@@ -11,12 +11,15 @@
             "elm/html": "1.0.0",
             "elm/json": "1.1.2",
             "elm-explorations/markdown": "1.0.0",
-            "mdgriffith/elm-ui": "1.1.0"
+            "mdgriffith/elm-ui": "1.1.0",
+            "tiziano88/elm-protobuf": "3.0.0"
         },
         "indirect": {
+            "elm/regex": "1.0.0",
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
-            "elm/virtual-dom": "1.0.2"
+            "elm/virtual-dom": "1.0.2",
+            "jweir/elm-iso8601": "5.0.2"
         }
     },
     "test-dependencies": {
