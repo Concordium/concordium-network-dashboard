@@ -1,6 +1,10 @@
-module Color exposing (blue, grey, red, white)
+module Color exposing (blue, darkGrey, grey, red, white)
 
 import Element
+
+
+darkGrey =
+    Element.rgb255 48 44 45
 
 
 grey =

@@ -1,16 +1,28 @@
-module Main exposing (main)
+port module Main exposing (main)
 
 import Browser
 import Color exposing (..)
+import Concordium_p2p_rpc
 import Debug exposing (toString)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
+import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
 import Json.Decode as D
 import Json.Encode as E
 import Markdown
+
+
+port hello : String -> Cmd msg
+
+
+port reply : (Int -> msg) -> Sub msg
+
+
+type alias Flags =
+    ()
 
 
 type alias Model =
@@ -20,24 +32,26 @@ type alias Model =
 
 type Msg
     = Default String
+    | ReplyReceived Int
 
 
-init : ( Model, Cmd msg )
-init =
-    ( { derp = 1
-      }
-    , Cmd.none
-    )
+init : Flags -> ( Model, Cmd Msg )
+init flags =
+    ( { derp = 1 }, hello "World" )
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
-    theme
-        [ paragraph [] [ markdown "### Concordium Dashboard POC" ]
-        , row [ spacing 10 ]
-            [ paragraph [] [ markdown "cool" ]
+    { body =
+        [ theme
+            [ paragraph [] [ markdown "### Concordium Dashboard POC" ]
+            , row [ spacing 10 ]
+                [ paragraph [] [ markdown "cool" ]
+                ]
             ]
         ]
+    , title = "Concordium Dashboard"
+    }
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
@@ -46,16 +60,23 @@ update msg model =
         Default string ->
             ( model, Cmd.none )
 
+        ReplyReceived message ->
+            let
+                _ =
+                    Debug.log "ReplyReceived" message
+            in
+            ( model, Cmd.none )
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    reply ReplyReceived
 
 
-main : Program () Model Msg
+main : Program Flags Model Msg
 main =
-    Browser.element
-        { init = always init
+    Browser.document
+        { init = init
         , view = view
         , update = update
         , subscriptions = subscriptions
@@ -64,10 +85,9 @@ main =
 
 theme : List (Element msg) -> Html.Html msg
 theme x =
-    layout [ width fill, padding 10, bgGrey ] <|
+    layout [ width fill, padding 10, bgDarkGrey, Font.color grey ] <|
         column []
-            [ column [ bgWhite, padding 20, spacing 20 ] x
-            ]
+            x
 
 
 markdown : String -> Element msg
@@ -75,9 +95,9 @@ markdown string =
     Element.html <| Markdown.toHtml [] string
 
 
-bgGrey : Attr decorative msg
-bgGrey =
-    Background.color <| grey
+bgDarkGrey : Attr decorative msg
+bgDarkGrey =
+    Background.color <| darkGrey
 
 
 bgWhite : Attr decorative msg
