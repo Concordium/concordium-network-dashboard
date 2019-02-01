@@ -2,7 +2,6 @@ port module Main exposing (main)
 
 import Browser
 import Color exposing (..)
-import Concordium_p2p_rpc
 import Debug exposing (toString)
 import Dict exposing (Dict)
 import Element exposing (..)
@@ -18,7 +17,7 @@ import Markdown
 port hello : String -> Cmd msg
 
 
-port reply : (Int -> msg) -> Sub msg
+port reply : (String -> msg) -> Sub msg
 
 
 type alias Flags =
@@ -32,12 +31,12 @@ type alias Model =
 
 type Msg
     = Default String
-    | ReplyReceived Int
+    | ReplyReceived String
 
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    ( { derp = 1 }, hello "World" )
+    ( { derp = 1 }, hello "Hello from Elm!" )
 
 
 view : Model -> Browser.Document Msg

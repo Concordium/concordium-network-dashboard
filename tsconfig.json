@@ -1,10 +1,14 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es5",
-    "lib": ["dom", "es6"],
-    "strict": true,
-    "sourceMap": false
+    "target": "esnext",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    "outDir": "./dist",
+    "lib": ["es2015", "dom"],
+    "types": [],
+    "jsx": "react"
   },
-  "exclude": ["node_modules", "typings", "dist"]
+  "files": ["./types.d.ts", "./src/client/client.tsx"]
 }
