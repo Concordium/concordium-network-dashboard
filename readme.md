@@ -1,5 +1,10 @@
 # Concordium Dashboard
 
+POC dashboard to visualise the POC milestone. Elm frontend with small Typescript backend proxy.
+
+Will become proper Dashboard monitor in future, likely with Scala backend.
+
+
 ### Usage
 
 - `npm run dev` - Client and server are in watch mode with source maps, opens [http://localhost:3000](http://localhost:3000)
