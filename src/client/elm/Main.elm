@@ -25,7 +25,13 @@ type alias Flags =
 
 
 type alias Model =
-    { derp : Int
+    { nodes : List Node
+    }
+
+
+type alias Node =
+    { name : String
+    , state : Maybe String
     }
 
 
@@ -36,7 +42,13 @@ type Msg
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    ( { derp = 1 }, hello "Hello from Elm!" )
+    ( { nodes =
+            [ { name = "node1", state = Nothing }
+            , { name = "node2", state = Just "{somestate}" }
+            ]
+      }
+    , hello "Hello from Elm!"
+    )
 
 
 view : Model -> Browser.Document Msg
@@ -44,13 +56,20 @@ view model =
     { body =
         [ theme
             [ paragraph [] [ markdown "### Concordium Dashboard POC" ]
-            , row [ spacing 10 ]
-                [ paragraph [] [ markdown "cool" ]
-                ]
+            , column [ spacing 10 ]
+                (List.map viewNode model.nodes)
             ]
         ]
     , title = "Concordium Dashboard"
     }
+
+
+viewNode : Node -> Element msg
+viewNode node =
+    row []
+        [ row [ width (px 100) ] [ text node.name ]
+        , row [ width (px 100) ] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
+        ]
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
