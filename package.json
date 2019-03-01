@@ -2,7 +2,7 @@
   "name": "concordium-dashboard",
   "version": "1.0.0",
   "description": "Concordium Network Dashboard POC",
-  "main": "index.js",
+  "main": "dashboard-backend.js",
   "engines": {
     "node": ">=6.9.5"
   },
@@ -10,13 +10,14 @@
     "test": "jest",
     "clean": "rm -rf dist",
     "lint": "tslint -c tslint.json 'src/**/*.ts' 'src/**/*.tsx'",
-    "start": "node index.js",
-    "start:prod": "NODE_ENV=production node index.js",
+    "start": "node dashboard-backend.js",
+    "start:prod": "NODE_ENV=production node dashboard-backend.js",
     "build-client": "NODE_ENV=production webpack -p",
     "dev-client": "webpack-dev-server -w",
     "dev-client:hot": "webpack-dev-server -w --hot",
     "build-server": "tsc -p ./src/server",
-    "dev-server": "tsc-watch -p ./src/server --onSuccess \"node index.js\"",
+    "dev-server": "tsc-watch -p ./src/server --onSuccess \"node dashboard-backend.js\"",
+    "dev-collector": "tsc-watch -p ./src/server --onSuccess \"node dashboard-collector.js\"",
     "dev": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run dev-server\" \"npm run dev-client\"",
     "dev:hot": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run dev-server\" \"npm run dev-client:hot\"",
     "build": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run build-server\" \"npm run build-client\""
@@ -78,7 +79,9 @@
     "express": "^4.16.4",
     "grpc": "^1.18.0",
     "http-proxy-middleware": "^0.19.1",
-    "socket.io": "^2.2.0"
+    "interval-promise": "^1.3.0",
+    "socket.io": "^2.2.0",
+    "socket.io-client": "^2.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.2.2",
@@ -109,7 +112,6 @@
     "html-webpack-plugin": "^3.2.0",
     "jest": "^23.6.0",
     "open-browser-webpack-plugin": "github:rodrigopandini/open-browser-webpack-plugin",
-    "socket.io-client": "^2.2.0",
     "style-loader": "^0.23.1",
     "ts-jest": "^23.10.5",
     "tsc-watch": "^1.0.31",

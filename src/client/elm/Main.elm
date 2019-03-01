@@ -17,35 +17,42 @@ import Markdown
 port hello : String -> Cmd msg
 
 
-port reply : (String -> msg) -> Sub msg
+port nodeInfo : ({ host : String, state : Maybe String, uptime : Float } -> msg) -> Sub msg
 
 
 type alias Flags =
     ()
 
 
+type alias Host =
+    String
+
+
 type alias Model =
-    { nodes : List Node
+    { nodes : Dict Host Node
     }
 
 
 type alias Node =
-    { name : String
+    { host : String
     , state : Maybe String
+    , uptime : Float
     }
 
 
 type Msg
     = Default String
-    | ReplyReceived String
+    | NodeInfoReceived { host : String, state : Maybe String, uptime : Float }
 
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
     ( { nodes =
-            [ { name = "node1", state = Nothing }
-            , { name = "node2", state = Just "{somestate}" }
+            [ { host = "node1", state = Nothing, uptime = 0 }
+            , { host = "node2", state = Just "{somestate}", uptime = 0 }
             ]
+                |> List.map (\node -> ( node.host, node ))
+                |> Dict.fromList
       }
     , hello "Hello from Elm!"
     )
@@ -57,18 +64,45 @@ view model =
         [ theme
             [ paragraph [] [ markdown "### Concordium Dashboard POC" ]
             , column [ spacing 10 ]
-                (List.map viewNode model.nodes)
+                [ nodesTable model.nodes ]
             ]
         ]
     , title = "Concordium Dashboard"
     }
 
 
+nodesTable nodes =
+    Element.table [ spacing 10 ]
+        { data = nodes |> Dict.toList |> List.map Tuple.second
+        , columns =
+            [ { header = text "Name"
+              , width = fill
+              , view =
+                    \node ->
+                        text node.host
+              }
+            , { header = text "State"
+              , width = fill
+              , view =
+                    \node ->
+                        text <| Maybe.withDefault "<No state loaded>" node.state
+              }
+            , { header = text "Uptime"
+              , width = fill
+              , view =
+                    \node ->
+                        text <| String.fromFloat node.uptime
+              }
+            ]
+        }
+
+
 viewNode : Node -> Element msg
 viewNode node =
     row []
-        [ row [ width (px 100) ] [ text node.name ]
-        , row [ width (px 100) ] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
+        [ column [] [ text node.host ]
+        , column [] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
+        , column [] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
         ]
 
 
@@ -78,17 +112,17 @@ update msg model =
         Default string ->
             ( model, Cmd.none )
 
-        ReplyReceived message ->
+        NodeInfoReceived node ->
             let
                 _ =
-                    Debug.log "ReplyReceived" message
+                    Debug.log "NodeInfoReceived" node
             in
-            ( model, Cmd.none )
+            ( { model | nodes = Dict.insert node.host node model.nodes }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    reply ReplyReceived
+    nodeInfo NodeInfoReceived
 
 
 main : Program Flags Model Msg

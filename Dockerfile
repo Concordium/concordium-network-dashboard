@@ -13,7 +13,7 @@ COPY dist dist
 COPY proto proto
 COPY package.json package.json
 COPY package-lock.json package-lock.json
-COPY index.js index.js
+COPY dashboard-backend.js dashboard-backend.js
 
 RUN npm install
 
