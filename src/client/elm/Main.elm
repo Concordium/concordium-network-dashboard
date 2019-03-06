@@ -17,7 +17,7 @@ import Markdown
 port hello : String -> Cmd msg
 
 
-port nodeInfo : ({ host : String, state : Maybe String, uptime : Float } -> msg) -> Sub msg
+port nodeInfo : (Node -> msg) -> Sub msg
 
 
 type alias Flags =
@@ -36,26 +36,24 @@ type alias Model =
 type alias Node =
     { host : String
     , state : Maybe String
-    , uptime : Float
+    , uptime : Float -- Milliseconds @TODO figure out how to convert to Int, issue is in JS everything is Double even Ints
+    , client : String
+    , averagePing : Float -- Milliseconds @TODO as above figure out Int
+    , peersCount : Float -- @TODO as above figure out Int
+    , bestBlockHash : String
+    , packetsSent : Float -- @TODO as above figure out Int
+    , packetsReceived : Float -- @TODO as above figure out Int
     }
 
 
 type Msg
     = Default String
-    | NodeInfoReceived { host : String, state : Maybe String, uptime : Float }
+    | NodeInfoReceived Node
 
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    ( { nodes =
-            [ { host = "node1", state = Nothing, uptime = 0 }
-            , { host = "node2", state = Just "{somestate}", uptime = 0 }
-            ]
-                |> List.map (\node -> ( node.host, node ))
-                |> Dict.fromList
-      }
-    , hello "Hello from Elm!"
-    )
+    ( { nodes = Dict.empty }, hello "Hello from Elm!" )
 
 
 view : Model -> Browser.Document Msg
@@ -72,29 +70,69 @@ view model =
 
 
 nodesTable nodes =
-    Element.table [ spacing 10 ]
-        { data = nodes |> Dict.toList |> List.map Tuple.second
-        , columns =
-            [ { header = text "Name"
-              , width = fill
-              , view =
-                    \node ->
-                        text node.host
-              }
-            , { header = text "State"
-              , width = fill
-              , view =
-                    \node ->
-                        text <| Maybe.withDefault "<No state loaded>" node.state
-              }
-            , { header = text "Uptime"
-              , width = fill
-              , view =
-                    \node ->
-                        text <| String.fromFloat node.uptime
-              }
-            ]
-        }
+    if Dict.size nodes == 0 then
+        text "Loading node statistics..."
+
+    else
+        Element.table [ spacing 10 ]
+            { data = nodes |> Dict.toList |> List.map Tuple.second
+            , columns =
+                [ { header = text "Name"
+                  , width = fill
+                  , view =
+                        \node ->
+                            text node.host
+                  }
+                , { header = text "State"
+                  , width = fill
+                  , view =
+                        \node ->
+                            text <| Maybe.withDefault "<No state loaded>" node.state
+                  }
+                , { header = text "Uptime"
+                  , width = fill
+                  , view =
+                        \node ->
+                            text <| String.fromFloat node.uptime
+                  }
+                , { header = text "Client"
+                  , width = fill
+                  , view =
+                        \node ->
+                            text node.client
+                  }
+                , { header = text "Avg Ping"
+                  , width = fill
+                  , view =
+                        \node ->
+                            text <| String.fromFloat node.averagePing
+                  }
+                , { header = text "Peers"
+                  , width = fill
+                  , view =
+                        \node ->
+                            text <| String.fromFloat node.peersCount
+                  }
+                , { header = text "Sent"
+                  , width = fill
+                  , view =
+                        \node ->
+                            text <| String.fromFloat node.packetsSent
+                  }
+                , { header = text "Received"
+                  , width = fill
+                  , view =
+                        \node ->
+                            text <| String.fromFloat node.packetsReceived
+                  }
+                , { header = text "Last Block"
+                  , width = fill
+                  , view =
+                        \node ->
+                            text node.bestBlockHash
+                  }
+                ]
+            }
 
 
 viewNode : Node -> Element msg
@@ -137,7 +175,7 @@ main =
 
 theme : List (Element msg) -> Html.Html msg
 theme x =
-    layout [ width fill, padding 10, bgDarkGrey, Font.color grey ] <|
+    layout [ width fill, padding 10, bgDarkGrey, Font.color grey, Font.size 14 ] <|
         column []
             x
 
