@@ -9,9 +9,25 @@ import * as grpc from 'grpc'
 import * as protoLoader from '@grpc/proto-loader'
 import * as io from 'socket.io-client'
 import * as _ from 'lodash'
+
+const program = require('commander')
 const interval = require('interval-promise')
 
-console.log(`Collector version ${getVersion()}`)
+var nodeName = 'unknown'
+
+program
+  .arguments('<node-name>')
+  .action(name => { nodeName = name })
+  .option('-h, --host [default]', 'Specify hode hostname [localhost:8890]', 'localhost:8890')
+  .version(getVersion(), '-v, --version')
+  .parse(process.argv)
+
+if (!process.argv.slice(2).length) {
+  program.outputHelp()
+  process.exit()
+}
+
+console.log(`Collector connecting to ${program.host} as ${nodeName}`)
 
 var PROTO_PATH = __dirname + '/../../../proto/concordium_p2p_rpc.proto'
 
@@ -28,8 +44,7 @@ var protoDescriptor = grpc.loadPackageDefinition(packageDefinition)
 var meta = new grpc.Metadata()
 meta.add('authentication', 'rpcadmin')
 
-// @TODO need to add config option to override, if local node is using non-standard port
-var grpcService = new protoDescriptor.P2P('localhost:8890', grpc.credentials.createInsecure())
+var grpcService = new protoDescriptor.P2P(program.host, grpc.credentials.createInsecure())
 
 // @TODO need to add config option to override collector path
 const dashboard = io('http://localhost:3000/nodes')
@@ -120,7 +135,7 @@ const main = async () => {
   const peerCount = _.values(peerStats).length
 
   const nodeData = {
-    host: 'node1', // @TODO make host configurable
+    nodeName: nodeName,
     state: JSON.stringify(bestBlockInfo['globalState']),
     uptime: uptime,
     client: client,

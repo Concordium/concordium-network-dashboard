@@ -34,7 +34,7 @@ type alias Model =
 
 
 type alias Node =
-    { host : String
+    { nodeName : String
     , state : Maybe String
     , uptime : Float -- Milliseconds @TODO figure out how to convert to Int, issue is in JS everything is Double even Ints
     , client : String
@@ -81,7 +81,7 @@ nodesTable nodes =
                   , width = fill
                   , view =
                         \node ->
-                            text node.host
+                            text node.nodeName
                   }
                 , { header = text "State"
                   , width = fill
@@ -138,7 +138,7 @@ nodesTable nodes =
 viewNode : Node -> Element msg
 viewNode node =
     row []
-        [ column [] [ text node.host ]
+        [ column [] [ text node.nodeName ]
         , column [] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
         , column [] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
         ]
@@ -155,7 +155,7 @@ update msg model =
                 _ =
                     Debug.log "NodeInfoReceived" node
             in
-            ( { model | nodes = Dict.insert node.host node model.nodes }, Cmd.none )
+            ( { model | nodes = Dict.insert node.nodeName node model.nodes }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg

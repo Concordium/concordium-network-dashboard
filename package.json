@@ -17,7 +17,8 @@
     "dev-client:hot": "webpack-dev-server -w --hot",
     "build-server": "tsc -p ./src/server",
     "dev-server": "tsc-watch -p ./src/server --onSuccess \"node dashboard-backend.js\"",
-    "dev-collector": "tsc-watch -p ./src/server --onSuccess \"node dashboard-collector.js\"",
+    "dev-collector": "tsc-watch -p ./src/server --onSuccess \"node dashboard-collector testnode1 -h localhost:8890\"",
+    "dev-collector2": "tsc-watch -p ./src/server --onSuccess \"node dashboard-collector testnode2 -h localhost:8891\"",
     "dev": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run dev-server\" \"npm run dev-client\"",
     "dev:hot": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run dev-server\" \"npm run dev-client:hot\"",
     "build": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run build-server\" \"npm run build-client\""
@@ -42,10 +43,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/gilamran/fullstack-typescript.git"
+    "url": "git@gitlab.com:Concordium/dashboard.git"
   },
   "license": "MIT",
-  "author": "Gil Amran",
+  "author": "Concordium",
   "jest": {
     "roots": [
       "<rootDir>/src"
@@ -76,6 +77,7 @@
     "@babel/polyfill": "^7.2.5",
     "@grpc/proto-loader": "^0.4.0",
     "body-parser": "^1.18.3",
+    "commander": "^2.19.0",
     "express": "^4.16.4",
     "grpc": "^1.18.0",
     "http-proxy-middleware": "^0.19.1",
