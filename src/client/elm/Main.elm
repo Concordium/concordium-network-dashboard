@@ -71,7 +71,7 @@ view model =
 
 nodesTable nodes =
     if Dict.size nodes == 0 then
-        text "Loading node statistics..."
+        text "Waiting for node statistics..."
 
     else
         Element.table [ spacing 10 ]
