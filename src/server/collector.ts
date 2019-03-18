@@ -15,10 +15,14 @@ const interval = require('interval-promise')
 
 var nodeName = 'unknown'
 
+let defaultHost = (process.env.COLLECTOR_HOST && (process.env.COLLECTOR_HOST != '')) ? process.env.COLLECTOR_HOST : 'localhost:8890';
+let defaultDashboard = (process.env.COLLECTOR_DASHBOARD && (process.env.COLLECTOR_DASHBOARD != '')) ? process.env.COLLECTOR_DASHBOARD : 'localhost:3000';
+
 program
   .arguments('<node-name>')
   .action(name => { nodeName = name })
-  .option('-h, --host [default]', 'Specify hode hostname [localhost:8890]', 'localhost:8890')
+  .option('-h, --host [default]', 'Specify node hostname [localhost:8890]', defaultHost)
+  .option('-d, --dashboard [default]', 'Specify dashboard hostname [localhost:3000]', defaultDashboard)
   .version(getVersion(), '-v, --version')
   .parse(process.argv)
 
@@ -43,11 +47,9 @@ var protoDescriptor = grpc.loadPackageDefinition(packageDefinition)
 
 var meta = new grpc.Metadata()
 meta.add('authentication', 'rpcadmin')
-
 var grpcService = new protoDescriptor.P2P(program.host, grpc.credentials.createInsecure())
 
-// @TODO need to add config option to override collector path
-const dashboard = io('http://localhost:3000/nodes')
+const dashboard = io('http://' + program.dashboard + '/nodes')
 
 
 const getUptime = () => {
