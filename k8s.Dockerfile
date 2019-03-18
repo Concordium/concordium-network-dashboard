@@ -7,17 +7,7 @@ ENV NPM_CONFIG_PREFIX=/home/node/.npm-global
 WORKDIR /home/node/app
 
 # Possibly temporary, see proto/readme.md
-COPY docs docs
-COPY elm.json elm.json
-COPY index.js index.js
-COPY package.json package.json
-COPY package-lock.json package-lock.json
-COPY proto proto
-COPY src src
-COPY tsconfig.json tsconfig.json
-COPY tslint.json tslint.json
-COPY types.d.ts types.d.ts
-COPY webpack.config.js webpack.config.js
+COPY . .
 
 
 ENV NODE_ENV="development"
