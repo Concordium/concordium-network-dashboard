@@ -12,6 +12,7 @@ import Html exposing (Html)
 import Json.Decode as D
 import Json.Encode as E
 import Markdown
+import String
 
 
 port hello : String -> Cmd msg
@@ -61,12 +62,31 @@ view model =
     { body =
         [ theme
             [ paragraph [] [ markdown "### Concordium Dashboard POC" ]
-            , column [ spacing 10 ]
-                [ nodesTable model.nodes ]
+            , column [ spacing 20 ]
+                [ row [ spacing 20 ]
+                    [ widgetNumber blue_ "Active Nodes" "icon-nodes.png" (Dict.size model.nodes)
+                    , widgetNumber purple "Active Nodes" "icon-nodes.png" (Dict.size model.nodes)
+                    , widgetNumber lightBlue "Active Nodes" "icon-nodes.png" (Dict.size model.nodes)
+                    , widgetNumber pink "Active Nodes" "icon-nodes.png" (Dict.size model.nodes)
+                    , widgetNumber green "Active Nodes" "icon-nodes.png" (Dict.size model.nodes)
+                    ]
+                , nodesTable model.nodes
+                ]
             ]
         ]
     , title = "Concordium Dashboard"
     }
+
+
+widgetNumber color title icon value =
+    row [ Background.color moduleGrey, padding 30, spacing 30 ]
+        [ column []
+            [ text icon ]
+        , column [ spacing 20 ]
+            [ row [ Font.color color ] [ text <| String.toUpper title ]
+            , row [ Font.color color, Font.size 30 ] [ text <| Debug.toString value ]
+            ]
+        ]
 
 
 nodesTable nodes =
@@ -175,7 +195,15 @@ main =
 
 theme : List (Element msg) -> Html.Html msg
 theme x =
-    layout [ width fill, padding 10, bgDarkGrey, Font.color grey, Font.size 14 ] <|
+    layout
+        [ width fill
+        , padding 20
+        , bgDarkGrey
+        , Font.color grey
+        , Font.family [ Font.typeface "Exo" ]
+        , Font.size 14
+        ]
+    <|
         column []
             x
 
