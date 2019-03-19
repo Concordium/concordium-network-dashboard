@@ -12,7 +12,7 @@
     "lint": "tslint -c tslint.json 'src/**/*.ts' 'src/**/*.tsx'",
     "start": "node dashboard-backend.js",
     "start:prod": "NODE_ENV=production node dashboard-backend.js",
-    "build-client": "NODE_ENV=production webpack -p",
+    "build-client": "NODE_ENV=production webpack -p && cp -rp assets dist/public",
     "dev-client": "webpack-dev-server -w",
     "dev-client:hot": "webpack-dev-server -w --hot",
     "build-server": "tsc -p ./src/server",

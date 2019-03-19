@@ -33,7 +33,7 @@ module.exports = {
   output: {
     path: path.join(__dirname, 'dist', 'public'),
     filename: `[name]-[hash:8]-bundle.js`,
-    publicPath: '/public/',
+    publicPath: config.IS_PRODUCTION ? '/' : '/public/'
   },
   resolve: {
     extensions: ['.js', '.ts', '.tsx', '.elm'],

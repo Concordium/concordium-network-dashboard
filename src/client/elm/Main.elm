@@ -1,11 +1,13 @@
 port module Main exposing (main)
 
 import Browser
-import Color exposing (..)
+import Chart
+import Colors exposing (..)
 import Debug exposing (toString)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
+import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
@@ -64,12 +66,15 @@ view model =
             [ paragraph [] [ markdown "### Concordium Dashboard POC" ]
             , column [ spacing 20 ]
                 [ row [ spacing 20 ]
-                    [ widgetNumber blue_ "Active Nodes" "icon-nodes.png" (Dict.size model.nodes)
-                    , widgetNumber purple "Active Nodes" "icon-nodes.png" (Dict.size model.nodes)
-                    , widgetNumber lightBlue "Active Nodes" "icon-nodes.png" (Dict.size model.nodes)
-                    , widgetNumber pink "Active Nodes" "icon-nodes.png" (Dict.size model.nodes)
-                    , widgetNumber green "Active Nodes" "icon-nodes.png" (Dict.size model.nodes)
+                    [ widgetNumber blue_ "Block Height" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
+                    , widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (Dict.size model.nodes)
+                    , widgetNumber lightBlue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (Dict.size model.nodes)
+                    , widgetNumber pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" (Dict.size model.nodes)
+                    , widgetNumber green "Block finalized height" "/assets/images/icon-blocksfinal-green.png" (Dict.size model.nodes)
+                    , widgetNumber lightBlue "Last finalized block" "/assets/images/icon-blocklastfinal-lightblue.png" (Dict.size model.nodes)
                     ]
+                , widgetNumberChart blue_ "Active Nodes" "/assets/images/icon-blocks.png" (Dict.size model.nodes)
+                , chartTimeseries blue_ "Active Nodes" "/assets/images/icon-blocks.png" (Dict.size model.nodes)
                 , nodesTable model.nodes
                 ]
             ]
@@ -79,13 +84,39 @@ view model =
 
 
 widgetNumber color title icon value =
-    row [ Background.color moduleGrey, padding 30, spacing 30 ]
+    row [ Background.color moduleGrey, padding 30, spacing 30, Border.rounded 5 ]
         [ column []
-            [ text icon ]
+            [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 35), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
         , column [ spacing 20 ]
             [ row [ Font.color color ] [ text <| String.toUpper title ]
             , row [ Font.color color, Font.size 30 ] [ text <| Debug.toString value ]
             ]
+        ]
+
+
+widgetNumberChart color title icon value =
+    row [ Background.color moduleGrey, padding 30, spacing 30, Border.rounded 5 ]
+        [ column []
+            [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 40), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
+        , column [ spacing 20 ]
+            [ row [ Font.color color ] [ text <| String.toUpper title ]
+            , row [ Font.color color, Font.size 30 ] [ text <| Debug.toString value ]
+            ]
+        , column [ width (px 200) ]
+            [ html Chart.test ]
+        ]
+
+
+chartTimeseries color title icon value =
+    row [ Background.color moduleGrey, padding 30, spacing 30, Border.rounded 5 ]
+        -- @TODO play with this later to finish the chart effect
+        -- Background.gradient { angle = pi, steps = [ rgba255 49 178 239 1, rgba255 0 0 0 0 ] }
+        [ column [ spacing 20 ]
+            [ row [ Font.color color ] [ text <| String.toUpper title ]
+            , row [ Font.color color, Font.size 30 ] [ text <| Debug.toString value ]
+            ]
+        , column [ width (px 200) ]
+            [ html Chart.test ]
         ]
 
 
