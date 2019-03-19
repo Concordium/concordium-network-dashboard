@@ -19,8 +19,10 @@ let defaultDashboard = (process.env.COLLECTOR_DASHBOARD && (process.env.COLLECTO
 
 
 program
-  .arguments('<node-name>')
-  .action(name => { nodeName = name })
+  // @TODO restore this later to enforce required args for users
+  // see note a few lines down too
+  // .arguments('<node-name>')
+  // .action(name => { nodeName = name })
   .option('-h, --host [default]', 'Specify node hostname [localhost:8890]', defaultHost)
   .option('-d, --dashboard [default]', 'Specify dashboard hostname [localhost:3000]', defaultDashboard)
   .version(getVersion(), '-v, --version')
