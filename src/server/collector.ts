@@ -26,10 +26,12 @@ program
   .version(getVersion(), '-v, --version')
   .parse(process.argv)
 
-if (!process.argv.slice(2).length) {
-  program.outputHelp()
-  process.exit()
-}
+// @TODO restore this later to enforce required args for users
+// we disabled it to just get going with k8s given it's easier to use ENV there
+// if (!process.argv.slice(2).length) {
+//   program.outputHelp()
+//   process.exit()
+// }
 
 console.log(`Collector connecting to ${program.host} as ${nodeName}`)
 
