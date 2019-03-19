@@ -63,18 +63,17 @@ view : Model -> Browser.Document Msg
 view model =
     { body =
         [ theme
-            [ paragraph [] [ markdown "### Concordium Dashboard POC" ]
-            , column [ spacing 20 ]
-                [ row [ spacing 20 ]
-                    [ widgetNumber blue_ "Block Height" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
+            [ column [ spacing 20 ]
+                [ image [ height (px 20) ] { src = "/assets/images/concordium-logo.png", description = "Concordium Logo" }
+                , wrappedRow [ spacing 20 ]
+                    [ widgetNumberChart blue_ "Block Height" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
                     , widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (Dict.size model.nodes)
                     , widgetNumber lightBlue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (Dict.size model.nodes)
                     , widgetNumber pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" (Dict.size model.nodes)
                     , widgetNumber green "Block finalized height" "/assets/images/icon-blocksfinal-green.png" (Dict.size model.nodes)
                     , widgetNumber lightBlue "Last finalized block" "/assets/images/icon-blocklastfinal-lightblue.png" (Dict.size model.nodes)
+                    , chartTimeseries blue_ "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
                     ]
-                , widgetNumberChart blue_ "Active Nodes" "/assets/images/icon-blocks.png" (Dict.size model.nodes)
-                , chartTimeseries blue_ "Active Nodes" "/assets/images/icon-blocks.png" (Dict.size model.nodes)
                 , nodesTable model.nodes
                 ]
             ]
@@ -84,7 +83,7 @@ view model =
 
 
 widgetNumber color title icon value =
-    row [ Background.color moduleGrey, padding 30, spacing 30, Border.rounded 5 ]
+    row [ height (px 140), width (fillPortion 1), Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
         [ column []
             [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 35), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
         , column [ spacing 20 ]
@@ -95,7 +94,7 @@ widgetNumber color title icon value =
 
 
 widgetNumberChart color title icon value =
-    row [ Background.color moduleGrey, padding 30, spacing 30, Border.rounded 5 ]
+    row [ Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
         [ column []
             [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 40), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
         , column [ spacing 20 ]
@@ -108,7 +107,7 @@ widgetNumberChart color title icon value =
 
 
 chartTimeseries color title icon value =
-    row [ Background.color moduleGrey, padding 30, spacing 30, Border.rounded 5 ]
+    row [ Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
         -- @TODO play with this later to finish the chart effect
         -- Background.gradient { angle = pi, steps = [ rgba255 49 178 239 1, rgba255 0 0 0 0 ] }
         [ column [ spacing 20 ]
@@ -122,10 +121,10 @@ chartTimeseries color title icon value =
 
 nodesTable nodes =
     if Dict.size nodes == 0 then
-        text "Waiting for node statistics..."
+        row [ Font.color green ] [ text "Waiting for node statistics..." ]
 
     else
-        Element.table [ spacing 10 ]
+        Element.table [ spacing 10, Font.color green ]
             { data = nodes |> Dict.toList |> List.map Tuple.second
             , columns =
                 [ { header = text "Name"

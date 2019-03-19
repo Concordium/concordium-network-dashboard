@@ -44,7 +44,7 @@ h =
 
 padding : Float
 padding =
-    30
+    0
 
 
 xScale : ContinuousScale Time.Posix
@@ -101,15 +101,15 @@ view : List ( Time.Posix, Float ) -> Svg msg
 view model =
     svg [ viewBox 0 0 w h ]
         [ g [ transform [ Translate (padding - 1) (h - padding) ] ]
-            [ xAxis model ]
+            []
 
         -- [ xAxis model ]
         , g [ transform [ Translate (padding - 1) padding ] ]
-            [ yAxis ]
+            []
 
         -- [ yAxis ]
         , g [ transform [ Translate padding padding ], class [ "series" ] ]
-            [ Path.element (area model) [ strokeWidth 3, fill <| FillNone, stroke <| rgbac255 0 173 255 0.15 ]
+            [ Path.element (area model) [ strokeWidth 3, fill <| Fill <| rgbac255 0 173 255 0.05 ]
             , Path.element (line 0 model) [ stroke (rgbac255 0 173 255 1), strokeWidth 6, fill FillNone ]
             , Path.element (line -10 model) [ stroke (rgbac255 0 173 255 0.15), strokeWidth 20, fill FillNone ]
             ]
