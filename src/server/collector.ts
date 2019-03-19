@@ -13,10 +13,10 @@ import * as _ from 'lodash'
 const program = require('commander')
 const interval = require('interval-promise')
 
-var nodeName = 'unknown'
-
+var nodeName = (process.env.COLLECTOR_NAME && (process.env.COLLECTOR_NAME != '')) ? process.env.COLLECTOR_NAME : 'unknown';
 let defaultHost = (process.env.COLLECTOR_HOST && (process.env.COLLECTOR_HOST != '')) ? process.env.COLLECTOR_HOST : 'localhost:8890';
 let defaultDashboard = (process.env.COLLECTOR_DASHBOARD && (process.env.COLLECTOR_DASHBOARD != '')) ? process.env.COLLECTOR_DASHBOARD : 'localhost:3000';
+
 
 program
   .arguments('<node-name>')
