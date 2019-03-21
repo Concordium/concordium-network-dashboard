@@ -76,9 +76,10 @@ view model =
                     , widgetNumber pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" (Dict.size model.nodes)
                     , widgetNumber green "Block finalized height" "/assets/images/icon-blocksfinal-green.png" (Dict.size model.nodes)
                     , widgetNumber green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (Dict.size model.nodes)
-                    , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
+                    , worldMap
+
+                    -- , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
                     ]
-                , row [ spacing 20 ] [ worldMap ]
                 , nodesTable model.nodes
                 ]
             ]
