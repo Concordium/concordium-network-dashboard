@@ -66,12 +66,12 @@ view model =
             [ column [ spacing 20 ]
                 [ image [ height (px 20) ] { src = "/assets/images/concordium-logo.png", description = "Concordium Logo" }
                 , wrappedRow [ spacing 20 ]
-                    [ widgetNumberChart blue_ "Block Height" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
-                    , widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (Dict.size model.nodes)
+                    [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (Dict.size model.nodes)
+                    , widgetNumberChart blue_ "Block Height" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
                     , widgetNumber lightBlue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (Dict.size model.nodes)
                     , widgetNumber pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" (Dict.size model.nodes)
                     , widgetNumber green "Block finalized height" "/assets/images/icon-blocksfinal-green.png" (Dict.size model.nodes)
-                    , widgetNumber lightBlue "Last finalized block" "/assets/images/icon-blocklastfinal-lightblue.png" (Dict.size model.nodes)
+                    , widgetNumber green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (Dict.size model.nodes)
                     , chartTimeseries blue_ "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
                     ]
                 , nodesTable model.nodes
