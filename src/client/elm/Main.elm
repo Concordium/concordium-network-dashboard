@@ -14,6 +14,7 @@ import Html exposing (Html)
 import Json.Decode as D
 import Json.Encode as E
 import Markdown
+import Round
 import String
 import Time exposing (millisToPosix)
 import Time.Distance exposing (inWordsWithConfig)
@@ -70,12 +71,12 @@ view model =
                 [ image [ height (px 20) ] { src = "/assets/images/concordium-logo.png", description = "Concordium Logo" }
                 , wrappedRow [ spacing 20 ]
                     [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (Dict.size model.nodes)
-                    , widgetNumberChart blue_ "Block Height" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
+                    , widgetNumberChart blue "Block Height" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
                     , widgetNumber lightBlue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (Dict.size model.nodes)
                     , widgetNumber pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" (Dict.size model.nodes)
                     , widgetNumber green "Block finalized height" "/assets/images/icon-blocksfinal-green.png" (Dict.size model.nodes)
                     , widgetNumber green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (Dict.size model.nodes)
-                    , chartTimeseries blue_ "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
+                    , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
                     ]
                 , row [ spacing 20 ] [ worldMap ]
                 , nodesTable model.nodes
@@ -126,7 +127,7 @@ chartTimeseries color title icon value =
 worldMap =
     row [ height (px 260), width (fillPortion 1), Background.color moduleGrey, Border.rounded 5 ]
         [ column [ spacing 0 ]
-            [ row [ Font.color blue_, paddingXY 20 0 ] [ text <| String.toUpper "Node Locations" ]
+            [ row [ Font.color blue, paddingXY 20 0 ] [ text <| String.toUpper "Node Locations" ]
             , image [ height (px 220), centerY, centerX ] { src = "/assets/images/world.svg", description = "World Map" }
             ]
         ]
@@ -183,7 +184,14 @@ nodesTable nodes =
                         \node ->
                             case node.averagePing of
                                 Just ping ->
-                                    text <| String.fromFloat ping
+                                    if ping < 1000 then
+                                        text <| Round.round 2 ping ++ "ms"
+
+                                    else if ping < 1000 * 60 then
+                                        el [ Font.color orange ] (text <| Round.round 2 (ping / 1000) ++ "s")
+
+                                    else
+                                        el [ Font.color red ] (text <| "> 60s")
 
                                 Nothing ->
                                     text "n/a"

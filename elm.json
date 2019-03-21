@@ -19,6 +19,7 @@
             "gampleman/elm-visualization": "2.0.0",
             "gingko/time-distance": "2.0.1",
             "mdgriffith/elm-ui": "1.1.0",
+            "myrho/elm-round": "1.0.4",
             "tiziano88/elm-protobuf": "3.0.0"
         },
         "indirect": {
