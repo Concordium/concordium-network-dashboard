@@ -41,7 +41,7 @@ type alias Node =
     , state : Maybe String
     , uptime : Float -- Milliseconds @TODO figure out how to convert to Int, issue is in JS everything is Double even Ints
     , client : String
-    , averagePing : Float -- Milliseconds @TODO as above figure out Int
+    , averagePing : Maybe Float -- Milliseconds @TODO as above figure out Int. Maybe for when 0 nodes
     , peersCount : Float -- @TODO as above figure out Int
     , bestBlockHash : String
     , packetsSent : Float -- @TODO as above figure out Int
@@ -155,7 +155,12 @@ nodesTable nodes =
                   , width = fill
                   , view =
                         \node ->
-                            text <| String.fromFloat node.averagePing
+                            case node.averagePing of
+                                Just ping ->
+                                    text <| String.fromFloat ping
+
+                                Nothing ->
+                                    text "n/a"
                   }
                 , { header = text "Peers"
                   , width = fill
