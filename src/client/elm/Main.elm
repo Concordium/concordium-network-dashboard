@@ -77,6 +77,7 @@ view model =
                     , widgetNumber green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (Dict.size model.nodes)
                     , chartTimeseries blue_ "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
                     ]
+                , row [ spacing 20 ] [ worldMap ]
                 , nodesTable model.nodes
                 ]
             ]
@@ -119,6 +120,15 @@ chartTimeseries color title icon value =
             ]
         , column [ width (px 200) ]
             [ html Chart.test ]
+        ]
+
+
+worldMap =
+    row [ height (px 260), width (fillPortion 1), Background.color moduleGrey, Border.rounded 5 ]
+        [ column [ spacing 0 ]
+            [ row [ Font.color blue_, paddingXY 20 0 ] [ text <| String.toUpper "Node Locations" ]
+            , image [ height (px 220), centerY, centerX ] { src = "/assets/images/world.svg", description = "World Map" }
+            ]
         ]
 
 
