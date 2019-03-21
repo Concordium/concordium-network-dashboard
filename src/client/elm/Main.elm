@@ -15,6 +15,9 @@ import Json.Decode as D
 import Json.Encode as E
 import Markdown
 import String
+import Time exposing (millisToPosix)
+import Time.Distance exposing (inWordsWithConfig)
+import Time.Distance.I18n as I18n
 
 
 port hello : String -> Cmd msg
@@ -143,7 +146,20 @@ nodesTable nodes =
                   , width = fill
                   , view =
                         \node ->
-                            text <| String.fromFloat node.uptime
+                            let
+                                point =
+                                    1552573958904
+
+                                timePoint =
+                                    millisToPosix point
+
+                                offsetTimePoint =
+                                    millisToPosix (point - round node.uptime)
+
+                                words =
+                                    inWordsWithConfig { withAffix = False } I18n.en offsetTimePoint timePoint
+                            in
+                            text words
                   }
                 , { header = text "Client"
                   , width = fill

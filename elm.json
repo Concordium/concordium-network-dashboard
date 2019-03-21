@@ -17,6 +17,7 @@
             "elm-explorations/markdown": "1.0.0",
             "folkertdev/one-true-path-experiment": "4.0.2",
             "gampleman/elm-visualization": "2.0.0",
+            "gingko/time-distance": "2.0.1",
             "mdgriffith/elm-ui": "1.1.0",
             "tiziano88/elm-protobuf": "3.0.0"
         },
