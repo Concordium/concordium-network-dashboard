@@ -152,6 +152,11 @@ const main = async () => {
     packetsReceived: packetsReceived
   }
 
+  if (nodeData.averagePing > 20000) {
+    console.log('Enormous ping average from these hosts on ${nodeName}:')
+    console.log(peerStats)
+  }
+
   console.log('emitting: nodeInfo', nodeData)
   dashboard.emit('nodeInfo', nodeData)
 };
