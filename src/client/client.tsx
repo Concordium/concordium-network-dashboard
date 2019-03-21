@@ -1,15 +1,18 @@
 import { Elm } from "./elm/Main"
 import io from 'socket.io-client'
 
+const dashboardHost = window.location.host + '/frontends'
+
 document.addEventListener("DOMContentLoaded", function() {
   let app = Elm.Main.init({
     flags: null
   })
 
-  console.log(`Connecting to ${window.location.host + '/frontends'}`)
-  var socket = io.connect(window.location.host + '/frontends')
+  console.log(`Connecting to ${dashboardHost}`)
+  var socket = io.connect(dashboardHost)
 
   socket.on('nodeInfo', function (nodeData) {
+    console.log('js:nodeInfo received:', nodeData)
     app.ports.nodeInfo.send(nodeData)
   })
 
