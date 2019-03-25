@@ -1,6 +1,8 @@
 port module Main exposing (main)
 
-import Browser
+import Browser exposing (..)
+import Browser.Events
+import Browser.Navigation as Nav exposing (Key)
 import Chart
 import Colors exposing (..)
 import Debug exposing (toString)
@@ -14,12 +16,14 @@ import Element.Input as Input
 import Html exposing (Html)
 import Json.Decode as D
 import Json.Encode as E
+import List.Extra as List
 import Markdown
 import Round
 import String
 import Time exposing (millisToPosix)
 import Time.Distance exposing (inWordsWithConfig)
 import Time.Distance.I18n as I18n
+import Url exposing (Url)
 
 
 port hello : String -> Cmd msg
@@ -29,7 +33,7 @@ port nodeInfo : (Node -> msg) -> Sub msg
 
 
 type alias Flags =
-    ()
+    { width : Int, height : Int }
 
 
 type alias Host =
@@ -37,7 +41,8 @@ type alias Host =
 
 
 type alias Model =
-    { nodes : Dict Host Node
+    { window : { width : Int, height : Int }
+    , nodes : Dict Host Node
     , sortMode : SortMode
     }
 
@@ -56,7 +61,9 @@ type alias Node =
 
 
 type Msg
-    = Default String
+    = UrlClicked UrlRequest
+    | UrlChanged Url
+    | WindowResized Int Int
     | NodeInfoReceived Node
     | SortSet SortBy
 
@@ -76,18 +83,18 @@ type SortBy
     | SortReceived
 
 
-init : Flags -> ( Model, Cmd Msg )
-init flags =
-    ( { nodes = Dict.empty, sortMode = SortNone }, hello "Hello from Elm!" )
+init : Flags -> Url -> Key -> ( Model, Cmd Msg )
+init flags url key =
+    ( { nodes = Dict.empty, sortMode = SortNone, window = flags }, hello "Hello from Elm!" )
 
 
 view : Model -> Browser.Document Msg
 view model =
     { body =
         [ theme
-            [ column [ spacing 20 ]
+            [ column [ spacing 20, width fill ]
                 [ image [ height (px 20) ] { src = "/assets/images/concordium-logo.png", description = "Concordium Logo" }
-                , wrappedRow [ spacing 20 ]
+                , wrappedRow [ spacing 20, width fill ]
                     [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (Dict.size model.nodes)
                     , widgetNumberChart blue "Block Height" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
                     , widgetNumber lightBlue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (Dict.size model.nodes)
@@ -98,7 +105,27 @@ view model =
 
                     -- , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
                     ]
-                , nodesTable model (sortNodesMode model.sortMode model.nodes)
+                , let
+                    listNodes =
+                        model.nodes |> Dict.toList |> List.map Tuple.second
+
+                    sortedNodes =
+                        sortNodesMode model.sortMode listNodes
+                  in
+                  if model.window.width < 1800 then
+                    nodesTable model sortedNodes
+
+                  else
+                    let
+                        ( nodes1, nodes2 ) =
+                            -- Ceiling so we always end up with longer part of odd-numbered list first
+                            List.splitAt (toFloat (List.length listNodes) / 2 |> ceiling) sortedNodes
+                    in
+                    row [ spacing 20, width fill ]
+                        [ nodesTable model (sortNodesMode model.sortMode nodes1)
+                        , column [ height fill, width (px 4), Background.color blue ] []
+                        , nodesTable model (sortNodesMode model.sortMode nodes2)
+                        ]
                 ]
             ]
         ]
@@ -157,7 +184,7 @@ nodesTable model nodes =
         row [ Font.color green ] [ text "Waiting for node statistics..." ]
 
     else
-        Element.table [ spacing 10, Font.color green ]
+        Element.table [ spacing 10, Font.color green, alignTop, width fill ]
             { data = nodes
             , columns =
                 [ { header = sortableHeader model SortName "Name"
@@ -286,12 +313,8 @@ sortableHeader model sortBy name =
             withoutIcon
 
 
-sortNodesMode : SortMode -> Dict String Node -> List Node
-sortNodesMode sortMode nodes =
-    let
-        listNodes =
-            nodes |> Dict.toList |> List.map Tuple.second
-    in
+sortNodesMode : SortMode -> List Node -> List Node
+sortNodesMode sortMode listNodes =
     case sortMode of
         SortAsc sortBy ->
             sortNodesBy sortBy listNodes
@@ -337,8 +360,24 @@ sortNodesBy sortBy listNodes =
 update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case msg of
-        Default string ->
+        UrlClicked urlRequest ->
             ( model, Cmd.none )
+
+        -- case urlRequest of
+        --     Internal url ->
+        --         ( { model | currentPage = pathToPage url }
+        --         , Nav.pushUrl model.key (Url.toString url)
+        --         )
+        --
+        --     External url ->
+        --         ( model
+        --         , Nav.load url
+        --         )
+        UrlChanged url ->
+            ( model, Cmd.none )
+
+        WindowResized width height ->
+            ( { model | window = { width = width, height = height } }, Cmd.none )
 
         NodeInfoReceived node ->
             ( { model | nodes = Dict.insert node.nodeName node model.nodes }, Cmd.none )
@@ -369,16 +408,18 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    nodeInfo NodeInfoReceived
+    Sub.batch [ nodeInfo NodeInfoReceived, Browser.Events.onResize WindowResized ]
 
 
 main : Program Flags Model Msg
 main =
-    Browser.document
+    Browser.application
         { init = init
         , view = view
         , update = update
         , subscriptions = subscriptions
+        , onUrlRequest = UrlClicked
+        , onUrlChange = UrlChanged
         }
 
 
@@ -393,7 +434,7 @@ theme x =
         , Font.size 14
         ]
     <|
-        column []
+        column [ width fill ]
             x
 
 
