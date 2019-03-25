@@ -8,6 +8,7 @@ import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
@@ -37,6 +38,7 @@ type alias Host =
 
 type alias Model =
     { nodes : Dict Host Node
+    , sortMode : SortMode
     }
 
 
@@ -56,11 +58,27 @@ type alias Node =
 type Msg
     = Default String
     | NodeInfoReceived Node
+    | SortSet SortBy
+
+
+type SortMode
+    = SortAsc SortBy
+    | SortDesc SortBy
+    | SortNone
+
+
+type SortBy
+    = SortName
+    | SortUptime
+    | SortAvgPing
+    | SortPeers
+    | SortSent
+    | SortReceived
 
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    ( { nodes = Dict.empty }, hello "Hello from Elm!" )
+    ( { nodes = Dict.empty, sortMode = SortNone }, hello "Hello from Elm!" )
 
 
 view : Model -> Browser.Document Msg
@@ -80,7 +98,7 @@ view model =
 
                     -- , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
                     ]
-                , nodesTable model.nodes
+                , nodesTable model (sortNodesMode model.sortMode model.nodes)
                 ]
             ]
         ]
@@ -134,15 +152,15 @@ worldMap =
         ]
 
 
-nodesTable nodes =
-    if Dict.size nodes == 0 then
+nodesTable model nodes =
+    if List.length nodes == 0 then
         row [ Font.color green ] [ text "Waiting for node statistics..." ]
 
     else
         Element.table [ spacing 10, Font.color green ]
-            { data = nodes |> Dict.toList |> List.map Tuple.second
+            { data = nodes
             , columns =
-                [ { header = text "Name"
+                [ { header = sortableHeader model SortName "Name"
                   , width = fill
                   , view =
                         \node ->
@@ -154,7 +172,7 @@ nodesTable nodes =
                         \node ->
                             text <| Maybe.withDefault "<No state loaded>" node.state
                   }
-                , { header = text "Uptime"
+                , { header = sortableHeader model SortUptime "Uptime"
                   , width = fill
                   , view =
                         \node ->
@@ -179,7 +197,7 @@ nodesTable nodes =
                         \node ->
                             text node.client
                   }
-                , { header = text "Avg Ping"
+                , { header = sortableHeader model SortAvgPing "Avg Ping"
                   , width = fill
                   , view =
                         \node ->
@@ -197,23 +215,23 @@ nodesTable nodes =
                                 Nothing ->
                                     el [ Font.color red ] (text "n/a")
                   }
-                , { header = text "Peers"
+                , { header = sortableHeader model SortPeers "Peers"
                   , width = fill
                   , view =
                         \node ->
-                            if peers == 0 then
+                            if node.peersCount == 0 then
                                 el [ Font.color red ] (text "0")
 
                             else
                                 text <| String.fromFloat node.peersCount
                   }
-                , { header = text "Sent"
+                , { header = sortableHeader model SortSent "Sent"
                   , width = fill
                   , view =
                         \node ->
                             text <| String.fromFloat node.packetsSent
                   }
-                , { header = text "Received"
+                , { header = sortableHeader model SortReceived "Received"
                   , width = fill
                   , view =
                         \node ->
@@ -238,18 +256,115 @@ viewNode node =
         ]
 
 
+sortableHeader model sortBy name =
+    let
+        withIcon url =
+            row [ spacing 5 ]
+                [ el [ onClick <| SortSet sortBy ] (text name)
+                , image [ width (px 10) ] { src = url, description = "Sort Ascending Icon" }
+                ]
+
+        withoutIcon =
+            el [ onClick <| SortSet sortBy ] (text name)
+    in
+    case model.sortMode of
+        SortAsc sortBy_ ->
+            if sortBy_ == sortBy then
+                withIcon "/assets/images/icon-arrow-up.png"
+
+            else
+                withoutIcon
+
+        SortDesc sortBy_ ->
+            if sortBy_ == sortBy then
+                withIcon "/assets/images/icon-arrow-down.png"
+
+            else
+                withoutIcon
+
+        SortNone ->
+            withoutIcon
+
+
+sortNodesMode : SortMode -> Dict String Node -> List Node
+sortNodesMode sortMode nodes =
+    let
+        listNodes =
+            nodes |> Dict.toList |> List.map Tuple.second
+    in
+    case sortMode of
+        SortAsc sortBy ->
+            sortNodesBy sortBy listNodes
+
+        SortDesc sortBy ->
+            sortNodesBy sortBy listNodes |> List.reverse
+
+        SortNone ->
+            listNodes
+
+
+sortNodesBy sortBy listNodes =
+    case sortBy of
+        SortName ->
+            List.sortBy .nodeName listNodes
+
+        SortUptime ->
+            List.sortBy .uptime listNodes
+
+        SortAvgPing ->
+            List.sortBy
+                (\n ->
+                    case n.averagePing of
+                        Nothing ->
+                            -- Sort n/a's to 'bottom' by giving them a large number
+                            1000000000
+
+                        Just x ->
+                            x
+                )
+                listNodes
+
+        SortPeers ->
+            List.sortBy .peersCount listNodes
+
+        SortSent ->
+            List.sortBy .packetsSent listNodes
+
+        SortReceived ->
+            List.sortBy .packetsReceived listNodes
+
+
 update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
-    case Debug.log "Main.update" msg of
+    case msg of
         Default string ->
             ( model, Cmd.none )
 
         NodeInfoReceived node ->
-            let
-                _ =
-                    Debug.log "NodeInfoReceived" node
-            in
             ( { model | nodes = Dict.insert node.nodeName node model.nodes }, Cmd.none )
+
+        SortSet sortBy ->
+            let
+                newSortMode =
+                    case model.sortMode of
+                        SortNone ->
+                            SortAsc sortBy
+
+                        SortAsc sortBy_ ->
+                            if sortBy_ == sortBy then
+                                SortDesc sortBy
+
+                            else
+                                SortAsc sortBy
+
+                        SortDesc sortBy_ ->
+                            if sortBy_ == sortBy then
+                                SortNone
+
+                            else
+                                SortAsc sortBy
+            in
+            ( { model | sortMode = newSortMode }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
