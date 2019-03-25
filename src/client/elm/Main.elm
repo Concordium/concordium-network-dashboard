@@ -195,13 +195,17 @@ nodesTable nodes =
                                         el [ Font.color red ] (text <| "> 60s")
 
                                 Nothing ->
-                                    text "n/a"
+                                    el [ Font.color red ] (text "n/a")
                   }
                 , { header = text "Peers"
                   , width = fill
                   , view =
                         \node ->
-                            text <| String.fromFloat node.peersCount
+                            if peers == 0 then
+                                el [ Font.color red ] (text "0")
+
+                            else
+                                text <| String.fromFloat node.peersCount
                   }
                 , { header = text "Sent"
                   , width = fill
