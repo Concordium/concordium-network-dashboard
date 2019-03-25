@@ -101,8 +101,8 @@ view model =
                     , widgetNumber pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" -1
                     , widgetNumber green "Block finalized height" "/assets/images/icon-blocksfinal-green.png" -1
                     , widgetNumber green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" -1
-                    , worldMap
 
+                    -- , worldMap
                     -- , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
                     ]
                 , let
