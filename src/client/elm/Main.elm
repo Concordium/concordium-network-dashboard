@@ -96,11 +96,11 @@ view model =
                 [ image [ height (px 20) ] { src = "/assets/images/concordium-logo.png", description = "Concordium Logo" }
                 , wrappedRow [ spacing 20, width fill ]
                     [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (Dict.size model.nodes)
-                    , widgetNumberChart blue "Block Height" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
-                    , widgetNumber lightBlue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (Dict.size model.nodes)
-                    , widgetNumber pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" (Dict.size model.nodes)
-                    , widgetNumber green "Block finalized height" "/assets/images/icon-blocksfinal-green.png" (Dict.size model.nodes)
-                    , widgetNumber green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (Dict.size model.nodes)
+                    , widgetNumberChart blue "Block Height" "/assets/images/icon-blocks-blue.png" -1
+                    , widgetNumber lightBlue "Last Block" "/assets/images/icon-lastblock-lightblue.png" -1
+                    , widgetNumber pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" -1
+                    , widgetNumber green "Block finalized height" "/assets/images/icon-blocksfinal-green.png" -1
+                    , widgetNumber green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" -1
                     , worldMap
 
                     -- , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
@@ -139,7 +139,14 @@ widgetNumber color title icon value =
             [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 35), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
         , column [ spacing 20 ]
             [ row [ Font.color color ] [ text <| String.toUpper title ]
-            , row [ Font.color color, Font.size 30 ] [ text <| Debug.toString value ]
+            , row [ Font.color color, Font.size 30 ]
+                [ text <|
+                    if value >= 0 then
+                        Debug.toString value
+
+                    else
+                        "-"
+                ]
             ]
         ]
 
@@ -150,7 +157,14 @@ widgetNumberChart color title icon value =
             [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 40), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
         , column [ spacing 20 ]
             [ row [ Font.color color ] [ text <| String.toUpper title ]
-            , row [ Font.color color, Font.size 30 ] [ text <| Debug.toString value ]
+            , row [ Font.color color, Font.size 30 ]
+                [ text <|
+                    if value >= 0 then
+                        Debug.toString value
+
+                    else
+                        "-"
+                ]
             ]
         , column [ width (px 200) ]
             [ html Chart.test ]
