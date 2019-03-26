@@ -18,6 +18,7 @@ import Json.Decode as D
 import Json.Encode as E
 import List.Extra as List
 import Markdown
+import NetworkGraph
 import Round
 import String
 import Time exposing (millisToPosix)
@@ -49,11 +50,13 @@ type alias Model =
 
 type alias Node =
     { nodeName : String
+    , nodeId : String
     , state : Maybe String
     , uptime : Float -- Milliseconds @TODO figure out how to convert to Int, issue is in JS everything is Double even Ints
     , client : String
     , averagePing : Maybe Float -- Milliseconds @TODO as above figure out Int. Maybe for when 0 nodes
     , peersCount : Float -- @TODO as above figure out Int
+    , peersList : List String
     , bestBlockHash : String
     , packetsSent : Float -- @TODO as above figure out Int
     , packetsReceived : Float -- @TODO as above figure out Int
@@ -105,6 +108,7 @@ view model =
                     -- , worldMap
                     -- , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
                     ]
+                , column [ height (px 300), width (px 300) ] [ html <| NetworkGraph.agedRelations model.nodes ]
                 , let
                     listNodes =
                         model.nodes |> Dict.toList |> List.map Tuple.second

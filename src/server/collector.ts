@@ -129,6 +129,18 @@ const getPeerTotalReceived = () => {
   })
 }
 
+const getNodeInfo = () => {
+  return new Promise ((resolve, reject) => {
+    grpcService.NodeInfo({}, meta, function(err, response) {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(response)
+      }
+    })
+  })
+}
+
 const main = async () => {
 
   const uptime = await getUptime()
@@ -137,16 +149,19 @@ const main = async () => {
   const peerStats = await getPeerStats()
   const packetsSent = await getPeerTotalSent()
   const packetsReceived = await getPeerTotalReceived()
-
+  const nodeInfo = await getNodeInfo()
   const peerCount = _.values(peerStats).length
 
   const nodeData = {
     nodeName: nodeName,
+    nodeId: nodeInfo['node_id']['value'],
     state: JSON.stringify(bestBlockInfo['globalState']),
     uptime: uptime,
     client: client,
     averagePing: _.sum(_.values(peerStats).map(n => parseInt(n['measured_latency']))) / peerCount,
     peersCount: peerCount,
+    peersList: _.values(peerStats).map(n => n['node_id']),
+    // peersList: ["abc", "def", "ghi", "asdf", "blah", "derp", "nice"],
     bestBlockHash: bestBlockInfo['blockHash'],
     packetsSent: packetsSent,
     packetsReceived: packetsReceived

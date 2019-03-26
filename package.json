@@ -17,8 +17,9 @@
     "dev-client:hot": "webpack-dev-server -w --hot",
     "build-server": "tsc -p ./src/server",
     "dev-server": "tsc-watch -p ./src/server --onSuccess \"node dashboard-backend.js\"",
-    "dev-collector": "tsc-watch -p ./src/server --onSuccess \"node dashboard-collector testnode1 -h localhost:8890\"",
-    "dev-collector2": "tsc-watch -p ./src/server --onSuccess \"node dashboard-collector testnode2 -h localhost:8891\"",
+    "dev-collector": "COLLECTOR_NAME=testnode1 tsc-watch -p ./src/server --onSuccess \"node dashboard-collector -h localhost:11121\"",
+    "dev-collector2": "COLLECTOR_NAME=testnode2 tsc-watch -p ./src/server --onSuccess \"node dashboard-collector -h localhost:11122\"",
+    "dev-collector3": "COLLECTOR_NAME=testnode3 tsc-watch -p ./src/server --onSuccess \"node dashboard-collector -h localhost:11123\"",
     "dev": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run dev-server\" \"npm run dev-client\"",
     "dev:hot": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run dev-server\" \"npm run dev-client:hot\"",
     "build": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run build-server\" \"npm run build-client\""
