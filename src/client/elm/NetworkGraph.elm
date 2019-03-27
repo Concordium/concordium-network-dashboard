@@ -28,7 +28,7 @@ h =
 
 colorScale : SequentialScale Color
 colorScale =
-    Scale.sequential Scale.Color.viridisInterpolator ( 200, 700 )
+    Scale.sequential Scale.Color.viridisInterpolator ( 100, 200 )
 
 
 type alias CustomNode =
@@ -148,27 +148,7 @@ nodeSize size node =
 
 
 nodeElement node =
-    if node.label.value.rank < 5 then
-        nodeSize 4 node.label
-
-    else if node.label.value.rank < 9 then
-        nodeSize 7 node.label
-
-    else if modBy 2 node.label.value.rank == 0 then
-        g []
-            [ nodeSize 9 node.label
-            , circle
-                [ r 12
-                , cx node.label.x
-                , cy node.label.y
-                , fill FillNone
-                , stroke <| Scale.convert colorScale node.label.x
-                ]
-                []
-            ]
-
-    else
-        nodeSize 10 node.label
+    nodeSize 7 node.label
 
 
 view model =
