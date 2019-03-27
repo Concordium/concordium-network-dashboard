@@ -12,9 +12,39 @@ Will become proper Dashboard monitor in future, likely with Scala backend.
 - `npm run build` - `dist` folder will include all the needed files, both client (Bundle) and server.
 - `npm start` - Just runs `node ./dist/server/server.js`
 
+
+### Getting some data
+
+#### Use livenet data
+
+Running local bakers requires a hefty build process, so if you just want quick data;
+
+```
+// Change dashboardHost in client.tsx
+const dashboardHost = 'https://dashboard.eu.test.concordium.com/frontends'
+```
+
+#### Local bakers
+
+You'll need the [p2p-client](https://gitlab.com/Concordium/p2p-client) repo and to follow the [local build instructions](https://gitlab.com/Concordium/p2p-client/tree/master/scripts/local).
+
+Once you've got the images build, there is a helper script to help you boot collectors for each exposed baker port.
+
+```
+# Say we want to boot 5 bakers. Run this from the p2p-client/scripts/local folder;
+NUM_BAKERS=5 docker-compose up --scale baker=5
+# Then in another window, this from dashboard folder;
+./runAllCollectors.sh
+```
+
+Now if you run `npm run dev` in a 3rd window to boot the dashboard frontend+backend, you should start getting live data from your local bakers via the booted collectors.
+
+If that's hard to follow, here's an [architecture diagram](https://docs.google.com/drawings/d/1FWV8Ah9RAiqMaghT3Ql1JyGnBq0_TxOS6BgM6mFjepQ/edit) of what you're booting.
+
+
 ### Docker build
 
-See `./docker.sh`, or run it. Builds `dist` locally first before copying into image.
+See `./docker.sh`, or run it. Builds `dist` locally first before copying into image. This is what gets used for the Kubernetes deploy.
 
 ---
 

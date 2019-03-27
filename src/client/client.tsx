@@ -2,6 +2,7 @@ import { Elm } from "./elm/Main"
 import io from 'socket.io-client'
 
 const dashboardHost = window.location.host + '/frontends'
+// const dashboardHost = 'https://dashboard.eu.test.concordium.com/frontends'
 
 document.addEventListener("DOMContentLoaded", function() {
 
