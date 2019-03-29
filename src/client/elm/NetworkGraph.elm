@@ -193,14 +193,17 @@ agedRelations nodesDict =
         --                 |> List.map (\nodeId_ -> ( nameAsId nodeId_, () ))
         --                 |> IntDict.fromList
         --         }
-        nodesAsNodeList =
+        validNodes =
             nodesDict
                 |> Dict.toList
+                |> List.filter (\( nodeName, nodeData ) -> nodeData.peersCount /= 0)
+
+        nodesAsNodeList =
+            validNodes
                 |> List.map (\( nodeName, nodeData ) -> Node (nameAsId nodeData.nodeId) nodeData.nodeId)
 
         nodesAsEdgeList =
-            nodesDict
-                |> Dict.toList
+            validNodes
                 |> List.map
                     (\( nodeName, nodeData ) ->
                         List.map
