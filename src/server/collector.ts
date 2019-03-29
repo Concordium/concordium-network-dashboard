@@ -51,12 +51,11 @@ var protoDescriptor = grpc.loadPackageDefinition(packageDefinition)
 
 var meta = new grpc.Metadata()
 meta.add('authentication', 'rpcadmin')
-var grpcService = new protoDescriptor.P2P(program.host, grpc.credentials.createInsecure())
 
 const dashboard = io('http://' + program.dashboard + '/nodes')
 
 
-const getUptime = () => {
+const getUptime = (grpcService) => {
   return new Promise ((resolve, reject) => {
     grpcService.peerUptime({}, meta, function(err, response) {
       if (err) {
@@ -68,7 +67,7 @@ const getUptime = () => {
   })
 }
 
-const getBestBlockInfo = () => {
+const getBestBlockInfo = (grpcService) => {
   return new Promise ((resolve, reject) => {
     grpcService.getBestBlockInfo({}, meta, function(err, response) {
       if (err) {
@@ -81,7 +80,7 @@ const getBestBlockInfo = () => {
   })
 }
 
-const getPeerVersion = () => {
+const getPeerVersion = (grpcService) => {
   return new Promise ((resolve, reject) => {
     grpcService.PeerVersion({}, meta, function(err, response) {
       if (err) {
@@ -93,7 +92,7 @@ const getPeerVersion = () => {
   })
 }
 
-const getPeerStats = () => {
+const getPeerStats = (grpcService) => {
   return new Promise ((resolve, reject) => {
     grpcService.PeerStats({}, meta, function(err, response) {
       if (err) {
@@ -105,7 +104,7 @@ const getPeerStats = () => {
   })
 }
 
-const getPeerTotalSent = () => {
+const getPeerTotalSent = (grpcService) => {
   return new Promise ((resolve, reject) => {
     grpcService.PeerTotalSent({}, meta, function(err, response) {
       if (err) {
@@ -117,7 +116,7 @@ const getPeerTotalSent = () => {
   })
 }
 
-const getPeerTotalReceived = () => {
+const getPeerTotalReceived = (grpcService) => {
   return new Promise ((resolve, reject) => {
     grpcService.PeerTotalReceived({}, meta, function(err, response) {
       if (err) {
@@ -129,7 +128,7 @@ const getPeerTotalReceived = () => {
   })
 }
 
-const getNodeInfo = () => {
+const getNodeInfo = (grpcService) => {
   return new Promise ((resolve, reject) => {
     grpcService.NodeInfo({}, meta, function(err, response) {
       if (err) {
@@ -143,13 +142,15 @@ const getNodeInfo = () => {
 
 const main = async () => {
 
-  const uptime = await getUptime()
-  const bestBlockInfo = await getBestBlockInfo()
-  const client = await getPeerVersion()
-  const peerStats = await getPeerStats()
-  const packetsSent = await getPeerTotalSent()
-  const packetsReceived = await getPeerTotalReceived()
-  const nodeInfo = await getNodeInfo()
+  var grpcService = new protoDescriptor.P2P(program.host, grpc.credentials.createInsecure())
+
+  const uptime = await getUptime(grpcService)
+  const bestBlockInfo = await getBestBlockInfo(grpcService)
+  const client = await getPeerVersion(grpcService)
+  const peerStats = await getPeerStats(grpcService)
+  const packetsSent = await getPeerTotalSent(grpcService)
+  const packetsReceived = await getPeerTotalReceived(grpcService)
+  const nodeInfo = await getNodeInfo(grpcService)
   const peerCount = _.values(peerStats).length
 
   const nodeData = {
@@ -161,7 +162,6 @@ const main = async () => {
     averagePing: _.sum(_.values(peerStats).map(n => parseInt(n['measured_latency']))) / peerCount,
     peersCount: peerCount,
     peersList: _.values(peerStats).map(n => n['node_id']),
-    // peersList: ["abc", "def", "ghi", "asdf", "blah", "derp", "nice"],
     bestBlockHash: bestBlockInfo['blockHash'],
     packetsSent: packetsSent,
     packetsReceived: packetsReceived
@@ -178,7 +178,14 @@ const main = async () => {
 
 
 interval(async () => {
+
+  try {
     await main()
+  }
+  catch(err) {
+    console.log('gRPC failed to connect to '+program.host+', retrying...')
+  }
+
 }, 2000)
 
 
