@@ -166,9 +166,13 @@ const main = async () => {
     bestBlock: consensusStatus['bestBlock'],
     bestBlockHeight: consensusStatus['bestBlockHeight'],
     bestArrivedTime: consensusStatus['blockLastArrivedTime'],
+    blockArrivePeriodEMA: consensusStatus['blockArrivePeriodEMA'],
+    blockArrivePeriodEMSD: consensusStatus['blockArrivePeriodEMSD'],
     finalizedBlock: consensusStatus['lastFinalizedBlock'],
     finalizedBlockHeight: consensusStatus['lastFinalizedBlockHeight'],
     finalizedTime: consensusStatus['lastFinalizedTime'],
+    finalizationPeriodEMA: consensusStatus['finalizationPeriodEMA'],
+    finalizationPeriodEMSD: consensusStatus['finalizationPeriodEMSD'],
     packetsSent: packetsSent,
     packetsReceived: packetsReceived
   }

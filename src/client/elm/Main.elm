@@ -64,9 +64,13 @@ type alias Node =
     , bestBlock : String
     , bestBlockHeight : Float
     , bestArrivedTime : String
+    , blockArrivePeriodEMA : Float
+    , blockArrivePeriodEMSD : Float
     , finalizedBlock : String
     , finalizedBlockHeight : Float
     , finalizedTime : String
+    , finalizationPeriodEMA : Float
+    , finalizationPeriodEMSD : Float
     , packetsSent : Float -- @TODO as above figure out Int
     , packetsReceived : Float -- @TODO as above figure out Int
     }
@@ -137,6 +141,17 @@ majorityStatFor getter default nodes =
             default
 
 
+averageStatFor getter nodes =
+    let
+        dataPoints =
+            nodes
+                |> Dict.toList
+                |> List.map Tuple.second
+                |> List.map getter
+    in
+    List.sum dataPoints / toFloat (List.length dataPoints)
+
+
 view : Model -> Browser.Document Msg
 view model =
     { body =
@@ -145,11 +160,22 @@ view model =
                 [ image [ height (px 20) ] { src = "/assets/images/concordium-logo.png", description = "Concordium Logo" }
                 , wrappedRow [ spacing 20, width fill ]
                     [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (Dict.size model.nodes)
-                    , widgetNumber blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
-                    , widgetNumber green "Finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
                     , widgetSeconds blue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime n.bestArrivedTime) -1 model.nodes)
                     , widgetSeconds green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime n.finalizedTime) -1 model.nodes)
-                    , widgetNumber pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" -1
+                    , widgetNumber blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
+                    , widgetNumber green "Finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
+                    , widgetText pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" <|
+                        if Dict.size model.nodes > 0 then
+                            Round.round 2 (averageStatFor .blockArrivePeriodEMA model.nodes) ++ "s"
+
+                        else
+                            "-"
+                    , widgetText pink "Avg Finalization Time" "/assets/images/icon-rocket-pink.png" <|
+                        if Dict.size model.nodes > 0 then
+                            Round.round 2 (averageStatFor .finalizationPeriodEMA model.nodes) ++ "s"
+
+                        else
+                            "-"
                     , column [ height (px 300), width (px 300), Background.color moduleGrey, Border.rounded 5 ] [ html <| NetworkGraph.agedRelations model.nodes ]
 
                     -- , worldMap
