@@ -163,10 +163,10 @@ const main = async () => {
     averagePing: _.sum(_.values(peerStats).map(n => parseInt(n['measured_latency']))) / peerCount,
     peersCount: peerCount,
     peersList: _.values(peerStats).map(n => n['node_id']),
-    bestBlockHash: consensusStatus['bestBlock'],
-    blockHeight: consensusStatus['bestBlockHeight'],
+    bestBlock: consensusStatus['bestBlock'],
+    bestBlockHeight: consensusStatus['bestBlockHeight'],
+    finalizedBlock: consensusStatus['lastFinalizedBlock'],
     finalizedBlockHeight: consensusStatus['lastFinalizedBlockHeight'],
-    lastFinalizedBlock: consensusStatus['lastFinalizedBlock'],
     packetsSent: packetsSent,
     packetsReceived: packetsReceived
   }

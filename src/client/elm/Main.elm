@@ -51,16 +51,17 @@ type alias Model =
 type alias Node =
     { nodeName : String
     , nodeId : String
- --   , state : Maybe String
+
+    --   , state : Maybe String
     , uptime : Float -- Milliseconds @TODO figure out how to convert to Int, issue is in JS everything is Double even Ints
     , client : String
     , averagePing : Maybe Float -- Milliseconds @TODO as above figure out Int. Maybe for when 0 nodes
     , peersCount : Float -- @TODO as above figure out Int
     , peersList : List String
-    , bestBlockHash : String
-    , blockHeight: Float
-    , finalizedBlockHeight: Float
-    , lastFinalizedBlock: String
+    , bestBlock : String
+    , bestBlockHeight : Float
+    , finalizedBlock : String
+    , finalizedBlockHeight : Float
     , packetsSent : Float -- @TODO as above figure out Int
     , packetsReceived : Float -- @TODO as above figure out Int
     }
@@ -94,6 +95,42 @@ init flags url key =
     ( { nodes = Dict.empty, sortMode = SortNone, window = flags }, hello "Hello from Elm!" )
 
 
+majorityStatFor getter default nodes =
+    -- For the given node attribute, finds majority value across all nodes and returns that, or the default if unknown
+    let
+        stats =
+            nodes
+                |> Dict.toList
+                |> List.map Tuple.second
+                |> List.map getter
+
+        highestResult =
+            stats
+                |> List.foldl
+                    (\v dict ->
+                        Dict.update v
+                            (\mCount ->
+                                case mCount of
+                                    Just count ->
+                                        Just <| count + 1
+
+                                    Nothing ->
+                                        Just 1
+                            )
+                            dict
+                    )
+                    Dict.empty
+                |> Dict.toList
+                |> List.maximumBy (\( attr, count ) -> count)
+    in
+    case highestResult of
+        Just ( highestSeenKey, groupedDictCount ) ->
+            highestSeenKey
+
+        Nothing ->
+            default
+
+
 view : Model -> Browser.Document Msg
 view model =
     { body =
@@ -102,11 +139,11 @@ view model =
                 [ image [ height (px 20) ] { src = "/assets/images/concordium-logo.png", description = "Concordium Logo" }
                 , wrappedRow [ spacing 20, width fill ]
                     [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (Dict.size model.nodes)
-                    , widgetNumberChart blue "Block Height" "/assets/images/icon-blocks-blue.png" -1
-                    , widgetNumber lightBlue "Last Block" "/assets/images/icon-lastblock-lightblue.png" -1
+                    , widgetNumberChart blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
+                    , widgetText lightBlue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> hashSnippet n.bestBlock) "-" model.nodes)
                     , widgetNumber pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" -1
-                    , widgetNumber green "Block finalized height" "/assets/images/icon-blocksfinal-green.png" -1
-                    , widgetNumber green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" -1
+                    , widgetNumber green "Block finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
+                    , widgetText green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (majorityStatFor (\n -> hashSnippet n.finalizedBlock) "-" model.nodes)
                     , column [ height (px 300), width (px 300), Background.color moduleGrey, Border.rounded 5 ] [ html <| NetworkGraph.agedRelations model.nodes ]
 
                     -- , worldMap
@@ -138,6 +175,19 @@ view model =
         ]
     , title = "Concordium Dashboard"
     }
+
+
+widgetText color title icon value =
+    row [ height (px 140), width (fillPortion 1), Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
+        [ column []
+            [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 35), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
+        , column [ spacing 20 ]
+            [ row [ Font.color color ] [ text <| String.toUpper title ]
+            , row [ Font.color color, Font.size 30 ]
+                [ text value
+                ]
+            ]
+        ]
 
 
 widgetNumber color title icon value =
@@ -214,6 +264,7 @@ nodesTable model nodes =
                         \node ->
                             text node.nodeName
                   }
+
                 --, { header = text "State"
                 --  , width = fill
                 --, view =
@@ -285,22 +336,49 @@ nodesTable model nodes =
                         \node ->
                             text <| String.fromFloat node.packetsReceived
                   }
-                , { header = text "Last Block"
+                , { header = text "Block"
                   , width = fill
                   , view =
                         \node ->
-                            text node.bestBlockHash
+                            text <| hashSnippet node.bestBlock
+                  }
+                , { header = text "Block Height"
+                  , width = fill
+                  , view =
+                        \node ->
+                            text <| String.fromFloat node.bestBlockHeight
+                  }
+                , { header = text "Finalized Block"
+                  , width = fill
+                  , view =
+                        \node ->
+                            text <| hashSnippet node.finalizedBlock
+                  }
+                , { header = text "Finalized Height"
+                  , width = fill
+                  , view =
+                        \node ->
+                            text <| String.fromFloat node.finalizedBlockHeight
                   }
                 ]
             }
+
+
+hashSnippet hash =
+    String.left 6 hash ++ "..."
+
+
+
+-- ++ String.right 6 hash
 
 
 viewNode : Node -> Element msg
 viewNode node =
     row []
         [ column [] [ text node.nodeName ]
-         -- , column [] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
-         -- , column [] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
+
+        -- , column [] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
+        -- , column [] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
         ]
 
 
