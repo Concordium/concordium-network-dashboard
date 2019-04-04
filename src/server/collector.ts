@@ -67,18 +67,20 @@ const getUptime = (grpcService) => {
   })
 }
 
-const getBestBlockInfo = (grpcService) => {
+
+const getConsensusStatus = (grpcService) => {
   return new Promise ((resolve, reject) => {
-    grpcService.getBestBlockInfo({}, meta, function(err, response) {
+    grpcService.GetConsensusStatus({}, meta, function(err, response) {
       if (err) {
         reject(err)
       } else {
-        resolve(JSON.parse(response.best_block_info))
+        resolve(JSON.parse(response["json_value"]))
         // return JSON.parse(response.best_block_info)
       }
     })
   })
 }
+
 
 const getPeerVersion = (grpcService) => {
   return new Promise ((resolve, reject) => {
@@ -145,7 +147,7 @@ const main = async () => {
   var grpcService = new protoDescriptor.P2P(program.host, grpc.credentials.createInsecure())
 
   const uptime = await getUptime(grpcService)
-  const bestBlockInfo = await getBestBlockInfo(grpcService)
+  const consensusStatus = await getConsensusStatus(grpcService)
   const client = await getPeerVersion(grpcService)
   const peerStats = await getPeerStats(grpcService)
   const packetsSent = await getPeerTotalSent(grpcService)
@@ -156,13 +158,15 @@ const main = async () => {
   const nodeData = {
     nodeName: nodeName,
     nodeId: nodeInfo['node_id']['value'],
-    state: JSON.stringify(bestBlockInfo['globalState']),
     uptime: uptime,
     client: client,
     averagePing: _.sum(_.values(peerStats).map(n => parseInt(n['measured_latency']))) / peerCount,
     peersCount: peerCount,
     peersList: _.values(peerStats).map(n => n['node_id']),
-    bestBlockHash: bestBlockInfo['blockHash'],
+    bestBlockHash: consensusStatus['bestBlock'],
+    blockHeight: consensusStatus['bestBlockHeight'],
+    finalizedBlockHeight: consensusStatus['lastFinalizedBlockHeight'],
+    lastFinalizedBlock: consensusStatus['lastFinalizedBlock'],
     packetsSent: packetsSent,
     packetsReceived: packetsReceived
   }
@@ -183,7 +187,7 @@ interval(async () => {
     await main()
   }
   catch(err) {
-    console.log('gRPC failed to connect to '+program.host+', retrying...')
+    console.log('gRPC failed to connect to '+program.host+' with error: "' + err + '", retrying...')
   }
 
 }, 2000)
