@@ -14,6 +14,7 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
+import Iso8601
 import Json.Decode as D
 import Json.Encode as E
 import List.Extra as List
@@ -21,9 +22,10 @@ import Markdown
 import NetworkGraph
 import Round
 import String
-import Time exposing (millisToPosix)
+import Time
 import Time.Distance exposing (inWordsWithConfig)
 import Time.Distance.I18n as I18n
+import Time.Extra
 import Url exposing (Url)
 
 
@@ -43,6 +45,7 @@ type alias Host =
 
 type alias Model =
     { window : { width : Int, height : Int }
+    , currentTime : Time.Posix
     , nodes : Dict Host Node
     , sortMode : SortMode
     }
@@ -60,15 +63,18 @@ type alias Node =
     , peersList : List String
     , bestBlock : String
     , bestBlockHeight : Float
+    , bestArrivedTime : String
     , finalizedBlock : String
     , finalizedBlockHeight : Float
+    , finalizedTime : String
     , packetsSent : Float -- @TODO as above figure out Int
     , packetsReceived : Float -- @TODO as above figure out Int
     }
 
 
 type Msg
-    = UrlClicked UrlRequest
+    = CurrentTime Time.Posix
+    | UrlClicked UrlRequest
     | UrlChanged Url
     | WindowResized Int Int
     | NodeInfoReceived Node
@@ -92,7 +98,7 @@ type SortBy
 
 init : Flags -> Url -> Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( { nodes = Dict.empty, sortMode = SortNone, window = flags }, hello "Hello from Elm!" )
+    ( { nodes = Dict.empty, currentTime = Time.millisToPosix 0, sortMode = SortNone, window = flags }, hello "Hello from Elm!" )
 
 
 majorityStatFor getter default nodes =
@@ -139,11 +145,11 @@ view model =
                 [ image [ height (px 20) ] { src = "/assets/images/concordium-logo.png", description = "Concordium Logo" }
                 , wrappedRow [ spacing 20, width fill ]
                     [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (Dict.size model.nodes)
-                    , widgetNumberChart blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
-                    , widgetText lightBlue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> hashSnippet n.bestBlock) "-" model.nodes)
+                    , widgetNumber blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
+                    , widgetNumber green "Finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
+                    , widgetSeconds blue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime n.bestArrivedTime) -1 model.nodes)
+                    , widgetSeconds green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime n.finalizedTime) -1 model.nodes)
                     , widgetNumber pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" -1
-                    , widgetNumber green "Block finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
-                    , widgetText green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (majorityStatFor (\n -> hashSnippet n.finalizedBlock) "-" model.nodes)
                     , column [ height (px 300), width (px 300), Background.color moduleGrey, Border.rounded 5 ] [ html <| NetworkGraph.agedRelations model.nodes ]
 
                     -- , worldMap
@@ -185,6 +191,24 @@ widgetText color title icon value =
             [ row [ Font.color color ] [ text <| String.toUpper title ]
             , row [ Font.color color, Font.size 30 ]
                 [ text value
+                ]
+            ]
+        ]
+
+
+widgetSeconds color title icon value =
+    row [ height (px 140), width (fillPortion 1), Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
+        [ column []
+            [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 35), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
+        , column [ spacing 20 ]
+            [ row [ Font.color color ] [ text <| String.toUpper title ]
+            , row [ Font.color color, Font.size 30 ]
+                [ text <|
+                    if value >= 0 then
+                        Debug.toString value ++ "s ago"
+
+                    else
+                        "-"
                 ]
             ]
         ]
@@ -275,20 +299,7 @@ nodesTable model nodes =
                   , width = fill
                   , view =
                         \node ->
-                            let
-                                point =
-                                    1552573958904
-
-                                timePoint =
-                                    millisToPosix point
-
-                                offsetTimePoint =
-                                    millisToPosix (point - round node.uptime)
-
-                                words =
-                                    inWordsWithConfig { withAffix = False } I18n.en offsetTimePoint timePoint
-                            in
-                            text words
+                            text <| asTimeAgoDuration node.uptime
                   }
                 , { header = text "Client"
                   , width = fill
@@ -456,9 +467,41 @@ sortNodesBy sortBy listNodes =
             List.sortBy .packetsReceived listNodes
 
 
+asTimeAgoDuration duration =
+    let
+        point =
+            -- Arbitrary point, doesn't matter we care about figuring out the duration
+            1552573958904
+
+        timePoint =
+            Time.millisToPosix point
+
+        offsetTimePoint =
+            Time.millisToPosix (point - round duration)
+    in
+    inWordsWithConfig { withAffix = False } I18n.en offsetTimePoint timePoint
+
+
+asSecondsAgo currentTime targetTime =
+    case Iso8601.toTime targetTime of
+        Err x ->
+            -1
+
+        Ok p ->
+            if Time.Extra.diff Time.Extra.Second Time.utc currentTime (Time.millisToPosix 0) == 0 then
+                -- Handle case where app is initialised and we don't yet have a real currentTime value
+                -1
+
+            else
+                Time.Extra.diff Time.Extra.Second Time.utc p currentTime
+
+
 update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case msg of
+        CurrentTime time ->
+            ( { model | currentTime = time }, Cmd.none )
+
         UrlClicked urlRequest ->
             ( model, Cmd.none )
 
@@ -507,7 +550,11 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch [ nodeInfo NodeInfoReceived, Browser.Events.onResize WindowResized ]
+    Sub.batch
+        [ nodeInfo NodeInfoReceived
+        , Browser.Events.onResize WindowResized
+        , Time.every 1000 CurrentTime
+        ]
 
 
 main : Program Flags Model Msg

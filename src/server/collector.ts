@@ -165,8 +165,10 @@ const main = async () => {
     peersList: _.values(peerStats).map(n => n['node_id']),
     bestBlock: consensusStatus['bestBlock'],
     bestBlockHeight: consensusStatus['bestBlockHeight'],
+    bestArrivedTime: consensusStatus['blockLastArrivedTime'],
     finalizedBlock: consensusStatus['lastFinalizedBlock'],
     finalizedBlockHeight: consensusStatus['lastFinalizedBlockHeight'],
+    finalizedTime: consensusStatus['lastFinalizedTime'],
     packetsSent: packetsSent,
     packetsReceived: packetsReceived
   }
