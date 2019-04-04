@@ -51,13 +51,16 @@ type alias Model =
 type alias Node =
     { nodeName : String
     , nodeId : String
-    , state : Maybe String
+ --   , state : Maybe String
     , uptime : Float -- Milliseconds @TODO figure out how to convert to Int, issue is in JS everything is Double even Ints
     , client : String
     , averagePing : Maybe Float -- Milliseconds @TODO as above figure out Int. Maybe for when 0 nodes
     , peersCount : Float -- @TODO as above figure out Int
     , peersList : List String
     , bestBlockHash : String
+    , blockHeight: Float
+    , finalizedBlockHeight: Float
+    , lastFinalizedBlock: String
     , packetsSent : Float -- @TODO as above figure out Int
     , packetsReceived : Float -- @TODO as above figure out Int
     }
@@ -211,12 +214,12 @@ nodesTable model nodes =
                         \node ->
                             text node.nodeName
                   }
-                , { header = text "State"
-                  , width = fill
-                  , view =
-                        \node ->
-                            text <| Maybe.withDefault "<No state loaded>" node.state
-                  }
+                --, { header = text "State"
+                --  , width = fill
+                --, view =
+                --      \node ->
+                --           text <| Maybe.withDefault "<No state loaded>" node.state
+                --}
                 , { header = sortableHeader model SortUptime "Uptime"
                   , width = fill
                   , view =
@@ -296,8 +299,8 @@ viewNode : Node -> Element msg
 viewNode node =
     row []
         [ column [] [ text node.nodeName ]
-        , column [] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
-        , column [] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
+         -- , column [] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
+         -- , column [] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
         ]
 
 
