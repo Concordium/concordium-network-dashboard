@@ -63,14 +63,14 @@ type alias Node =
     , peersList : List String
     , bestBlock : String
     , bestBlockHeight : Float
-    , bestArrivedTime : String
-    , blockArrivePeriodEMA : Float
-    , blockArrivePeriodEMSD : Float
+    , bestArrivedTime : Maybe String
+    , blockArrivePeriodEMA : Maybe Float
+    , blockArrivePeriodEMSD : Maybe Float
     , finalizedBlock : String
     , finalizedBlockHeight : Float
-    , finalizedTime : String
-    , finalizationPeriodEMA : Float
-    , finalizationPeriodEMSD : Float
+    , finalizedTime : Maybe String
+    , finalizationPeriodEMA : Maybe Float
+    , finalizationPeriodEMSD : Maybe Float
     , packetsSent : Float -- @TODO as above figure out Int
     , packetsReceived : Float -- @TODO as above figure out Int
     }
@@ -141,15 +141,26 @@ majorityStatFor getter default nodes =
             default
 
 
-averageStatFor getter nodes =
+averageStatSecondsFor getter nodes =
     let
         dataPoints =
             nodes
                 |> Dict.toList
                 |> List.map Tuple.second
                 |> List.map getter
+                |> List.filterMap (\a -> a)
+
+        isNaNInt x =
+            x /= x
+
+        result =
+            List.sum dataPoints / toFloat (List.length dataPoints)
     in
-    List.sum dataPoints / toFloat (List.length dataPoints)
+    if Dict.size nodes == 0 || isNaNInt result then
+        "-"
+
+    else
+        Round.round 2 result ++ "s"
 
 
 view : Model -> Browser.Document Msg
@@ -160,24 +171,16 @@ view model =
                 [ image [ height (px 20) ] { src = "/assets/images/concordium-logo.png", description = "Concordium Logo" }
                 , wrappedRow [ spacing 20, width fill ]
                     [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (Dict.size model.nodes)
-                    , widgetSeconds blue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime n.bestArrivedTime) -1 model.nodes)
-                    , widgetSeconds green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime n.finalizedTime) -1 model.nodes)
+                    , widgetSeconds blue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.bestArrivedTime)) -1 model.nodes)
+                    , widgetSeconds green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.finalizedTime)) -1 model.nodes)
                     , widgetNumber blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
                     , widgetNumber green "Finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
                     , widgetText pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" <|
-                        if Dict.size model.nodes > 0 then
-                            Round.round 2 (averageStatFor .blockArrivePeriodEMA model.nodes) ++ "s"
-
-                        else
-                            "-"
+                        averageStatSecondsFor .blockArrivePeriodEMA model.nodes
                     , widgetText pink "Avg Finalization Time" "/assets/images/icon-rocket-pink.png" <|
-                        if Dict.size model.nodes > 0 then
-                            Round.round 2 (averageStatFor .finalizationPeriodEMA model.nodes) ++ "s"
+                        averageStatSecondsFor .finalizationPeriodEMA model.nodes
 
-                        else
-                            "-"
-                    , column [ height (px 300), width (px 300), Background.color moduleGrey, Border.rounded 5 ] [ html <| NetworkGraph.agedRelations model.nodes ]
-
+                    -- , column [ height (px 300), width (px 300), Background.color moduleGrey, Border.rounded 5 ] [ html <| NetworkGraph.agedRelations model.nodes ]
                     -- , worldMap
                     -- , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
                     ]
@@ -422,13 +425,13 @@ viewNode node =
 sortableHeader model sortBy name =
     let
         withIcon url =
-            row [ spacing 5 ]
+            row [ spacing 5, Font.color lightGrey ]
                 [ el [ onClick <| SortSet sortBy ] (text name)
                 , image [ width (px 10) ] { src = url, description = "Sort Ascending Icon" }
                 ]
 
         withoutIcon =
-            el [ onClick <| SortSet sortBy ] (text name)
+            el [ onClick <| SortSet sortBy, Font.color lightGrey ] (text name)
     in
     case model.sortMode of
         SortAsc sortBy_ ->

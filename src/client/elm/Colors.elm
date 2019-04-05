@@ -1,4 +1,4 @@
-module Colors exposing (asC, blue, darkGrey, green, grey, lightBlue, moduleGrey, orange, pink, purple, red, rgbac255, white)
+module Colors exposing (asC, blue, darkGrey, green, grey, lightBlue, lightGrey, moduleGrey, orange, pink, purple, red, rgbac255, white)
 
 import Color
 import Element
@@ -21,6 +21,10 @@ asC ec =
             Element.toRgb ec
     in
     Color.fromRgba ecc
+
+
+lightGrey =
+    Element.rgb255 60 65 69
 
 
 darkGrey =
