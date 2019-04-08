@@ -94,10 +94,15 @@ type SortMode
 type SortBy
     = SortName
     | SortUptime
+    | SortClient
     | SortAvgPing
     | SortPeers
     | SortSent
     | SortReceived
+    | SortBlock
+    | SortHeight
+    | SortFinalizedBlock
+    | SortFinalizedHeight
 
 
 init : Flags -> Url -> Key -> ( Model, Cmd Msg )
@@ -330,7 +335,7 @@ nodesTable model nodes =
                         \node ->
                             text <| asTimeAgoDuration node.uptime
                   }
-                , { header = text "Client"
+                , { header = sortableHeader model SortClient "Client"
                   , width = fill
                   , view =
                         \node ->
@@ -376,25 +381,25 @@ nodesTable model nodes =
                         \node ->
                             text <| String.fromFloat node.packetsReceived
                   }
-                , { header = text "Block"
+                , { header = sortableHeader model SortBlock "Block"
                   , width = fill
                   , view =
                         \node ->
                             text <| hashSnippet node.bestBlock
                   }
-                , { header = text "Block Height"
+                , { header = sortableHeader model SortHeight "Block Height"
                   , width = fill
                   , view =
                         \node ->
                             text <| String.fromFloat node.bestBlockHeight
                   }
-                , { header = text "Finalized Block"
+                , { header = sortableHeader model SortFinalizedBlock "Finalized Block"
                   , width = fill
                   , view =
                         \node ->
                             text <| hashSnippet node.finalizedBlock
                   }
-                , { header = text "Finalized Height"
+                , { header = sortableHeader model SortFinalizedHeight "Finalized Height"
                   , width = fill
                   , view =
                         \node ->
@@ -473,6 +478,9 @@ sortNodesBy sortBy listNodes =
         SortUptime ->
             List.sortBy .uptime listNodes
 
+        SortClient ->
+            List.sortBy .client listNodes
+
         SortAvgPing ->
             List.sortBy
                 (\n ->
@@ -494,6 +502,18 @@ sortNodesBy sortBy listNodes =
 
         SortReceived ->
             List.sortBy .packetsReceived listNodes
+
+        SortBlock ->
+            List.sortBy .bestBlock listNodes
+
+        SortHeight ->
+            List.sortBy .bestBlockHeight listNodes
+
+        SortFinalizedBlock ->
+            List.sortBy .finalizedBlock listNodes
+
+        SortFinalizedHeight ->
+            List.sortBy .finalizedBlockHeight listNodes
 
 
 asTimeAgoDuration duration =
