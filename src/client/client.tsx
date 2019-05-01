@@ -1,4 +1,4 @@
-import { Elm } from "./elm/Main"
+import { Elm } from "./elm/Dashboard"
 import io from 'socket.io-client'
 
 const dashboardHost = window.location.host + '/frontends'
@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		height: document.documentElement.clientHeight
 	})
 
-  let app = Elm.Main.init({
+  let app = Elm.Dashboard.init({
     flags: layoutViewportSize()
   })
 

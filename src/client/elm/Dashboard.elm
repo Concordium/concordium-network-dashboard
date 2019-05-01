@@ -1,4 +1,4 @@
-port module Main exposing (main)
+port module Dashboard exposing (Flags, Host, Model, Msg(..), Node, SortBy(..), SortMode(..), asSecondsAgo, asTimeAgoDuration, averageStatSecondsFor, bgDarkGrey, bgWhite, chartTimeseries, hashSnippet, hello, init, main, majorityStatFor, markdown, nodeInfo, nodesTable, sortNodesBy, sortNodesMode, sortableHeader, subscriptions, theme, update, view, viewNode, widgetNumber, widgetNumberChart, widgetSeconds, widgetText, widgetsForWebsite, worldMap)
 
 import Browser exposing (..)
 import Browser.Events
@@ -215,6 +215,22 @@ view model =
         ]
     , title = "Concordium Dashboard"
     }
+
+
+widgetsForWebsite model =
+    [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (Dict.size model.nodes)
+    , widgetSeconds lightBlue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.bestArrivedTime)) -1 model.nodes)
+
+    -- , widgetSeconds green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.finalizedTime)) -1 model.nodes)
+    , widgetNumber blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
+
+    -- , widgetNumber green "Finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
+    , widgetText pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" <|
+        averageStatSecondsFor .blockArrivePeriodEMA model.nodes
+
+    -- , widgetText pink "Avg Finalization Time" "/assets/images/icon-rocket-pink.png" <|
+    --     averageStatSecondsFor .finalizationPeriodEMA model.nodes
+    ]
 
 
 widgetText color title icon value =
