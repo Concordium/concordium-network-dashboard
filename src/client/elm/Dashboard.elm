@@ -1,6 +1,7 @@
 port module Dashboard exposing (Flags, Host, Model, Msg(..), Node, SortBy(..), SortMode(..), asSecondsAgo, asTimeAgoDuration, averageStatSecondsFor, bgDarkGrey, bgWhite, chartTimeseries, hashSnippet, hello, init, main, majorityStatFor, markdown, nodeInfo, nodesTable, sortNodesBy, sortNodesMode, sortableHeader, subscriptions, theme, update, view, viewNode, widgetNumber, widgetNumberChart, widgetSeconds, widgetText, widgetsForWebsite, worldMap)
 
 import Browser exposing (..)
+import Browser.Dom
 import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
 import Chart
@@ -14,14 +15,17 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
+import Http
 import Iso8601
 import Json.Decode as D
+import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import Json.Encode as E
 import List.Extra as List
 import Markdown
 import NetworkGraph
 import Round
 import String
+import Task
 import Time
 import Time.Distance exposing (inWordsWithConfig)
 import Time.Distance.I18n as I18n
@@ -46,6 +50,7 @@ type alias Host =
 type alias Model =
     { window : { width : Int, height : Int }
     , currentTime : Time.Posix
+    , key : Key
     , nodes : Dict Host Node
     , sortMode : SortMode
     }
@@ -76,13 +81,41 @@ type alias Node =
     }
 
 
+nodeSummariesDecoder =
+    D.list
+        (D.succeed Node
+            |> required "nodeName" D.string
+            |> required "nodeId" D.string
+            |> required "uptime" D.float
+            |> required "client" D.string
+            |> required "averagePing" (D.nullable D.float)
+            |> required "peersCount" D.float
+            |> required "peersList" (D.list D.string)
+            |> required "bestBlock" D.string
+            |> required "bestBlockHeight" D.float
+            |> required "bestArrivedTime" (D.nullable D.string)
+            |> required "blockArrivePeriodEMA" (D.nullable D.float)
+            |> required "blockArrivePeriodEMSD" (D.nullable D.float)
+            |> required "finalizedBlock" D.string
+            |> required "finalizedBlockHeight" D.float
+            |> required "finalizedTime" (D.nullable D.string)
+            |> required "finalizationPeriodEMA" (D.nullable D.float)
+            |> required "finalizationPeriodEMSD" (D.nullable D.float)
+            |> required "packetsSent" D.float
+            |> required "packetsReceived" D.float
+        )
+
+
 type Msg
     = CurrentTime Time.Posix
     | UrlClicked UrlRequest
     | UrlChanged Url
     | WindowResized Int Int
     | NodeInfoReceived Node
+    | FetchNodeSummaries Time.Posix
+    | FetchedNodeSummaries (Result Http.Error (List Node))
     | SortSet SortBy
+    | Noop
 
 
 type SortMode
@@ -107,7 +140,7 @@ type SortBy
 
 init : Flags -> Url -> Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( { nodes = Dict.empty, currentTime = Time.millisToPosix 0, sortMode = SortNone, window = flags }, hello "Hello from Elm!" )
+    ( { nodes = Dict.empty, currentTime = Time.millisToPosix 0, key = key, sortMode = SortNone, window = flags }, hello "Hello from Elm!" )
 
 
 majorityStatFor getter default nodes =
@@ -561,26 +594,31 @@ asSecondsAgo currentTime targetTime =
                 Time.Extra.diff Time.Extra.Second Time.utc p currentTime
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         CurrentTime time ->
             ( { model | currentTime = time }, Cmd.none )
 
         UrlClicked urlRequest ->
-            ( model, Cmd.none )
+            case urlRequest of
+                Internal url ->
+                    ( model
+                    , Cmd.batch
+                        [ Nav.pushUrl model.key (Url.toString url)
 
-        -- case urlRequest of
-        --     Internal url ->
-        --         ( { model | currentPage = pathToPage url }
-        --         , Nav.pushUrl model.key (Url.toString url)
-        --         )
-        --
-        --     External url ->
-        --         ( model
-        --         , Nav.load url
-        --         )
+                        -- , onPageExit model.currentPage model
+                        -- , onPageInit (pathToPage url) model
+                        ]
+                    )
+
+                External url ->
+                    ( model
+                    , Nav.load url
+                    )
+
         UrlChanged url ->
+            -- ( { model | currentPage = pathToPage url }, scrollPageToTop )
             ( model, Cmd.none )
 
         WindowResized width height ->
@@ -588,6 +626,17 @@ update msg model =
 
         NodeInfoReceived node ->
             ( { model | nodes = Dict.insert node.nodeName node model.nodes }, Cmd.none )
+
+        FetchNodeSummaries _ ->
+            ( model, Http.get { url = "/data/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
+
+        FetchedNodeSummaries r ->
+            case r of
+                Ok nodeSummaries ->
+                    ( { model | nodes = nodeSummaries |> List.map (\node -> ( node.nodeName, node )) |> Dict.fromList }, Cmd.none )
+
+                Err err ->
+                    ( model, Cmd.none )
 
         SortSet sortBy ->
             let
@@ -612,6 +661,13 @@ update msg model =
             in
             ( { model | sortMode = newSortMode }, Cmd.none )
 
+        Noop ->
+            ( model, Cmd.none )
+
+
+scrollPageToTop =
+    Task.perform (\_ -> Noop) (Browser.Dom.setViewport 0 0)
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -619,6 +675,7 @@ subscriptions model =
         [ nodeInfo NodeInfoReceived
         , Browser.Events.onResize WindowResized
         , Time.every 1000 CurrentTime
+        , Time.every 1000 FetchNodeSummaries
         ]
 
 

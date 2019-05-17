@@ -15,13 +15,13 @@ document.addEventListener("DOMContentLoaded", function() {
     flags: layoutViewportSize()
   })
 
-  console.log(`Connecting to ${dashboardHost}`)
-  var socket = io.connect(dashboardHost)
-
-  socket.on('nodeInfo', function (nodeData) {
-    console.log('js:nodeInfo received:', nodeData)
-    app.ports.nodeInfo.send(nodeData)
-  })
+  // console.log(`Connecting to ${dashboardHost}`)
+  // var socket = io.connect(dashboardHost)
+  //
+  // socket.on('nodeInfo', function (nodeData) {
+  //   console.log('js:nodeInfo received:', nodeData)
+  //   app.ports.nodeInfo.send(nodeData)
+  // })
 
   // app.ports.hello.subscribe(message => socket.emit('toServer', message))
 })
