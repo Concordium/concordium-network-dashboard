@@ -8,8 +8,10 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
+import Graph exposing (nodes)
 import Html exposing (Html)
 import Types exposing (..)
+import ViewRewardGraph exposing (..)
 import WebsiteColors exposing (..)
 import Widgets exposing (..)
 
@@ -21,6 +23,12 @@ view model =
         [ theme <|
             case model.currentPage of
                 Home ->
-                    [ text "Hello from Homepage" ]
+                    [ el [ width fill, height fill, centerX, centerY ]
+                        (html <|
+                            ViewRewardGraph.viewNodes
+                                model.selectedNode
+                                (nodes model.graph)
+                        )
+                    ]
         ]
     }

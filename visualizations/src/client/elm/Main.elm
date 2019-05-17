@@ -5,6 +5,7 @@ import Browser.Dom
 import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
 import Dict exposing (Dict)
+import RewardGraph
 import Task
 import Time
 import Types exposing (..)
@@ -20,6 +21,8 @@ init flags url key =
             , window = flags
             , key = key
             , currentPage = pathToPage url
+            , graph = RewardGraph.init
+            , selectedNode = Nothing
             }
     in
     ( model
@@ -62,6 +65,9 @@ update msg model =
 
         WindowResized width height ->
             ( { model | window = { width = width, height = height } }, Cmd.none )
+
+        NodeHovered maybeNodeId ->
+            ( { model | selectedNode = maybeNodeId }, Cmd.none )
 
         Noop ->
             ( model, Cmd.none )
