@@ -98,9 +98,10 @@ theme x =
         [ width fill
         , Background.color darkGrey
         , Font.color white
-        , Font.size 15
+        , Font.size 18
+        , Font.regular
         , Font.family
-            [ Font.typeface "Montserrat"
+            [ Font.typeface "Poppins"
             , Font.sansSerif
             ]
         ]

@@ -4,6 +4,8 @@ import Browser exposing (..)
 import Browser.Navigation as Nav exposing (Key)
 import Dict
 import Enum
+import Graph exposing (Graph)
+import RewardGraph exposing (..)
 import Time
 import Url exposing (Url)
 import Url.Parser exposing (..)
@@ -18,6 +20,8 @@ type alias Model =
     , window : { width : Int, height : Int }
     , key : Key
     , currentPage : Page
+    , selectedNode : Maybe Int
+    , graph : Graph NodeSpec EdgeSpec
     }
 
 
@@ -28,6 +32,7 @@ type Msg
     | OpenPage Page
     | OpenUrl String
     | WindowResized Int Int
+    | NodeHovered (Maybe Int)
     | Noop
 
 
