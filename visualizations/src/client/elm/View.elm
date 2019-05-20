@@ -25,9 +25,9 @@ view model =
                 Home ->
                     [ el [ width fill, height fill, centerX, centerY ]
                         (html <|
-                            ViewRewardGraph.viewNodes
+                            ViewRewardGraph.view
                                 model.selectedNode
-                                (nodes model.graph)
+                                model.graph
                         )
                     ]
         ]

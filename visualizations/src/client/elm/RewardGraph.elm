@@ -3,12 +3,18 @@ module RewardGraph exposing
     , EdgeSpec
     , NodeSpec(..)
     , RectangularNodeSpec
+    , color
     , init
+    , nodeCenter
     )
 
 import Color exposing (Color)
 import Colors
 import Graph exposing (Edge, Graph, Node)
+import Grid
+import Point2d exposing (Point2d)
+import Rectangle2d exposing (Rectangle2d)
+import Vector2d exposing (Vector2d)
 
 
 type NodeSpec
@@ -37,8 +43,16 @@ type alias RectangularNodeSpec =
     }
 
 
+{-| Describes an Edge in the graph
+
+fromWaypoints is a set of points the edge shoud go through, realtive to the origin node
+toWaypoints is a set of points the edge should go through relative to the target node
+
+-}
 type alias EdgeSpec =
     { label : String
+    , fromWaypoints : List Point2d
+    , toWaypoints : List Point2d
     , value : Float
     }
 
@@ -58,19 +72,19 @@ init : Graph NodeSpec EdgeSpec
 init =
     let
         rectWidth =
-            210.0
+            Grid.offset 14
 
         rectHeight =
-            90.0
+            Grid.offset 6
 
         rectSpacing =
-            60.0
+            Grid.offset 4
 
         rectSlot i =
             100.0 + ((rectWidth + rectSpacing) * i)
 
         circleRadius =
-            80.0
+            Grid.offset 5
 
         nodes =
             [ Node id.blockchain
@@ -154,68 +168,169 @@ init =
             [ Edge
                 id.trustedIdentityIssuers
                 id.users
-                { label = "Identities", value = 0 }
+                { label = "Identities"
+                , value = 0
+                , fromWaypoints = [] -- [ Grid.point 2 0, Grid.point 2 10 ]
+                , toWaypoints = []
+                }
             , Edge
                 id.blockBakersBakingPools
                 id.users
-                { label = "Reward % Kickback", value = 0 }
+                { label = "Reward % Kickback"
+                , value = 0
+                , fromWaypoints = []
+                , toWaypoints = []
+                }
             , Edge
                 id.blockBakersBakingPools
                 id.blockchain
-                { label = "Baking", value = 0 }
+                { label = "Baking"
+                , value = 0
+                , fromWaypoints = []
+                , toWaypoints = []
+                }
             , Edge
                 id.smartContractDevelopers
                 id.users
-                { label = "Smart Contracts", value = 0 }
+                { label = "Smart Contracts"
+                , value = 0
+                , fromWaypoints = []
+                , toWaypoints = []
+                }
             , Edge
                 id.users
                 id.blockBakersBakingPools
-                { label = "Delegate Stake", value = 0 }
+                { label = "Delegate Stake"
+                , value = 0
+                , fromWaypoints = []
+                , toWaypoints = []
+                }
             , Edge
                 id.users
                 id.blockchain
-                { label = "Gas", value = 0 }
+                { label = "Gas"
+                , value = 0
+                , fromWaypoints = []
+                , toWaypoints = []
+                }
             , Edge
                 id.blockchain
                 id.trustedIdentityIssuers
-                { label = "Transaction Rewards", value = 0 }
+                { label = "Transaction Rewards"
+                , value = 0
+                , fromWaypoints = []
+                , toWaypoints = []
+                }
             , Edge
                 id.blockchain
                 id.blockBakersBakingPools
-                { label = "Block Rewards", value = 0 }
+                { label = "Block Rewards"
+                , value = 0
+                , fromWaypoints = []
+                , toWaypoints = []
+                }
             , Edge
                 id.blockchain
                 id.smartContractDevelopers
-                { label = "Execution Rewards", value = 0 }
+                { label = "Execution Rewards"
+                , value = 0
+                , fromWaypoints = []
+                , toWaypoints = []
+                }
             , Edge
                 id.blockchain
                 id.blockFinalizers
-                { label = "Finalization Rewards", value = 0 }
+                { label = "Finalization Rewards"
+                , value = 0
+                , fromWaypoints = [ Grid.point 0 1 ]
+                , toWaypoints = [ Grid.point 0 1 ]
+                }
+            , Edge
+                id.blockFinalizers
+                id.blockchain
+                { label = "Finalization"
+                , value = 0
+                , fromWaypoints = [ Grid.point 0 -1 ]
+                , toWaypoints = [ Grid.point 0 -1 ]
+                }
             , Edge
                 id.blockchain
                 id.foundation
-                { label = "Tax", value = 0 }
+                { label = "Tax"
+                , value = 0
+                , fromWaypoints = []
+                , toWaypoints = [ Grid.point 4 0 ]
+                }
             , Edge
                 id.foundation
                 id.users
-                { label = "Wallet", value = 0 }
+                { label = "Wallet"
+                , value = 0
+                , fromWaypoints = [ Grid.point -14 0 ]
+                , toWaypoints = []
+                }
             , Edge
                 id.foundation
                 id.trustedIdentityIssuers
-                { label = "Software", value = 0 }
+                { label = "Software"
+                , value = 0
+                , fromWaypoints = [ Grid.point -23 0 ]
+                , toWaypoints = []
+                }
             , Edge
                 id.foundation
                 id.blockBakersBakingPools
-                { label = "Software", value = 0 }
+                { label = "Software"
+                , value = 0
+                , fromWaypoints = [ Grid.point -5 0 ]
+                , toWaypoints = []
+                }
             , Edge
                 id.foundation
                 id.smartContractDevelopers
-                { label = "Software", value = 0 }
+                { label = "Software"
+                , value = 0
+                , fromWaypoints = [ Grid.point 13 0 ]
+                , toWaypoints = []
+                }
             , Edge
                 id.foundation
                 id.blockFinalizers
-                { label = "Software", value = 0 }
-            , Edge id.blockchain id.blockchain { label = "GTU Minting", value = 0 }
+                { label = "Software"
+                , value = 0
+                , fromWaypoints = [ Grid.point 24 0 ]
+                , toWaypoints = []
+                }
+            , Edge id.blockchain
+                id.blockchain
+                { label = "GTU Minting"
+                , value = 0
+                , fromWaypoints = []
+                , toWaypoints = []
+                }
             ]
     in
     Graph.fromNodesAndEdges nodes edges
+
+
+nodeCenter : NodeSpec -> Point2d
+nodeCenter node =
+    case node of
+        Circular cnode ->
+            Point2d.fromCoordinates ( cnode.cx, cnode.cy )
+
+        Rectangular rnode ->
+            Point2d.fromCoordinates
+                ( rnode.x + (rnode.width / 2)
+                , rnode.y + (rnode.height / 2)
+                )
+
+
+color : NodeSpec -> Color.Color
+color node =
+    case node of
+        Circular cnode ->
+            cnode.color
+
+        Rectangular rnode ->
+            rnode.color
