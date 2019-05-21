@@ -6,12 +6,14 @@ module RewardGraph exposing
     , color
     , init
     , nodeCenter
+    , tick
     )
 
 import Color exposing (Color)
 import Colors
 import Graph exposing (Edge, Graph, Node)
 import Grid
+import IntDict
 import Point2d exposing (Point2d)
 import Rectangle2d exposing (Rectangle2d)
 import Vector2d exposing (Vector2d)
@@ -29,6 +31,7 @@ type alias CircularNodeSpec =
     , radius : Float
     , icon : String
     , color : Color
+    , value : Float
     }
 
 
@@ -96,6 +99,7 @@ init =
                     , radius = circleRadius
                     , icon = "/assets/blockchain.svg"
                     , color = Colors.yellow
+                    , value = 100
                     }
                 )
             , Node id.users
@@ -106,6 +110,7 @@ init =
                     , radius = circleRadius
                     , icon = "/assets/users.svg"
                     , color = Colors.green
+                    , value = 100
                     }
                 )
             , Node id.foundation
@@ -116,7 +121,7 @@ init =
                     , width = Grid.offset 61
                     , height = rectHeight
                     , color = Colors.blue
-                    , value = 20
+                    , value = 100
                     }
                 )
             , Node id.trustedIdentityIssuers
@@ -127,7 +132,7 @@ init =
                     , width = rectWidth
                     , height = rectHeight
                     , color = Colors.purple
-                    , value = 40
+                    , value = 100
                     }
                 )
             , Node id.blockBakersBakingPools
@@ -138,7 +143,7 @@ init =
                     , width = rectWidth
                     , height = rectHeight
                     , color = Colors.purple
-                    , value = 45
+                    , value = 100
                     }
                 )
             , Node id.smartContractDevelopers
@@ -149,7 +154,7 @@ init =
                     , width = rectWidth
                     , height = rectHeight
                     , color = Colors.purple
-                    , value = 15
+                    , value = 100
                     }
                 )
             , Node id.blockFinalizers
@@ -160,7 +165,7 @@ init =
                     , width = rectWidth
                     , height = rectHeight
                     , color = Colors.purple
-                    , value = 13
+                    , value = 100
                     }
                 )
             ]
@@ -353,3 +358,32 @@ color node =
 
         Rectangular rnode ->
             rnode.color
+
+
+tick : Graph NodeSpec EdgeSpec -> Graph NodeSpec EdgeSpec
+tick graph =
+    Graph.mapContexts
+        (\context ->
+            let
+                edgeSum =
+                    \eid edge acc -> acc + edge.value
+
+                incoming =
+                    IntDict.foldr edgeSum 0 context.incoming
+
+                outgoing =
+                    IntDict.foldr edgeSum 0 context.outgoing
+            in
+            { context | node = updateNodeValue (incoming - outgoing) context.node }
+        )
+        graph
+
+
+updateNodeValue : Float -> Node NodeSpec -> Node NodeSpec
+updateNodeValue delta node =
+    case node.label of
+        Circular spec ->
+            Node node.id (Circular { spec | value = spec.value + delta })
+
+        Rectangular spec ->
+            Node node.id (Rectangular { spec | value = spec.value + delta })

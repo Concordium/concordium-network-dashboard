@@ -1,8 +1,10 @@
 module ViewRewardGraph exposing (view, viewEdges, viewNodes)
 
+import Arc2d exposing (sweptAngle)
 import Color exposing (Color)
 import Color.Interpolate as Interpolate exposing (interpolate)
 import Colors
+import EllipticalArc2d exposing (startAngle)
 import Frame2d
 import Geometry.Svg as Svg
 import Graph exposing (Edge, Graph, Node, nodes)
@@ -50,6 +52,14 @@ viewNodes selected nodes =
 
 viewRectangularNode : Int -> Maybe Int -> RectangularNodeSpec -> Svg Msg
 viewRectangularNode current selected props =
+    let
+        padding =
+            8
+
+        valueDisplayHeight =
+            normalizeLinear 50 150 props.value
+                |> mapLinear 0 (props.height - (padding * 2))
+    in
     svg
         [ x (px props.x)
         , y (px props.y)
@@ -69,10 +79,10 @@ viewRectangularNode current selected props =
             ]
             []
         , rect
-            [ x (px 8)
-            , y (px (props.height - 8 - props.value))
+            [ x (px padding)
+            , y (px (props.height - padding - valueDisplayHeight))
             , width (px 4)
-            , height (px props.value)
+            , height (px valueDisplayHeight)
             , fill <| Fill (interpolate Interpolate.LAB props.color Colors.nodeBackground 0.5)
             ]
             []
@@ -80,8 +90,32 @@ viewRectangularNode current selected props =
         ]
 
 
+mapLinear mapmin mapmax normalizedValue =
+    mapmin + (normalizedValue * (mapmax - mapmin))
+
+
+normalizeLinear mapmin mapmax mappedValue =
+    (mappedValue - mapmin) / (mapmax - mapmin)
+
+
 viewCircularNode : Int -> Maybe Int -> CircularNodeSpec -> Svg Msg
 viewCircularNode current selected props =
+    let
+        padding =
+            8
+
+        valueDisplayHeight =
+            normalizeLinear 50 150 props.value
+                |> mapLinear 0 90
+
+        valueArc =
+            Arc2d.with
+                { centerPoint = Point2d.fromCoordinates ( props.radius, props.radius )
+                , radius = props.radius - padding
+                , startAngle = degrees 160
+                , sweptAngle = degrees valueDisplayHeight
+                }
+    in
     svg
         [ x (px <| props.cx - props.radius)
         , y (px <| props.cy - props.radius)
@@ -107,6 +141,12 @@ viewCircularNode current selected props =
             ]
             []
         , viewTextLines props.label props.color 24 30
+        , Svg.arc2d
+            [ stroke (interpolate Interpolate.LAB props.color Colors.nodeBackground 0.5)
+            , strokeWidth (px 4)
+            , fill <| FillNone
+            ]
+            valueArc
         ]
 
 

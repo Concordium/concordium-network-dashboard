@@ -37,14 +37,6 @@ init flags url key =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        CurrentTime time ->
-            ( { model
-                | currentTime = time
-                , transfer = animation model.clock |> duration 3000
-              }
-            , Cmd.none
-            )
-
         UrlClicked urlRequest ->
             case urlRequest of
                 Internal url ->
@@ -77,6 +69,19 @@ update msg model =
 
         NodeHovered maybeNodeId ->
             ( { model | selectedNode = maybeNodeId }, Cmd.none )
+
+        CurrentTime time ->
+            let
+                nextGraph =
+                    RewardGraph.tick model.graph
+            in
+            ( { model
+                | currentTime = time
+                , transfer = animation model.clock |> duration 3000
+                , graph = nextGraph
+              }
+            , Cmd.none
+            )
 
         Tick timeDelta ->
             let
