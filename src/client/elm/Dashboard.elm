@@ -1,4 +1,4 @@
-port module Dashboard exposing (Flags, Host, Model, Msg(..), Node, SortBy(..), SortMode(..), asSecondsAgo, asTimeAgoDuration, averageStatSecondsFor, bgDarkGrey, bgWhite, chartTimeseries, hashSnippet, hello, init, main, majorityStatFor, markdown, nodeInfo, nodesTable, sortNodesBy, sortNodesMode, sortableHeader, subscriptions, theme, update, view, viewNode, widgetNumber, widgetNumberChart, widgetSeconds, widgetText, widgetsForWebsite, worldMap)
+port module Dashboard exposing (Flags, Host, Model, Msg(..), Node, SortBy(..), SortMode(..), asSecondsAgo, asTimeAgoDuration, averageStatSecondsFor, bgDarkGrey, bgWhite, chartTimeseries, hashSnippet, hello, init, main, majorityStatFor, markdown, nodeInfo, nodeSummariesDecoder, nodesTable, sortNodesBy, sortNodesMode, sortableHeader, subscriptions, theme, update, view, viewNode, widgetNumber, widgetNumberChart, widgetSeconds, widgetText, widgetsForWebsite, worldMap)
 
 import Browser exposing (..)
 import Browser.Dom
