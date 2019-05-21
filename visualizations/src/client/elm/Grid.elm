@@ -9,17 +9,17 @@ gridSize =
     15
 
 
-position : Int -> Int -> ( Float, Float )
+position : Float -> Float -> ( Float, Float )
 position x y =
-    ( toFloat (x * gridSize), toFloat (y * gridSize) )
+    ( x * gridSize, y * gridSize )
 
 
-offset : Int -> Float
+offset : Float -> Float
 offset o =
-    toFloat (o * gridSize)
+    o * gridSize
 
 
-rectangle : Int -> Int -> Int -> Int -> Rectangle2d
+rectangle : Float -> Float -> Float -> Float -> Rectangle2d
 rectangle x y w h =
     Rectangle2d.fromExtrema
         { minX = offset x
@@ -29,11 +29,11 @@ rectangle x y w h =
         }
 
 
-circle : Int -> Int -> Int -> Circle2d
+circle : Float -> Float -> Float -> Circle2d
 circle x y r =
     Circle2d.withRadius (offset r) (point x y)
 
 
-point : Int -> Int -> Point2d
+point : Float -> Float -> Point2d
 point x y =
     Point2d.fromCoordinates (position x y)

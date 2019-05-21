@@ -112,7 +112,7 @@ init =
                     { label = [ "Foundation" ]
                     , x = 100
                     , y = 600
-                    , width = 900.0
+                    , width = Grid.offset 61
                     , height = rectHeight
                     , color = Colors.blue
                     , value = 20
@@ -170,7 +170,7 @@ init =
                 id.users
                 { label = "Identities"
                 , value = 0
-                , fromWaypoints = [] -- [ Grid.point 2 0, Grid.point 2 10 ]
+                , fromWaypoints = [ Grid.point 2 0, Grid.point 2 10 ]
                 , toWaypoints = []
                 }
             , Edge
@@ -178,23 +178,23 @@ init =
                 id.users
                 { label = "Reward % Kickback"
                 , value = 0
-                , fromWaypoints = []
-                , toWaypoints = []
+                , fromWaypoints = [ Grid.point -4 0, Grid.point -4 10 ]
+                , toWaypoints = [ Grid.point 0 -2 ]
                 }
             , Edge
                 id.blockBakersBakingPools
                 id.blockchain
                 { label = "Baking"
                 , value = 0
-                , fromWaypoints = []
-                , toWaypoints = []
+                , fromWaypoints = [ Grid.point 4 0, Grid.point 4 10 ]
+                , toWaypoints = [ Grid.point 0 -2 ]
                 }
             , Edge
                 id.smartContractDevelopers
                 id.users
                 { label = "Smart Contracts"
                 , value = 0
-                , fromWaypoints = []
+                , fromWaypoints = [ Grid.point 0 0, Grid.point 0 -6, Grid.point -27 -6 ]
                 , toWaypoints = []
                 }
             , Edge
@@ -202,8 +202,8 @@ init =
                 id.blockBakersBakingPools
                 { label = "Delegate Stake"
                 , value = 0
-                , fromWaypoints = []
-                , toWaypoints = []
+                , fromWaypoints = [ Grid.point 0 2 ]
+                , toWaypoints = [ Grid.point -2 12, Grid.point -2 0 ]
                 }
             , Edge
                 id.users
@@ -218,16 +218,16 @@ init =
                 id.trustedIdentityIssuers
                 { label = "Transaction Rewards"
                 , value = 0
-                , fromWaypoints = []
-                , toWaypoints = []
+                , fromWaypoints = [ Grid.point 0 0, Grid.point 0 -22, Grid.point -27 -22 ]
+                , toWaypoints = [ Grid.point 0 0 ]
                 }
             , Edge
                 id.blockchain
                 id.blockBakersBakingPools
                 { label = "Block Rewards"
                 , value = 0
-                , fromWaypoints = []
-                , toWaypoints = []
+                , fromWaypoints = [ Grid.point 0 2 ]
+                , toWaypoints = [ Grid.point 2 12, Grid.point 2 2 ]
                 }
             , Edge
                 id.blockchain
@@ -235,7 +235,7 @@ init =
                 { label = "Execution Rewards"
                 , value = 0
                 , fromWaypoints = []
-                , toWaypoints = []
+                , toWaypoints = [ Grid.point -2 10, Grid.point -2 0 ]
                 }
             , Edge
                 id.blockchain
@@ -258,55 +258,55 @@ init =
                 id.foundation
                 { label = "Tax"
                 , value = 0
-                , fromWaypoints = []
-                , toWaypoints = [ Grid.point 4 0 ]
+                , fromWaypoints = [ Grid.point 0 0, Grid.point 0 15 ]
+                , toWaypoints = []
                 }
             , Edge
                 id.foundation
                 id.users
                 { label = "Wallet"
                 , value = 0
-                , fromWaypoints = [ Grid.point -14 0 ]
-                , toWaypoints = []
+                , fromWaypoints = []
+                , toWaypoints = [ Grid.point 0 15, Grid.point 0 0 ]
                 }
             , Edge
                 id.foundation
                 id.trustedIdentityIssuers
                 { label = "Software"
                 , value = 0
-                , fromWaypoints = [ Grid.point -23 0 ]
-                , toWaypoints = []
+                , fromWaypoints = []
+                , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
                 }
             , Edge
                 id.foundation
                 id.blockBakersBakingPools
                 { label = "Software"
                 , value = 0
-                , fromWaypoints = [ Grid.point -5 0 ]
-                , toWaypoints = []
+                , fromWaypoints = []
+                , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
                 }
             , Edge
                 id.foundation
                 id.smartContractDevelopers
                 { label = "Software"
                 , value = 0
-                , fromWaypoints = [ Grid.point 13 0 ]
-                , toWaypoints = []
+                , fromWaypoints = []
+                , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
                 }
             , Edge
                 id.foundation
                 id.blockFinalizers
                 { label = "Software"
                 , value = 0
-                , fromWaypoints = [ Grid.point 24 0 ]
-                , toWaypoints = []
+                , fromWaypoints = []
+                , toWaypoints = [ Grid.point 0 15, Grid.point 0 0 ]
                 }
             , Edge id.blockchain
                 id.blockchain
                 { label = "GTU Minting"
                 , value = 0
-                , fromWaypoints = []
-                , toWaypoints = []
+                , fromWaypoints = [ Grid.point 1 -1, Grid.point 7 5 ]
+                , toWaypoints = [ Grid.point 4.5 7.5, Grid.point -1.5 1.5 ]
                 }
             ]
     in
