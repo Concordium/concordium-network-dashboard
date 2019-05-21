@@ -1,10 +1,12 @@
 port module Main exposing (main)
 
+import Animation exposing (..)
 import Browser exposing (..)
 import Browser.Dom
-import Browser.Events
+import Browser.Events as Events
 import Browser.Navigation as Nav exposing (Key)
 import Dict exposing (Dict)
+import Graph
 import RewardGraph
 import Task
 import Time
@@ -23,6 +25,8 @@ init flags url key =
             , currentPage = pathToPage url
             , graph = RewardGraph.init
             , selectedNode = Nothing
+            , clock = 0
+            , transfer = animation 0 |> duration 0.7
             }
     in
     ( model
@@ -34,7 +38,12 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         CurrentTime time ->
-            ( { model | currentTime = time }, Cmd.none )
+            ( { model
+                | currentTime = time
+                , transfer = animation model.clock |> duration 3000
+              }
+            , Cmd.none
+            )
 
         UrlClicked urlRequest ->
             case urlRequest of
@@ -69,6 +78,17 @@ update msg model =
         NodeHovered maybeNodeId ->
             ( { model | selectedNode = maybeNodeId }, Cmd.none )
 
+        Tick timeDelta ->
+            let
+                animatedGraph =
+                    Graph.mapEdges
+                        (\edge ->
+                            { edge | animationDelta = animate model.clock model.transfer }
+                        )
+                        model.graph
+            in
+            ( { model | clock = model.clock + timeDelta, graph = animatedGraph }, Cmd.none )
+
         Noop ->
             ( model, Cmd.none )
 
@@ -92,8 +112,9 @@ scrollPageToTop =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Browser.Events.onResize WindowResized
-        , Time.every 1000 CurrentTime
+        [ Events.onResize WindowResized
+        , Events.onAnimationFrameDelta Tick
+        , Time.every 3000 CurrentTime
 
         -- , when
         --     (model.currentPage == SomePage)

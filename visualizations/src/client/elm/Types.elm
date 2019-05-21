@@ -1,5 +1,6 @@
 module Types exposing (Flags, Model, Msg(..), Page(..), pageToPath, parserRoutes, pathToPage)
 
+import Animation exposing (Animation)
 import Browser exposing (..)
 import Browser.Navigation as Nav exposing (Key)
 import Dict
@@ -22,6 +23,8 @@ type alias Model =
     , currentPage : Page
     , selectedNode : Maybe Int
     , graph : Graph NodeSpec EdgeSpec
+    , clock : Float
+    , transfer : Animation
     }
 
 
@@ -32,6 +35,7 @@ type Msg
     | OpenPage Page
     | OpenUrl String
     | WindowResized Int Int
+    | Tick Float
     | NodeHovered (Maybe Int)
     | Noop
 

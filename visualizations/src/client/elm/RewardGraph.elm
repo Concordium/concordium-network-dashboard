@@ -54,6 +54,7 @@ type alias EdgeSpec =
     , fromWaypoints : List Point2d
     , toWaypoints : List Point2d
     , value : Float
+    , animationDelta : Float
     }
 
 
@@ -170,6 +171,7 @@ init =
                 id.users
                 { label = "Identities"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = [ Grid.point 2 0, Grid.point 2 10 ]
                 , toWaypoints = []
                 }
@@ -178,6 +180,7 @@ init =
                 id.users
                 { label = "Reward % Kickback"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = [ Grid.point -4 0, Grid.point -4 10 ]
                 , toWaypoints = [ Grid.point 0 -2 ]
                 }
@@ -186,6 +189,7 @@ init =
                 id.blockchain
                 { label = "Baking"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = [ Grid.point 4 0, Grid.point 4 10 ]
                 , toWaypoints = [ Grid.point 0 -2 ]
                 }
@@ -194,6 +198,7 @@ init =
                 id.users
                 { label = "Smart Contracts"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = [ Grid.point 0 0, Grid.point 0 -6, Grid.point -27 -6 ]
                 , toWaypoints = []
                 }
@@ -202,6 +207,7 @@ init =
                 id.blockBakersBakingPools
                 { label = "Delegate Stake"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = [ Grid.point 0 2 ]
                 , toWaypoints = [ Grid.point -2 12, Grid.point -2 0 ]
                 }
@@ -210,6 +216,7 @@ init =
                 id.blockchain
                 { label = "Gas"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = []
                 , toWaypoints = []
                 }
@@ -218,6 +225,7 @@ init =
                 id.trustedIdentityIssuers
                 { label = "Transaction Rewards"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = [ Grid.point 0 0, Grid.point 0 -22, Grid.point -27 -22 ]
                 , toWaypoints = [ Grid.point 0 0 ]
                 }
@@ -226,6 +234,7 @@ init =
                 id.blockBakersBakingPools
                 { label = "Block Rewards"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = [ Grid.point 0 2 ]
                 , toWaypoints = [ Grid.point 2 12, Grid.point 2 2 ]
                 }
@@ -234,6 +243,7 @@ init =
                 id.smartContractDevelopers
                 { label = "Execution Rewards"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = []
                 , toWaypoints = [ Grid.point -2 10, Grid.point -2 0 ]
                 }
@@ -242,6 +252,7 @@ init =
                 id.blockFinalizers
                 { label = "Finalization Rewards"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = [ Grid.point 0 1 ]
                 , toWaypoints = [ Grid.point 0 1 ]
                 }
@@ -250,6 +261,7 @@ init =
                 id.blockchain
                 { label = "Finalization"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = [ Grid.point 0 -1 ]
                 , toWaypoints = [ Grid.point 0 -1 ]
                 }
@@ -258,6 +270,7 @@ init =
                 id.foundation
                 { label = "Tax"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = [ Grid.point 0 0, Grid.point 0 15 ]
                 , toWaypoints = []
                 }
@@ -266,6 +279,7 @@ init =
                 id.users
                 { label = "Wallet"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = []
                 , toWaypoints = [ Grid.point 0 15, Grid.point 0 0 ]
                 }
@@ -274,6 +288,7 @@ init =
                 id.trustedIdentityIssuers
                 { label = "Software"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = []
                 , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
                 }
@@ -282,6 +297,7 @@ init =
                 id.blockBakersBakingPools
                 { label = "Software"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = []
                 , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
                 }
@@ -290,6 +306,7 @@ init =
                 id.smartContractDevelopers
                 { label = "Software"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = []
                 , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
                 }
@@ -298,6 +315,7 @@ init =
                 id.blockFinalizers
                 { label = "Software"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = []
                 , toWaypoints = [ Grid.point 0 15, Grid.point 0 0 ]
                 }
@@ -305,6 +323,7 @@ init =
                 id.blockchain
                 { label = "GTU Minting"
                 , value = 0
+                , animationDelta = 0
                 , fromWaypoints = [ Grid.point 1 -1, Grid.point 7 5 ]
                 , toWaypoints = [ Grid.point 4.5 7.5, Grid.point -1.5 1.5 ]
                 }

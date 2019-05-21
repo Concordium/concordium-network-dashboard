@@ -184,12 +184,19 @@ viewEdge selected edge fromNode toNode =
         baseColor =
             RewardGraph.color fromNode.label
 
-        edgeColor =
+        transferColor =
             if Maybe.withDefault -1 selected == fromNode.id then
                 baseColor
 
             else
-                interpolate Interpolate.LAB baseColor Colors.nodeBackground 0.5
+                interpolate Interpolate.LAB baseColor Colors.nodeBackground 0.4
+
+        trackColor =
+            if Maybe.withDefault -1 selected == fromNode.id then
+                interpolate Interpolate.LAB baseColor Colors.nodeBackground 0.3
+
+            else
+                interpolate Interpolate.LAB baseColor Colors.nodeBackground 0.7
 
         fromWaypoints =
             List.map
@@ -202,13 +209,30 @@ viewEdge selected edge fromNode toNode =
                 (Point2d.placeIn <| Frame2d.atPoint <| nodeCenter toNode.label)
                 edge.label.toWaypoints
                 |> setIfEmpty (nodeCenter toNode.label)
+
+        polyline =
+            Polyline2d.fromVertices (fromWaypoints ++ toWaypoints)
+
+        lineLength =
+            Polyline2d.length polyline
+
+        dashLength =
+            edge.label.value * 50
     in
     [ Svg.polyline2d
-        [ stroke edgeColor
+        [ stroke trackColor
         , strokeWidth (px 2)
         , fill <| FillNone
         ]
-        (Polyline2d.fromVertices (fromWaypoints ++ toWaypoints))
+        polyline
+    , Svg.polyline2d
+        [ stroke transferColor
+        , strokeWidth (px 4)
+        , fill <| FillNone
+        , strokeDasharray ("50 " ++ String.fromFloat (lineLength + 50))
+        , strokeDashoffset (String.fromFloat <| 60 + (1 - edge.label.animationDelta) * (lineLength + 50))
+        ]
+        polyline
     ]
 
 
