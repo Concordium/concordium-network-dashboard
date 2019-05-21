@@ -6,7 +6,6 @@ import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
 import Chart
 import Colors exposing (..)
-import Debug exposing (toString)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
@@ -208,7 +207,7 @@ view model =
             [ column [ spacing 20, width fill ]
                 [ image [ height (px 20) ] { src = "/assets/images/concordium-logo.png", description = "Concordium Logo" }
                 , wrappedRow [ spacing 20, width fill ]
-                    [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (Dict.size model.nodes)
+                    [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (toFloat <| Dict.size model.nodes)
                     , widgetSeconds blue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.bestArrivedTime)) -1 model.nodes)
                     , widgetSeconds green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.finalizedTime)) -1 model.nodes)
                     , widgetNumber blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
@@ -251,7 +250,7 @@ view model =
 
 
 widgetsForWebsite model =
-    [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (Dict.size model.nodes)
+    [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (toFloat <| Dict.size model.nodes)
     , widgetSeconds lightBlue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.bestArrivedTime)) -1 model.nodes)
 
     -- , widgetSeconds green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.finalizedTime)) -1 model.nodes)
@@ -288,7 +287,7 @@ widgetSeconds color title icon value =
             , row [ Font.color color, Font.size 30 ]
                 [ text <|
                     if value >= 0 then
-                        Debug.toString value ++ "s ago"
+                        String.fromInt value ++ "s ago"
 
                     else
                         "-"
@@ -306,7 +305,7 @@ widgetNumber color title icon value =
             , row [ Font.color color, Font.size 30 ]
                 [ text <|
                     if value >= 0 then
-                        Debug.toString value
+                        String.fromFloat value
 
                     else
                         "-"
@@ -324,7 +323,7 @@ widgetNumberChart color title icon value =
             , row [ Font.color color, Font.size 30 ]
                 [ text <|
                     if value >= 0 then
-                        Debug.toString value
+                        String.fromFloat value
 
                     else
                         "-"
@@ -341,7 +340,7 @@ chartTimeseries color title icon value =
         -- Background.gradient { angle = pi, steps = [ rgba255 49 178 239 1, rgba255 0 0 0 0 ] }
         [ column [ spacing 20 ]
             [ row [ Font.color color ] [ text <| String.toUpper title ]
-            , row [ Font.color color, Font.size 30 ] [ text <| Debug.toString value ]
+            , row [ Font.color color, Font.size 30 ] [ text <| String.fromFloat value ]
             ]
         , column [ width (px 200) ]
             [ html Chart.test ]
