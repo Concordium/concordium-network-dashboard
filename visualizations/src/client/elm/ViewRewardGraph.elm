@@ -217,7 +217,7 @@ viewEdge selected edge fromNode toNode =
             Polyline2d.length polyline
 
         dashLength =
-            edge.label.value * 50
+            edge.label.value * 50.0
     in
     [ Svg.polyline2d
         [ stroke trackColor
@@ -229,8 +229,18 @@ viewEdge selected edge fromNode toNode =
         [ stroke transferColor
         , strokeWidth (px 4)
         , fill <| FillNone
-        , strokeDasharray ("50 " ++ String.fromFloat (lineLength + 50))
-        , strokeDashoffset (String.fromFloat <| 60 + (1 - edge.label.animationDelta) * (lineLength + 50))
+        , strokeDasharray
+            (String.fromFloat dashLength
+                ++ " "
+                ++ String.fromFloat (lineLength + dashLength)
+            )
+        , strokeDashoffset
+            (((dashLength + 10)
+                + (1 - edge.label.animationDelta)
+                * (lineLength + dashLength)
+             )
+                |> String.fromFloat
+            )
         ]
         polyline
     ]
