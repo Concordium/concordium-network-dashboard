@@ -86,7 +86,7 @@ viewRectangularNode current selected props =
             , fill <| Fill (interpolate Interpolate.LAB props.color Colors.nodeBackground 0.5)
             ]
             []
-        , viewTextLines props.label props.color 24 0
+        , viewTextLines props.label props.color 24 0 16
         ]
 
 
@@ -140,7 +140,7 @@ viewCircularNode current selected props =
             , transform [ Translate (-props.radius / 2) (-props.radius / 2 - 10) ]
             ]
             []
-        , viewTextLines props.label props.color 24 30
+        , viewTextLines props.label props.color 24 30 16
         , Svg.arc2d
             [ stroke (interpolate Interpolate.LAB props.color Colors.nodeBackground 0.5)
             , strokeWidth (px 4)
@@ -159,8 +159,8 @@ nodeFill current selected colorA colorB =
         colorB
 
 
-viewTextLines : List String -> Color -> Float -> Float -> Svg msg
-viewTextLines lines color lineHeight baseOffset =
+viewTextLines : List String -> Color -> Float -> Float -> Float -> Svg msg
+viewTextLines lines color lineHeight baseOffset textSize =
     let
         numLines =
             toFloat (List.length lines)
@@ -182,7 +182,7 @@ viewTextLines lines color lineHeight baseOffset =
                     , textAnchor AnchorMiddle
                     , alignmentBaseline AlignmentCentral
                     , fill <| Fill color
-                    , fontSize (px 16)
+                    , fontSize (px textSize)
                     ]
                     [ Svg.text line ]
             )
@@ -224,15 +224,18 @@ viewEdge selected edge fromNode toNode =
         baseColor =
             RewardGraph.color fromNode.label
 
+        isSelected =
+            Maybe.withDefault -1 selected == fromNode.id
+
         transferColor =
-            if Maybe.withDefault -1 selected == fromNode.id then
+            if isSelected then
                 baseColor
 
             else
                 interpolate Interpolate.LAB baseColor Colors.nodeBackground 0.4
 
         trackColor =
-            if Maybe.withDefault -1 selected == fromNode.id then
+            if isSelected then
                 interpolate Interpolate.LAB baseColor Colors.nodeBackground 0.3
 
             else
@@ -242,13 +245,13 @@ viewEdge selected edge fromNode toNode =
             List.map
                 (Point2d.placeIn <| Frame2d.atPoint <| nodeCenter fromNode.label)
                 edge.label.fromWaypoints
-                |> setIfEmpty (nodeCenter fromNode.label)
+                |> fallbackIfEmpty (nodeCenter fromNode.label)
 
         toWaypoints =
             List.map
                 (Point2d.placeIn <| Frame2d.atPoint <| nodeCenter toNode.label)
                 edge.label.toWaypoints
-                |> setIfEmpty (nodeCenter toNode.label)
+                |> fallbackIfEmpty (nodeCenter toNode.label)
 
         polyline =
             Polyline2d.fromVertices (fromWaypoints ++ toWaypoints)
@@ -258,11 +261,20 @@ viewEdge selected edge fromNode toNode =
 
         dashLength =
             edge.label.value * 50.0
+
+        label =
+            if isSelected then
+                [ viewEdgeLabel edge.label.label transferColor polyline ]
+
+            else
+                []
     in
     [ Svg.polyline2d
         [ stroke trackColor
         , strokeWidth (px 2)
         , fill <| FillNone
+        , strokeDasharray "4 2"
+        , strokeDashoffset (String.fromFloat <| -24 * edge.label.animationDelta)
         ]
         polyline
     , Svg.polyline2d
@@ -284,13 +296,78 @@ viewEdge selected edge fromNode toNode =
         ]
         polyline
     ]
+        ++ label
 
 
-setIfEmpty : a -> List a -> List a
-setIfEmpty fallback list =
+{-| Finds the longest segment of a polyline and places a label next to it
+-}
+viewEdgeLabel : EdgeLabel -> Color -> Polyline2d -> Svg msg
+viewEdgeLabel label color edgeLine =
+    let
+        longestSegment =
+            List.sortBy
+                (\line -> -(LineSegment2d.length line))
+                (Polyline2d.segments edgeLine)
+                |> List.head
+    in
+    Maybe.withDefault
+        (svg [] [])
+        (Maybe.map
+            (\segment ->
+                let
+                    ( posX, posY ) =
+                        Point2d.coordinates <| LineSegment2d.midpoint segment
+                in
+                svg
+                    [ x (px <| posX - 100)
+                    , y (px <| posY - 25)
+                    , width (px 200)
+                    , height (px 50)
+                    ]
+                    [ viewTextLines label.text color 24 0 12
+                    ]
+            )
+            longestSegment
+        )
+
+
+fallbackIfEmpty : a -> List a -> List a
+fallbackIfEmpty fallback list =
     case list of
         [] ->
             [ fallback ]
 
         _ ->
             list
+
+
+pointAlong : Polyline2d -> Float -> Maybe Point2d
+pointAlong polyline position =
+    let
+        length =
+            Polyline2d.length polyline
+
+        toTravel =
+            if position == 0 then
+                0
+
+            else
+                length / position
+
+        step segments distance =
+            case segments of
+                [] ->
+                    Nothing
+
+                seg :: rest ->
+                    let
+                        segLength =
+                            LineSegment2d.length seg
+                    in
+                    if distance > segLength then
+                        step rest (distance - segLength)
+
+                    else
+                        Just (LineSegment2d.interpolate seg (segLength / distance))
+    in
+    step (Polyline2d.segments polyline) toTravel
