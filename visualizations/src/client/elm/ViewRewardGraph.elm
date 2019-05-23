@@ -4,6 +4,7 @@ import Arc2d exposing (sweptAngle)
 import Color exposing (Color)
 import Color.Interpolate as Interpolate exposing (interpolate)
 import Colors
+import Direction2d exposing (Direction2d)
 import EllipticalArc2d exposing (startAngle)
 import Frame2d
 import Geometry.Svg as Svg
@@ -304,30 +305,44 @@ viewEdge selected edge fromNode toNode =
 viewEdgeLabel : EdgeLabel -> Color -> Polyline2d -> Svg msg
 viewEdgeLabel label color edgeLine =
     let
-        longestSegment =
-            List.sortBy
-                (\line -> -(LineSegment2d.length line))
-                (Polyline2d.segments edgeLine)
-                |> List.head
+        ( position, direction ) =
+            pointAndDirectionAt edgeLine label.position
+
+        rotation =
+            case direction of
+                Nothing ->
+                    []
+
+                Just dir ->
+                    [ Rotate
+                        (if Direction2d.xComponent dir == 0 then
+                            -90
+
+                         else
+                            0
+                        )
+                        100
+                        100
+                    ]
+
+        ( offX, offY ) =
+            label.offset
     in
     Maybe.withDefault
         (svg [] [])
         (Maybe.map
-            (\segment ->
-                let
-                    ( posX, posY ) =
-                        Point2d.coordinates <| LineSegment2d.midpoint segment
-                in
+            (\( posX, posY ) ->
                 svg
-                    [ x (px <| posX - 100)
-                    , y (px <| posY - 25)
+                    [ x (px <| posX - 100 + offX)
+                    , y (px <| posY - 100 + offY)
                     , width (px 200)
-                    , height (px 50)
+                    , height (px 200)
                     ]
-                    [ viewTextLines label.text color 24 0 12
+                    [ g [ transform rotation ]
+                        [ viewTextLines label.text color 24 0 12 ]
                     ]
             )
-            longestSegment
+            (Maybe.map Point2d.coordinates position)
         )
 
 
@@ -341,8 +356,8 @@ fallbackIfEmpty fallback list =
             list
 
 
-pointAlong : Polyline2d -> Float -> Maybe Point2d
-pointAlong polyline position =
+pointAndDirectionAt : Polyline2d -> Float -> ( Maybe Point2d, Maybe Direction2d )
+pointAndDirectionAt polyline position =
     let
         length =
             Polyline2d.length polyline
@@ -352,12 +367,12 @@ pointAlong polyline position =
                 0
 
             else
-                length / position
+                length * position
 
         step segments distance =
             case segments of
                 [] ->
-                    Nothing
+                    ( Nothing, Nothing )
 
                 seg :: rest ->
                     let
@@ -368,6 +383,8 @@ pointAlong polyline position =
                         step rest (distance - segLength)
 
                     else
-                        Just (LineSegment2d.interpolate seg (segLength / distance))
+                        ( Just (LineSegment2d.interpolate seg (distance / segLength))
+                        , LineSegment2d.direction seg
+                        )
     in
     step (Polyline2d.segments polyline) toTravel

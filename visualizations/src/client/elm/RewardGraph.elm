@@ -67,17 +67,18 @@ type alias EdgeSpec =
 type alias EdgeLabel =
     { text : List String
     , position : Float
+    , offset : ( Float, Float )
     }
 
 
 id =
     { blockchain = 0
     , users = 1
-    , foundation = 2
+    , foundation = 6
     , trustedIdentityIssuers = 3
     , blockBakersBakingPools = 4
     , smartContractDevelopers = 5
-    , blockFinalizers = 6
+    , blockFinalizers = 2
     }
 
 
@@ -181,9 +182,54 @@ init =
 
         edges =
             [ Edge
+                id.foundation
+                id.users
+                { label = EdgeLabel [ "Wallet" ] 0.72 ( 10, 0 )
+                , value = 0.1
+                , animationDelta = 0
+                , fromWaypoints = []
+                , toWaypoints = [ Grid.point 0 15, Grid.point 0 0 ]
+                }
+            , Edge
+                id.foundation
+                id.trustedIdentityIssuers
+                { label = EdgeLabel [ "Software" ] 0.57 ( 10, 0 )
+                , value = 0.4
+                , animationDelta = 0
+                , fromWaypoints = []
+                , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
+                }
+            , Edge
+                id.foundation
+                id.blockBakersBakingPools
+                { label = EdgeLabel [ "Software" ] 0.38 ( 10, 0 )
+                , value = 0.5
+                , animationDelta = 0
+                , fromWaypoints = []
+                , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
+                }
+            , Edge
+                id.foundation
+                id.smartContractDevelopers
+                { label = EdgeLabel [ "Software" ] 0.47 ( 10, 0 )
+                , value = 0.5
+                , animationDelta = 0
+                , fromWaypoints = []
+                , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
+                }
+            , Edge
+                id.foundation
+                id.blockFinalizers
+                { label = EdgeLabel [ "Software" ] 0.784 ( 10, 0 )
+                , value = 0.5
+                , animationDelta = 0
+                , fromWaypoints = []
+                , toWaypoints = [ Grid.point 0 15, Grid.point 0 0 ]
+                }
+            , Edge
                 id.trustedIdentityIssuers
                 id.users
-                { label = EdgeLabel [ "Identities" ] 0.5
+                { label = EdgeLabel [ "Identities" ] 0.35 ( 10, 0 )
                 , value = 0.9
                 , animationDelta = 0
                 , fromWaypoints = [ Grid.point 2 0, Grid.point 2 10 ]
@@ -192,7 +238,7 @@ init =
             , Edge
                 id.blockBakersBakingPools
                 id.users
-                { label = EdgeLabel [ "Reward % Kickback" ] 0.5
+                { label = EdgeLabel [ "Reward % Kickback" ] 0.45 ( 10, 0 )
                 , value = 1.0
                 , animationDelta = 0
                 , fromWaypoints = [ Grid.point -4 0, Grid.point -4 10 ]
@@ -201,7 +247,7 @@ init =
             , Edge
                 id.blockBakersBakingPools
                 id.blockchain
-                { label = EdgeLabel [ "Baking" ] 0.5
+                { label = EdgeLabel [ "Baking" ] 0.4 ( 10, 0 )
                 , value = 1.1
                 , animationDelta = 0
                 , fromWaypoints = [ Grid.point 4 0, Grid.point 4 10 ]
@@ -210,7 +256,7 @@ init =
             , Edge
                 id.smartContractDevelopers
                 id.users
-                { label = EdgeLabel [ "Smart Contracts" ] 0.5
+                { label = EdgeLabel [ "Smart Contracts" ] 0.34 ( 0, -10 )
                 , value = 0.2
                 , animationDelta = 0
                 , fromWaypoints =
@@ -223,7 +269,7 @@ init =
             , Edge
                 id.users
                 id.blockBakersBakingPools
-                { label = EdgeLabel [ "Delegate Stake" ] 0.5
+                { label = EdgeLabel [ "Delegate Stake" ] 0.65 ( 10, 0 )
                 , value = 0.3
                 , animationDelta = 0
                 , fromWaypoints = [ Grid.point 0 2 ]
@@ -232,7 +278,7 @@ init =
             , Edge
                 id.users
                 id.blockchain
-                { label = EdgeLabel [ "Gas" ] 0.5
+                { label = EdgeLabel [ "Gas" ] 0.4 ( 0, 10 )
                 , value = 1.1
                 , animationDelta = 0
                 , fromWaypoints = []
@@ -241,7 +287,7 @@ init =
             , Edge
                 id.blockchain
                 id.trustedIdentityIssuers
-                { label = EdgeLabel [ "Transaction Rewards" ] 0.5
+                { label = EdgeLabel [ "Transaction Rewards" ] 0.5 ( 0, 10 )
                 , value = 0.5
                 , animationDelta = 0
                 , fromWaypoints =
@@ -254,7 +300,7 @@ init =
             , Edge
                 id.blockchain
                 id.blockBakersBakingPools
-                { label = EdgeLabel [ "Block Rewards" ] 0.5
+                { label = EdgeLabel [ "Block Rewards" ] 0.7 ( 10, 0 )
                 , value = 0.4
                 , animationDelta = 0
                 , fromWaypoints = [ Grid.point 0 2 ]
@@ -263,7 +309,7 @@ init =
             , Edge
                 id.blockchain
                 id.smartContractDevelopers
-                { label = EdgeLabel [ "Execution Rewards" ] 0.5
+                { label = EdgeLabel [ "Execution Rewards" ] 0.6 ( 10, 0 )
                 , value = 0.2
                 , animationDelta = 0
                 , fromWaypoints = []
@@ -272,82 +318,37 @@ init =
             , Edge
                 id.blockchain
                 id.blockFinalizers
-                { label = EdgeLabel [ "Finalization Rewards" ] 0.5
-                , value = 0.7
+                { label = EdgeLabel [ "Finalization", "Rewards" ] 0.45 ( 0, 0 )
+                , value = 0.4
                 , animationDelta = 0
                 , fromWaypoints = [ Grid.point 0 1 ]
                 , toWaypoints = [ Grid.point 0 1 ]
                 }
             , Edge
-                id.blockFinalizers
-                id.blockchain
-                { label = EdgeLabel [ "Finalization" ] 0.5
-                , value = 0.5
-                , animationDelta = 0
-                , fromWaypoints = [ Grid.point 0 -1 ]
-                , toWaypoints = [ Grid.point 0 -1 ]
-                }
-            , Edge
                 id.blockchain
                 id.foundation
-                { label = EdgeLabel [ "Tax" ] 0.5
+                { label = EdgeLabel [ "Tax" ] 0.5 ( 10, 0 )
                 , value = 1.2
                 , animationDelta = 0
                 , fromWaypoints = [ Grid.point 0 0, Grid.point 0 15 ]
                 , toWaypoints = []
                 }
-            , Edge
-                id.foundation
-                id.users
-                { label = EdgeLabel [ "Wallet" ] 0.5
-                , value = 0.1
-                , animationDelta = 0
-                , fromWaypoints = []
-                , toWaypoints = [ Grid.point 0 15, Grid.point 0 0 ]
-                }
-            , Edge
-                id.foundation
-                id.trustedIdentityIssuers
-                { label = EdgeLabel [ "Software" ] 0.5
-                , value = 0.4
-                , animationDelta = 0
-                , fromWaypoints = []
-                , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
-                }
-            , Edge
-                id.foundation
-                id.blockBakersBakingPools
-                { label = EdgeLabel [ "Software" ] 0.5
-                , value = 0.5
-                , animationDelta = 0
-                , fromWaypoints = []
-                , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
-                }
-            , Edge
-                id.foundation
-                id.smartContractDevelopers
-                { label = EdgeLabel [ "Software" ] 0.5
-                , value = 0.5
-                , animationDelta = 0
-                , fromWaypoints = []
-                , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
-                }
-            , Edge
-                id.foundation
-                id.blockFinalizers
-                { label = EdgeLabel [ "Software" ] 0.5
-                , value = 0.5
-                , animationDelta = 0
-                , fromWaypoints = []
-                , toWaypoints = [ Grid.point 0 15, Grid.point 0 0 ]
-                }
             , Edge id.blockchain
                 id.blockchain
-                { label = EdgeLabel [ "GTU Minting" ] 0.5
+                { label = EdgeLabel [ "GTU Minting" ] 0.5 ( -10, 34 )
                 , value = 0.8
                 , animationDelta = 0
                 , fromWaypoints = [ Grid.point 1 -1, Grid.point 7 5 ]
                 , toWaypoints = [ Grid.point 4.5 7.5, Grid.point -1.5 1.5 ]
+                }
+            , Edge
+                id.blockFinalizers
+                id.blockchain
+                { label = EdgeLabel [ "Finalization" ] 0.55 ( 0, -10 )
+                , value = 0.5
+                , animationDelta = 0
+                , fromWaypoints = [ Grid.point 0 -1 ]
+                , toWaypoints = [ Grid.point 0 -1 ]
                 }
             ]
     in
