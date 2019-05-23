@@ -212,9 +212,9 @@ view model =
                     , widgetSeconds green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.finalizedTime)) -1 model.nodes)
                     , widgetNumber blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
                     , widgetNumber green "Finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
-                    , widgetText pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" <|
+                    , widgetText pink "Last Block EMA" "/assets/images/icon-rocket-pink.png" <|
                         averageStatSecondsFor .blockArrivePeriodEMA model.nodes
-                    , widgetText pink "Avg Finalization Time" "/assets/images/icon-rocket-pink.png" <|
+                    , widgetText pink "Last Finalization EMA" "/assets/images/icon-rocket-pink.png" <|
                         averageStatSecondsFor .finalizationPeriodEMA model.nodes
 
                     -- , column [ height (px 300), width (px 300), Background.color moduleGrey, Border.rounded 5 ] [ html <| NetworkGraph.agedRelations model.nodes ]
@@ -257,7 +257,7 @@ widgetsForWebsite model =
     , widgetNumber blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
 
     -- , widgetNumber green "Finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
-    , widgetText pink "Avg Block Time" "/assets/images/icon-rocket-pink.png" <|
+    , widgetText pink "Last Block EMA" "/assets/images/icon-rocket-pink.png" <|
         averageStatSecondsFor .blockArrivePeriodEMA model.nodes
 
     -- , widgetText pink "Avg Finalization Time" "/assets/images/icon-rocket-pink.png" <|
