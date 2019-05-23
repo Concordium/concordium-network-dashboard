@@ -24,7 +24,7 @@ program
   // .arguments('<node-name>')
   // .action(name => { nodeName = name })
   .option('-h, --host [default]', 'Specify node hostname [localhost:8890]', defaultHost)
-  .option('-d, --dashboard [default]', 'Specify dashboard hostname [localhost:3000]', defaultDashboard)
+  .option('-d, --dashboard [default]', 'Specify dashboard hostname, comma seperate for multiple [localhost:3000]', defaultDashboard)
   .version(getVersion(), '-v, --version')
   .parse(process.argv)
 
@@ -52,8 +52,7 @@ var protoDescriptor = grpc.loadPackageDefinition(packageDefinition)
 var meta = new grpc.Metadata()
 meta.add('authentication', 'rpcadmin')
 
-const dashboard = io('http://' + program.dashboard + '/nodes')
-
+const dashboards = _.map(program.dashboard.split(','), host => io('http://' + host + '/nodes'))
 
 const getUptime = (grpcService) => {
   return new Promise ((resolve, reject) => {
@@ -183,7 +182,7 @@ const main = async () => {
   }
 
   console.log('emitting: nodeInfo', nodeData)
-  dashboard.emit('nodeInfo', nodeData)
+  _.map(dashboards, dashboard => dashboard.emit('nodeInfo', nodeData))
 };
 
 
