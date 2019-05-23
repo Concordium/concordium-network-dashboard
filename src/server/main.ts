@@ -35,7 +35,7 @@ const nodes = io.of('/nodes')
 nodes.on('connection', socket => {
   console.log(`Connection from node ${socket.handshake.headers.host}`)
   socket.on('nodeInfo', node => {
-    nodesSummary[node.nodeId] = node
+    nodesSummary[node.nodeName] = node
     // frontends.emit('nodeInfo', node)
   })
 })
