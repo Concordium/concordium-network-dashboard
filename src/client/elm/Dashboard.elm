@@ -546,16 +546,8 @@ subscriptions model =
     Sub.batch
         [ nodeInfo NodeInfoReceived
         , Browser.Events.onResize WindowResized
-        , if Dict.size model.nodes == 0 then
-            Time.every 1000 CurrentTime
-
-          else
-            Sub.none
-        , if Dict.size model.nodes == 0 then
-            Time.every 1000 FetchNodeSummaries
-
-          else
-            Sub.none
+        , Time.every 1000 CurrentTime
+        , Time.every 1000 FetchNodeSummaries
         ]
 
 
