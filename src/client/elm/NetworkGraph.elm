@@ -1,9 +1,10 @@
 module NetworkGraph exposing (agedRelations, view)
 
-import Color exposing (Color)
+import Color exposing (..)
 import Dict
 import Force exposing (State)
 import Graph exposing (Edge, Graph, Node, NodeId)
+import Html.Events.Extra.Mouse as Mouse
 import IntDict
 import List exposing (range)
 import Murmur3
@@ -12,23 +13,24 @@ import Scale.Color
 import TypedSvg exposing (circle, g, line, polygon, svg, title)
 import TypedSvg.Attributes exposing (class, fill, points, stroke, viewBox)
 import TypedSvg.Attributes.InPx exposing (cx, cy, r, strokeWidth, x1, x2, y1, y2)
-import TypedSvg.Core exposing (Svg, text)
+import TypedSvg.Core exposing (Attribute, Svg, text)
 import TypedSvg.Types exposing (Fill(..))
+import Types exposing (..)
 
 
 w : Float
 w =
-    300
+    800
 
 
 h : Float
 h =
-    300
+    800
 
 
 colorScale : SequentialScale Color
 colorScale =
-    Scale.sequential Scale.Color.viridisInterpolator ( 100, 200 )
+    Scale.sequential Scale.Color.viridisInterpolator ( 100, 800 )
 
 
 type alias CustomNode =
@@ -139,22 +141,37 @@ hexagon ( x, y ) size attrs =
         (p :: attrs)
 
 
-nodeSize size node =
+nodeSize model size node =
     hexagon ( node.x, node.y )
         size
-        [ fill <| Fill <| Scale.convert colorScale node.x
+        [ case model.selectedNode of
+            Just selectedNode ->
+                if selectedNode.nodeId == node.value.name then
+                    fill <| Fill red
+
+                else
+                    fill <| Fill <| Scale.convert colorScale node.x
+
+            Nothing ->
+                fill <| Fill <| Scale.convert colorScale node.x
+        , onMouseDown node.value.name
         ]
         [ title [] [ text node.value.name ] ]
 
 
-nodeElement node =
-    nodeSize 7 node.label
+onMouseDown : String -> Attribute Msg
+onMouseDown name =
+    Mouse.onDown (\_ -> NodeClicked name)
 
 
-view model =
+nodeElement model node =
+    nodeSize model 7 node.label
+
+
+view model nodesModel =
     svg [ viewBox 0 0 w h ]
-        [ g [ class [ "links" ] ] <| List.map (linkElement model) <| Graph.edges model
-        , g [ class [ "nodes" ] ] <| List.map nodeElement <| Graph.nodes model
+        [ g [ class [ "links" ] ] <| List.map (linkElement nodesModel) <| Graph.edges nodesModel
+        , g [ class [ "nodes" ] ] <| List.map (nodeElement model) <| Graph.nodes nodesModel
         ]
 
 
@@ -163,7 +180,7 @@ view model =
 --     init miserablesGraph |> view
 
 
-agedRelations nodesDict =
+agedRelations model nodesDict =
     let
         nGraph =
             Graph.fromNodesAndEdges nodesAsNodeList nodesAsEdgeList
@@ -243,4 +260,4 @@ agedRelations nodesDict =
         --     [ ( 23, 44 ) ]
         -- Graph.fromNodesAndEdges [ Node 1 "1", Node 2 "2" ] [ Edge 1 2 (), Edge 2 1 () ]
     in
-    init test |> view
+    init test |> view model

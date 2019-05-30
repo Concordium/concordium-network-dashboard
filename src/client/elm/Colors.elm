@@ -24,7 +24,7 @@ asC ec =
 
 
 lightGrey =
-    Element.rgb255 60 65 69
+    Element.rgb255 140 145 149
 
 
 darkGrey =

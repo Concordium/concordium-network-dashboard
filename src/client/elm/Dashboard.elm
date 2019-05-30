@@ -1,4 +1,4 @@
-port module Dashboard exposing (Flags, Host, Model, Msg(..), Node, SortBy(..), SortMode(..), asSecondsAgo, asTimeAgoDuration, averageStatSecondsFor, bgDarkGrey, bgWhite, chartTimeseries, hashSnippet, hello, init, main, majorityStatFor, markdown, nodeInfo, nodeSummariesDecoder, nodesTable, sortNodesBy, sortNodesMode, sortableHeader, subscriptions, theme, update, view, viewNode, widgetNumber, widgetNumberChart, widgetSeconds, widgetText, widgetsForWebsite, worldMap)
+port module Dashboard exposing (Flags, bgDarkGrey, bgWhite, chartTimeseries, hashSnippet, hello, init, main, markdown, nodeInfo, nodeSummariesDecoder, nodesTable, scrollPageToTop, sortNodesBy, sortNodesMode, sortableHeader, subscriptions, theme, update, view, viewNode, widgetNumber, widgetNumberChart, widgetSeconds, widgetText, widgetsForWebsite, worldMap)
 
 import Browser exposing (..)
 import Browser.Dom
@@ -7,6 +7,7 @@ import Browser.Navigation as Nav exposing (Key)
 import Chart
 import Colors exposing (..)
 import Dict exposing (Dict)
+import Dict.Extra as Dict
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -22,6 +23,7 @@ import Json.Encode as E
 import List.Extra as List
 import Markdown
 import NetworkGraph
+import Pages.Graph
 import Round
 import String
 import Task
@@ -29,60 +31,20 @@ import Time
 import Time.Distance exposing (inWordsWithConfig)
 import Time.Distance.I18n as I18n
 import Time.Extra
+import Types exposing (..)
 import Url exposing (Url)
+import Widgets exposing (..)
 
 
 port hello : String -> Cmd msg
 
 
-port nodeInfo : (Node -> msg) -> Sub msg
-
-
-type alias Flags =
-    { width : Int, height : Int }
-
-
-type alias Host =
-    String
-
-
-type alias Model =
-    { window : { width : Int, height : Int }
-    , currentTime : Time.Posix
-    , key : Key
-    , nodes : Dict Host Node
-    , sortMode : SortMode
-    }
-
-
-type alias Node =
-    { nodeName : String
-    , nodeId : String
-
-    --   , state : Maybe String
-    , uptime : Float -- Milliseconds @TODO figure out how to convert to Int, issue is in JS everything is Double even Ints
-    , client : String
-    , averagePing : Maybe Float -- Milliseconds @TODO as above figure out Int. Maybe for when 0 nodes
-    , peersCount : Float -- @TODO as above figure out Int
-    , peersList : List String
-    , bestBlock : String
-    , bestBlockHeight : Float
-    , bestArrivedTime : Maybe String
-    , blockArrivePeriodEMA : Maybe Float
-    , blockArrivePeriodEMSD : Maybe Float
-    , finalizedBlock : String
-    , finalizedBlockHeight : Float
-    , finalizedTime : Maybe String
-    , finalizationPeriodEMA : Maybe Float
-    , finalizationPeriodEMSD : Maybe Float
-    , packetsSent : Float -- @TODO as above figure out Int
-    , packetsReceived : Float -- @TODO as above figure out Int
-    }
+port nodeInfo : (NetworkNode -> msg) -> Sub msg
 
 
 nodeSummariesDecoder =
     D.list
-        (D.succeed Node
+        (D.succeed NetworkNode
             |> required "nodeName" D.string
             |> required "nodeId" D.string
             |> required "uptime" D.float
@@ -105,147 +67,74 @@ nodeSummariesDecoder =
         )
 
 
-type Msg
-    = CurrentTime Time.Posix
-    | UrlClicked UrlRequest
-    | UrlChanged Url
-    | WindowResized Int Int
-    | NodeInfoReceived Node
-    | FetchNodeSummaries Time.Posix
-    | FetchedNodeSummaries (Result Http.Error (List Node))
-    | SortSet SortBy
-    | Noop
-
-
-type SortMode
-    = SortAsc SortBy
-    | SortDesc SortBy
-    | SortNone
-
-
-type SortBy
-    = SortName
-    | SortUptime
-    | SortClient
-    | SortAvgPing
-    | SortPeers
-    | SortSent
-    | SortReceived
-    | SortBlock
-    | SortHeight
-    | SortFinalizedBlock
-    | SortFinalizedHeight
+type alias Flags =
+    { width : Int, height : Int }
 
 
 init : Flags -> Url -> Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( { nodes = Dict.empty, currentTime = Time.millisToPosix 0, key = key, sortMode = SortNone, window = flags }, hello "Hello from Elm!" )
-
-
-majorityStatFor getter default nodes =
-    -- For the given node attribute, finds majority value across all nodes and returns that, or the default if unknown
-    let
-        stats =
-            nodes
-                |> Dict.toList
-                |> List.map Tuple.second
-                |> List.map getter
-
-        highestResult =
-            stats
-                |> List.foldl
-                    (\v dict ->
-                        Dict.update v
-                            (\mCount ->
-                                case mCount of
-                                    Just count ->
-                                        Just <| count + 1
-
-                                    Nothing ->
-                                        Just 1
-                            )
-                            dict
-                    )
-                    Dict.empty
-                |> Dict.toList
-                |> List.maximumBy (\( attr, count ) -> count)
-    in
-    case highestResult of
-        Just ( highestSeenKey, groupedDictCount ) ->
-            highestSeenKey
-
-        Nothing ->
-            default
-
-
-averageStatSecondsFor getter nodes =
-    let
-        dataPoints =
-            nodes
-                |> Dict.toList
-                |> List.map Tuple.second
-                |> List.map getter
-                |> List.filterMap (\a -> a)
-
-        isNaNInt x =
-            x /= x
-
-        result =
-            List.sum dataPoints / toFloat (List.length dataPoints)
-    in
-    if Dict.size nodes == 0 || isNaNInt result then
-        "-"
-
-    else
-        Round.round 2 result ++ "s"
+    ( { nodes = Dict.empty
+      , currentTime = Time.millisToPosix 0
+      , key = key
+      , currentPage = pathToPage url
+      , sortMode = SortNone
+      , window = flags
+      , selectedNode = Nothing
+      }
+    , hello "Hello from Elm!"
+    )
 
 
 view : Model -> Browser.Document Msg
 view model =
-    { body =
-        [ theme
-            [ column [ spacing 20, width fill ]
-                [ image [ height (px 20) ] { src = "/assets/images/concordium-logo.png", description = "Concordium Logo" }
-                , wrappedRow [ spacing 20, width fill ]
-                    [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (toFloat <| Dict.size model.nodes)
-                    , widgetSeconds blue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.bestArrivedTime)) -1 model.nodes)
-                    , widgetSeconds green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.finalizedTime)) -1 model.nodes)
-                    , widgetNumber blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
-                    , widgetNumber green "Finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
-                    , widgetText pink "Last Block EMA" "/assets/images/icon-rocket-pink.png" <|
-                        averageStatSecondsFor .blockArrivePeriodEMA model.nodes
-                    , widgetText pink "Last Finalization EMA" "/assets/images/icon-rocket-pink.png" <|
-                        averageStatSecondsFor .finalizationPeriodEMA model.nodes
+    { title = "Concordium Dashboard"
+    , body =
+        [ theme <|
+            case model.currentPage of
+                Dashboard ->
+                    [ column [ spacing 20, width fill ]
+                        [ header
+                        , wrappedRow [ spacing 20, width fill ]
+                            [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (toFloat <| Dict.size model.nodes)
+                            , widgetSeconds blue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.bestArrivedTime)) -1 model.nodes)
+                            , widgetSeconds green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.finalizedTime)) -1 model.nodes)
+                            , widgetNumber blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
+                            , widgetNumber green "Finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
+                            , widgetText pink "Last Block EMA" "/assets/images/icon-rocket-pink.png" <|
+                                averageStatSecondsFor .blockArrivePeriodEMA model.nodes
+                            , widgetText pink "Last Finalization EMA" "/assets/images/icon-rocket-pink.png" <|
+                                averageStatSecondsFor .finalizationPeriodEMA model.nodes
 
-                    -- , column [ height (px 300), width (px 300), Background.color moduleGrey, Border.rounded 5 ] [ html <| NetworkGraph.agedRelations model.nodes ]
-                    -- , worldMap
-                    -- , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
-                    ]
-                , let
-                    listNodes =
-                        model.nodes |> Dict.toList |> List.map Tuple.second
+                            -- , worldMap
+                            -- , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
+                            ]
+                        , let
+                            listNodes =
+                                model.nodes |> Dict.toList |> List.map Tuple.second
 
-                    sortedNodes =
-                        sortNodesMode model.sortMode listNodes
-                  in
-                  if model.window.width < 1800 then
-                    nodesTable model sortedNodes
+                            sortedNodes =
+                                sortNodesMode model.sortMode listNodes
+                          in
+                          if model.window.width < 1800 then
+                            nodesTable model sortedNodes
 
-                  else
-                    let
-                        ( nodes1, nodes2 ) =
-                            -- Ceiling so we always end up with longer part of odd-numbered list first
-                            List.splitAt (toFloat (List.length listNodes) / 2 |> ceiling) sortedNodes
-                    in
-                    row [ spacing 20, width fill ]
-                        [ nodesTable model (sortNodesMode model.sortMode nodes1)
-                        , column [ height fill, width (px 4), Background.color blue ] []
-                        , nodesTable model (sortNodesMode model.sortMode nodes2)
+                          else
+                            let
+                                ( nodes1, nodes2 ) =
+                                    -- Ceiling so we always end up with longer part of odd-numbered list first
+                                    List.splitAt (toFloat (List.length listNodes) / 2 |> ceiling) sortedNodes
+                            in
+                            row [ spacing 20, width fill ]
+                                [ nodesTable model (sortNodesMode model.sortMode nodes1)
+                                , column [ height fill, width (px 4), Background.color blue ] []
+                                , nodesTable model (sortNodesMode model.sortMode nodes2)
+                                ]
                         ]
-                ]
-            ]
+                    ]
+
+                NodeGraph ->
+                    Pages.Graph.view model
         ]
-    , title = "Concordium Dashboard"
     }
 
 
@@ -392,20 +281,7 @@ nodesTable model nodes =
                 , { header = sortableHeader model SortAvgPing "Avg Ping"
                   , width = fill
                   , view =
-                        \node ->
-                            case node.averagePing of
-                                Just ping ->
-                                    if ping < 1000 then
-                                        text <| Round.round 2 ping ++ "ms"
-
-                                    else if ping < 1000 * 60 then
-                                        el [ Font.color orange ] (text <| Round.round 2 (ping / 1000) ++ "s")
-
-                                    else
-                                        el [ Font.color red ] (text <| "> 60s")
-
-                                Nothing ->
-                                    el [ Font.color red ] (text "n/a")
+                        \node -> formatPing node.averagePing
                   }
                 , { header = sortableHeader model SortPeers "Peers"
                   , width = fill
@@ -465,7 +341,7 @@ hashSnippet hash =
 -- ++ String.right 6 hash
 
 
-viewNode : Node -> Element msg
+viewNode : NetworkNode -> Element msg
 viewNode node =
     row []
         [ column [] [ text node.nodeName ]
@@ -505,7 +381,7 @@ sortableHeader model sortBy name =
             withoutIcon
 
 
-sortNodesMode : SortMode -> List Node -> List Node
+sortNodesMode : SortMode -> List NetworkNode -> List NetworkNode
 sortNodesMode sortMode listNodes =
     case sortMode of
         SortAsc sortBy ->
@@ -564,35 +440,6 @@ sortNodesBy sortBy listNodes =
             List.sortBy .finalizedBlockHeight listNodes
 
 
-asTimeAgoDuration duration =
-    let
-        point =
-            -- Arbitrary point, doesn't matter we care about figuring out the duration
-            1552573958904
-
-        timePoint =
-            Time.millisToPosix point
-
-        offsetTimePoint =
-            Time.millisToPosix (point - round duration)
-    in
-    inWordsWithConfig { withAffix = False } I18n.en offsetTimePoint timePoint
-
-
-asSecondsAgo currentTime targetTime =
-    case Iso8601.toTime targetTime of
-        Err x ->
-            -1
-
-        Ok p ->
-            if Time.Extra.diff Time.Extra.Second Time.utc currentTime (Time.millisToPosix 0) == 0 then
-                -- Handle case where app is initialised and we don't yet have a real currentTime value
-                -1
-
-            else
-                Time.Extra.diff Time.Extra.Second Time.utc p currentTime
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -617,8 +464,7 @@ update msg model =
                     )
 
         UrlChanged url ->
-            -- ( { model | currentPage = pathToPage url }, scrollPageToTop )
-            ( model, Cmd.none )
+            ( { model | currentPage = pathToPage url }, scrollPageToTop )
 
         WindowResized width height ->
             ( { model | window = { width = width, height = height } }, Cmd.none )
@@ -627,12 +473,21 @@ update msg model =
             ( { model | nodes = Dict.insert node.nodeName node model.nodes }, Cmd.none )
 
         FetchNodeSummaries _ ->
-            ( model, Http.get { url = "/data/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
+            ( model, Http.get { url = "https://dashboard.eu.prod.concordium.com/data/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
 
         FetchedNodeSummaries r ->
             case r of
                 Ok nodeSummaries ->
-                    ( { model | nodes = nodeSummaries |> List.map (\node -> ( node.nodeName, node )) |> Dict.fromList }, Cmd.none )
+                    let
+                        nodes =
+                            nodeSummaries |> List.map (\node -> ( node.nodeName, node )) |> Dict.fromList
+                    in
+                    ( { model
+                        | nodes = nodes
+                        , selectedNode = nodes |> Dict.toList |> List.head |> Maybe.map Tuple.second
+                      }
+                    , Cmd.none
+                    )
 
                 Err err ->
                     ( model, Cmd.none )
@@ -660,6 +515,24 @@ update msg model =
             in
             ( { model | sortMode = newSortMode }, Cmd.none )
 
+        NodeClicked nodeId ->
+            let
+                selectedNode =
+                    case Dict.find (\_ n -> n.nodeId == nodeId) model.nodes of
+                        Just ( _, node ) ->
+                            Just node
+
+                        Nothing ->
+                            Nothing
+            in
+            ( { model | selectedNode = selectedNode }, Cmd.none )
+
+        DevResetCache ->
+            ( model, Http.get { url = "https://dashboard.eu.prod.concordium.com/dev/reset", expect = Http.expectWhatever NoopHttp } )
+
+        NoopHttp r ->
+            ( model, Cmd.none )
+
         Noop ->
             ( model, Cmd.none )
 
@@ -673,8 +546,16 @@ subscriptions model =
     Sub.batch
         [ nodeInfo NodeInfoReceived
         , Browser.Events.onResize WindowResized
-        , Time.every 1000 CurrentTime
-        , Time.every 1000 FetchNodeSummaries
+        , if Dict.size model.nodes == 0 then
+            Time.every 1000 CurrentTime
+
+          else
+            Sub.none
+        , if Dict.size model.nodes == 0 then
+            Time.every 1000 FetchNodeSummaries
+
+          else
+            Sub.none
         ]
 
 
