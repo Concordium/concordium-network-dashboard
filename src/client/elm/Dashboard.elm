@@ -484,7 +484,8 @@ update msg model =
                     in
                     ( { model
                         | nodes = nodes
-                        , selectedNode = nodes |> Dict.toList |> List.head |> Maybe.map Tuple.second
+
+                        -- , selectedNode = nodes |> Dict.toList |> List.head |> Maybe.map Tuple.second
                       }
                     , Cmd.none
                     )
