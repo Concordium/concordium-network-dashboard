@@ -473,7 +473,7 @@ update msg model =
             ( { model | nodes = Dict.insert node.nodeName node model.nodes }, Cmd.none )
 
         FetchNodeSummaries _ ->
-            ( model, Http.get { url = "https://dashboard.eu.prod.concordium.com/data/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
+            ( model, Http.get { url = "/data/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
 
         FetchedNodeSummaries r ->
             case r of
@@ -528,7 +528,7 @@ update msg model =
             ( { model | selectedNode = selectedNode }, Cmd.none )
 
         DevResetCache ->
-            ( model, Http.get { url = "https://dashboard.eu.prod.concordium.com/dev/reset", expect = Http.expectWhatever NoopHttp } )
+            ( model, Http.get { url = "/dev/reset", expect = Http.expectWhatever NoopHttp } )
 
         NoopHttp r ->
             ( model, Cmd.none )
