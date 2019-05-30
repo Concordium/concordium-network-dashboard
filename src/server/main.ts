@@ -32,6 +32,7 @@ const basic = auth.basic({realm: "Protected"}, function(username, password, call
 })
 app.get('/dev/reset', auth.connect(basic), function(req, res){
   nodesSummary = {}
+  res.set('Cache-Control', 'no-cache');
   res.send('nodeSummaries reset')
 })
 
