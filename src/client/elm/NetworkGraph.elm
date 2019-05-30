@@ -20,12 +20,12 @@ import Types exposing (..)
 
 w : Float
 w =
-    800
+    300
 
 
 h : Float
 h =
-    800
+    300
 
 
 colorScale : SequentialScale Color
@@ -69,7 +69,7 @@ init seedGraph =
                     (\{ from, to } ->
                         { source = from
                         , target = to
-                        , distance = 30
+                        , distance = 100
                         , strength = Nothing
                         }
                     )
