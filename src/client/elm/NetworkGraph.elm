@@ -175,11 +175,6 @@ view model nodesModel =
         ]
 
 
-
--- main =
---     init miserablesGraph |> view
-
-
 agedRelations model nodesDict =
     let
         nGraph =
