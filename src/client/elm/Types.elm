@@ -17,6 +17,7 @@ type alias Model =
     , nodes : Dict Host NetworkNode
     , sortMode : SortMode
     , selectedNode : Maybe NetworkNode
+    , graph : { width : Float, height : Float }
     }
 
 
@@ -34,6 +35,7 @@ type Msg
     | FetchedNodeSummaries (Result Http.Error (List NetworkNode))
     | SortSet SortBy
     | NodeClicked String
+    | GraphZoom Float
     | DevResetCache
     | NoopHttp (Result Http.Error ())
     | Noop

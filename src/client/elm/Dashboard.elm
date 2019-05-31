@@ -22,7 +22,6 @@ import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import Json.Encode as E
 import List.Extra as List
 import Markdown
-import NetworkGraph
 import Pages.Graph
 import Round
 import String
@@ -80,6 +79,7 @@ init flags url key =
       , sortMode = SortNone
       , window = flags
       , selectedNode = Nothing
+      , graph = { width = 800, height = 800 }
       }
     , hello "Hello from Elm!"
     )
@@ -527,6 +527,9 @@ update msg model =
                             Nothing
             in
             ( { model | selectedNode = selectedNode }, Cmd.none )
+
+        GraphZoom zoom ->
+            ( { model | graph = { width = model.graph.width + zoom, height = model.graph.height + zoom } }, Cmd.none )
 
         DevResetCache ->
             ( model, Http.get { url = "/dev/reset", expect = Http.expectWhatever NoopHttp } )

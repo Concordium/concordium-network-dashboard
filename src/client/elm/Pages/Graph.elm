@@ -21,7 +21,12 @@ view model =
             , Background.color moduleGrey
             , Border.rounded 5
             ]
-            [ html <| NetworkGraph.agedRelations model model.nodes ]
+            [ html <| NetworkGraph.agedRelations model model.nodes
+            , row [ spacing 5 ]
+                [ el [ padding 10, onClick (GraphZoom 100) ] (text "Zoom Out")
+                , el [ padding 10, onClick (GraphZoom -100) ] (text "Zoom In")
+                ]
+            ]
         , case model.selectedNode of
             Just node ->
                 nodeView node model

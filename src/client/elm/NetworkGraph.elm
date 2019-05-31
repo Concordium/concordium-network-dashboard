@@ -18,14 +18,15 @@ import TypedSvg.Types exposing (Fill(..))
 import Types exposing (..)
 
 
-w : Float
-w =
-    300
 
-
-h : Float
-h =
-    300
+-- w : Float
+-- w =
+--     800
+--
+--
+-- h : Float
+-- h =
+--     800
 
 
 colorScale : SequentialScale Color
@@ -41,8 +42,8 @@ type alias Entity =
     Force.Entity NodeId { value : CustomNode }
 
 
-init : Graph String () -> Graph Entity ()
-init seedGraph =
+init : Model -> Graph String () -> Graph Entity ()
+init model seedGraph =
     let
         graph =
             Graph.mapContexts
@@ -77,7 +78,7 @@ init seedGraph =
         forces =
             [ Force.customLinks 1 links
             , Force.manyBodyStrength -30 <| List.map .id <| Graph.nodes graph
-            , Force.center (w / 2) (h / 2)
+            , Force.center (model.graph.width / 2) (model.graph.height / 2)
             ]
     in
     Graph.nodes graph
@@ -169,7 +170,7 @@ nodeElement model node =
 
 
 view model nodesModel =
-    svg [ viewBox 0 0 w h ]
+    svg [ viewBox 0 0 model.graph.width model.graph.height ]
         [ g [ class [ "links" ] ] <| List.map (linkElement nodesModel) <| Graph.edges nodesModel
         , g [ class [ "nodes" ] ] <| List.map (nodeElement model) <| Graph.nodes nodesModel
         ]
@@ -255,4 +256,4 @@ agedRelations model nodesDict =
         --     [ ( 23, 44 ) ]
         -- Graph.fromNodesAndEdges [ Node 1 "1", Node 2 "2" ] [ Edge 1 2 (), Edge 2 1 () ]
     in
-    init test |> view model
+    init model test |> view model
