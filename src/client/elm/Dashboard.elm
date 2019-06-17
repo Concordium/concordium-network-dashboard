@@ -329,6 +329,24 @@ nodesTable model nodes =
                         \node ->
                             text <| String.fromFloat node.finalizedBlockHeight
                   }
+                , { header = text "Finalized Time"
+                  , width = fill
+                  , view =
+                        \node ->
+                            text <| String.fromInt <| asSecondsAgo model.currentTime (Maybe.withDefault "" node.finalizedTime)
+                  }
+                , { header = text "Last Block EMA"
+                  , width = fill
+                  , view =
+                        \node ->
+                            text <| Round.round 2 <| Maybe.withDefault 0 node.blockArrivePeriodEMA
+                  }
+                , { header = text "Last Finalization EMA"
+                  , width = fill
+                  , view =
+                        \node ->
+                            text <| Round.round 2 <| Maybe.withDefault 0 node.finalizationPeriodEMA
+                  }
                 ]
             }
 
