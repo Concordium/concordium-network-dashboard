@@ -257,7 +257,7 @@ nodesTable model nodes =
                   , width = fill
                   , view =
                         \node ->
-                            text node.nodeName
+                            el [ pointer, onClick (NodeClicked node.nodeId) ] <| text node.nodeName
                   }
 
                 --, { header = text "State"
@@ -526,7 +526,7 @@ update msg model =
                         Nothing ->
                             Nothing
             in
-            ( { model | selectedNode = selectedNode }, Cmd.none )
+            ( { model | selectedNode = selectedNode }, Cmd.batch [ Nav.pushUrl model.key (pageToPath NodeGraph), scrollPageToTop ] )
 
         GraphZoom zoom ->
             ( { model | graph = { width = model.graph.width + zoom, height = model.graph.height + zoom } }, Cmd.none )

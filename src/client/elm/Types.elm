@@ -21,6 +21,11 @@ type alias Model =
     }
 
 
+type Page
+    = Dashboard
+    | NodeGraph
+
+
 type alias Host =
     String
 
@@ -84,11 +89,6 @@ type SortBy
     | SortHeight
     | SortFinalizedBlock
     | SortFinalizedHeight
-
-
-type Page
-    = Dashboard
-    | NodeGraph
 
 
 parserRoutes =
