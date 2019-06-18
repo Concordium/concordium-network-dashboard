@@ -388,13 +388,13 @@ viewNode node =
 sortableHeader model sortBy name =
     let
         withIcon url =
-            row [ spacing 5, Font.color lightGrey ]
+            row [ spacing 5, Font.color lightGrey, pointer ]
                 [ el [ onClick <| SortSet sortBy ] (text name)
                 , image [ width (px 10) ] { src = url, description = "Sort Ascending Icon" }
                 ]
 
         withoutIcon =
-            el [ onClick <| SortSet sortBy, Font.color lightGrey ] (text name)
+            el [ onClick <| SortSet sortBy, Font.color lightGrey, pointer ] (text name)
     in
     case model.sortMode of
         SortAsc sortBy_ ->
