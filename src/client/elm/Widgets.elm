@@ -1,4 +1,4 @@
-module Widgets exposing (asSecondsAgo, asTimeAgoDuration, averageStatSecondsFor, formatPing, header, majorityStatFor)
+module Widgets exposing (asSecondsAgo, asTimeAgoDuration, averageStatSecondsFor, formatPing, header, majorityStatFor, withinHighestStatFor)
 
 import Colors exposing (..)
 import Dict exposing (Dict)
@@ -15,6 +15,7 @@ import Time
 import Time.Distance exposing (inWordsWithConfig)
 import Time.Distance.I18n as I18n
 import Time.Extra
+import Types exposing (..)
 
 
 header =
@@ -45,15 +46,40 @@ asTimeAgoDuration duration =
 asSecondsAgo currentTime targetTime =
     case Iso8601.toTime targetTime of
         Err x ->
-            -1
+            "-"
 
         Ok p ->
             if Time.Extra.diff Time.Extra.Second Time.utc currentTime (Time.millisToPosix 0) == 0 then
                 -- Handle case where app is initialised and we don't yet have a real currentTime value
-                -1
+                "-"
 
             else
-                Time.Extra.diff Time.Extra.Second Time.utc p currentTime
+                let
+                    secondsAgo =
+                        Time.Extra.diff Time.Extra.Second Time.utc p currentTime
+
+                    seconds =
+                        remainderBy 60 secondsAgo
+
+                    minutes =
+                        remainderBy 60 ((secondsAgo - seconds) // 60)
+
+                    hours =
+                        (secondsAgo - seconds - (minutes * 60)) // 3600
+
+                    parts =
+                        [ String.fromInt seconds
+                        , String.fromInt minutes
+                        , String.fromInt hours
+                        ]
+                            |> List.filter (\a -> a /= "0")
+
+                    partsString =
+                        List.map2 Tuple.pair parts [ "s", "m", "h" ]
+                            |> List.map (\( a, b ) -> a ++ b)
+                            |> List.reverse
+                in
+                String.concat partsString
 
 
 majorityStatFor getter default nodes =
@@ -90,6 +116,17 @@ majorityStatFor getter default nodes =
 
         Nothing ->
             default
+
+
+withinHighestStatFor : (NetworkNode -> Float) -> b -> Dict.Dict String NetworkNode -> (NetworkNode -> Maybe String) -> Maybe String
+withinHighestStatFor getter default nodes withinGetter =
+    -- For the given node attribute, finds highest value across all nodes and returns that, or the default if unknown
+    nodes
+        |> Dict.toList
+        |> List.map Tuple.second
+        |> List.maximumBy (\node -> getter node)
+        |> Maybe.map withinGetter
+        |> Maybe.withDefault (Just "")
 
 
 averageStatSecondsFor getter nodes =

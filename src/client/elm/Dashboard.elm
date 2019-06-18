@@ -96,8 +96,31 @@ view model =
                         [ header
                         , wrappedRow [ spacing 20, width fill ]
                             [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (toFloat <| Dict.size model.nodes)
-                            , widgetSeconds blue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.bestArrivedTime)) -1 model.nodes)
-                            , widgetSeconds green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.finalizedTime)) -1 model.nodes)
+                            , widgetSeconds blue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.bestArrivedTime)) "" model.nodes)
+
+                            -- The old last finalized block function which was broken - did not take into account highest final block first
+                            -- , widgetSeconds green
+                            --     "Last finalized block"
+                            --     "/assets/images/icon-blocklastfinal-green.png"
+                            --     (majorityStatFor
+                            --         (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.finalizedTime))
+                            --         -1
+                            --         model.nodes
+                            --     )
+                            -- Take the highest finalised block height and then the oldest (smallest) time of those
+                            , widgetSeconds green
+                                "Last finalized block"
+                                "/assets/images/icon-blocklastfinal-green.png"
+                                (asSecondsAgo model.currentTime
+                                    (Maybe.withDefault ""
+                                        (withinHighestStatFor
+                                            .finalizedBlockHeight
+                                            ""
+                                            model.nodes
+                                            .finalizedTime
+                                        )
+                                    )
+                                )
                             , widgetNumber blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
                             , widgetNumber green "Finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
                             , widgetText pink "Last Block EMA" "/assets/images/icon-rocket-pink.png" <|
@@ -140,7 +163,7 @@ view model =
 
 widgetsForWebsite model =
     [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (toFloat <| Dict.size model.nodes)
-    , widgetSeconds lightBlue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.bestArrivedTime)) -1 model.nodes)
+    , widgetSeconds lightBlue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.bestArrivedTime)) "" model.nodes)
 
     -- , widgetSeconds green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.finalizedTime)) -1 model.nodes)
     , widgetNumber blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
@@ -173,14 +196,7 @@ widgetSeconds color title icon value =
             [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 35), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
         , column [ spacing 20 ]
             [ row [ Font.color color ] [ text <| String.toUpper title ]
-            , row [ Font.color color, Font.size 30 ]
-                [ text <|
-                    if value >= 0 then
-                        String.fromInt value ++ "s ago"
-
-                    else
-                        "-"
-                ]
+            , row [ Font.color color, Font.size 30 ] [ text <| value ]
             ]
         ]
 
@@ -333,7 +349,7 @@ nodesTable model nodes =
                   , width = fill
                   , view =
                         \node ->
-                            text <| String.fromInt <| asSecondsAgo model.currentTime (Maybe.withDefault "" node.finalizedTime)
+                            text <| asSecondsAgo model.currentTime (Maybe.withDefault "" node.finalizedTime)
                   }
                 , { header = text "Last Block EMA"
                   , width = fill
