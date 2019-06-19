@@ -1,4 +1,4 @@
-module Widgets exposing (asSecondsAgo, asTimeAgoDuration, averageStatSecondsFor, formatPing, header, majorityStatFor, withinHighestStatFor)
+module Widgets exposing (asSecondsAgo, asTimeAgoDuration, averageStatSecondsFor, formatPing, header, majorityStatFor, secondsAsText, withinHighestStatFor)
 
 import Colors exposing (..)
 import Dict exposing (Dict)
@@ -57,29 +57,42 @@ asSecondsAgo currentTime targetTime =
                 let
                     secondsAgo =
                         Time.Extra.diff Time.Extra.Second Time.utc p currentTime
-
-                    seconds =
-                        remainderBy 60 secondsAgo
-
-                    minutes =
-                        remainderBy 60 ((secondsAgo - seconds) // 60)
-
-                    hours =
-                        (secondsAgo - seconds - (minutes * 60)) // 3600
-
-                    parts =
-                        [ String.fromInt seconds
-                        , String.fromInt minutes
-                        , String.fromInt hours
-                        ]
-                            |> List.filter (\a -> a /= "0")
-
-                    partsString =
-                        List.map2 Tuple.pair parts [ "s", "m", "h" ]
-                            |> List.map (\( a, b ) -> a ++ b)
-                            |> List.reverse
                 in
-                String.concat partsString
+                secondsAsText secondsAgo
+
+
+secondsAsText secondsAgo =
+    let
+        seconds =
+            remainderBy 60 secondsAgo
+
+        minutes =
+            remainderBy 60 ((secondsAgo - seconds) // 60)
+
+        hours =
+            (secondsAgo - seconds - (minutes * 60)) // 3600
+
+        parts =
+            [ String.fromInt seconds ++ "s"
+            , if hours == 0 && minutes == 0 then
+                ""
+
+              else
+                String.fromInt minutes
+            , if hours == 0 then
+                ""
+
+              else
+                String.fromInt hours
+            ]
+                |> List.filter (\a -> a /= "")
+
+        partsString =
+            List.map2 Tuple.pair parts [ "", "m", "h" ]
+                |> List.map (\( a, b ) -> a ++ b)
+                |> List.reverse
+    in
+    String.concat partsString
 
 
 majorityStatFor getter default nodes =
