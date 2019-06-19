@@ -1,4 +1,4 @@
-module Widgets exposing (asSecondsAgo, asTimeAgoDuration, averageStatSecondsFor, formatPing, header, majorityStatFor, secondsAsText, withinHighestStatFor)
+module Widgets exposing (asSecondsAgo, asTimeAgoDuration, averageStatSecondsFor, formatPing, header, justs, majorityStatFor, secondsAsText, withinHighestStatFor)
 
 import Colors exposing (..)
 import Dict exposing (Dict)
@@ -178,3 +178,16 @@ formatPing averagePing =
 
         Nothing ->
             el [ Font.color red ] (text "n/a")
+
+
+justs =
+    List.foldl
+        (\v acc ->
+            case v of
+                Just x ->
+                    [ x ] ++ acc
+
+                Nothing ->
+                    acc
+        )
+        []

@@ -30,6 +30,7 @@ import Time
 import Time.Distance exposing (inWordsWithConfig)
 import Time.Distance.I18n as I18n
 import Time.Extra
+import Trend.Math
 import Types exposing (..)
 import Url exposing (Url)
 import Widgets exposing (..)
@@ -97,20 +98,10 @@ view model =
                         , wrappedRow [ spacing 20, width fill ]
                             [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (toFloat <| Dict.size model.nodes)
                             , widgetSeconds blue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.bestArrivedTime)) "" model.nodes)
-
-                            -- The old last finalized block function which was broken - did not take into account highest final block first
-                            -- , widgetSeconds green
-                            --     "Last finalized block"
-                            --     "/assets/images/icon-blocklastfinal-green.png"
-                            --     (majorityStatFor
-                            --         (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.finalizedTime))
-                            --         -1
-                            --         model.nodes
-                            --     )
-                            -- Take the highest finalised block height and then the oldest (smallest) time of those
                             , widgetSeconds green
                                 "Last finalized block"
                                 "/assets/images/icon-blocklastfinal-green.png"
+                                -- Take the highest finalised block height and then the oldest (smallest) time of those
                                 (asSecondsAgo model.currentTime
                                     (Maybe.withDefault ""
                                         (withinHighestStatFor
@@ -123,10 +114,34 @@ view model =
                                 )
                             , widgetNumber blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
                             , widgetNumber green "Finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
-                            , widgetText pink "Last Block EMA" "/assets/images/icon-rocket-pink.png" <|
-                                averageStatSecondsFor .blockArrivePeriodEMA model.nodes
-                            , widgetText pink "Last Finalization EMA" "/assets/images/icon-rocket-pink.png" <|
-                                averageStatSecondsFor .finalizationPeriodEMA model.nodes
+                            , widgetTextSub pink
+                                "Last Block EMA"
+                                "/assets/images/icon-rocket-pink.png"
+                                (averageStatSecondsFor .blockArrivePeriodEMA model.nodes)
+                                (model.nodes
+                                    |> Dict.toList
+                                    |> List.map Tuple.second
+                                    |> List.map .blockArrivePeriodEMA
+                                    |> justs
+                                    |> Trend.Math.stddev
+                                    |> Result.map (Round.round 2)
+                                    |> Result.withDefault "-"
+                                    |> (++) "stddev: "
+                                )
+                            , widgetTextSub pink
+                                "Last Finalization EMA"
+                                "/assets/images/icon-rocket-pink.png"
+                                (averageStatSecondsFor .finalizationPeriodEMA model.nodes)
+                                (model.nodes
+                                    |> Dict.toList
+                                    |> List.map Tuple.second
+                                    |> List.map .blockArrivePeriodEMA
+                                    |> justs
+                                    |> Trend.Math.stddev
+                                    |> Result.map (Round.round 2)
+                                    |> Result.withDefault "-"
+                                    |> (++) "stddev: "
+                                )
 
                             -- , worldMap
                             -- , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
@@ -169,8 +184,20 @@ widgetsForWebsite model =
     , widgetNumber blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
 
     -- , widgetNumber green "Finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
-    , widgetText pink "Last Block EMA" "/assets/images/icon-rocket-pink.png" <|
-        averageStatSecondsFor .blockArrivePeriodEMA model.nodes
+    , widgetTextSub pink
+        "Last Block EMA"
+        "/assets/images/icon-rocket-pink.png"
+        (averageStatSecondsFor .blockArrivePeriodEMA model.nodes)
+        (model.nodes
+            |> Dict.toList
+            |> List.map Tuple.second
+            |> List.map .blockArrivePeriodEMA
+            |> justs
+            |> Trend.Math.stddev
+            |> Result.map (Round.round 2)
+            |> Result.withDefault "-"
+            |> (++) "stddev: "
+        )
 
     -- , widgetText pink "Avg Finalization Time" "/assets/images/icon-rocket-pink.png" <|
     --     averageStatSecondsFor .finalizationPeriodEMA model.nodes
@@ -186,6 +213,24 @@ widgetText color title icon value =
             , row [ Font.color color, Font.size 30 ]
                 [ text value
                 ]
+            ]
+        ]
+
+
+widgetTextSub color title icon value subvalue =
+    row [ height (px 140), width (fillPortion 1), Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
+        [ column []
+            [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 35), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
+        , column [ spacing 20 ]
+            [ row [ Font.color color ] [ text <| String.toUpper title ]
+            , column [ Font.color color, Font.size 30 ]
+                [ text value
+                ]
+            , if value == "-" then
+                none
+
+              else
+                column [ Font.color color ] [ text subvalue ]
             ]
         ]
 
