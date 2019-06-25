@@ -143,7 +143,7 @@ const getNodeInfo = (grpcService) => {
 
 const main = async () => {
 
-  var grpcService = new protoDescriptor.P2P(program.host, grpc.credentials.createInsecure())
+  var grpcService = new protoDescriptor.concordium.P2P(program.host, grpc.credentials.createInsecure())
 
   const uptime = await getUptime(grpcService)
   const consensusStatus = await getConsensusStatus(grpcService)
