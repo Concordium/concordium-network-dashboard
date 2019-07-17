@@ -5,6 +5,7 @@ import Color exposing (Color)
 import Color.Interpolate as Interpolate exposing (interpolate)
 import Colors
 import Direction2d exposing (Direction2d)
+import Element exposing (paddingXY)
 import EllipticalArc2d exposing (startAngle)
 import Frame2d
 import Geometry.Svg as Svg
@@ -15,17 +16,24 @@ import Point2d exposing (Point2d)
 import Polyline2d exposing (Polyline2d)
 import RewardGraph exposing (..)
 import Svg exposing (Svg)
-import Svg.Attributes as Attributes
 import TypedSvg exposing (..)
 import TypedSvg.Attributes exposing (..)
 import TypedSvg.Events exposing (onClick, onMouseOut, onMouseOver)
 import TypedSvg.Types exposing (..)
-import Types exposing (Msg(..))
+import Types exposing (Msg(..), Window)
 
 
-view : Maybe Int -> Graph NodeSpec EdgeSpec -> Svg Msg
-view selected graph =
-    svg [ width (px 1024), height (px 768), viewBox 0 0 1024 768 ]
+view : Window -> Maybe Int -> Graph NodeSpec EdgeSpec -> Svg Msg
+view window selected graph =
+    let
+        width_ =
+            toFloat (window.width - 270)
+    in
+    svg
+        [ width (px width_)
+        , height (px ((width_ * 3) / 4))
+        , viewBox 0 0 920 768
+        ]
         [ viewEdges selected graph
         , viewNodes selected (nodes graph)
         ]
@@ -68,6 +76,7 @@ viewRectangularNode current selected props =
         , height (px props.height)
         , onMouseOver <| NodeHovered (Just current)
         , onMouseOut <| NodeHovered Nothing
+        , TypedSvg.Attributes.style "cursor: pointer"
         ]
         [ rect
             [ x (px 0)
@@ -124,6 +133,7 @@ viewCircularNode current selected props =
         , height (px <| props.radius * 2.0)
         , onMouseOver <| NodeHovered (Just current)
         , onMouseOut <| NodeHovered Nothing
+        , TypedSvg.Attributes.style "cursor: pointer"
         ]
         [ circle
             [ cx (percent 50)

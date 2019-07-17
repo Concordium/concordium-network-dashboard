@@ -1,7 +1,9 @@
 module View exposing (view)
 
 import Browser
-import Dict
+import Color
+import Color.Interpolate exposing (Space(..), interpolate)
+import Colors exposing (..)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -12,7 +14,6 @@ import Graph exposing (nodes)
 import Html exposing (Html)
 import Types exposing (..)
 import ViewRewardGraph exposing (..)
-import WebsiteColors exposing (..)
 import Widgets exposing (..)
 
 
@@ -23,12 +24,31 @@ view model =
         [ theme <|
             case model.currentPage of
                 Home ->
-                    [ el [ width fill, height fill, centerX, centerY ]
-                        (html <|
-                            ViewRewardGraph.view
-                                model.selectedNode
-                                model.graph
-                        )
+                    [ row
+                        [ width fill
+                        , height (px model.window.height)
+                        ]
+                        [ viewAside model
+                        , el [ width fill, height fill ]
+                            (html <|
+                                ViewRewardGraph.view
+                                    model.window
+                                    model.selectedNode
+                                    model.graph
+                            )
+                        ]
                     ]
         ]
     }
+
+
+viewAside : Model -> Element Msg
+viewAside model =
+    el
+        [ width (px 250)
+        , height fill
+        , Background.color <|
+            toUI <|
+                interpolate LAB (Color.rgb 1 1 1) nodeBackground 0.99
+        ]
+        (row [] [])

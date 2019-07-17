@@ -95,7 +95,7 @@ init =
             Grid.offset 4
 
         rectSlot i =
-            100.0 + ((rectWidth + rectSpacing) * i)
+            (rectWidth + rectSpacing) * i
 
         circleRadius =
             Grid.offset 5
@@ -126,7 +126,7 @@ init =
             , Node id.foundation
                 (Rectangular
                     { label = [ "Foundation" ]
-                    , x = 100
+                    , x = rectSlot 0
                     , y = 600
                     , width = Grid.offset 61
                     , height = rectHeight

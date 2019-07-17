@@ -1,4 +1,4 @@
-module Types exposing (Flags, Model, Msg(..), Page(..), pageToPath, parserRoutes, pathToPage)
+module Types exposing (Flags, Model, Msg(..), Page(..), Window, pageToPath, parserRoutes, pathToPage)
 
 import Animation exposing (Animation)
 import Browser exposing (..)
@@ -16,9 +16,13 @@ type alias Flags =
     { width : Int, height : Int }
 
 
+type alias Window =
+    { width : Int, height : Int }
+
+
 type alias Model =
     { currentTime : Time.Posix
-    , window : { width : Int, height : Int }
+    , window : Window
     , key : Key
     , currentPage : Page
     , selectedNode : Maybe Int
