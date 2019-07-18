@@ -16,6 +16,7 @@ const interval = require('interval-promise')
 var nodeName = (process.env.COLLECTOR_NAME && (process.env.COLLECTOR_NAME != '')) ? process.env.COLLECTOR_NAME : 'unknown';
 let defaultHost = (process.env.COLLECTOR_HOST && (process.env.COLLECTOR_HOST != '')) ? process.env.COLLECTOR_HOST : 'localhost:8890';
 let defaultDashboard = (process.env.COLLECTOR_DASHBOARD && (process.env.COLLECTOR_DASHBOARD != '')) ? process.env.COLLECTOR_DASHBOARD : 'localhost:3000';
+let defaultFrequency = (process.env.COLLECTOR_FREQUENCY && (process.env.COLLECTOR_FREQUENCY != '')) ? process.env.COLLECTOR_FREQUENCY : '2000';
 
 
 program
@@ -195,7 +196,7 @@ interval(async () => {
     console.log('gRPC failed to connect to '+program.host+' with error: "' + err + '", retrying...')
   }
 
-}, 2000)
+}, +defaultFrequency)
 
 
 // @TODO do we remove this later, or is it unavoidable with node.js?
