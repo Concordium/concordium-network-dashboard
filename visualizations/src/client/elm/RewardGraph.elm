@@ -1,18 +1,22 @@
 module RewardGraph exposing
-    ( CircularNodeSpec
-    , EdgeLabel
+    ( CircularNodeDisplay
+    , EdgeDisplay
     , EdgeSpec
-    , NodeSpec(..)
-    , RectangularNodeSpec
-    , color
+    , NodeDisplay(..)
+    , NodeSpec
+    , RectangularNodeDisplay
     , init
     , nodeCenter
+    , nodeColor
+    , nodeColorFromId
+    , outgoingConnectedNodes
     , tick
+    , updateEdgeValue
     )
 
 import Color exposing (Color)
 import Colors
-import Graph exposing (Edge, Graph, Node)
+import Graph exposing (Edge, Graph, Node, nodes)
 import Grid
 import IntDict
 import LineSegment2d exposing (LineSegment2d)
@@ -22,52 +26,54 @@ import Rectangle2d exposing (Rectangle2d)
 import Vector2d exposing (Vector2d)
 
 
-type NodeSpec
-    = Circular CircularNodeSpec
-    | Rectangular RectangularNodeSpec
-
-
-type alias CircularNodeSpec =
+type alias NodeSpec =
     { label : List String
-    , cx : Float
+    , value : Float
+    , display : NodeDisplay
+    }
+
+
+type NodeDisplay
+    = Circular CircularNodeDisplay
+    | Rectangular RectangularNodeDisplay
+
+
+type alias CircularNodeDisplay =
+    { cx : Float
     , cy : Float
     , radius : Float
     , icon : String
     , color : Color
-    , value : Float
     }
 
 
-type alias RectangularNodeSpec =
-    { label : List String
-    , x : Float
+type alias RectangularNodeDisplay =
+    { x : Float
     , y : Float
     , width : Float
     , height : Float
     , color : Color
-    , value : Float
     }
 
 
-{-| Describes an Edge in the graph
-
-fromWaypoints is a set of points the edge shoud go through, realtive to the origin node
-toWaypoints is a set of points the edge should go through relative to the target node
-
--}
 type alias EdgeSpec =
-    { label : EdgeLabel
-    , fromWaypoints : List Point2d
-    , toWaypoints : List Point2d
+    { label : List String
     , value : Float
+    , interval : Int
     , animationDelta : Float
+    , display : EdgeDisplay
     }
 
 
-type alias EdgeLabel =
-    { text : List String
-    , position : Float
-    , offset : ( Float, Float )
+{-| Contains the information for displaying the static diagram
+_fromWaypoints_ is a set of points the edge shoud go through, realtive to the origin node
+_toWaypoints_ is a set of points the edge should go through relative to the target node
+-}
+type alias EdgeDisplay =
+    { fromWaypoints : List Point2d
+    , toWaypoints : List Point2d
+    , labelPosition : Float
+    , labelOffset : ( Float, Float )
     }
 
 
@@ -102,260 +108,393 @@ init =
 
         nodes =
             [ Node id.blockchain
-                (Circular
-                    { label = [ "Blockchain" ]
-                    , cx = rectSlot 2 - (rectSpacing / 2)
-                    , cy = 400
-                    , radius = circleRadius
-                    , icon = "/assets/blockchain.svg"
-                    , color = Colors.yellow
-                    , value = 100
-                    }
-                )
+                { label = [ "Blockchain" ]
+                , value = 100
+                , display =
+                    Circular
+                        { cx = rectSlot 2 - (rectSpacing / 2)
+                        , cy = 400
+                        , radius = circleRadius
+                        , icon = "/assets/blockchain.svg"
+                        , color = Colors.yellow
+                        }
+                }
             , Node id.users
-                (Circular
-                    { label = [ "Users" ]
-                    , cx = rectSlot 1 - (rectSpacing / 2)
-                    , cy = 400
-                    , radius = circleRadius
-                    , icon = "/assets/users.svg"
-                    , color = Colors.green
-                    , value = 100
-                    }
-                )
+                { label = [ "Users" ]
+                , value = 100
+                , display =
+                    Circular
+                        { cx = rectSlot 1 - (rectSpacing / 2)
+                        , cy = 400
+                        , radius = circleRadius
+                        , icon = "/assets/users.svg"
+                        , color = Colors.green
+                        }
+                }
             , Node id.foundation
-                (Rectangular
-                    { label = [ "Foundation" ]
-                    , x = rectSlot 0
-                    , y = 600
-                    , width = Grid.offset 61
-                    , height = rectHeight
-                    , color = Colors.blue
-                    , value = 100
-                    }
-                )
+                { label = [ "Foundation" ]
+                , value = 100
+                , display =
+                    Rectangular
+                        { x = rectSlot 0
+                        , y = 600
+                        , width = Grid.offset 61
+                        , height = rectHeight
+                        , color = Colors.blue
+                        }
+                }
             , Node id.trustedIdentityIssuers
-                (Rectangular
-                    { label = [ "Trusted Identity", "Issuers" ]
-                    , x = rectSlot 0
-                    , y = 100
-                    , width = rectWidth
-                    , height = rectHeight
-                    , color = Colors.purple
-                    , value = 100
-                    }
-                )
+                { label = [ "Trusted Identity", "Issuers" ]
+                , value = 100
+                , display =
+                    Rectangular
+                        { x = rectSlot 0
+                        , y = 100
+                        , width = rectWidth
+                        , height = rectHeight
+                        , color = Colors.purple
+                        }
+                }
             , Node id.blockBakersBakingPools
-                (Rectangular
-                    { label = [ "Block Bakers", "Baking Pools" ]
-                    , x = rectSlot 1
-                    , y = 100
-                    , width = rectWidth
-                    , height = rectHeight
-                    , color = Colors.purple
-                    , value = 100
-                    }
-                )
+                { label = [ "Block Bakers", "Baking Pools" ]
+                , value = 100
+                , display =
+                    Rectangular
+                        { x = rectSlot 1
+                        , y = 100
+                        , width = rectWidth
+                        , height = rectHeight
+                        , color = Colors.purple
+                        }
+                }
             , Node id.smartContractDevelopers
-                (Rectangular
-                    { label = [ "Smart Contract", "Developers" ]
-                    , x = rectSlot 2
-                    , y = 100
-                    , width = rectWidth
-                    , height = rectHeight
-                    , color = Colors.purple
-                    , value = 100
-                    }
-                )
+                { label = [ "Smart Contract", "Developers" ]
+                , value = 100
+                , display =
+                    Rectangular
+                        { x = rectSlot 2
+                        , y = 100
+                        , width = rectWidth
+                        , height = rectHeight
+                        , color = Colors.purple
+                        }
+                }
             , Node id.blockFinalizers
-                (Rectangular
-                    { label = [ "Block Finalizers" ]
-                    , x = rectSlot 3 - rectWidth / 2
-                    , y = 400 - (rectHeight / 2)
-                    , width = rectWidth
-                    , height = rectHeight
-                    , color = Colors.purple
-                    , value = 100
-                    }
-                )
+                { label = [ "Block Finalizers" ]
+                , value = 100
+                , display =
+                    Rectangular
+                        { x = rectSlot 3 - rectWidth / 2
+                        , y = 400 - (rectHeight / 2)
+                        , width = rectWidth
+                        , height = rectHeight
+                        , color = Colors.purple
+                        }
+                }
             ]
 
         edges =
             [ Edge
                 id.foundation
                 id.users
-                { label = EdgeLabel [ "Wallet" ] 0.72 ( 10, 0 )
+                { label = [ "Wallet" ]
                 , value = 0.1
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints = []
-                , toWaypoints = [ Grid.point 0 15, Grid.point 0 0 ]
+                , display =
+                    { fromWaypoints = []
+                    , toWaypoints = [ Grid.point 0 15, Grid.point 0 0 ]
+                    , labelPosition = 0.72
+                    , labelOffset = ( 10, 0 )
+                    }
                 }
             , Edge
                 id.foundation
                 id.trustedIdentityIssuers
-                { label = EdgeLabel [ "Software" ] 0.57 ( 10, 0 )
+                { label = [ "Software" ]
                 , value = 0.4
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints = []
-                , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
+                , display =
+                    { fromWaypoints = []
+                    , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
+                    , labelPosition = 0.57
+                    , labelOffset = ( 10, 0 )
+                    }
                 }
             , Edge
                 id.foundation
                 id.blockBakersBakingPools
-                { label = EdgeLabel [ "Software" ] 0.38 ( 10, 0 )
+                { label = [ "Software" ]
                 , value = 0.5
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints = []
-                , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
+                , display =
+                    { fromWaypoints = []
+                    , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
+                    , labelPosition = 0.38
+                    , labelOffset = ( 10, 0 )
+                    }
                 }
             , Edge
                 id.foundation
                 id.smartContractDevelopers
-                { label = EdgeLabel [ "Software" ] 0.47 ( 10, 0 )
+                { label = [ "Software" ]
                 , value = 0.5
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints = []
-                , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
+                , display =
+                    { fromWaypoints = []
+                    , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
+                    , labelPosition = 0.47
+                    , labelOffset = ( 10, 0 )
+                    }
                 }
             , Edge
                 id.foundation
                 id.blockFinalizers
-                { label = EdgeLabel [ "Software" ] 0.784 ( 10, 0 )
+                { label = [ "Software" ]
                 , value = 0.5
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints = []
-                , toWaypoints = [ Grid.point 0 15, Grid.point 0 0 ]
+                , display =
+                    { fromWaypoints = []
+                    , toWaypoints = [ Grid.point 0 15, Grid.point 0 0 ]
+                    , labelPosition = 0.784
+                    , labelOffset = ( 10, 0 )
+                    }
                 }
             , Edge
                 id.trustedIdentityIssuers
                 id.users
-                { label = EdgeLabel [ "Identities" ] 0.35 ( 10, 0 )
+                { label = [ "Identities" ]
                 , value = 0.9
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints = [ Grid.point 2 0, Grid.point 2 10 ]
-                , toWaypoints = []
+                , display =
+                    { fromWaypoints = [ Grid.point 2 0, Grid.point 2 10 ]
+                    , toWaypoints = []
+                    , labelPosition = 0.35
+                    , labelOffset = ( 10, 0 )
+                    }
                 }
             , Edge
                 id.blockBakersBakingPools
                 id.users
-                { label = EdgeLabel [ "Reward % Kickback" ] 0.45 ( 10, 0 )
+                { label = [ "Reward % Kickback" ]
                 , value = 1.0
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints = [ Grid.point -4 0, Grid.point -4 10 ]
-                , toWaypoints = [ Grid.point 0 -2 ]
+                , display =
+                    { fromWaypoints = [ Grid.point -4 0, Grid.point -4 10 ]
+                    , toWaypoints = [ Grid.point 0 -2 ]
+                    , labelPosition = 0.45
+                    , labelOffset = ( 10, 0 )
+                    }
                 }
             , Edge
                 id.blockBakersBakingPools
                 id.blockchain
-                { label = EdgeLabel [ "Baking" ] 0.4 ( 10, 0 )
+                { label = [ "Baking" ]
                 , value = 1.1
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints = [ Grid.point 4 0, Grid.point 4 10 ]
-                , toWaypoints = [ Grid.point 0 -2 ]
+                , display =
+                    { fromWaypoints = [ Grid.point 4 0, Grid.point 4 10 ]
+                    , toWaypoints = [ Grid.point 0 -2 ]
+                    , labelPosition = 0.4
+                    , labelOffset = ( 10, 0 )
+                    }
                 }
             , Edge
                 id.smartContractDevelopers
                 id.users
-                { label = EdgeLabel [ "Smart Contracts" ] 0.34 ( 0, -10 )
+                { label = [ "Smart Contracts" ]
                 , value = 0.2
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints =
-                    [ Grid.point 0 0
-                    , Grid.point 0 -6
-                    , Grid.point -27 -6
-                    ]
-                , toWaypoints = []
+                , display =
+                    { fromWaypoints =
+                        [ Grid.point 0 0
+                        , Grid.point 0 -6
+                        , Grid.point -27 -6
+                        ]
+                    , toWaypoints = []
+                    , labelPosition = 0.34
+                    , labelOffset = ( 0, -10 )
+                    }
                 }
             , Edge
                 id.users
                 id.blockBakersBakingPools
-                { label = EdgeLabel [ "Delegate Stake" ] 0.65 ( 10, 0 )
+                { label = [ "Delegate Stake" ]
                 , value = 0.3
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints = [ Grid.point 0 2 ]
-                , toWaypoints = [ Grid.point -2 12, Grid.point -2 0 ]
+                , display =
+                    { fromWaypoints = [ Grid.point 0 2 ]
+                    , toWaypoints = [ Grid.point -2 12, Grid.point -2 0 ]
+                    , labelPosition = 0.65
+                    , labelOffset = ( 10, 0 )
+                    }
                 }
             , Edge
                 id.users
                 id.blockchain
-                { label = EdgeLabel [ "Gas" ] 0.4 ( 0, 10 )
+                { label = [ "Gas" ]
                 , value = 1.1
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints = []
-                , toWaypoints = []
+                , display =
+                    { fromWaypoints = []
+                    , toWaypoints = []
+                    , labelPosition = 0.4
+                    , labelOffset = ( 0, 10 )
+                    }
                 }
             , Edge
                 id.blockchain
                 id.trustedIdentityIssuers
-                { label = EdgeLabel [ "Transaction Rewards" ] 0.5 ( 0, 10 )
+                { label = [ "Transaction Rewards" ]
                 , value = 0.5
+                , interval = 10
                 , animationDelta = 0
-                , fromWaypoints =
-                    [ Grid.point 0 0
-                    , Grid.point 0 -22
-                    , Grid.point -27 -22
-                    ]
-                , toWaypoints = [ Grid.point 0 0 ]
+                , display =
+                    { fromWaypoints =
+                        [ Grid.point 0 0
+                        , Grid.point 0 -22
+                        , Grid.point -27 -22
+                        ]
+                    , toWaypoints = [ Grid.point 0 0 ]
+                    , labelPosition = 0.5
+                    , labelOffset = ( 0, 10 )
+                    }
                 }
             , Edge
                 id.blockchain
                 id.blockBakersBakingPools
-                { label = EdgeLabel [ "Block Rewards" ] 0.7 ( 10, 0 )
+                { label = [ "Block Rewards" ]
                 , value = 0.4
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints = [ Grid.point 0 2 ]
-                , toWaypoints = [ Grid.point 2 12, Grid.point 2 2 ]
+                , display =
+                    { fromWaypoints = [ Grid.point 0 2 ]
+                    , toWaypoints = [ Grid.point 2 12, Grid.point 2 2 ]
+                    , labelPosition = 0.7
+                    , labelOffset = ( 10, 0 )
+                    }
                 }
             , Edge
                 id.blockchain
                 id.smartContractDevelopers
-                { label = EdgeLabel [ "Execution Rewards" ] 0.6 ( 10, 0 )
+                { label = [ "Execution Rewards" ]
                 , value = 0.2
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints = []
-                , toWaypoints = [ Grid.point -2 10, Grid.point -2 0 ]
+                , display =
+                    { fromWaypoints = []
+                    , toWaypoints = [ Grid.point -2 10, Grid.point -2 0 ]
+                    , labelPosition = 0.6
+                    , labelOffset = ( 10, 0 )
+                    }
                 }
             , Edge
                 id.blockchain
                 id.blockFinalizers
-                { label = EdgeLabel [ "Finalization", "Rewards" ] 0.45 ( 0, 0 )
+                { label = [ "Finalization", "Rewards" ]
                 , value = 0.4
+                , interval = 30
                 , animationDelta = 0
-                , fromWaypoints = [ Grid.point 0 1 ]
-                , toWaypoints = [ Grid.point 0 1 ]
+                , display =
+                    { fromWaypoints = [ Grid.point 0 1 ]
+                    , toWaypoints = [ Grid.point 0 1 ]
+                    , labelPosition = 0.45
+                    , labelOffset = ( 0, 0 )
+                    }
                 }
             , Edge
                 id.blockchain
                 id.foundation
-                { label = EdgeLabel [ "Tax" ] 0.5 ( 10, 0 )
+                { label = [ "Tax" ]
                 , value = 1.2
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints = [ Grid.point 0 0, Grid.point 0 15 ]
-                , toWaypoints = []
+                , display =
+                    { fromWaypoints = [ Grid.point 0 0, Grid.point 0 15 ]
+                    , toWaypoints = []
+                    , labelPosition = 0.5
+                    , labelOffset = ( 10, 0 )
+                    }
                 }
             , Edge id.blockchain
                 id.blockchain
-                { label = EdgeLabel [ "GTU Minting" ] 0.5 ( -10, 34 )
+                { label = [ "GTU Minting" ]
                 , value = 0.8
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints = [ Grid.point 1 -1, Grid.point 7 5 ]
-                , toWaypoints = [ Grid.point 4.5 7.5, Grid.point -1.5 1.5 ]
+                , display =
+                    { fromWaypoints = [ Grid.point 1 -1, Grid.point 7 5 ]
+                    , toWaypoints = [ Grid.point 4.5 7.5, Grid.point -1.5 1.5 ]
+                    , labelPosition = 0.5
+                    , labelOffset = ( -10, 34 )
+                    }
                 }
             , Edge
                 id.blockFinalizers
                 id.blockchain
-                { label = EdgeLabel [ "Finalization" ] 0.55 ( 0, -10 )
+                { label = [ "Finalization" ]
                 , value = 0.5
+                , interval = 20
                 , animationDelta = 0
-                , fromWaypoints = [ Grid.point 0 -1 ]
-                , toWaypoints = [ Grid.point 0 -1 ]
+                , display =
+                    { fromWaypoints = [ Grid.point 0 -1 ]
+                    , toWaypoints = [ Grid.point 0 -1 ]
+                    , labelPosition = 0.55
+                    , labelOffset = ( 0, -10 )
+                    }
                 }
             ]
     in
     Graph.fromNodesAndEdges nodes edges
 
 
-nodeCenter : NodeSpec -> Point2d
+outgoingConnectedNodes : Int -> Graph NodeSpec EdgeSpec -> List NodeSpec
+outgoingConnectedNodes nodeId graph =
+    Graph.get nodeId graph
+        |> Maybe.map Graph.alongOutgoingEdges
+        |> Maybe.withDefault []
+        |> (\ids -> List.filter (\a -> List.member a.id ids) (Graph.nodes graph))
+        |> List.map .label
+
+
+updateEdgeValue : Int -> Int -> Float -> Graph NodeSpec EdgeSpec -> Graph NodeSpec EdgeSpec
+updateEdgeValue fromId toId value graph =
+    let
+        nodes =
+            Graph.nodes graph
+
+        edges =
+            Graph.edges graph
+
+        newEdges =
+            List.map
+                (\edge ->
+                    if edge.from == fromId && edge.to == toId then
+                        let
+                            label =
+                                edge.label
+                        in
+                        Edge edge.from edge.to { label | value = value }
+
+                    else
+                        edge
+                )
+                edges
+    in
+    Graph.fromNodesAndEdges nodes newEdges
+
+
+nodeCenter : NodeDisplay -> Point2d
 nodeCenter node =
     case node of
         Circular cnode ->
@@ -368,14 +507,21 @@ nodeCenter node =
                 )
 
 
-color : NodeSpec -> Color.Color
-color node =
-    case node of
+nodeColor : NodeSpec -> Color.Color
+nodeColor node =
+    case node.display of
         Circular cnode ->
             cnode.color
 
         Rectangular rnode ->
             rnode.color
+
+
+nodeColorFromId : Int -> Graph NodeSpec EdgeSpec -> Color.Color
+nodeColorFromId nodeId graph =
+    Graph.get nodeId graph
+        |> Maybe.map (.node >> .label >> nodeColor)
+        |> Maybe.withDefault Color.white
 
 
 tick : Graph NodeSpec EdgeSpec -> Graph NodeSpec EdgeSpec
@@ -399,9 +545,11 @@ tick graph =
 
 updateNodeValue : Float -> Node NodeSpec -> Node NodeSpec
 updateNodeValue delta node =
-    case node.label of
-        Circular spec ->
-            Node node.id (Circular { spec | value = spec.value + delta })
+    let
+        label =
+            node.label
 
-        Rectangular spec ->
-            Node node.id (Rectangular { spec | value = spec.value + delta })
+        newLabel =
+            { label | value = label.value + delta }
+    in
+    { node | label = newLabel }

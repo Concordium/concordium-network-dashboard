@@ -2,6 +2,8 @@ module Colors exposing
     ( background
     , blue
     , green
+    , lightGray
+    , midGray
     , nodeBackground
     , pink
     , purple
@@ -54,6 +56,14 @@ purple =
 
 yellow =
     fromHex "#ffde80"
+
+
+midGray =
+    fromHex "#666677"
+
+
+lightGray =
+    fromHex "#9999aa"
 
 
 white =

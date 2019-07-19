@@ -1,4 +1,4 @@
-module ViewRewardGraph exposing (view, viewEdges, viewNodes)
+module RewardGraph.Static exposing (view, viewEdges, viewNodes)
 
 import Arc2d exposing (sweptAngle)
 import Color exposing (Color)
@@ -27,7 +27,7 @@ view : Window -> Maybe Int -> Graph NodeSpec EdgeSpec -> Svg Msg
 view window selected graph =
     let
         width_ =
-            toFloat (window.width - 270)
+            toFloat (window.width - 320)
     in
     svg
         [ width (px width_)
@@ -48,34 +48,43 @@ viewNodes selected nodes =
     svg [ width (px 1024), height (px 768), viewBox 0 0 1024 768 ]
         (List.map
             (\node ->
-                case node.label of
-                    Rectangular props ->
-                        viewRectangularNode node.id selected props
+                case node.label.display of
+                    Rectangular display ->
+                        viewRectangularNode
+                            node.id
+                            selected
+                            node.label.label
+                            node.label.value
+                            display
 
-                    Circular props ->
-                        viewCircularNode node.id selected props
+                    Circular display ->
+                        viewCircularNode
+                            node.id
+                            selected
+                            node.label.label
+                            node.label.value
+                            display
             )
             nodes
         )
 
 
-viewRectangularNode : Int -> Maybe Int -> RectangularNodeSpec -> Svg Msg
-viewRectangularNode current selected props =
+viewRectangularNode : Int -> Maybe Int -> List String -> Float -> RectangularNodeDisplay -> Svg Msg
+viewRectangularNode current selected label value display =
     let
         padding =
             8
 
         valueDisplayHeight =
-            normalizeLinear 50 150 props.value
-                |> mapLinear 0 (props.height - (padding * 2))
+            normalizeLinear 50 150 value
+                |> mapLinear 0 (display.height - (padding * 2))
     in
     svg
-        [ x (px props.x)
-        , y (px props.y)
-        , width (px props.width)
-        , height (px props.height)
-        , onMouseOver <| NodeHovered (Just current)
-        , onMouseOut <| NodeHovered Nothing
+        [ x (px display.x)
+        , y (px display.y)
+        , width (px display.width)
+        , height (px display.height)
+        , onClick <| NodeHovered (Just current)
         , TypedSvg.Attributes.style "cursor: pointer"
         ]
         [ rect
@@ -85,18 +94,18 @@ viewRectangularNode current selected props =
             , ry (px 6)
             , width (percent 100)
             , height (percent 100)
-            , fill <| Fill (nodeFill current selected props.color Colors.nodeBackground)
+            , fill <| Fill (nodeFill current selected display.color Colors.nodeBackground)
             ]
             []
         , rect
             [ x (px padding)
-            , y (px (props.height - padding - valueDisplayHeight))
+            , y (px (display.height - padding - valueDisplayHeight))
             , width (px 4)
             , height (px valueDisplayHeight)
-            , fill <| Fill (interpolate Interpolate.LAB props.color Colors.nodeBackground 0.5)
+            , fill <| Fill (interpolate Interpolate.LAB display.color Colors.nodeBackground 0.5)
             ]
             []
-        , viewTextLines props.label props.color 24 0 16
+        , viewTextLines label display.color 24 0 16
         ]
 
 
@@ -108,52 +117,51 @@ normalizeLinear mapmin mapmax mappedValue =
     (mappedValue - mapmin) / (mapmax - mapmin)
 
 
-viewCircularNode : Int -> Maybe Int -> CircularNodeSpec -> Svg Msg
-viewCircularNode current selected props =
+viewCircularNode : Int -> Maybe Int -> List String -> Float -> CircularNodeDisplay -> Svg Msg
+viewCircularNode current selected label value display =
     let
         padding =
             8
 
         valueDisplayHeight =
-            normalizeLinear 50 150 props.value
+            normalizeLinear 50 150 value
                 |> mapLinear 0 90
 
         valueArc =
             Arc2d.with
-                { centerPoint = Point2d.fromCoordinates ( props.radius, props.radius )
-                , radius = props.radius - padding
+                { centerPoint = Point2d.fromCoordinates ( display.radius, display.radius )
+                , radius = display.radius - padding
                 , startAngle = degrees 160
                 , sweptAngle = degrees valueDisplayHeight
                 }
     in
     svg
-        [ x (px <| props.cx - props.radius)
-        , y (px <| props.cy - props.radius)
-        , width (px <| props.radius * 2.0)
-        , height (px <| props.radius * 2.0)
-        , onMouseOver <| NodeHovered (Just current)
-        , onMouseOut <| NodeHovered Nothing
+        [ x (px <| display.cx - display.radius)
+        , y (px <| display.cy - display.radius)
+        , width (px <| display.radius * 2.0)
+        , height (px <| display.radius * 2.0)
+        , onClick <| NodeHovered (Just current)
         , TypedSvg.Attributes.style "cursor: pointer"
         ]
         [ circle
             [ cx (percent 50)
             , cy (percent 50)
-            , r (px props.radius)
-            , fill <| Fill (nodeFill current selected props.color Colors.nodeBackground)
+            , r (px display.radius)
+            , fill <| Fill (nodeFill current selected display.color Colors.nodeBackground)
             ]
             []
         , image
             [ x (percent 50)
             , y (percent 50)
-            , width (px props.radius)
-            , height (px props.radius)
-            , xlinkHref props.icon
-            , transform [ Translate (-props.radius / 2) (-props.radius / 2 - 10) ]
+            , width (px display.radius)
+            , height (px display.radius)
+            , xlinkHref display.icon
+            , transform [ Translate (-display.radius / 2) (-display.radius / 2 - 10) ]
             ]
             []
-        , viewTextLines props.label props.color 24 30 16
+        , viewTextLines label display.color 24 30 16
         , Svg.arc2d
-            [ stroke (interpolate Interpolate.LAB props.color Colors.nodeBackground 0.5)
+            [ stroke (interpolate Interpolate.LAB display.color Colors.nodeBackground 0.5)
             , strokeWidth (px 4)
             , fill <| FillNone
             ]
@@ -233,7 +241,7 @@ viewEdge : Maybe Int -> Edge EdgeSpec -> Node NodeSpec -> Node NodeSpec -> List 
 viewEdge selected edge fromNode toNode =
     let
         baseColor =
-            RewardGraph.color fromNode.label
+            RewardGraph.nodeColor fromNode.label
 
         isSelected =
             Maybe.withDefault -1 selected == fromNode.id
@@ -254,15 +262,15 @@ viewEdge selected edge fromNode toNode =
 
         fromWaypoints =
             List.map
-                (Point2d.placeIn <| Frame2d.atPoint <| nodeCenter fromNode.label)
-                edge.label.fromWaypoints
-                |> fallbackIfEmpty (nodeCenter fromNode.label)
+                (Point2d.placeIn <| Frame2d.atPoint <| nodeCenter fromNode.label.display)
+                edge.label.display.fromWaypoints
+                |> fallbackIfEmpty (nodeCenter fromNode.label.display)
 
         toWaypoints =
             List.map
-                (Point2d.placeIn <| Frame2d.atPoint <| nodeCenter toNode.label)
-                edge.label.toWaypoints
-                |> fallbackIfEmpty (nodeCenter toNode.label)
+                (Point2d.placeIn <| Frame2d.atPoint <| nodeCenter toNode.label.display)
+                edge.label.display.toWaypoints
+                |> fallbackIfEmpty (nodeCenter toNode.label.display)
 
         polyline =
             Polyline2d.fromVertices (fromWaypoints ++ toWaypoints)
@@ -275,7 +283,7 @@ viewEdge selected edge fromNode toNode =
 
         label =
             if isSelected then
-                [ viewEdgeLabel edge.label.label transferColor polyline ]
+                [ viewEdgeLabel edge.label transferColor polyline ]
 
             else
                 []
@@ -312,11 +320,14 @@ viewEdge selected edge fromNode toNode =
 
 {-| Finds the longest segment of a polyline and places a label next to it
 -}
-viewEdgeLabel : EdgeLabel -> Color -> Polyline2d -> Svg msg
-viewEdgeLabel label color edgeLine =
+viewEdgeLabel : EdgeSpec -> Color -> Polyline2d -> Svg msg
+viewEdgeLabel edge color edgeLine =
     let
+        display =
+            edge.display
+
         ( position, direction ) =
-            pointAndDirectionAt edgeLine label.position
+            pointAndDirectionAt edgeLine display.labelPosition
 
         rotation =
             case direction of
@@ -336,7 +347,7 @@ viewEdgeLabel label color edgeLine =
                     ]
 
         ( offX, offY ) =
-            label.offset
+            display.labelOffset
     in
     Maybe.withDefault
         (svg [] [])
@@ -349,7 +360,7 @@ viewEdgeLabel label color edgeLine =
                     , height (px 200)
                     ]
                     [ g [ transform rotation ]
-                        [ viewTextLines label.text color 24 0 12 ]
+                        [ viewTextLines edge.label color 24 0 12 ]
                     ]
             )
             (Maybe.map Point2d.coordinates position)

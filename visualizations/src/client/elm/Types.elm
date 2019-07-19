@@ -41,6 +41,7 @@ type Msg
     | WindowResized Int Int
     | Tick Float
     | NodeHovered (Maybe Int)
+    | EdgeValueChanged Int Int String
     | Noop
 
 

@@ -5,9 +5,10 @@ import Browser exposing (..)
 import Browser.Dom
 import Browser.Events as Events
 import Browser.Navigation as Nav exposing (Key)
+import Curve.ParameterValue exposing (value)
 import Dict exposing (Dict)
 import Graph
-import RewardGraph
+import RewardGraph exposing (updateEdgeValue)
 import Task
 import Time
 import Types exposing (..)
@@ -93,6 +94,20 @@ update msg model =
                         model.graph
             in
             ( { model | clock = model.clock + timeDelta, graph = animatedGraph }, Cmd.none )
+
+        EdgeValueChanged originId targetId value ->
+            let
+                maybeUpdatedGraph =
+                    Maybe.map
+                        (\parsedValue ->
+                            updateEdgeValue originId targetId parsedValue model.graph
+                        )
+                        (String.toFloat value)
+            in
+            Maybe.map
+                (\updatedGraph -> ( { model | graph = updatedGraph }, Cmd.none ))
+                maybeUpdatedGraph
+                |> Maybe.withDefault ( model, Cmd.none )
 
         Noop ->
             ( model, Cmd.none )
