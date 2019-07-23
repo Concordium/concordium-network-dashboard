@@ -8,7 +8,7 @@ import Browser.Navigation as Nav exposing (Key)
 import Curve.ParameterValue exposing (value)
 import Dict exposing (Dict)
 import Graph
-import RewardGraph exposing (updateEdgeValue)
+import RewardGraph exposing (updateEdgeInterval, updateEdgeValue)
 import Task
 import Time
 import Types exposing (..)
@@ -95,19 +95,19 @@ update msg model =
             in
             ( { model | clock = model.clock + timeDelta, graph = animatedGraph }, Cmd.none )
 
-        EdgeValueChanged originId targetId value ->
+        EdgeValueChanged originId targetId valueString ->
             let
-                maybeUpdatedGraph =
-                    Maybe.map
-                        (\parsedValue ->
-                            updateEdgeValue originId targetId parsedValue model.graph
-                        )
-                        (String.toFloat value)
+                updatedGraph =
+                    updateEdgeValue originId targetId valueString model.graph
             in
-            Maybe.map
-                (\updatedGraph -> ( { model | graph = updatedGraph }, Cmd.none ))
-                maybeUpdatedGraph
-                |> Maybe.withDefault ( model, Cmd.none )
+            ( { model | graph = updatedGraph }, Cmd.none )
+
+        EdgeIntervalChanged originId targetId intervalString ->
+            let
+                updatedGraph =
+                    updateEdgeInterval originId targetId intervalString model.graph
+            in
+            ( { model | graph = updatedGraph }, Cmd.none )
 
         Noop ->
             ( model, Cmd.none )

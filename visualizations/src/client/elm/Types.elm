@@ -42,6 +42,7 @@ type Msg
     | Tick Float
     | NodeHovered (Maybe Int)
     | EdgeValueChanged Int Int String
+    | EdgeIntervalChanged Int Int String
     | Noop
 
 

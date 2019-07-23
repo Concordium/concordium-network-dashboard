@@ -94,7 +94,15 @@ buttonExternal url attrs text_ =
 
 theme : List (Element msg) -> Html.Html msg
 theme x =
-    layout
+    layoutWith
+        { options =
+            [ focusStyle
+                { borderColor = Nothing
+                , backgroundColor = Nothing
+                , shadow = Nothing
+                }
+            ]
+        }
         [ width fill
         , Background.color darkGrey
         , Font.color white

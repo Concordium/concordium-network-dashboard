@@ -157,21 +157,36 @@ viewConnection origin target edge graph =
             , column [ spacing 8 ]
                 [ el [ Font.color (toUI targetColor) ] (text targetLabel)
                 , row [ Font.color (toUI midGray), spacing 16 ]
-                    [ row [ spacing 8 ] [ SvgWidgets.clock 17 0.6, text (String.fromInt edge.label.interval) ]
+                    [ row [ spacing 8 ]
+                        [ SvgWidgets.clock 17 0.6
+                        , Input.text
+                            [ width (px 60)
+                            , height (px 24)
+                            , Background.color <| rgba 1 1 1 0.02
+                            , Border.width 1
+                            , Border.color <| rgba 1 1 1 0.05
+                            , Border.rounded 6
+                            ]
+                            { onChange = EdgeIntervalChanged edge.from edge.to
+                            , text = edge.label.intervalString
+                            , placeholder = Nothing
+                            , label = Input.labelHidden "Interval"
+                            }
+                        ]
                     , row [ spacing 8 ]
                         [ amountIcon 18 18 midGray
                         , Input.text
                             [ width (px 60)
                             , height (px 24)
-                            , Background.color <| rgba 0 0 0 0
+                            , Background.color <| rgba 1 1 1 0.02
                             , Border.width 1
                             , Border.color <| rgba 1 1 1 0.05
                             , Border.rounded 6
                             ]
                             { onChange = EdgeValueChanged edge.from edge.to
-                            , text = String.fromFloat edge.label.value
+                            , text = edge.label.valueString
                             , placeholder = Nothing
-                            , label = Input.labelHidden "Value "
+                            , label = Input.labelHidden "Value"
                             }
                         ]
                     ]
