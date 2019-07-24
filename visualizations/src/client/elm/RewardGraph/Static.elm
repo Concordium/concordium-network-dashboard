@@ -293,7 +293,7 @@ viewEdge selected edge fromNode toNode =
         , strokeWidth (px 2)
         , fill <| FillNone
         , strokeDasharray "4 2"
-        , strokeDashoffset (String.fromFloat <| -24 * edge.label.animationDelta)
+        , strokeDashoffset (String.fromFloat <| -24 * edge.label.animationValue)
         ]
         polyline
     , Svg.polyline2d
@@ -307,7 +307,7 @@ viewEdge selected edge fromNode toNode =
             )
         , strokeDashoffset
             (((dashLength + 10)
-                + (1 - edge.label.animationDelta)
+                + (1 - edge.label.animationValue)
                 * (lineLength + dashLength)
              )
                 |> String.fromFloat

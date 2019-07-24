@@ -28,6 +28,7 @@ init flags url key =
             , selectedNode = Nothing
             , clock = 0
             , transfer = animation 0 |> duration 0.7
+            , ticks = 0
             }
     in
     ( model
@@ -72,14 +73,8 @@ update msg model =
             ( { model | selectedNode = maybeNodeId }, Cmd.none )
 
         CurrentTime time ->
-            let
-                nextGraph =
-                    RewardGraph.tick model.graph
-            in
             ( { model
                 | currentTime = time
-                , transfer = animation model.clock |> duration 3000
-                , graph = nextGraph
               }
             , Cmd.none
             )
@@ -89,11 +84,32 @@ update msg model =
                 animatedGraph =
                     Graph.mapEdges
                         (\edge ->
-                            { edge | animationDelta = animate model.clock model.transfer }
+                            let
+                                updatedAnimation =
+                                    if isDone model.clock edge.animation then
+                                        animation model.clock
+                                            |> duration (RewardGraph.millisecondsFromInterval edge.interval)
+
+                                    else
+                                        edge.animation
+                            in
+                            { edge
+                                | animationValue = animate model.clock edge.animation
+                                , animation = updatedAnimation
+                            }
                         )
                         model.graph
+
+                updatedGraph =
+                    animatedGraph |> RewardGraph.tick model.ticks
             in
-            ( { model | clock = model.clock + timeDelta, graph = animatedGraph }, Cmd.none )
+            ( { model
+                | clock = model.clock + timeDelta
+                , ticks = model.ticks + 1
+                , graph = updatedGraph
+              }
+            , Cmd.none
+            )
 
         EdgeValueChanged originId targetId valueString ->
             let

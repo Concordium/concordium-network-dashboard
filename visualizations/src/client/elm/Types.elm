@@ -29,6 +29,7 @@ type alias Model =
     , graph : Graph NodeSpec EdgeSpec
     , clock : Float
     , transfer : Animation
+    , ticks : Int
     }
 
 

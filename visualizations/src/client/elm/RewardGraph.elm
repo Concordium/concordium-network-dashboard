@@ -6,6 +6,7 @@ module RewardGraph exposing
     , NodeSpec
     , RectangularNodeDisplay
     , init
+    , millisecondsFromInterval
     , nodeCenter
     , nodeColor
     , nodeColorFromId
@@ -15,6 +16,7 @@ module RewardGraph exposing
     , updateEdgeValue
     )
 
+import Animation exposing (Animation, animation, duration)
 import Color exposing (Color)
 import Colors
 import Graph exposing (Edge, Graph, Node, nodes)
@@ -65,7 +67,8 @@ type alias EdgeSpec =
     , valueString : String
     , interval : Int
     , intervalString : String
-    , animationDelta : Float
+    , animation : Animation
+    , animationValue : Float
     , display : EdgeDisplay
     }
 
@@ -211,10 +214,11 @@ init =
                 id.users
                 { label = [ "Wallet" ]
                 , value = 0.1
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = []
                     , toWaypoints = [ Grid.point 0 15, Grid.point 0 0 ]
@@ -227,10 +231,11 @@ init =
                 id.trustedIdentityIssuers
                 { label = [ "Software" ]
                 , value = 0.4
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = []
                     , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
@@ -243,10 +248,11 @@ init =
                 id.blockBakersBakingPools
                 { label = [ "Software" ]
                 , value = 0.5
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = []
                     , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
@@ -259,10 +265,11 @@ init =
                 id.smartContractDevelopers
                 { label = [ "Software" ]
                 , value = 0.5
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = []
                     , toWaypoints = [ Grid.point 0 35, Grid.point 0 0 ]
@@ -275,10 +282,11 @@ init =
                 id.blockFinalizers
                 { label = [ "Software" ]
                 , value = 0.5
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = []
                     , toWaypoints = [ Grid.point 0 15, Grid.point 0 0 ]
@@ -291,10 +299,11 @@ init =
                 id.users
                 { label = [ "Identities" ]
                 , value = 0.9
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = [ Grid.point 2 0, Grid.point 2 10 ]
                     , toWaypoints = []
@@ -307,10 +316,11 @@ init =
                 id.users
                 { label = [ "Reward % Kickback" ]
                 , value = 1.0
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = [ Grid.point -4 0, Grid.point -4 10 ]
                     , toWaypoints = [ Grid.point 0 -2 ]
@@ -323,10 +333,11 @@ init =
                 id.blockchain
                 { label = [ "Baking" ]
                 , value = 1.1
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = [ Grid.point 4 0, Grid.point 4 10 ]
                     , toWaypoints = [ Grid.point 0 -2 ]
@@ -339,10 +350,11 @@ init =
                 id.users
                 { label = [ "Smart Contracts" ]
                 , value = 0.2
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints =
                         [ Grid.point 0 0
@@ -359,10 +371,11 @@ init =
                 id.blockBakersBakingPools
                 { label = [ "Delegate Stake" ]
                 , value = 0.3
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = [ Grid.point 0 2 ]
                     , toWaypoints = [ Grid.point -2 12, Grid.point -2 0 ]
@@ -375,10 +388,11 @@ init =
                 id.blockchain
                 { label = [ "Gas" ]
                 , value = 1.1
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = []
                     , toWaypoints = []
@@ -391,10 +405,11 @@ init =
                 id.trustedIdentityIssuers
                 { label = [ "Transaction Rewards" ]
                 , value = 0.5
-                , interval = 10
+                , interval = 50
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints =
                         [ Grid.point 0 0
@@ -411,10 +426,11 @@ init =
                 id.blockBakersBakingPools
                 { label = [ "Block Rewards" ]
                 , value = 0.4
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = [ Grid.point 0 2 ]
                     , toWaypoints = [ Grid.point 2 12, Grid.point 2 2 ]
@@ -427,10 +443,11 @@ init =
                 id.smartContractDevelopers
                 { label = [ "Execution Rewards" ]
                 , value = 0.2
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = []
                     , toWaypoints = [ Grid.point -2 10, Grid.point -2 0 ]
@@ -443,10 +460,11 @@ init =
                 id.blockFinalizers
                 { label = [ "Finalization", "Rewards" ]
                 , value = 0.4
-                , interval = 30
+                , interval = 60
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = [ Grid.point 0 1 ]
                     , toWaypoints = [ Grid.point 0 1 ]
@@ -459,10 +477,11 @@ init =
                 id.foundation
                 { label = [ "Tax" ]
                 , value = 1.2
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = [ Grid.point 0 0, Grid.point 0 15 ]
                     , toWaypoints = []
@@ -474,10 +493,11 @@ init =
                 id.blockchain
                 { label = [ "GTU Minting" ]
                 , value = 1
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = [ Grid.point 1 -1, Grid.point 7 5 ]
                     , toWaypoints = [ Grid.point 4.5 7.5, Grid.point -1.5 1.5 ]
@@ -490,10 +510,11 @@ init =
                 id.blockchain
                 { label = [ "Finalization" ]
                 , value = 1
-                , interval = 20
+                , interval = 90
                 , valueString = ""
                 , intervalString = ""
-                , animationDelta = 0
+                , animation = Animation.static 0
+                , animationValue = 0
                 , display =
                     { fromWaypoints = [ Grid.point 0 -1 ]
                     , toWaypoints = [ Grid.point 0 -1 ]
@@ -505,6 +526,25 @@ init =
     in
     Graph.fromNodesAndEdges nodes edges
         |> updateFormStrings
+        |> initAnimations
+
+
+initAnimations : Graph NodeSpec EdgeSpec -> Graph NodeSpec EdgeSpec
+initAnimations graph =
+    graph
+        |> Graph.mapEdges
+            (\edge ->
+                { edge | animation = animation 0 |> duration (millisecondsFromInterval edge.interval) }
+            )
+
+
+millisecondsFromInterval : Int -> Float
+millisecondsFromInterval interval =
+    let
+        ticksPerSecond =
+            30.0
+    in
+    (toFloat interval / ticksPerSecond) * 1000
 
 
 updateFormStrings : Graph NodeSpec EdgeSpec -> Graph NodeSpec EdgeSpec
@@ -635,13 +675,18 @@ nodeColorFromId nodeId graph =
         |> Maybe.withDefault Color.white
 
 
-tick : Graph NodeSpec EdgeSpec -> Graph NodeSpec EdgeSpec
-tick graph =
+tick : Int -> Graph NodeSpec EdgeSpec -> Graph NodeSpec EdgeSpec
+tick ticks graph =
     Graph.mapContexts
         (\context ->
             let
                 edgeSum =
-                    \eid edge accumulator -> accumulator + edge.value
+                    \eid edge accumulator ->
+                        if modBy edge.interval ticks == 0 then
+                            accumulator + edge.value
+
+                        else
+                            accumulator
 
                 incoming =
                     IntDict.foldr edgeSum 0 context.incoming
