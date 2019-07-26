@@ -4,7 +4,9 @@ import Color exposing (..)
 import Dict
 import Force exposing (State)
 import Graph exposing (Edge, Graph, Node, NodeId)
+import Html exposing (Html)
 import Html.Events.Extra.Mouse as Mouse
+import Html.Lazy exposing (lazy)
 import IntDict
 import List exposing (range)
 import Murmur3
@@ -142,22 +144,23 @@ hexagon ( x, y ) size attrs =
         (p :: attrs)
 
 
-nodeSize model size node =
-    hexagon ( node.x, node.y )
+nodeSize : Model -> Float -> Entity -> Svg Msg
+nodeSize model size nodeLabel =
+    hexagon ( nodeLabel.x, nodeLabel.y )
         size
         [ case model.selectedNode of
             Just selectedNode ->
-                if selectedNode.nodeId == node.value.name then
+                if selectedNode.nodeId == nodeLabel.value.name then
                     fill <| Fill red
 
                 else
-                    fill <| Fill <| Scale.convert colorScale node.x
+                    fill <| Fill <| Scale.convert colorScale nodeLabel.x
 
             Nothing ->
-                fill <| Fill <| Scale.convert colorScale node.x
-        , onMouseDown node.value.name
+                fill <| Fill <| Scale.convert colorScale nodeLabel.x
+        , onMouseDown nodeLabel.value.name
         ]
-        [ title [] [ text node.value.name ] ]
+        [ title [] [ text nodeLabel.value.name ] ]
 
 
 onMouseDown : String -> Attribute Msg
@@ -165,11 +168,22 @@ onMouseDown name =
     Mouse.onDown (\_ -> NodeClicked name)
 
 
+nodeElement : Model -> Node Entity -> Svg Msg
 nodeElement model node =
     nodeSize model 7 node.label
 
 
+view : Model -> Graph Entity () -> Html Msg
 view model nodesModel =
+    lazy (view_ model) nodesModel
+
+
+view_ : Model -> Graph Entity () -> Html Msg
+view_ model nodesModel =
+    let
+        x =
+            Debug.log "nodegraph view redrawn"
+    in
     svg [ viewBox 0 0 model.graph.width model.graph.height ]
         [ g [ class [ "links" ] ] <| List.map (linkElement nodesModel) <| Graph.edges nodesModel
         , g [ class [ "nodes" ] ] <| List.map (nodeElement model) <| Graph.nodes nodesModel
