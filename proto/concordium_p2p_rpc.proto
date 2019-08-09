@@ -84,6 +84,9 @@ message NodeInfoResponse {
   google.protobuf.StringValue node_id = 1;
   uint64 current_localtime = 2;
   string peer_type = 3;
+  bool consensus_baker_running = 4;
+  bool consensus_running = 5;
+  string consensus_type = 6;
 }
 
 message SuccessfulJsonPayloadResponse {
@@ -92,6 +95,10 @@ message SuccessfulJsonPayloadResponse {
 
 message BlockHash {
   string block_hash = 1;
+}
+
+message TransactionHash {
+  string transaction_hash = 1;
 }
 
 message BlockHashAndAmount {
@@ -146,6 +153,21 @@ message RetransmitRequestMessage {
   uint32 network_id = 4;
 }
 
+message GRPCSkovStats {
+  uint32 skov_block_receipt = 1; // in seconds
+  uint32 skov_block_entry = 2; // in us
+  uint32 skov_block_query = 3; // in us
+  uint32 skov_finalization_receipt = 4; // in seconds
+  uint32 skov_finalization_entry = 5; // in us
+  uint32 skov_finalization_query = 6; // in us
+}
+
+message SuccesfulStructResponse {
+  oneof payload {
+    GRPCSkovStats skov_stats = 1;
+  }
+}
+
 service P2P {
   // Suggest this peer connects to submitted peer details
   rpc PeerConnect (PeerConnectRequest) returns (SuccessResponse) {}
@@ -182,6 +204,11 @@ service P2P {
   // Submit a local transaction
   rpc SendTransaction(SendTransactionRequest) returns (SuccessResponse) {}
 
+  // Start the baker in the consensus module
+  rpc StartBaker(Empty) returns (SuccessResponse) {}
+  // Stop the baker in the consensus module
+  rpc StopBaker(Empty) returns (SuccessResponse) {}
+
   rpc GetAccountList(BlockHash) returns (SuccessfulJsonPayloadResponse) {}
   rpc GetInstances(BlockHash) returns (SuccessfulJsonPayloadResponse) {}
   rpc GetAccountInfo(GetAddressInfoRequest) returns (SuccessfulJsonPayloadResponse) {}
@@ -197,4 +224,6 @@ service P2P {
   rpc DumpStart(DumpRequest) returns (SuccessResponse) {}
   rpc DumpStop(Empty) returns (SuccessResponse) {}
   rpc RetransmitRequest(RetransmitRequestMessage) returns (SuccessResponse) {}
+  rpc GetSkovStats(Empty) returns (SuccesfulStructResponse) {}
+  rpc HookTransaction(TransactionHash) returns (SuccessfulJsonPayloadResponse) {}
 }
