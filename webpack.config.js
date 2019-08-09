@@ -11,7 +11,6 @@ const MODE =
 const plugins = [
   new HtmlWebpackPlugin({
     title: 'Concordium Dashboard',
-    favicon: './src/client/favicon.ico',
     filename: 'index.html',
     template: './src/client/index.ejs',
   }),
