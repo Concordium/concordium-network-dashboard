@@ -180,10 +180,10 @@ view model nodesModel =
 
 view_ : Model -> Graph Entity () -> Html Msg
 view_ model nodesModel =
-    let
-        x =
-            Debug.log "nodegraph view redrawn"
-    in
+    -- let
+    --     x =
+    --         Debug.log "nodegraph view redrawn"
+    -- in
     svg [ viewBox 0 0 model.graph.width model.graph.height ]
         [ g [ class [ "links" ] ] <| List.map (linkElement nodesModel) <| Graph.edges nodesModel
         , g [ class [ "nodes" ] ] <| List.map (nodeElement model) <| Graph.nodes nodesModel
