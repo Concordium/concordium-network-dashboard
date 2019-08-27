@@ -22,6 +22,7 @@ import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import Json.Encode as E
 import List.Extra as List
 import Markdown
+import NodeHelpers exposing (..)
 import Pages.Graph
 import Round
 import String
@@ -48,7 +49,7 @@ nodeSummariesDecoder =
             |> required "nodeName" D.string
             |> required "nodeId" D.string
             -- @TODO make this mandatory when collector has been deployed
-            |> optional "peerType" D.string ""
+            |> optional "peerType" D.string "Unknown"
             |> required "uptime" D.float
             |> required "client" D.string
             |> required "averagePing" (D.nullable D.float)
@@ -623,15 +624,6 @@ update msg model =
 
         Noop ->
             ( model, Cmd.none )
-
-
-findNodeById nodeId nodes =
-    case Dict.find (\_ n -> n.nodeId == nodeId) nodes of
-        Just ( _, node ) ->
-            Just node
-
-        Nothing ->
-            Nothing
 
 
 onPageInit : Page -> Model -> ( Model, Cmd Msg )

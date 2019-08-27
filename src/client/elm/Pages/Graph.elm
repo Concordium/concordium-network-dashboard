@@ -8,6 +8,7 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import NetworkGraph
+import NodeHelpers exposing (..)
 import Types exposing (..)
 import Widgets exposing (..)
 
@@ -32,7 +33,12 @@ view model =
                 nodeView node model
 
             Nothing ->
-                el [ alignTop ] (text "Click on a node to see an overview")
+                case model.currentPage of
+                    NodeView _ ->
+                        el [ alignTop ] (text "Loading...")
+
+                    _ ->
+                        el [ alignTop ] (text "Click on a node to see an overview")
         ]
     ]
 
@@ -58,10 +64,20 @@ nodeView node model =
             , ( "finalizationPeriodEMSD", text <| String.fromFloat <| Maybe.withDefault 0 node.finalizationPeriodEMSD )
             , ( "packetsSent", text <| String.fromFloat node.packetsSent )
             , ( "packetsReceived", text <| String.fromFloat node.packetsReceived )
-            , ( "peersList", column [] (List.map (\t -> paragraph [] [ text t ]) node.peersList) )
+            , ( "peersList", peersListView model node.peersList )
             ]
     in
     row [ Font.color green, spacing 20, alignTop ]
         [ column [ Font.color lightGrey, alignTop ] (pairs |> List.map Tuple.first |> List.map (\t -> el [ height (px 30) ] (text t)))
         , column [ alignTop ] (pairs |> List.map Tuple.second |> List.map (\e -> el [ height (px 30) ] e))
         ]
+
+
+peersListView model peersList =
+    column []
+        (List.map
+            (\peerNodeId ->
+                paragraph [ onClick <| NodeClicked peerNodeId, pointer ] [ text <| "(" ++ nodeTypeById peerNodeId model.nodes ++ ") " ++ peerNodeId ]
+            )
+            peersList
+        )
