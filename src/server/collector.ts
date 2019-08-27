@@ -158,6 +158,7 @@ const main = async () => {
   const nodeData = {
     nodeName: nodeName,
     nodeId: nodeInfo['node_id']['value'],
+    peerType: nodeInfo['peer_type'],
     uptime: uptime,
     client: client,
     averagePing: _.sum(_.values(peerStats).map(n => parseInt(n['measured_latency']))) / peerCount,
