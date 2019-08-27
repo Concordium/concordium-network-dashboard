@@ -47,6 +47,8 @@ nodeSummariesDecoder =
         (D.succeed NetworkNode
             |> required "nodeName" D.string
             |> required "nodeId" D.string
+            -- @TODO make this mandatory when collector has been deployed
+            |> optional "peerType" D.string ""
             |> required "uptime" D.float
             |> required "client" D.string
             |> required "averagePing" (D.nullable D.float)
@@ -96,7 +98,7 @@ view model =
                     [ column [ spacing 20, width fill ]
                         [ header
                         , wrappedRow [ spacing 20, width fill ]
-                            [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (toFloat <| Dict.size model.nodes)
+                            [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (toFloat <| Dict.size <| nodePeersOnly model.nodes)
                             , widgetSeconds blue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.bestArrivedTime)) "" model.nodes)
                             , widgetSeconds green
                                 "Last finalized block"
@@ -171,6 +173,9 @@ view model =
                     ]
 
                 NodeGraph ->
+                    Pages.Graph.view model
+
+                NodeView nodeName ->
                     Pages.Graph.view model
         ]
     }
@@ -528,12 +533,16 @@ update msg model =
         UrlClicked urlRequest ->
             case urlRequest of
                 Internal url ->
-                    ( model
+                    let
+                        ( initModel, initCmds ) =
+                            onPageInit (pathToPage url) model
+                    in
+                    ( initModel
                     , Cmd.batch
                         [ Nav.pushUrl model.key (Url.toString url)
 
                         -- , onPageExit model.currentPage model
-                        -- , onPageInit (pathToPage url) model
+                        , initCmds
                         ]
                     )
 
@@ -558,16 +567,21 @@ update msg model =
             case r of
                 Ok nodeSummaries ->
                     let
+                        newModel =
+                            { model
+                                | nodes = nodes
+                            }
+
                         nodes =
                             nodeSummaries |> List.map (\node -> ( node.nodeName, node )) |> Dict.fromList
                     in
-                    ( { model
-                        | nodes = nodes
+                    case model.currentPage of
+                        NodeView nodeId ->
+                            -- nodeSummaries may have loaded after a nodeview URL was already open, so re-init it
+                            onPageInit newModel.currentPage newModel
 
-                        -- , selectedNode = nodes |> Dict.toList |> List.head |> Maybe.map Tuple.second
-                      }
-                    , Cmd.none
-                    )
+                        _ ->
+                            ( newModel, Cmd.none )
 
                 Err err ->
                     ( model, Cmd.none )
@@ -596,16 +610,7 @@ update msg model =
             ( { model | sortMode = newSortMode }, Cmd.none )
 
         NodeClicked nodeId ->
-            let
-                selectedNode =
-                    case Dict.find (\_ n -> n.nodeId == nodeId) model.nodes of
-                        Just ( _, node ) ->
-                            Just node
-
-                        Nothing ->
-                            Nothing
-            in
-            ( { model | selectedNode = selectedNode }, Cmd.batch [ Nav.pushUrl model.key (pageToPath NodeGraph), scrollPageToTop ] )
+            ( { model | selectedNode = findNodeById nodeId model.nodes }, Cmd.batch [ Nav.pushUrl model.key (pageToPath (NodeView nodeId)), scrollPageToTop ] )
 
         GraphZoom zoom ->
             ( { model | graph = { width = model.graph.width + zoom, height = model.graph.height + zoom } }, Cmd.none )
@@ -618,6 +623,34 @@ update msg model =
 
         Noop ->
             ( model, Cmd.none )
+
+
+findNodeById nodeId nodes =
+    case Dict.find (\_ n -> n.nodeId == nodeId) nodes of
+        Just ( _, node ) ->
+            Just node
+
+        Nothing ->
+            Nothing
+
+
+onPageInit : Page -> Model -> ( Model, Cmd Msg )
+onPageInit page model =
+    case page of
+        NodeView nodeId ->
+            ( { model | selectedNode = findNodeById nodeId model.nodes }, Cmd.none )
+
+        NodeGraph ->
+            ( { model | selectedNode = Nothing }, Cmd.none )
+
+        _ ->
+            ( model, Cmd.none )
+
+
+onPageExit page model =
+    case page of
+        _ ->
+            Cmd.none
 
 
 scrollPageToTop =
@@ -674,3 +707,9 @@ bgDarkGrey =
 bgWhite : Attr decorative msg
 bgWhite =
     Background.color <| white
+
+
+nodePeersOnly : Dict Host NetworkNode -> Dict Host NetworkNode
+nodePeersOnly nodes =
+    -- @TODO remove "" case when new collector is deployed
+    nodes |> Dict.filter (\k n -> n.peerType == "Node" || n.peerType == "")

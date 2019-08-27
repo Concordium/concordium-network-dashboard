@@ -1,4 +1,4 @@
-module Types exposing (Host, Model, Msg(..), NetworkNode, Page(..), SortBy(..), SortMode(..), pageToPath, parserRoutes, pathToPage)
+module Types exposing (..)
 
 import Browser exposing (..)
 import Browser.Navigation as Nav exposing (Key)
@@ -24,6 +24,7 @@ type alias Model =
 type Page
     = Dashboard
     | NodeGraph
+    | NodeView String -- Node by nodeId
 
 
 type alias Host =
@@ -49,6 +50,7 @@ type Msg
 type alias NetworkNode =
     { nodeName : String
     , nodeId : String
+    , peerType : String
 
     --   , state : Maybe String
     , uptime : Float -- Milliseconds @TODO figure out how to convert to Int, issue is in JS everything is Double even Ints
@@ -95,6 +97,7 @@ parserRoutes =
     oneOf
         [ Url.Parser.map Dashboard (s "")
         , Url.Parser.map NodeGraph (s "nodegraph")
+        , Url.Parser.map NodeView (s "node" </> Url.Parser.string)
         ]
 
 
@@ -116,3 +119,6 @@ pageToPath page =
 
         NodeGraph ->
             "/nodegraph"
+
+        NodeView nodeId ->
+            "/node/" ++ nodeId
