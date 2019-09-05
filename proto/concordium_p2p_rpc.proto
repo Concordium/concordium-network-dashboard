@@ -144,6 +144,10 @@ message DumpRequest {
   bool raw = 2;
 }
 
+message PeersRequest {
+  bool include_bootstrappers = 1;
+}
+
 message Empty {}
 
 message RetransmitRequestMessage {
@@ -154,17 +158,17 @@ message RetransmitRequestMessage {
 }
 
 message GRPCSkovStats {
-  uint32 skov_block_receipt = 1; // in seconds
-  uint32 skov_block_entry = 2; // in us
-  uint32 skov_block_query = 3; // in us
-  uint32 skov_finalization_receipt = 4; // in seconds
-  uint32 skov_finalization_entry = 5; // in us
-  uint32 skov_finalization_query = 6; // in us
+  uint32 gs_block_receipt = 1; // in seconds
+  uint32 gs_block_entry = 2; // in us
+  uint32 gs_block_query = 3; // in us
+  uint32 gs_finalization_receipt = 4; // in seconds
+  uint32 gs_finalization_entry = 5; // in us
+  uint32 gs_finalization_query = 6; // in us
 }
 
 message SuccesfulStructResponse {
   oneof payload {
-    GRPCSkovStats skov_stats = 1;
+    GRPCSkovStats gs_stats = 1;
   }
 }
 
@@ -181,9 +185,9 @@ service P2P {
   rpc PeerVersion(Empty) returns (StringResponse) {}
   rpc SendMessage(SendMessageRequest) returns (SuccessResponse) {}
   // Stats for connected peers
-  rpc PeerStats(Empty) returns (PeerStatsResponse) {}
+  rpc PeerStats(PeersRequest) returns (PeerStatsResponse) {}
   // List of connected peers
-  rpc PeerList(Empty) returns (PeerListResponse) {}
+  rpc PeerList(PeersRequest) returns (PeerListResponse) {}
   rpc SubscriptionStart(Empty) returns (SuccessResponse) {}
   rpc SubscriptionStop(Empty) returns (SuccessResponse) {}
   rpc SubscriptionPoll(Empty) returns (P2PNetworkMessage) {}
