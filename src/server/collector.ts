@@ -17,6 +17,7 @@ var nodeName = (process.env.COLLECTOR_NAME && (process.env.COLLECTOR_NAME != '')
 let defaultHost = (process.env.COLLECTOR_HOST && (process.env.COLLECTOR_HOST != '')) ? process.env.COLLECTOR_HOST : 'localhost:8890';
 let defaultDashboard = (process.env.COLLECTOR_DASHBOARD && (process.env.COLLECTOR_DASHBOARD != '')) ? process.env.COLLECTOR_DASHBOARD : 'localhost:3000';
 let defaultFrequency = (process.env.COLLECTOR_FREQUENCY && (process.env.COLLECTOR_FREQUENCY != '')) ? process.env.COLLECTOR_FREQUENCY : '2000';
+const grpcTimeoutInSeconds = 10;
 
 
 program
@@ -55,9 +56,16 @@ meta.add('authentication', 'rpcadmin')
 
 const dashboards = _.map(program.dashboard.split(','), host => io('http://' + host + '/nodes'))
 
+const getGrpcOptions = () => {
+  //Calculate now + 10 seconds   
+  return {
+    deadline: new Date(new Date().getTime() + 1000 * grpcTimeoutInSeconds)
+  }
+}
+
 const getUptime = (grpcService) => {
   return new Promise ((resolve, reject) => {
-    grpcService.peerUptime({}, meta, function(err, response) {
+    grpcService.peerUptime({}, meta, getGrpcOptions(), function(err, response) {
       if (err) {
         reject(err)
       } else {
@@ -70,7 +78,7 @@ const getUptime = (grpcService) => {
 
 const getConsensusStatus = (grpcService) => {
   return new Promise ((resolve, reject) => {
-    grpcService.GetConsensusStatus({}, meta, function(err, response) {
+    grpcService.GetConsensusStatus({}, meta, getGrpcOptions(), function(err, response) {
       if (err) {
         reject(err)
       } else {
@@ -84,7 +92,7 @@ const getConsensusStatus = (grpcService) => {
 
 const getPeerVersion = (grpcService) => {
   return new Promise ((resolve, reject) => {
-    grpcService.PeerVersion({}, meta, function(err, response) {
+    grpcService.PeerVersion({}, meta, getGrpcOptions(), function(err, response) {
       if (err) {
         reject(err)
       } else {
@@ -96,7 +104,7 @@ const getPeerVersion = (grpcService) => {
 
 const getPeerStats = (grpcService) => {
   return new Promise ((resolve, reject) => {
-    grpcService.PeerStats({}, meta, function(err, response) {
+    grpcService.PeerStats({}, meta, getGrpcOptions(), function(err, response) {
       if (err) {
         reject(err)
       } else {
@@ -108,7 +116,7 @@ const getPeerStats = (grpcService) => {
 
 const getPeerTotalSent = (grpcService) => {
   return new Promise ((resolve, reject) => {
-    grpcService.PeerTotalSent({}, meta, function(err, response) {
+    grpcService.PeerTotalSent({}, meta, getGrpcOptions(), function(err, response) {
       if (err) {
         reject(err)
       } else {
@@ -120,7 +128,7 @@ const getPeerTotalSent = (grpcService) => {
 
 const getPeerTotalReceived = (grpcService) => {
   return new Promise ((resolve, reject) => {
-    grpcService.PeerTotalReceived({}, meta, function(err, response) {
+    grpcService.PeerTotalReceived({}, meta, getGrpcOptions(), function(err, response) {
       if (err) {
         reject(err)
       } else {
@@ -132,7 +140,7 @@ const getPeerTotalReceived = (grpcService) => {
 
 const getNodeInfo = (grpcService) => {
   return new Promise ((resolve, reject) => {
-    grpcService.NodeInfo({}, meta, function(err, response) {
+    grpcService.NodeInfo({}, meta, getGrpcOptions(), function(err, response) {
       if (err) {
         reject(err)
       } else {
