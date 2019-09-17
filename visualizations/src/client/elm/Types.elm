@@ -3,6 +3,7 @@ module Types exposing (Flags, Model, Msg(..), Page(..), Window, pageToPath, pars
 import Animation exposing (Animation)
 import Browser exposing (..)
 import Browser.Navigation as Nav exposing (Key)
+import Chain exposing (Chain)
 import Dict
 import Enum
 import Graph exposing (Graph)
@@ -30,6 +31,8 @@ type alias Model =
     , clock : Float
     , transfer : Animation
     , ticks : Int
+    , currentChain : Chain
+    , previousChain : Maybe Chain
     }
 
 

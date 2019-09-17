@@ -1,4 +1,4 @@
-module View exposing (view)
+module RewardGraph.View exposing (view)
 
 import Browser
 import Color exposing (toRgba)

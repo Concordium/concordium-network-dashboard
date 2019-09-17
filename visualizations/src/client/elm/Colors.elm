@@ -1,6 +1,9 @@
 module Colors exposing
     ( background
     , blue
+    , blueishBlack
+    , blueishVeryDarkGray
+    , fromUI
     , green
     , lightGray
     , midGray
@@ -82,3 +85,12 @@ toUI color =
             Color.toRgba color
     in
     Element.rgb c.red c.green c.blue
+
+
+fromUI : Element.Color -> Color
+fromUI color =
+    let
+        c =
+            Element.toRgb color
+    in
+    Color.rgb c.red c.green c.blue

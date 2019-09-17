@@ -5,15 +5,22 @@ import Browser exposing (..)
 import Browser.Dom
 import Browser.Events as Events
 import Browser.Navigation as Nav exposing (Key)
+import Chain
 import Curve.ParameterValue exposing (value)
 import Dict exposing (Dict)
+import Element exposing (..)
+import Element.Background as Background
+import Element.Border as Border
+import Element.Font as Font
+import Element.Input as Input
+import Element.Region as Region
 import Graph
 import RewardGraph exposing (updateEdgeInterval, updateEdgeValue)
 import Task
 import Time
 import Types exposing (..)
 import Url exposing (Url)
-import View exposing (view)
+import Widgets exposing (..)
 
 
 init : Flags -> Url -> Key -> ( Model, Cmd Msg )
@@ -29,11 +36,34 @@ init flags url key =
             , clock = 0
             , transfer = animation 0 |> duration 0.7
             , ticks = 0
+            , previousChain = Nothing
+            , currentChain = Chain.mockChain
             }
     in
     ( model
     , onPageInit (pathToPage url) model
     )
+
+
+view : Model -> Browser.Document Msg
+view model =
+    { title = "Concordium Visualizations"
+    , body =
+        [ theme <|
+            case model.currentPage of
+                Home ->
+                    [ row
+                        [ width fill
+                        , height (px model.window.height)
+                        ]
+                        [ Chain.view
+                            model.previousChain
+                            model.currentChain
+                            0
+                        ]
+                    ]
+        ]
+    }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
