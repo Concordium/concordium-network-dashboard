@@ -1,5 +1,7 @@
-module Chain exposing (Block, Chain, Link(..), Node, mockChain, view)
+module Chain exposing (Block, BlockChain, Node, mockChain, view)
 
+import Chain.Connector exposing (..)
+import Chain.Spec exposing (..)
 import Color exposing (..)
 import Color.Interpolate exposing (..)
 import Colors exposing (..)
@@ -19,39 +21,64 @@ type alias Node =
 
 type alias Block =
     { hash : String
-    , finalized : Maybe Posix
+    , nodesAt : List Node
     }
 
 
-type Link
-    = Link Block
-    | Fork (List Link)
-
-
-type alias Chain =
-    { chain : List Link
+type alias Model =
+    { chain : BlockChain
     , nodes : List Node
     }
 
 
-mockChain =
-    { chain = mockLinks
+type alias FinalizedChain =
+    List Block
+
+
+type CandidateTree
+    = Chain (List Block) (List CandidateTree)
+
+
+type alias BlockChain =
+    { finalizedBlocks : FinalizedChain
+    , candidateBlocks : CandidateTree
+    }
+
+
+mockModel =
+    { chain = mockChain
     , nodes = mockNodes
     }
 
 
-mockLinks =
-    [ Link { hash = "32ef", finalized = Just (millisToPosix <| 1568724381000 - 30000) }
-    , Link { hash = "923a", finalized = Just (millisToPosix <| 1568724381000 - 20000) }
-    , Link { hash = "d2c3", finalized = Just (millisToPosix <| 1568724381000 - 10000) }
-    , Link { hash = "89fa", finalized = Just (millisToPosix 1568724381000) }
-    , Link { hash = "2d45", finalized = Nothing }
-    , Link { hash = "8574", finalized = Nothing }
-    , Fork
-        [ Link { hash = "235a", finalized = Nothing }
-        , Link { hash = "352b", finalized = Nothing }
-        ]
+mockChain =
+    { finalizedBlocks = mockFinalizedBlocks
+    , candidateBlocks = mockCandidateBlocks
+    }
+
+
+mockFinalizedBlocks =
+    [ { hash = "32ef", nodesAt = [] }
+    , { hash = "923a", nodesAt = [] }
+    , { hash = "d2c3", nodesAt = [] }
     ]
+
+
+mockCandidateBlocks =
+    Chain
+        [ { hash = "32ef", nodesAt = [] }
+        , { hash = "923a", nodesAt = [] }
+        ]
+        [ Chain [ { hash = "32ef", nodesAt = [] }, { hash = "89fa", nodesAt = [] } ] []
+        , Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ]
+            [ Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ] []
+            , Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ] []
+            ]
+        , Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ] []
+        , Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ] []
+        , Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ] []
+        , Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ] []
+        ]
 
 
 mockNodes : List Node
@@ -68,46 +95,114 @@ mockNodes =
     ]
 
 
-view : Maybe Chain -> Chain -> Float -> Element msg
+view : Maybe BlockChain -> BlockChain -> Float -> Element msg
 view lastState currentState transitionTime =
-    row [ spacingXY 40 0, centerX, centerY ]
-        (List.map viewLink currentState.chain)
+    let
+        viewFinalizedChain =
+            viewChain True
+    in
+    row [ centerX, centerY ]
+        [ viewFinalizedChain currentState.finalizedBlocks
+        , connector spec (fromUI <| blockBackground Candidate) 1
+        , viewCandidateTree 1 currentState.candidateBlocks
+        ]
 
 
-viewLink : Link -> Element msg
-viewLink link =
-    case link of
-        Link block ->
-            el
-                [ Background.color (blockBackground block)
-                , Font.color (blockColor block)
-                , Border.rounded 5
-                , Font.size 16
-                , width (px 80)
-                , height (px 44)
+viewChain : Bool -> List Block -> Element msg
+viewChain finalized blocks =
+    row [ alignTop ]
+        (if finalized then
+            List.map (viewBlock Finalized) (List.take (List.length blocks - 1) blocks)
+                ++ List.map (viewBlock LastFinalized) (List.drop (List.length blocks - 1) blocks)
+                |> List.intersperse (connector spec (fromUI <| blockBackground Finalized) 1)
+
+         else
+            List.map (viewBlock Candidate) blocks
+                |> List.intersperse (connector spec (fromUI <| blockBackground Candidate) 1)
+        )
+
+
+type BlockStatus
+    = Finalized
+    | LastFinalized
+    | Candidate
+
+
+viewBlock : BlockStatus -> Block -> Element msg
+viewBlock blockStatus block =
+    el
+        [ Background.color (blockBackground blockStatus)
+        , Font.color (blockColor blockStatus)
+        , Border.rounded 3
+        , Font.size 16
+        , width (px 64)
+        , height (px 36)
+        ]
+        (el [ centerX, centerY ] (text block.hash))
+
+
+viewSummaryBlock : Int -> Element msg
+viewSummaryBlock n =
+    el
+        [ Font.color (blockBackground Candidate)
+        , Border.rounded 3
+        , Border.dotted
+        , Border.color (blockBackground Candidate)
+        , Border.width 2
+        , Font.size 16
+        , width (px 64)
+        , height (px 36)
+        ]
+        (el [ centerX, centerY ] (text ("+" ++ String.fromInt n)))
+
+
+viewCandidateTree : Int -> CandidateTree -> Element msg
+viewCandidateTree depth tree =
+    case ( depth, tree ) of
+        ( 0, Chain chain [] ) ->
+            viewChain False (List.take 1 chain)
+
+        ( 0, Chain chain subChains ) ->
+            viewChain False (List.take 1 chain)
+
+        ( n, Chain chain [] ) ->
+            viewChain False chain
+
+        ( n, Chain chain subChains ) ->
+            row [ alignTop ]
+                [ viewChain False chain
+                , connector spec (fromUI <| blockBackground Candidate) (min 3 (List.length subChains))
+                , column
+                    [ spacingXY 0 22 ]
+                    ((subChains |> List.take 2 |> List.map (viewCandidateTree (n - 1)))
+                        ++ [ viewSummaryBlock (List.length subChains - 2) ]
+                    )
                 ]
-                (el [ centerX, centerY ] (text block.hash))
-
-        Fork candidates ->
-            viewFork candidates
 
 
-viewFork : List Link -> Element msg
-viewFork candidates =
-    column [ spacingXY 0 20 ] (List.map viewLink candidates)
-
-
-blockColor : Block -> Element.Color
-blockColor block =
-    case block.finalized of
-        Just posix ->
+blockColor : BlockStatus -> Element.Color
+blockColor status =
+    case status of
+        Finalized ->
             toUI <| Colors.green
 
-        Nothing ->
+        LastFinalized ->
+            toUI <| Colors.green
+
+        Candidate ->
             toUI <| Colors.blue
 
 
-blockBackground : Block -> Element.Color
-blockBackground block =
+blockBackground : BlockStatus -> Element.Color
+blockBackground status =
+    let
+        bgAlpha =
+            case status of
+                LastFinalized ->
+                    0.5
+
+                _ ->
+                    0.75
+    in
     toUI <|
-        interpolate LAB (fromUI <| blockColor block) Colors.blueishBlack 0.7
+        interpolate LAB (fromUI <| blockColor status) Colors.blueishBlack bgAlpha
