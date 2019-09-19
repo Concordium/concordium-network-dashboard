@@ -39,16 +39,22 @@ connectorPath spec color numBlocks toBlock =
         spline =
             CubicSpline2d.with
                 { startPoint = Point2d.fromCoordinates ( 0, 0.5 * spec.blockHeight )
-                , startControlPoint = Point2d.fromCoordinates ( spec.gutterWidth / 2.0, 0.5 * spec.blockHeight )
+                , startControlPoint = Point2d.fromCoordinates ( 2 * spec.gutterWidth / 3.0, 0.5 * spec.blockHeight )
                 , endControlPoint =
                     Point2d.fromCoordinates
-                        ( spec.gutterWidth / 2.0
-                        , 0.5 * spec.blockHeight + toFloat toBlock * (spec.gutterHeight + spec.blockHeight)
+                        ( spec.gutterWidth / 3.0
+                        , 0.5
+                            * spec.blockHeight
+                            + toFloat toBlock
+                            * (spec.gutterHeight + spec.blockHeight)
                         )
                 , endPoint =
                     Point2d.fromCoordinates
                         ( spec.gutterWidth
-                        , 0.5 * spec.blockHeight + toFloat toBlock * (spec.gutterHeight + spec.blockHeight)
+                        , 0.5
+                            * spec.blockHeight
+                            + toFloat toBlock
+                            * (spec.gutterHeight + spec.blockHeight)
                         )
                 }
     in

@@ -58,7 +58,7 @@ mockChain =
 
 
 mockFinalizedBlocks =
-    [ { hash = "32ef", nodesAt = [] }
+    [ { hash = "32ea", nodesAt = [] }
     , { hash = "923a", nodesAt = [] }
     , { hash = "d2c3", nodesAt = [] }
     ]
@@ -66,11 +66,11 @@ mockFinalizedBlocks =
 
 mockCandidateBlocks =
     Chain
-        [ { hash = "32ef", nodesAt = [] }
+        [ { hash = "54b2", nodesAt = [] }
         , { hash = "923a", nodesAt = [] }
         ]
         [ Chain [ { hash = "32ef", nodesAt = [] }, { hash = "89fa", nodesAt = [] } ] []
-        , Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ]
+        , Chain [ { hash = "2aa6", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ]
             [ Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ] []
             , Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ] []
             ]
