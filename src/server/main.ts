@@ -36,7 +36,7 @@ app.get('/dev/reset', auth.connect(basic), function(req, res){
   res.send('nodeSummaries reset')
 })
 
-app.use(config.IS_PRODUCTION ? staticsRouter() : staticsDevRouter())
+app.use(config.IS_PRODUCTION ? staticsRouter(nodesSummary) : staticsDevRouter(nodesSummary))
 
 const server = http.createServer(app)
 var io = socketio(server)
