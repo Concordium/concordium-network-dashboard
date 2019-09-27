@@ -1,9 +1,9 @@
 import * as path from 'path';
 import * as express from 'express';
-import { Router } from 'express';
 
 export function staticsRouter(nodesSummary) {
-  const router = Router();
+  const router = express.Router();
+  router.use(express.json());
   const publicPath = path.join(__dirname, '..', '..', '..', 'public');
 
   // All the assets are in "public" folder (Done by Webpack)
