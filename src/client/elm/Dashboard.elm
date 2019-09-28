@@ -67,9 +67,9 @@ nodeSummariesDecoder =
             |> required "finalizationPeriodEMSD" (D.nullable D.float)
             |> required "packetsSent" D.float
             |> required "packetsReceived" D.float
-            |> optional "consensusRunning" D.boolean false
-            |> optional "bakingCommitteeMember" D.boolean false
-            |> optional "finalizationCommitteeMember" D.boolean false
+            |> optional "consensusRunning" D.bool False
+            |> optional "bakingCommitteeMember" D.bool False
+            |> optional "finalizationCommitteeMember" D.bool False
         )
 
 
