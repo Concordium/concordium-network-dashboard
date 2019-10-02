@@ -1,4 +1,4 @@
-FROM node:11
+FROM node:11 as build
 
 # https://github.com/nodejs/docker-node/blob/master/docs/BestPractices.md
 ENV NPM_CONFIG_PREFIX=/home/node/.npm-global
@@ -9,15 +9,13 @@ WORKDIR /home/node/app
 # Possibly temporary, see proto/readme.md
 COPY . .
 
-
-ENV NODE_ENV="development"
-
-RUN npm i
-RUN npm run build
-
 ENV NODE_ENV="production"
 RUN npm install
+RUN npm run build
 
-ENV PORT=80
+FROM nginx:alpine
+
+COPY --from=build /home/node/app/dist/public /usr/share/nginx/html/
+
 EXPOSE 80
-ENTRYPOINT npm run start:prod
+CMD ["nginx", "-g", "daemon off;"]
