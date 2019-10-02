@@ -70,6 +70,9 @@ type alias NetworkNode =
     , finalizationPeriodEMSD : Maybe Float
     , packetsSent : Float -- @TODO as above figure out Int
     , packetsReceived : Float -- @TODO as above figure out Int
+    , consensusRunning : Bool 
+    , bakingCommitteeMember : Bool
+    , finalizationCommitteeMember : Bool
     }
 
 
