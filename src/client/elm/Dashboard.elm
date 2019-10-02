@@ -565,7 +565,7 @@ update msg model =
             ( { model | nodes = Dict.insert node.nodeName node model.nodes }, Cmd.none )
 
         FetchNodeSummaries _ ->
-            ( model, Http.get { url = "/data/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
+            ( model, Http.get { url = "/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
 
         FetchedNodeSummaries r ->
             case r of
