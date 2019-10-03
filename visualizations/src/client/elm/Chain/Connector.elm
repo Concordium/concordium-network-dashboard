@@ -1,10 +1,10 @@
-module Chain.Connector exposing (connector)
+module Chain.Connector exposing (connector, connector1)
 
 import Arc2d exposing (endPoint)
 import Chain.Spec exposing (Spec)
 import Color exposing (Color)
 import CubicSpline2d exposing (endControlPoint, startControlPoint)
-import Element exposing (Element, alignTop, el)
+import Element exposing (Element, alignTop, el, explain)
 import Geometry.Svg as Svg
 import Point2d
 import TypedSvg exposing (..)
@@ -13,14 +13,23 @@ import TypedSvg.Core exposing (..)
 import TypedSvg.Types exposing (..)
 
 
-connector : Spec -> Color -> Int -> Element msg
-connector spec color numBlocks =
+connector1 : Spec -> Color -> Element msg
+connector1 spec color =
+    connector spec color [ 0 ]
+
+
+connector : Spec -> Color -> List Int -> Element msg
+connector spec color positions =
     let
+        maxCon =
+            Maybe.withDefault 0 (List.maximum positions) + 1
+
         cWidth =
             spec.gutterWidth
 
         cHeight =
-            spec.blockHeight * toFloat numBlocks + spec.gutterHeight * (toFloat numBlocks - 1)
+            ((spec.blockHeight + spec.nodeIndicatorHeight) * toFloat maxCon)
+                + (spec.gutterHeight * (toFloat maxCon - 1))
     in
     el [ alignTop ]
         (Element.html <|
@@ -29,32 +38,46 @@ connector spec color numBlocks =
                 , height (px cHeight)
                 , viewBox 0 0 cWidth cHeight
                 ]
-                (List.map (connectorPath spec color numBlocks) (List.range 0 (numBlocks - 1)))
+                (List.map (connectorPath spec color) positions)
         )
 
 
-connectorPath : Spec -> Color -> Int -> Int -> Svg msg
-connectorPath spec color numBlocks toBlock =
+connectorPath : Spec -> Color -> Int -> Svg msg
+connectorPath spec color toBlock =
     let
         spline =
             CubicSpline2d.with
-                { startPoint = Point2d.fromCoordinates ( 0, 0.5 * spec.blockHeight )
-                , startControlPoint = Point2d.fromCoordinates ( 2 * spec.gutterWidth / 3.0, 0.5 * spec.blockHeight )
+                { startPoint =
+                    Point2d.fromCoordinates
+                        ( 0
+                        , spec.nodeIndicatorHeight
+                            + 0.5
+                            * spec.blockHeight
+                        )
+                , startControlPoint =
+                    Point2d.fromCoordinates
+                        ( 2 * spec.gutterWidth / 3.0
+                        , spec.nodeIndicatorHeight
+                            + 0.5
+                            * spec.blockHeight
+                        )
                 , endControlPoint =
                     Point2d.fromCoordinates
                         ( spec.gutterWidth / 3.0
-                        , 0.5
+                        , spec.nodeIndicatorHeight
+                            + 0.5
                             * spec.blockHeight
                             + toFloat toBlock
-                            * (spec.gutterHeight + spec.blockHeight)
+                            * (spec.gutterHeight + spec.blockHeight + spec.nodeIndicatorHeight)
                         )
                 , endPoint =
                     Point2d.fromCoordinates
                         ( spec.gutterWidth
-                        , 0.5
+                        , spec.nodeIndicatorHeight
+                            + 0.5
                             * spec.blockHeight
                             + toFloat toBlock
-                            * (spec.gutterHeight + spec.blockHeight)
+                            * (spec.gutterHeight + spec.blockHeight + spec.nodeIndicatorHeight)
                         )
                 }
     in

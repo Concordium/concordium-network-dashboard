@@ -1,4 +1,4 @@
-module Chain exposing (Block, BlockChain, Node, mockChain, view)
+module Chain exposing (Block, Chain, Node, mockChain, view)
 
 import Chain.Connector exposing (..)
 import Chain.Spec exposing (..)
@@ -9,7 +9,12 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
+import List.Extra as List
 import Time exposing (..)
+
+
+
+-- Node
 
 
 type alias Node =
@@ -19,65 +24,129 @@ type alias Node =
     }
 
 
+
+-- Chain
+
+
 type alias Block =
     { hash : String
-    , nodesAt : List Node
     }
 
 
-type alias Model =
-    { chain : BlockChain
-    , nodes : List Node
+type Chain
+    = Chain (List Block) (List Chain)
+
+
+
+-- Annotated Chain
+
+
+type alias AnnotatedBlock =
+    { hash : String
+    , numNodesAt : Int
+    , percentageNodesAt : Float
+    , color : Element.Color
+    , background : Element.Color
+    , connectorsTo : List Int
     }
 
 
-type alias FinalizedChain =
-    List Block
+type AnnotatedChain
+    = AnnotatedChain Int (List AnnotatedBlock) (List AnnotatedChain)
 
 
-type CandidateTree
-    = Chain (List Block) (List CandidateTree)
+
+-- Deriving the annotations
 
 
-type alias BlockChain =
-    { finalizedBlocks : FinalizedChain
-    , candidateBlocks : CandidateTree
+chainHeight : AnnotatedChain -> Int
+chainHeight chain =
+    case chain of
+        AnnotatedChain height blocks subChains ->
+            height
+
+
+annotateChain : Chain -> AnnotatedChain
+annotateChain chain =
+    case chain of
+        Chain blocks [] ->
+            AnnotatedChain 1 (annotateBlocks mockNodes blocks []) []
+
+        Chain blocks subChains ->
+            let
+                annotatedSubChains =
+                    List.map annotateChain subChains
+
+                height =
+                    List.map chainHeight annotatedSubChains
+                        |> List.sum
+            in
+            AnnotatedChain
+                height
+                (annotateBlocks mockNodes blocks (connectorsTo annotatedSubChains))
+                annotatedSubChains
+
+
+annotateBlocks : List Node -> List Block -> List Int -> List AnnotatedBlock
+annotateBlocks nodes blocks connectorsLast =
+    case blocks of
+        [] ->
+            []
+
+        lastBlock :: [] ->
+            [ annotateBlock nodes lastBlock connectorsLast ]
+
+        currentBlock :: remainingBlocks ->
+            annotateBlock nodes currentBlock [ 0 ]
+                :: annotateBlocks nodes remainingBlocks connectorsLast
+
+
+annotateBlock : List Node -> Block -> List Int -> AnnotatedBlock
+annotateBlock nodes block connectors =
+    let
+        numNodes =
+            List.length nodes
+
+        numNodesAt =
+            nodesAt nodes block.hash
+    in
+    { hash = block.hash
+    , numNodesAt = nodesAt nodes block.hash
+    , percentageNodesAt = (numNodesAt |> toFloat) / (numNodes |> toFloat)
+    , color = blockColor Candidate
+    , background = blockBackground Candidate
+    , connectorsTo = connectors
     }
 
 
-mockModel =
-    { chain = mockChain
-    , nodes = mockNodes
-    }
+nodesAt : List Node -> String -> Int
+nodesAt nodes hash =
+    nodes
+        |> List.filter (\node -> node.currentBlock == hash)
+        |> List.length
+
+
+connectorsTo : List AnnotatedChain -> List Int
+connectorsTo chains =
+    List.map chainHeight chains
+        |> List.scanl (+) 0
+        |> List.unconsLast
+        |> Maybe.withDefault ( 0, [] )
+        |> Tuple.second
+
+
+
+-- Mock Data
 
 
 mockChain =
-    { finalizedBlocks = mockFinalizedBlocks
-    , candidateBlocks = mockCandidateBlocks
-    }
-
-
-mockFinalizedBlocks =
-    [ { hash = "32ea", nodesAt = [] }
-    , { hash = "923a", nodesAt = [] }
-    , { hash = "d2c3", nodesAt = [] }
-    ]
-
-
-mockCandidateBlocks =
-    Chain
-        [ { hash = "54b2", nodesAt = [] }
-        , { hash = "923a", nodesAt = [] }
-        ]
-        [ Chain [ { hash = "32ef", nodesAt = [] }, { hash = "89fa", nodesAt = [] } ] []
-        , Chain [ { hash = "2aa6", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ]
-            [ Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ] []
-            , Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ] []
+    Chain [ { hash = "ddf3" }, { hash = "34ef" } ]
+        [ Chain [ { hash = "32ef" }, { hash = "89fa" }, { hash = "hallo" } ]
+            [ Chain [ { hash = "2aa6" }, { hash = "32ef" } ] [ Chain [ { hash = "2aa6" }, { hash = "32ef" } ] [], Chain [ { hash = "2aa6" }, { hash = "32ef" } ] [] ]
+            , Chain [ { hash = "32ef" }, { hash = "32ef" } ] []
+            , Chain [ { hash = "32ef" }, { hash = "32ef" } ] [ Chain [ { hash = "32ef" }, { hash = "89fa" } ] [ Chain [ { hash = "32ef" }, { hash = "89fa" } ] [] ] ]
+            , Chain [ { hash = "32ef" }, { hash = "32ef" } ] []
             ]
-        , Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ] []
-        , Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ] []
-        , Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ] []
-        , Chain [ { hash = "32ef", nodesAt = [] }, { hash = "32ef", nodesAt = [] } ] []
         ]
 
 
@@ -95,31 +164,27 @@ mockNodes =
     ]
 
 
-view : Maybe BlockChain -> BlockChain -> Float -> Element msg
-view lastState currentState transitionTime =
-    let
-        viewFinalizedChain =
-            viewChain True
-    in
-    row [ centerX, centerY ]
-        [ viewFinalizedChain currentState.finalizedBlocks
-        , connector spec (fromUI <| blockBackground Candidate) 1
-        , viewCandidateTree 1 currentState.candidateBlocks
-        ]
+
+-- View
 
 
-viewChain : Bool -> List Block -> Element msg
-viewChain finalized blocks =
-    row [ alignTop ]
-        (if finalized then
-            List.map (viewBlock Finalized) (List.take (List.length blocks - 1) blocks)
-                ++ List.map (viewBlock LastFinalized) (List.drop (List.length blocks - 1) blocks)
-                |> List.intersperse (connector spec (fromUI <| blockBackground Finalized) 1)
+viewAnnotatedChain : Spec -> AnnotatedChain -> Element msg
+viewAnnotatedChain spec chain =
+    case chain of
+        AnnotatedChain n blocks [] ->
+            viewAnnotatedBlocks blocks
 
-         else
-            List.map (viewBlock Candidate) blocks
-                |> List.intersperse (connector spec (fromUI <| blockBackground Candidate) 1)
-        )
+        AnnotatedChain n blocks subChains ->
+            row [ alignTop ]
+                [ viewAnnotatedBlocks blocks
+                , column [ alignTop, spacing (round spec.gutterHeight) ]
+                    (List.map (viewAnnotatedChain spec) subChains)
+                ]
+
+
+viewAnnotatedBlocks : List AnnotatedBlock -> Element msg
+viewAnnotatedBlocks blocks =
+    row [ alignTop ] (List.map viewBlock blocks)
 
 
 type BlockStatus
@@ -128,17 +193,38 @@ type BlockStatus
     | Candidate
 
 
-viewBlock : BlockStatus -> Block -> Element msg
-viewBlock blockStatus block =
-    el
-        [ Background.color (blockBackground blockStatus)
-        , Font.color (blockColor blockStatus)
-        , Border.rounded 3
-        , Font.size 16
-        , width (px 64)
-        , height (px 36)
+view : Chain -> Element msg
+view chain =
+    row [ centerX, centerY ]
+        [ viewAnnotatedChain spec (annotateChain chain)
         ]
-        (el [ centerX, centerY ] (text block.hash))
+
+
+viewBlock : AnnotatedBlock -> Element msg
+viewBlock block =
+    row [ alignTop ]
+        [ column [ spacing 4, alignTop ]
+            [ el
+                [ height (px 6)
+                , width (px <| round (toFloat 64 * block.percentageNodesAt))
+                , Border.rounded 10
+                , Background.color (toUI Colors.purple)
+                , alignTop
+                ]
+                none
+            , el
+                [ Background.color block.background
+                , Font.color block.color
+                , Border.rounded 3
+                , Font.size 16
+                , width (px 64)
+                , height (px 36)
+                , alignTop
+                ]
+                (el [ centerX, centerY ] (text block.hash))
+            ]
+        , connector spec (fromUI block.background) block.connectorsTo
+        ]
 
 
 viewSummaryBlock : Int -> Element msg
@@ -154,30 +240,6 @@ viewSummaryBlock n =
         , height (px 36)
         ]
         (el [ centerX, centerY ] (text ("+" ++ String.fromInt n)))
-
-
-viewCandidateTree : Int -> CandidateTree -> Element msg
-viewCandidateTree depth tree =
-    case ( depth, tree ) of
-        ( 0, Chain chain [] ) ->
-            viewChain False (List.take 1 chain)
-
-        ( 0, Chain chain subChains ) ->
-            viewChain False (List.take 1 chain)
-
-        ( n, Chain chain [] ) ->
-            viewChain False chain
-
-        ( n, Chain chain subChains ) ->
-            row [ alignTop ]
-                [ viewChain False chain
-                , connector spec (fromUI <| blockBackground Candidate) (min 3 (List.length subChains))
-                , column
-                    [ spacingXY 0 22 ]
-                    ((subChains |> List.take 2 |> List.map (viewCandidateTree (n - 1)))
-                        ++ [ viewSummaryBlock (List.length subChains - 2) ]
-                    )
-                ]
 
 
 blockColor : BlockStatus -> Element.Color

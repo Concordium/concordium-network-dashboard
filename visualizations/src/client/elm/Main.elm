@@ -57,9 +57,7 @@ view model =
                         , height (px model.window.height)
                         ]
                         [ Chain.view
-                            model.previousChain
                             model.currentChain
-                            0
                         ]
                     ]
         ]
