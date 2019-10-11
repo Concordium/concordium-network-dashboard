@@ -562,7 +562,7 @@ update msg model =
             ( { model | window = { width = width, height = height } }, Cmd.none )
 
         NodeInfoReceived node ->
-            ( { model | nodes = Dict.insert node.nodeName node model.nodes }, Cmd.none )
+            ( { model | nodes = Dict.insert node.nodeId node model.nodes }, Cmd.none )
 
         FetchNodeSummaries _ ->
             ( model, Http.get { url = "/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
@@ -577,7 +577,7 @@ update msg model =
                             }
 
                         nodes =
-                            nodeSummaries |> List.map (\node -> ( node.nodeName, node )) |> Dict.fromList
+                            nodeSummaries |> List.map (\node -> ( node.nodeId, node )) |> Dict.fromList
                     in
                     case model.currentPage of
                         NodeView nodeId ->
