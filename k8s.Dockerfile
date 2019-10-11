@@ -10,7 +10,10 @@ WORKDIR /home/node/app
 COPY . .
 
 ENV NODE_ENV="production"
+RUN NODE_ENV="development" npm install
+RUN NODE_ENV="development" npm install concurrently
 RUN npm install
+RUN npm install concurrently
 RUN npm run build
 
 FROM nginx:alpine
