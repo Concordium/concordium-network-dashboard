@@ -15,7 +15,7 @@ COPY package.json package.json
 COPY package-lock.json package-lock.json
 COPY dashboard-backend.js dashboard-backend.js
 
-RUN npm -g install concurrently
+RUN npm install concurrently
 RUN npm install
 
 ENV PORT=80
