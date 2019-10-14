@@ -58,7 +58,7 @@ view model =
                         [ width fill
                         , height (px model.window.height)
                         ]
-                        []
+                        [ column [ centerX, centerY ] (List.map Chain.view model.chainModel.chainTree) ]
                     ]
         ]
     }
@@ -184,6 +184,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Events.onResize WindowResized
+        , Time.every 1000 (ChainMsg << Chain.Tick)
 
         --, Events.onAnimationFrameDelta Tick
         --, Time.every 3000 CurrentTime

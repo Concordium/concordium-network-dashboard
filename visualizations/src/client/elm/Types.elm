@@ -3,7 +3,7 @@ module Types exposing (Flags, Model, Msg(..), Page(..), Window, pageToPath, pars
 import Animation exposing (Animation)
 import Browser exposing (..)
 import Browser.Navigation as Nav exposing (Key)
-import Chain exposing (Chain)
+import Chain exposing (..)
 import Dict
 import Enum
 import Graph exposing (Graph)

@@ -1,4 +1,4 @@
-module Chain.Connector exposing (connector, connector1)
+module Chain.Connector exposing (connector)
 
 import Arc2d exposing (endPoint)
 import Chain.Spec exposing (Spec)
@@ -11,11 +11,6 @@ import TypedSvg exposing (..)
 import TypedSvg.Attributes exposing (..)
 import TypedSvg.Core exposing (..)
 import TypedSvg.Types exposing (..)
-
-
-connector1 : Spec -> Color -> Element msg
-connector1 spec color =
-    connector spec color [ 0 ]
 
 
 connector : Spec -> Color -> List Int -> Element msg

@@ -1,9 +1,8 @@
-module Chain exposing (Block, Chain, Model, Msg, init, update, view)
+module Chain exposing (Model, Msg(..), init, update, view)
 
-import Chain.Api as Api exposing (Node)
+import Chain.Api as Api exposing (Block, BlockStatus(..), Node, annotateChain)
 import Chain.Connector exposing (..)
 import Chain.Spec exposing (..)
-import Chain.Tree exposing (..)
 import Color exposing (..)
 import Color.Interpolate exposing (..)
 import Colors exposing (..)
@@ -16,6 +15,7 @@ import Http
 import List.Extra as List
 import RemoteData exposing (..)
 import Time exposing (..)
+import Transitions exposing (growAndShrink)
 import Tree exposing (Tree)
 import Tree.Zipper as Zipper
 
@@ -26,8 +26,7 @@ import Tree.Zipper as Zipper
 
 type alias Model =
     { nodes : Deque (List Node)
-    , chain : WebData Chain
-    , chainTree : List (Tree String)
+    , chainTree : List (Tree Block)
     , errors : List Http.Error
     }
 
@@ -35,7 +34,6 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
     ( { nodes = Deque.fromList []
-      , chain = Loading
       , chainTree = []
       , errors = []
       }
@@ -44,43 +42,54 @@ init =
 
 
 
--- Node
--- Chain
+{--| Mocked init for testing
 
+init : ( Model, Cmd Msg )
+init =
+     { nodes = Deque.fromList [ mockNodes ]
+     , chainTree = []
+     , errors = []
+     }
+        |> update (GotNodeInfo (Success mockNodes))
 
-type alias Block =
-    { hash : String
-    }
+}
 
+mockNodes =
+    [ [ "a", "b", "c", "d" ]
+    , [ "a", "b", "c", "d" ]
+    , [ "a", "b", "q", "w", "e" ]
+    , [ "a", "b", "q", "w" ]
+    , [ "a", "t", "z", "u" ]
+    , [ "a", "t", "z", "i" ]
+    ]
+        |> List.map
+            (\l ->
+                let
+                    final =
+                        Maybe.withDefault "..." (List.head l)
 
-type Chain
-    = Chain (List Block) (List Chain)
+                    ancestors =
+                        List.drop 1 l |> List.reverse
+                in
+                { nodeName = ""
+                , nodeId = ""
+                , bestBlock = Maybe.withDefault "..." (List.last l)
+                , bestBlockHeight = 0
+                , finalizedBlock = final
+                , finalizedBlockHeight = 0
+                , ancestorsSinceBestBlock = ancestors
+                }
+            )
 
-
-
--- Annotated Chain
-
-
-type alias AnnotatedBlock =
-    { hash : String
-    , numNodesAt : Int
-    , percentageNodesAt : Float
-    , color : Element.Color
-    , background : Element.Color
-    , connectorsTo : List Int
-    }
-
-
-type AnnotatedChain
-    = AnnotatedChain Int (List AnnotatedBlock) (List AnnotatedChain)
-
-
-
+--}
+--
+--
 -- Update
 
 
 type Msg
     = GotNodeInfo (WebData (List Node))
+    | Tick Posix
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -88,8 +97,10 @@ update msg model =
     case msg of
         GotNodeInfo (Success nodeInfo) ->
             ( { model
-                | nodes = Deque.pushFront nodeInfo model.nodes
-                , chainTree = build (List.map Api.prepareChain nodeInfo)
+                | nodes = updateNodes nodeInfo model.nodes
+                , chainTree =
+                    Api.buildChain (List.map Api.prepareBlockSequence nodeInfo)
+                        |> List.map (annotateChain nodeInfo)
               }
             , Cmd.none
             )
@@ -100,123 +111,42 @@ update msg model =
         GotNodeInfo _ ->
             ( model, Cmd.none )
 
+        Tick time ->
+            ( model, Api.getNodeInfo GotNodeInfo )
 
 
--- Deriving the annotations
-{--
-
-chainHeight : AnnotatedChain -> Int
-chainHeight chain =
-    case chain of
-        AnnotatedChain height blocks subChains ->
-            height
+updateNodes : List Node -> Deque (List Node) -> Deque (List Node)
+updateNodes new current =
+    Deque.pushFront new current
+        |> Deque.dropRight (max 0 (Deque.length current - 3))
 
 
-annotateChain : Chain -> AnnotatedChain
-annotateChain chain =
-    case chain of
-        Chain blocks [] ->
-            AnnotatedChain 1 (annotateBlocks mockNodes blocks []) []
 
-        Chain blocks subChains ->
-            let
-                annotatedSubChains =
-                    List.map annotateChain subChains
-
-                height =
-                    List.map chainHeight annotatedSubChains
-                        |> List.sum
-            in
-            AnnotatedChain
-                height
-                (annotateBlocks mockNodes blocks (connectorsTo annotatedSubChains))
-                annotatedSubChains
-
-
-annotateBlocks : List Node -> List Block -> List Int -> List AnnotatedBlock
-annotateBlocks nodes blocks connectorsLast =
-    case blocks of
-        [] ->
-            []
-
-        lastBlock :: [] ->
-            [ annotateBlock nodes lastBlock connectorsLast ]
-
-        currentBlock :: remainingBlocks ->
-            annotateBlock nodes currentBlock [ 0 ]
-                :: annotateBlocks nodes remainingBlocks connectorsLast
-
-
-annotateBlock : List Node -> Block -> List Int -> AnnotatedBlock
-annotateBlock nodes block connectors =
-    let
-        numNodes =
-            List.length nodes
-
-        numNodesAt =
-            nodesAt nodes block.hash
-    in
-    { hash = block.hash
-    , numNodesAt = nodesAt nodes block.hash
-    , percentageNodesAt = (numNodesAt |> toFloat) / (numNodes |> toFloat)
-    , color = blockColor Candidate
-    , background = blockBackground Candidate
-    , connectorsTo = connectors
-    }
-
-
-nodesAt : List Node -> String -> Int
-nodesAt nodes hash =
-    nodes
-        |> List.filter (\node -> node.bestBlock == hash)
-        |> List.length
-
-
-connectorsTo : List AnnotatedChain -> List Int
-connectorsTo chains =
-    List.map chainHeight chains
-        |> List.scanl (+) 0
-        |> List.unconsLast
-        |> Maybe.withDefault ( 0, [] )
-        |> Tuple.second
-
---}
 -- View
 
 
-viewAnnotatedChain : Spec -> AnnotatedChain -> Element msg
-viewAnnotatedChain spec chain =
-    case chain of
-        AnnotatedChain n blocks [] ->
-            viewAnnotatedBlocks blocks
+view : Tree Block -> Element msg
+view =
+    Tree.restructure
+        viewBlock
+        viewChain
 
-        AnnotatedChain n blocks subChains ->
+
+viewChain : Element msg -> List (Element msg) -> Element msg
+viewChain label children =
+    case children of
+        [] ->
+            label
+
+        _ ->
             row [ alignTop ]
-                [ viewAnnotatedBlocks blocks
+                [ label
                 , column [ alignTop, spacing (round spec.gutterHeight) ]
-                    (List.map (viewAnnotatedChain spec) subChains)
+                    children
                 ]
 
 
-viewAnnotatedBlocks : List AnnotatedBlock -> Element msg
-viewAnnotatedBlocks blocks =
-    row [ alignTop ] (List.map viewBlock blocks)
-
-
-type BlockStatus
-    = Finalized
-    | LastFinalized
-    | Candidate
-
-
-view : Chain -> Element msg
-view chain =
-    row [ centerX, centerY ]
-        [--viewAnnotatedChain spec (annotateChain chain)
-        ]
-
-
-viewBlock : AnnotatedBlock -> Element msg
+viewBlock : Block -> Element msg
 viewBlock block =
     row [ alignTop ]
         [ column [ spacing 4, alignTop ]
@@ -226,11 +156,12 @@ viewBlock block =
                 , Border.rounded 10
                 , Background.color (toUI Colors.purple)
                 , alignTop
+                , growAndShrink
                 ]
                 none
             , el
-                [ Background.color block.background
-                , Font.color block.color
+                [ Background.color <| blockBackground block.status
+                , Font.color <| blockColor block.status
                 , Border.rounded 3
                 , Font.size 16
                 , width (px 64)
@@ -239,7 +170,7 @@ viewBlock block =
                 ]
                 (el [ centerX, centerY ] (text block.hash))
             ]
-        , connector spec (fromUI block.background) block.connectorsTo
+        , connector spec (fromUI <| blockBackground block.status) block.connectors
         ]
 
 

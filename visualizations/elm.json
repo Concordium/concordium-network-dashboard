@@ -64,8 +64,8 @@
             "elm-explorations/test": "1.2.2"
         },
         "indirect": {
-            "jweir/elm-iso8601": "5.0.2",
-            "elm/random": "1.0.0"
+            "elm/random": "1.0.0",
+            "jweir/elm-iso8601": "5.0.2"
         }
     }
 }
