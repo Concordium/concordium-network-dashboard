@@ -17,7 +17,6 @@ import RemoteData exposing (..)
 import Time exposing (..)
 import Transitions exposing (growAndShrink)
 import Tree exposing (Tree)
-import Tree.Zipper as Zipper
 
 
 
@@ -29,6 +28,10 @@ type alias Model =
     , chainTree : List (Tree Block)
     , errors : List Http.Error
     }
+
+
+
+-- Put comments around this when checking out the mocked Nodes
 
 
 init : ( Model, Cmd Msg )

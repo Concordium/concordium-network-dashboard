@@ -6,6 +6,7 @@ import Browser.Dom
 import Browser.Events as Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
+import Chain.Spec exposing (spec)
 import Curve.ParameterValue exposing (value)
 import Dict exposing (Dict)
 import Element exposing (..)
@@ -58,7 +59,7 @@ view model =
                         [ width fill
                         , height (px model.window.height)
                         ]
-                        [ column [ centerX, centerY ] (List.map Chain.view model.chainModel.chainTree) ]
+                        [ column [ centerX, centerY, spacing (round spec.gutterHeight) ] (List.map Chain.view model.chainModel.chainTree) ]
                     ]
         ]
     }
