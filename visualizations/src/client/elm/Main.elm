@@ -26,6 +26,9 @@ import Widgets exposing (..)
 init : Flags -> Url -> Key -> ( Model, Cmd Msg )
 init flags url key =
     let
+        ( chainModel, chainCmd ) =
+            Chain.init
+
         model =
             { currentTime = Time.millisToPosix 0
             , window = flags
@@ -36,12 +39,11 @@ init flags url key =
             , clock = 0
             , transfer = animation 0 |> duration 0.7
             , ticks = 0
-            , previousChain = Nothing
-            , currentChain = Chain.mockChain
+            , chainModel = chainModel
             }
     in
     ( model
-    , onPageInit (pathToPage url) model
+    , Cmd.batch [ onPageInit (pathToPage url) model, Cmd.map ChainMsg chainCmd ]
     )
 
 
@@ -56,9 +58,7 @@ view model =
                         [ width fill
                         , height (px model.window.height)
                         ]
-                        [ Chain.view
-                            model.currentChain
-                        ]
+                        []
                     ]
         ]
     }
@@ -153,6 +153,13 @@ update msg model =
             in
             ( { model | graph = updatedGraph }, Cmd.none )
 
+        ChainMsg chainMsg ->
+            let
+                ( subModel, subCmd ) =
+                    Chain.update chainMsg model.chainModel
+            in
+            ( { model | chainModel = subModel }, Cmd.map ChainMsg subCmd )
+
         Noop ->
             ( model, Cmd.none )
 
@@ -177,9 +184,9 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Events.onResize WindowResized
-        , Events.onAnimationFrameDelta Tick
-        , Time.every 3000 CurrentTime
 
+        --, Events.onAnimationFrameDelta Tick
+        --, Time.every 3000 CurrentTime
         -- , when
         --     (model.currentPage == SomePage)
         --     (Time.every 1000 CurrentTime)

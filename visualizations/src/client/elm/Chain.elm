@@ -1,30 +1,50 @@
-module Chain exposing (Block, Chain, Node, mockChain, view)
+module Chain exposing (Block, Chain, Model, Msg, init, update, view)
 
+import Chain.Api as Api exposing (Node)
 import Chain.Connector exposing (..)
 import Chain.Spec exposing (..)
+import Chain.Tree exposing (..)
 import Color exposing (..)
 import Color.Interpolate exposing (..)
 import Colors exposing (..)
+import Deque exposing (Deque)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
+import Http
 import List.Extra as List
+import RemoteData exposing (..)
 import Time exposing (..)
+import Tree exposing (Tree)
+import Tree.Zipper as Zipper
+
+
+
+-- Model
+
+
+type alias Model =
+    { nodes : Deque (List Node)
+    , chain : WebData Chain
+    , chainTree : List (Tree String)
+    , errors : List Http.Error
+    }
+
+
+init : ( Model, Cmd Msg )
+init =
+    ( { nodes = Deque.fromList []
+      , chain = Loading
+      , chainTree = []
+      , errors = []
+      }
+    , Api.getNodeInfo GotNodeInfo
+    )
 
 
 
 -- Node
-
-
-type alias Node =
-    { name : String
-    , id : String
-    , currentBlock : String
-    }
-
-
-
 -- Chain
 
 
@@ -56,8 +76,34 @@ type AnnotatedChain
 
 
 
--- Deriving the annotations
+-- Update
 
+
+type Msg
+    = GotNodeInfo (WebData (List Node))
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        GotNodeInfo (Success nodeInfo) ->
+            ( { model
+                | nodes = Deque.pushFront nodeInfo model.nodes
+                , chainTree = build (List.map Api.prepareChain nodeInfo)
+              }
+            , Cmd.none
+            )
+
+        GotNodeInfo (Failure error) ->
+            ( { model | errors = error :: model.errors }, Cmd.none )
+
+        GotNodeInfo _ ->
+            ( model, Cmd.none )
+
+
+
+-- Deriving the annotations
+{--
 
 chainHeight : AnnotatedChain -> Int
 chainHeight chain =
@@ -122,7 +168,7 @@ annotateBlock nodes block connectors =
 nodesAt : List Node -> String -> Int
 nodesAt nodes hash =
     nodes
-        |> List.filter (\node -> node.currentBlock == hash)
+        |> List.filter (\node -> node.bestBlock == hash)
         |> List.length
 
 
@@ -134,37 +180,7 @@ connectorsTo chains =
         |> Maybe.withDefault ( 0, [] )
         |> Tuple.second
 
-
-
--- Mock Data
-
-
-mockChain =
-    Chain [ { hash = "ddf3" }, { hash = "34ef" } ]
-        [ Chain [ { hash = "32ef" }, { hash = "89fa" }, { hash = "hallo" } ]
-            [ Chain [ { hash = "2aa6" }, { hash = "32ef" } ] [ Chain [ { hash = "2aa6" }, { hash = "32ef" } ] [], Chain [ { hash = "2aa6" }, { hash = "32ef" } ] [] ]
-            , Chain [ { hash = "32ef" }, { hash = "32ef" } ] []
-            , Chain [ { hash = "32ef" }, { hash = "32ef" } ] [ Chain [ { hash = "32ef" }, { hash = "89fa" } ] [ Chain [ { hash = "32ef" }, { hash = "89fa" } ] [] ] ]
-            , Chain [ { hash = "32ef" }, { hash = "32ef" } ] []
-            ]
-        ]
-
-
-mockNodes : List Node
-mockNodes =
-    [ { name = "Node1", id = "0000000000000001", currentBlock = "32ef" }
-    , { name = "Node2", id = "0000000000000002", currentBlock = "923a" }
-    , { name = "Node3", id = "0000000000000003", currentBlock = "923a" }
-    , { name = "Node4", id = "0000000000000004", currentBlock = "d2c3" }
-    , { name = "Node5", id = "0000000000000005", currentBlock = "89fa" }
-    , { name = "Node6", id = "0000000000000006", currentBlock = "89fa" }
-    , { name = "Node7", id = "0000000000000007", currentBlock = "89fa" }
-    , { name = "Node8", id = "0000000000000008", currentBlock = "2d45" }
-    , { name = "Node9", id = "0000000000000009", currentBlock = "8574" }
-    ]
-
-
-
+--}
 -- View
 
 
@@ -196,7 +212,7 @@ type BlockStatus
 view : Chain -> Element msg
 view chain =
     row [ centerX, centerY ]
-        [ viewAnnotatedChain spec (annotateChain chain)
+        [--viewAnnotatedChain spec (annotateChain chain)
         ]
 
 

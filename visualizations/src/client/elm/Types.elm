@@ -31,8 +31,7 @@ type alias Model =
     , clock : Float
     , transfer : Animation
     , ticks : Int
-    , currentChain : Chain
-    , previousChain : Maybe Chain
+    , chainModel : Chain.Model
     }
 
 
@@ -47,6 +46,7 @@ type Msg
     | NodeHovered (Maybe Int)
     | EdgeValueChanged Int Int String
     | EdgeIntervalChanged Int Int String
+    | ChainMsg Chain.Msg
     | Noop
 
 
