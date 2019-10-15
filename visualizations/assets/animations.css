@@ -18,6 +18,18 @@
     }
 }
 
+@keyframes moveIn {
+    from {
+        opacity: 0;
+        transform: translateX(400px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0px);
+    }
+}
+
+
 .scaleIn {
     animation: scaleIn 300ms ease-in-out 0s 1;
     transform-origin: left;
@@ -25,4 +37,8 @@
 
 .fadeIn {
     animation: fadeIn 300ms ease-in 0s 1;
+}
+
+.moveIn {
+    animation: moveIn 300ms ease-in 0s 1;
 }

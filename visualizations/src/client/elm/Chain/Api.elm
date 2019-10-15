@@ -10,7 +10,7 @@ import Json.Encode as Encode
 import List.Extra as List
 import RemoteData exposing (WebData)
 import Tree exposing (Tree(..), singleton, tree)
-import Tuple
+import Tree.Zipper as Zipper exposing (Zipper)
 
 
 nodeInfoEndpoint =
@@ -35,6 +35,13 @@ type alias Block =
     , connectors : List Int
     , status : BlockStatus
     , height : Int
+    }
+
+
+type alias Positioned a =
+    { a
+        | x : Int
+        , y : Int
     }
 
 
@@ -140,7 +147,7 @@ annotateChain nodes sourceTree =
 
 annotateBlock : List Node -> String -> Block
 annotateBlock nodes =
-    block nodes 1 []
+    block nodes 1 ( 0, 0 ) []
 
 
 annotateChildren : Block -> List (Tree Block) -> Tree Block
@@ -180,8 +187,8 @@ connectors branches =
         |> Tuple.second
 
 
-block : List Node -> Int -> List Int -> String -> Block
-block nodes height connectorList hash =
+block : List Node -> Int -> ( Int, Int ) -> List Int -> String -> Block
+block nodes height position connectorList hash =
     let
         numNodes =
             List.length nodes
@@ -195,4 +202,59 @@ block nodes height connectorList hash =
     , connectors = connectorList
     , status = Candidate
     , height = height
+    }
+
+
+
+-- Flatten
+
+
+flattenTree : Tree Block -> List (Positioned Block)
+flattenTree chain =
+    flattenAt (Zipper.fromTree chain) 0 0
+        |> Tuple.second
+
+
+flattenAt : Zipper Block -> Int -> Int -> ( Zipper Block, List (Positioned Block) )
+flattenAt layer x y =
+    let
+        labelAnd result =
+            [ positioned (Zipper.label layer) x y ] ++ result
+    in
+    case Zipper.nextSibling layer of
+        Just sibling ->
+            flattenAt sibling x (y + 1)
+                |> Tuple.mapSecond labelAnd
+
+        Nothing ->
+            case Zipper.firstChild layer of
+                Just child ->
+                    flattenAt child (x + 1) y
+                        |> Tuple.mapSecond labelAnd
+
+                Nothing ->
+                    ( layer, labelAnd [] )
+
+
+positioned : Block -> Int -> Int -> Positioned Block
+positioned original x y =
+    { hash = original.hash
+    , numNodesAt = original.numNodesAt
+    , percentageNodesAt = original.percentageNodesAt
+    , connectors = original.connectors
+    , status = original.status
+    , height = original.height
+    , x = x
+    , y = y
+    }
+
+
+unPositioned : Positioned Block -> Block
+unPositioned original =
+    { hash = original.hash
+    , numNodesAt = original.numNodesAt
+    , percentageNodesAt = original.percentageNodesAt
+    , connectors = original.connectors
+    , status = original.status
+    , height = original.height
     }

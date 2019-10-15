@@ -5,7 +5,7 @@ import Browser exposing (..)
 import Browser.Dom
 import Browser.Events as Events
 import Browser.Navigation as Nav exposing (Key)
-import Chain
+import Chain exposing (viewFlattenedChain)
 import Chain.Spec exposing (spec)
 import Curve.ParameterValue exposing (value)
 import Dict exposing (Dict)
@@ -59,7 +59,8 @@ view model =
                         [ width fill
                         , height (px model.window.height)
                         ]
-                        (List.map Chain.view model.chainModel.chainTree)
+                        --(List.map Chain.view model.chainModel.chainTree
+                        ([] ++ [ viewFlattenedChain model.chainModel.flatTree ])
                     ]
         ]
     }

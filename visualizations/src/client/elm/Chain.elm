@@ -1,6 +1,6 @@
-module Chain exposing (Model, Msg(..), init, update, view)
+module Chain exposing (Model, Msg(..), init, update, view, viewFlattenedChain)
 
-import Chain.Api as Api exposing (Block, BlockStatus(..), Node, annotateChain)
+import Chain.Api as Api exposing (..)
 import Chain.Connector exposing (..)
 import Chain.Spec exposing (..)
 import Color exposing (..)
@@ -27,6 +27,7 @@ import Tree exposing (Tree)
 type alias Model =
     { nodes : Deque (List Node)
     , chainTree : List (Tree Block)
+    , flatTree : List (Positioned Block)
     , errors : List Http.Error
     }
 
@@ -39,6 +40,7 @@ init : ( Model, Cmd Msg )
 init =
     ( { nodes = Deque.fromList []
       , chainTree = []
+      , flatTree = []
       , errors = []
       }
     , Api.getNodeInfo GotNodeInfo
@@ -100,11 +102,19 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotNodeInfo (Success nodeInfo) ->
-            ( { model
-                | nodes = updateNodes nodeInfo model.nodes
-                , chainTree =
+            let
+                chainTrees =
                     Api.buildChain (List.map Api.prepareBlockSequence nodeInfo)
                         |> List.map (annotateChain nodeInfo)
+            in
+            ( { model
+                | nodes = updateNodes nodeInfo model.nodes
+                , chainTree = chainTrees
+                , flatTree =
+                    chainTrees
+                        |> List.head
+                        |> Maybe.map Api.flattenTree
+                        |> Maybe.withDefault []
               }
             , Cmd.none
             )
@@ -127,6 +137,34 @@ updateNodes new current =
 
 
 -- View
+-- New flattened view with absolute positioning, better for animation
+
+
+viewFlattenedChain : List (Positioned Block) -> Element msg
+viewFlattenedChain blocks =
+    el
+        ([ width (px 400), centerX, centerY ] ++ List.map (\b -> inFront (viewPositionedBlock b)) blocks)
+        none
+
+
+viewPositionedBlock : Positioned Block -> Element msg
+viewPositionedBlock positionedBlock =
+    Keyed.el
+        [ animateAll
+        , animateFromRight
+        , moveRight <|
+            toFloat positionedBlock.x
+                * (spec.blockWidth + spec.gutterWidth)
+        , moveDown <|
+            toFloat positionedBlock.y
+                * (spec.blockHeight + spec.gutterHeight + spec.nodeIndicatorHeight)
+        , width (px <| round (spec.blockWidth + spec.gutterWidth))
+        ]
+        ( positionedBlock.hash, viewBlock (unPositioned positionedBlock) )
+
+
+
+-- Tree based view
 
 
 view : Tree Block -> Element msg
@@ -155,33 +193,30 @@ viewChain label children =
 
 viewBlock : Block -> Element msg
 viewBlock block =
-    Keyed.el [ alignTop, animateFadeIn ]
-        ( block.hash
-        , row []
-            [ column [ spacing 4, alignTop ]
-                [ el
-                    [ height (px 6)
-                    , width (px <| round (toFloat 64 * block.percentageNodesAt))
-                    , Border.rounded 10
-                    , Background.color (toUI Colors.purple)
-                    , alignTop
-                    , growAndShrink
-                    ]
-                    none
-                , el
-                    [ Background.color <| blockBackground block.status
-                    , Font.color <| blockColor block.status
-                    , Border.rounded 3
-                    , Font.size 16
-                    , width (px 64)
-                    , height (px 36)
-                    , alignTop
-                    ]
-                    (el [ centerX, centerY ] (text block.hash))
+    row []
+        [ column [ spacing 4, alignTop ]
+            [ el
+                [ height (px 6)
+                , width (px <| round (toFloat 64 * block.percentageNodesAt))
+                , Border.rounded 10
+                , Background.color (toUI Colors.purple)
+                , alignTop
+                , growAndShrink
                 ]
-            , connector spec (fromUI <| blockBackground block.status) block.connectors
+                none
+            , el
+                [ Background.color <| blockBackground block.status
+                , Font.color <| blockColor block.status
+                , Border.rounded 3
+                , Font.size 16
+                , width (px 64)
+                , height (px 36)
+                , alignTop
+                ]
+                (el [ centerX, centerY ] (text block.hash))
             ]
-        )
+        , connector spec (fromUI <| blockBackground block.status) block.connectors
+        ]
 
 
 viewSummaryBlock : Int -> Element msg
