@@ -59,7 +59,7 @@ view model =
                         [ width fill
                         , height (px model.window.height)
                         ]
-                        [ column [ centerX, centerY, spacing (round spec.gutterHeight) ] (List.map Chain.view model.chainModel.chainTree) ]
+                        (List.map Chain.view model.chainModel.chainTree)
                     ]
         ]
     }

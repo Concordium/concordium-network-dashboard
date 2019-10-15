@@ -1,0 +1,28 @@
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scaleX(0);
+    }
+    to {
+        opacity: 1;
+        transform: scaleX(1);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.scaleIn {
+    animation: scaleIn 300ms ease-in-out 0s 1;
+    transform-origin: left;
+}
+
+.fadeIn {
+    animation: fadeIn 300ms ease-in 0s 1;
+}

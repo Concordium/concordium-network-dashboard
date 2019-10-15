@@ -11,11 +11,12 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
+import Element.Keyed as Keyed
 import Http
 import List.Extra as List
 import RemoteData exposing (..)
 import Time exposing (..)
-import Transitions exposing (growAndShrink)
+import Transitions exposing (..)
 import Tree exposing (Tree)
 
 
@@ -129,10 +130,13 @@ updateNodes new current =
 
 
 view : Tree Block -> Element msg
-view =
-    Tree.restructure
-        viewBlock
-        viewChain
+view tree =
+    column [ centerX, centerY, spacing (round spec.gutterHeight) ]
+        [ Tree.restructure
+            viewBlock
+            viewChain
+            tree
+        ]
 
 
 viewChain : Element msg -> List (Element msg) -> Element msg
@@ -151,30 +155,33 @@ viewChain label children =
 
 viewBlock : Block -> Element msg
 viewBlock block =
-    row [ alignTop ]
-        [ column [ spacing 4, alignTop ]
-            [ el
-                [ height (px 6)
-                , width (px <| round (toFloat 64 * block.percentageNodesAt))
-                , Border.rounded 10
-                , Background.color (toUI Colors.purple)
-                , alignTop
-                , growAndShrink
+    Keyed.el [ alignTop, animateFadeIn ]
+        ( block.hash
+        , row []
+            [ column [ spacing 4, alignTop ]
+                [ el
+                    [ height (px 6)
+                    , width (px <| round (toFloat 64 * block.percentageNodesAt))
+                    , Border.rounded 10
+                    , Background.color (toUI Colors.purple)
+                    , alignTop
+                    , growAndShrink
+                    ]
+                    none
+                , el
+                    [ Background.color <| blockBackground block.status
+                    , Font.color <| blockColor block.status
+                    , Border.rounded 3
+                    , Font.size 16
+                    , width (px 64)
+                    , height (px 36)
+                    , alignTop
+                    ]
+                    (el [ centerX, centerY ] (text block.hash))
                 ]
-                none
-            , el
-                [ Background.color <| blockBackground block.status
-                , Font.color <| blockColor block.status
-                , Border.rounded 3
-                , Font.size 16
-                , width (px 64)
-                , height (px 36)
-                , alignTop
-                ]
-                (el [ centerX, centerY ] (text block.hash))
+            , connector spec (fromUI <| blockBackground block.status) block.connectors
             ]
-        , connector spec (fromUI <| blockBackground block.status) block.connectors
-        ]
+        )
 
 
 viewSummaryBlock : Int -> Element msg
