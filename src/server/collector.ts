@@ -57,7 +57,7 @@ meta.add('authentication', 'rpcadmin')
 const dashboards = _.map(program.dashboard.split(','), host => io('http://' + host + '/nodes'))
 
 const getGrpcOptions = () => {
-  //Calculate now + 10 seconds   
+  //Calculate now + 10 seconds
   return {
     deadline: new Date(new Date().getTime() + 1000 * grpcTimeoutInSeconds)
   }

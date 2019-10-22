@@ -7,6 +7,8 @@ import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
+import Html
+import Html.Attributes exposing (style)
 import NetworkGraph
 import NodeHelpers exposing (..)
 import Types exposing (..)
@@ -21,6 +23,7 @@ view model =
             , width (px 800)
             , Background.color moduleGrey
             , Border.rounded 5
+            , alignTop
             ]
             [ html <| NetworkGraph.agedRelations model model.nodes
             , row [ spacing 5 ]
@@ -46,7 +49,7 @@ view model =
 nodeView node model =
     let
         pairs =
-            [ ( "nodeName", text node.nodeName )
+            [ ( "nodeName", el [ width (px 400) ] <| forceWrapTextElement node.nodeName )
             , ( "nodeId", text node.nodeId )
             , ( "uptime", text <| asTimeAgoDuration node.uptime )
             , ( "client", text node.client )
@@ -66,15 +69,34 @@ nodeView node model =
             , ( "packetsReceived", text <| String.fromFloat node.packetsReceived )
             , ( "peersList", peersListView model node.peersList )
             ]
+
+        statRows =
+            pairs
+                |> List.map
+                    (\( label, elem ) ->
+                        row [ height (shrink |> minimum 30) ]
+                            [ column [ width (px 170), Font.color lightGrey ] [ text label ]
+                            , column [ width fill ] [ elem ]
+                            ]
+                    )
     in
-    row [ Font.color green, spacing 20, alignTop ]
-        [ column [ Font.color lightGrey, alignTop ] (pairs |> List.map Tuple.first |> List.map (\t -> el [ height (px 30) ] (text t)))
-        , column [ alignTop ] (pairs |> List.map Tuple.second |> List.map (\e -> el [ height (px 30) ] e))
-        ]
+    column [ Font.color green, alignTop ]
+        statRows
+
+
+forceWrapTextElement t =
+    html <|
+        Html.div
+            [ style "overflow-wrap" "break-word"
+            , style "white-space" "normal"
+            , Html.Attributes.width 200
+            ]
+            [ Html.text t
+            ]
 
 
 peersListView model peersList =
-    column []
+    column [ width fill ]
         (List.map
             (\peerNodeId ->
                 paragraph [ onClick <| NodeClicked peerNodeId, pointer ] [ text <| "(" ++ nodeTypeById peerNodeId model.nodes ++ ") " ++ peerNodeId ]
