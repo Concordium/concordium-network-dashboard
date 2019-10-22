@@ -1,4 +1,4 @@
-module Widgets exposing (asSecondsAgo, asTimeAgoDuration, averageStatSecondsFor, formatPing, header, justs, majorityStatFor, secondsAsText, withinHighestStatFor)
+module Widgets exposing (..)
 
 import Colors exposing (..)
 import Dict exposing (Dict)
@@ -191,3 +191,11 @@ justs =
                     acc
         )
         []
+
+
+ellipsis maxLength string =
+    if String.length string > maxLength then
+        String.left 30 string ++ "..."
+
+    else
+        string

@@ -1,4 +1,4 @@
-port module Dashboard exposing (Flags, bgDarkGrey, bgWhite, chartTimeseries, hashSnippet, hello, init, main, markdown, nodeInfo, nodeSummariesDecoder, nodesTable, scrollPageToTop, sortNodesBy, sortNodesMode, sortableHeader, subscriptions, theme, update, view, viewNode, widgetNumber, widgetNumberChart, widgetSeconds, widgetText, widgetsForWebsite, worldMap)
+port module Dashboard exposing (..)
 
 import Browser exposing (..)
 import Browser.Dom
@@ -15,6 +15,7 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
+import Html.Attributes exposing (style)
 import Http
 import Iso8601
 import Json.Decode as D
@@ -327,7 +328,11 @@ nodesTable model nodes =
                   , width = fill
                   , view =
                         \node ->
-                            el [ pointer, onClick (NodeClicked node.nodeId) ] <| text node.nodeName
+                            el
+                                [ pointer
+                                , onClick (NodeClicked node.nodeId)
+                                ]
+                                (text <| ellipsis 30 node.nodeName)
                   }
 
                 --, { header = text "State"
@@ -423,20 +428,6 @@ nodesTable model nodes =
 
 hashSnippet hash =
     String.left 6 hash ++ "..."
-
-
-
--- ++ String.right 6 hash
-
-
-viewNode : NetworkNode -> Element msg
-viewNode node =
-    row []
-        [ column [] [ text node.nodeName ]
-
-        -- , column [] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
-        -- , column [] [ text <| Maybe.withDefault "<No state loaded>" node.state ]
-        ]
 
 
 sortableHeader model sortBy name =
