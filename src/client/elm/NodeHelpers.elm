@@ -2,7 +2,7 @@ module NodeHelpers exposing (..)
 
 import Dict exposing (..)
 import Dict.Extra as Dict
-import Types exposing (..)
+import TypesDashboard exposing (..)
 
 
 findNodeById : String -> Dict Host NetworkNode -> Maybe NetworkNode

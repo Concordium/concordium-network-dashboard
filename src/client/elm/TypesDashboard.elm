@@ -1,7 +1,8 @@
-module Types exposing (..)
+module TypesDashboard exposing (..)
 
 import Browser exposing (..)
 import Browser.Navigation as Nav exposing (Key)
+import Chain
 import Dict exposing (..)
 import Http
 import Time
@@ -18,6 +19,7 @@ type alias Model =
     , sortMode : SortMode
     , selectedNode : Maybe NetworkNode
     , graph : { width : Float, height : Float }
+    , chainModel : Chain.Model
     }
 
 
@@ -25,6 +27,7 @@ type Page
     = Dashboard
     | NodeGraph
     | NodeView String -- Node by nodeId
+    | ChainViz
 
 
 type alias Host =
@@ -44,6 +47,7 @@ type Msg
     | GraphZoom Float
     | DevResetCache
     | NoopHttp (Result Http.Error ())
+    | ChainMsg Chain.Msg
     | Noop
 
 
@@ -70,7 +74,7 @@ type alias NetworkNode =
     , finalizationPeriodEMSD : Maybe Float
     , packetsSent : Float -- @TODO as above figure out Int
     , packetsReceived : Float -- @TODO as above figure out Int
-    , consensusRunning : Bool 
+    , consensusRunning : Bool
     , bakingCommitteeMember : Bool
     , finalizationCommitteeMember : Bool
     }
@@ -91,9 +95,9 @@ type SortBy
     | SortSent
     | SortReceived
     | SortBlock
-    | SortHeight
+    | SortLength
     | SortFinalizedBlock
-    | SortFinalizedHeight
+    | SortFinalizedLength
 
 
 parserRoutes =
@@ -101,6 +105,7 @@ parserRoutes =
         [ Url.Parser.map Dashboard (s "")
         , Url.Parser.map NodeGraph (s "nodegraph")
         , Url.Parser.map NodeView (s "node" </> Url.Parser.string)
+        , Url.Parser.map ChainViz (s "chain")
         ]
 
 
@@ -125,3 +130,6 @@ pageToPath page =
 
         NodeView nodeId ->
             "/node/" ++ nodeId
+
+        ChainViz ->
+            "/chain"

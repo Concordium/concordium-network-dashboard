@@ -20,24 +20,29 @@ Will become proper Dashboard monitor in future, likely with Scala backend.
 Running local bakers requires a hefty build process, so if you just want quick data;
 
 ```
-// Change dashboardHost in client.tsx
-const dashboardHost = 'https://dashboard.eu.test.concordium.com/frontends'
+// Change in src/client/elm/Dashboard.elm
+FetchNodeSummaries _ ->
+    ( model, Http.get { url = "https://dashboard.eu.prod.concordium.com/data/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
 ```
 
 #### Local bakers
 
 You'll need the [p2p-client](https://gitlab.com/Concordium/p2p-client) repo and to follow the [local build instructions](https://gitlab.com/Concordium/p2p-client/tree/master/scripts/local).
 
-Once you've got the images build, there is a helper script to help you boot collectors for each exposed baker port.
-
 ```
 # Say we want to boot 5 bakers. Run this from the p2p-client/scripts/local folder;
 NUM_BAKERS=5 docker-compose up --scale baker=5
-# Then in another window, this from dashboard folder;
-./runAllCollectors.sh
+
 ```
 
-Now if you run `npm run dev` in a 3rd window to boot the dashboard frontend+backend, you should start getting live data from your local bakers via the booted collectors.
+The dashboard collectors + backend has moved here:
+
+https://gitlab.com/Concordium/p2p-client/blob/develop/src/bin/collector.rs
+https://gitlab.com/Concordium/p2p-client/blob/develop/src/bin/collector_backend.rs
+
+You'll need to build + boot those manually (docs TBC in that repo, ask Ian/Martin).
+
+See https://trello.com/c/oacYIeo0/82-add-collector-and-collector-backed-to-docker-compose-setup-to-allow-for-local-dashboard-development-this-way
 
 If that's hard to follow, here's an [architecture diagram](https://docs.google.com/drawings/d/1FWV8Ah9RAiqMaghT3Ql1JyGnBq0_TxOS6BgM6mFjepQ/edit) of what you're booting.
 
@@ -77,5 +82,7 @@ See `./docker.sh`, or run it. Builds `dist` locally first before copying into im
 - Client and server can share typescript code (and types)
 - The client is bundled using [Webpack](https://webpack.github.io/) because it goes to the browser.
 - The server is emitted by [TypeScript](https://github.com/Microsoft/TypeScript) because node 6 supports es6.
+
+Note: server is for development aid only.
 
 Initially derived from [fullstack-typescript](https://github.com/gilamran/fullstack-typescript), replacing React with Elm.

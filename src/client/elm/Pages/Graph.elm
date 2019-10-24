@@ -1,6 +1,6 @@
 module Pages.Graph exposing (nodeView, view)
 
-import Colors exposing (..)
+import ColorsDashboard exposing (..)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -11,8 +11,8 @@ import Html
 import Html.Attributes exposing (style)
 import NetworkGraph
 import NodeHelpers exposing (..)
-import Types exposing (..)
-import Widgets exposing (..)
+import TypesDashboard exposing (..)
+import WidgetsDashboard exposing (..)
 
 
 view model =
