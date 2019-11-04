@@ -28,6 +28,8 @@ type alias Model =
     { nodes : Deque (List Node)
     , chainTree : List (Tree Block)
     , flatTree : List (Positioned Block)
+
+    --, history : List String
     , errors : List Http.Error
     }
 
@@ -151,7 +153,8 @@ viewPositionedBlock : Positioned Block -> Element msg
 viewPositionedBlock positionedBlock =
     Keyed.el
         [ animateAll
-        , animateFromRight
+
+        --, animateFromRight
         , moveRight <|
             toFloat positionedBlock.x
                 * (spec.blockWidth + spec.gutterWidth)

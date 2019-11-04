@@ -1,4 +1,4 @@
-port module Main exposing (main)
+module Main exposing (main)
 
 import Animation exposing (..)
 import Browser exposing (..)
@@ -59,8 +59,9 @@ view model =
                         [ width fill
                         , height (px model.window.height)
                         ]
-                        --(List.map Chain.view model.chainModel.chainTree
-                        ([] ++ [ viewFlattenedChain model.chainModel.flatTree ])
+                        (List.map Chain.view model.chainModel.chainTree)
+
+                    --([] ++ [ viewFlattenedChain model.chainModel.flatTree ])
                     ]
         ]
     }

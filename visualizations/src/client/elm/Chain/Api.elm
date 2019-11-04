@@ -116,6 +116,36 @@ sequencesToBranches maybeSequences =
                 |> Dict.fromListDedupe (++)
 
 
+
+-- a b c d
+--     c d e f
+-- -> a b c d e f
+-- a b c d e f g
+--     c d
+-- -> a b c d e f g
+
+
+unifySequences : List comparable -> List comparable -> Result String (List comparable)
+unifySequences aList bList =
+    let
+        prefixA =
+            List.takeWhile (equalToHead bList >> not) aList
+
+        prefixB =
+            List.takeWhile (equalToHead aList >> not) bList
+    in
+    -- implementation missing, switching to different approach
+    Ok prefixA
+
+
+equalToHead : List a -> a -> Bool
+equalToHead list element =
+    list
+        |> List.head
+        |> Maybe.map ((==) element)
+        |> Maybe.withDefault False
+
+
 buildChain : List (List comparable) -> List (Tree comparable)
 buildChain sequences =
     let
