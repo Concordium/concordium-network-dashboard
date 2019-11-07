@@ -59,7 +59,7 @@ view model =
                         [ width fill
                         , height (px model.window.height)
                         ]
-                        (List.map Chain.view model.chainModel.chainTree)
+                        (List.map Chain.view model.chainModel.chainTrees)
 
                     --([] ++ [ viewFlattenedChain model.chainModel.flatTree ])
                     ]

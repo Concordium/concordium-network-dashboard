@@ -38,6 +38,12 @@ type alias Block =
     }
 
 
+type alias History comparable =
+    { lastFinalized : comparable
+    , history : List comparable
+    }
+
+
 type alias Positioned a =
     { a
         | x : Int
@@ -125,29 +131,8 @@ sequencesToBranches maybeSequences =
 -- -> a b c d e f g
 
 
-unifySequences : List comparable -> List comparable -> Result String (List comparable)
-unifySequences aList bList =
-    let
-        prefixA =
-            List.takeWhile (equalToHead bList >> not) aList
-
-        prefixB =
-            List.takeWhile (equalToHead aList >> not) bList
-    in
-    -- implementation missing, switching to different approach
-    Ok prefixA
-
-
-equalToHead : List a -> a -> Bool
-equalToHead list element =
-    list
-        |> List.head
-        |> Maybe.map ((==) element)
-        |> Maybe.withDefault False
-
-
-buildChain : List (List comparable) -> List (Tree comparable)
-buildChain sequences =
+buildChains : List (List comparable) -> List (Tree comparable)
+buildChains sequences =
     let
         branches =
             sequencesToBranches sequences
@@ -158,12 +143,167 @@ buildChain sequences =
 
         False ->
             branches
-                |> Dict.map (\k v -> tree k (buildChain v))
+                |> Dict.map (\k v -> tree k (buildChains v))
                 |> Dict.values
+
+
+writeHistory : Maybe (History comparable) -> List (Tree comparable) -> Maybe (History comparable)
+writeHistory maybeHistory trees =
+    case maybeHistory of
+        Nothing ->
+            initHistory trees
+
+        Just history ->
+            case trees of
+                [] ->
+                    Just history
+
+                [ single ] ->
+                    -- maybe try to stich with previous tree here?
+                    Just history
+
+                a :: b :: rest ->
+                    extractHistory a b
+                        |> Maybe.andThen (stitchHistories history)
+
+
+initHistory : List (Tree comparable) -> Maybe (History comparable)
+initHistory trees =
+    case trees of
+        [] ->
+            Nothing
+
+        [ single ] ->
+            Just
+                { lastFinalized = Tree.label single
+                , history = []
+                }
+
+        a :: b :: rest ->
+            extractHistory a b
+
+
+extractHistory : Tree comparable -> Tree comparable -> Maybe (History comparable)
+extractHistory a b =
+    case ( historyUpwards a (Tree.label b), historyUpwards b (Tree.label a) ) of
+        ( Just aUpwards, Nothing ) ->
+            Just aUpwards
+
+        ( Nothing, Just bUpwards ) ->
+            Just bUpwards
+
+        _ ->
+            Nothing
+
+
+stitchHistories : History comparable -> History comparable -> Maybe (History comparable)
+stitchHistories current next =
+    if current.lastFinalized == next.lastFinalized then
+        Just current
+
+    else
+        case next.history of
+            [] ->
+                Just
+                    { lastFinalized = next.lastFinalized
+                    , history = current.history
+                    }
+
+            headNext :: tailNext ->
+                if headNext == current.lastFinalized then
+                    Just
+                        { lastFinalized = next.lastFinalized
+                        , history = current.history ++ next.history
+                        }
+
+                else
+                    Nothing
+
+
+historyUpwards : Tree comparable -> comparable -> Maybe (History comparable)
+historyUpwards tree label =
+    if Tree.label tree == label then
+        Just
+            { lastFinalized = label
+            , history = []
+            }
+
+    else
+        let
+            zipper =
+                tree
+                    |> Zipper.fromTree
+                    |> Zipper.findNext (\current -> current == label)
+
+            construct history fromZipper =
+                case Zipper.parent fromZipper of
+                    Nothing ->
+                        history
+
+                    Just parent ->
+                        construct (Zipper.label parent :: history) parent
+        in
+        zipper
+            |> Maybe.map
+                (\zipr ->
+                    { lastFinalized = label
+                    , history = construct [] zipr
+                    }
+                )
+
+
+addBranch : Tree comparable -> List comparable -> ( Bool, Tree comparable )
+addBranch tree branch =
+    case branch of
+        [] ->
+            ( False, tree )
+
+        first :: remainingBranch ->
+            let
+                zipper =
+                    Zipper.fromTree tree
+            in
+            List.foldl
+                (\child ( parent, zipr, changed ) ->
+                    let
+                        ( newZiprChanged, newZipr ) =
+                            addBlock zipr ( parent, child )
+                    in
+                    ( child, newZipr, changed || newZiprChanged )
+                )
+                ( first, zipper, False )
+                remainingBranch
+                |> (\( lastElement, newZipper, hasChanged ) ->
+                        ( hasChanged, Zipper.tree newZipper )
+                   )
+
+
+addBlock : Zipper comparable -> ( comparable, comparable ) -> ( Bool, Zipper comparable )
+addBlock zipper ( parent, child ) =
+    case Zipper.findFromRoot ((==) parent) zipper of
+        Nothing ->
+            ( False, zipper )
+
+        Just zparent ->
+            case List.any (\e -> Tree.label e == child) (Zipper.children zparent) of
+                True ->
+                    ( True
+                    , zparent
+                        |> Zipper.append (singleton child)
+                    )
+
+                False ->
+                    ( False, zipper )
 
 
 
 -- Annotating the chain to prepare for viewing
+
+
+annotate : List Node -> List String -> Tree String -> Tree Block
+annotate nodes history sourceTree =
+    annotateChain nodes sourceTree
+        |> annotateAndAppendHistory nodes history 5
 
 
 annotateChain : List Node -> Tree String -> Tree Block
@@ -173,6 +313,17 @@ annotateChain nodes sourceTree =
         annotateChildren
         sourceTree
         |> Tree.mapLabel (\label -> { label | status = Finalized })
+
+
+annotateAndAppendHistory : List Node -> List String -> Int -> Tree Block -> Tree Block
+annotateAndAppendHistory nodes blocks n currentTree =
+    blocks
+        |> List.reverse
+        |> List.take n
+        |> List.map (annotateBlock nodes)
+        |> List.foldl
+            (\b acc -> tree b [ acc ])
+            currentTree
 
 
 annotateBlock : List Node -> String -> Block

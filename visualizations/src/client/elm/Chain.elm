@@ -2,11 +2,14 @@ module Chain exposing (Model, Msg(..), init, update, view, viewFlattenedChain)
 
 import Chain.Api as Api exposing (..)
 import Chain.Connector exposing (..)
+import Chain.DTree as DTree exposing (DTree)
 import Chain.Spec exposing (..)
+import Chain.Tree as CTree
 import Color exposing (..)
 import Color.Interpolate exposing (..)
 import Colors exposing (..)
 import Deque exposing (Deque)
+import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -25,11 +28,13 @@ import Tree exposing (Tree)
 
 
 type alias Model =
-    { nodes : Deque (List Node)
-    , chainTree : List (Tree Block)
+    { nodes : List (List Node)
+    , chainTrees : List (Tree Block)
+    , grownTree : Maybe (Tree String)
+    , dTree : DTree String
     , flatTree : List (Positioned Block)
-
-    --, history : List String
+    , history : Maybe (History String)
+    , dhistory : Dict String String
     , errors : List Http.Error
     }
 
@@ -40,10 +45,14 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { nodes = Deque.fromList []
-      , chainTree = []
+    ( { nodes = []
+      , chainTrees = []
+      , grownTree = Nothing
       , flatTree = []
       , errors = []
+      , dTree = DTree.init
+      , history = Nothing
+      , dhistory = Dict.fromList []
       }
     , Api.getNodeInfo GotNodeInfo
     )
@@ -105,13 +114,19 @@ update msg model =
     case msg of
         GotNodeInfo (Success nodeInfo) ->
             let
+                sequences =
+                    List.map Api.prepareBlockSequence nodeInfo
+
+                rawTrees =
+                    Api.buildChains sequences
+
                 chainTrees =
-                    Api.buildChain (List.map Api.prepareBlockSequence nodeInfo)
-                        |> List.map (annotateChain nodeInfo)
+                    List.map (annotateChain nodeInfo) rawTrees
             in
             ( { model
                 | nodes = updateNodes nodeInfo model.nodes
-                , chainTree = chainTrees
+                , chainTrees = chainTrees
+                , dTree = DTree.addAll sequences model.dTree
                 , flatTree =
                     chainTrees
                         |> List.head
@@ -131,10 +146,10 @@ update msg model =
             ( model, Api.getNodeInfo GotNodeInfo )
 
 
-updateNodes : List Node -> Deque (List Node) -> Deque (List Node)
+updateNodes : List Node -> List (List Node) -> List (List Node)
 updateNodes new current =
-    Deque.pushFront new current
-        |> Deque.dropRight (max 0 (Deque.length current - 3))
+    List.append [ new ] current
+        |> List.take 3
 
 
 
