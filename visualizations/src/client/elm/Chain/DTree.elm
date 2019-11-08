@@ -1,4 +1,12 @@
-module Chain.DTree exposing (DTree, addAll, buildBackward, buildForward, init, walkBackward)
+module Chain.DTree exposing
+    ( DTree
+    , addAll
+    , buildBackward
+    , buildForward
+    , init
+    , walkBackwardFrom
+    , walkForwardFrom
+    )
 
 import Dict exposing (Dict)
 import Dict.Extra as Dict
@@ -43,8 +51,10 @@ addBranch branch dtree =
 
 addConnection : comparable -> comparable -> DTree comparable -> DTree comparable
 addConnection a b dtree =
-    { forward = Dict.insertDedupe Set.union a (Set.fromList [ b ]) dtree.forward
-    , backward = Dict.insert b a dtree.backward
+    { forward =
+        Dict.insertDedupe Set.union a (Set.fromList [ b ]) dtree.forward
+    , backward =
+        Dict.insert b a dtree.backward
     }
 
 
@@ -64,7 +74,7 @@ buildForward depth root tree visited construct =
         isCycle =
             List.any ((==) root) visited
     in
-    if isCycle then
+    if isCycle || depth <= 0 then
         construct root []
 
     else
@@ -82,21 +92,60 @@ buildForward depth root tree visited construct =
             )
 
 
-walkBackward : Int -> comparable -> DTree comparable -> comparable
-walkBackward depth current tree =
+backward : Int -> Int -> comparable -> DTree comparable -> ( Int, comparable )
+backward depth maxDepth current tree =
     case Dict.get current tree.backward of
         Nothing ->
-            current
+            ( depth, current )
 
-        Just previous ->
-            if depth <= 0 then
-                current
+        Just next ->
+            if depth >= maxDepth then
+                ( depth, next )
 
             else
-                walkBackward
-                    (depth - 1)
-                    previous
+                backward
+                    (depth + 1)
+                    maxDepth
+                    next
                     tree
+
+
+walkBackwardFrom : comparable -> Int -> DTree comparable -> ( Int, comparable )
+walkBackwardFrom current maxDepth tree =
+    backward 0 (max 0 maxDepth) current tree
+
+
+forward : Int -> Int -> comparable -> DTree comparable -> List ( Int, comparable )
+forward depth maxDepth current tree =
+    case Dict.get current tree.forward of
+        Nothing ->
+            List.singleton ( depth, current )
+
+        Just next ->
+            if depth >= maxDepth then
+                next
+                    |> Set.toList
+                    |> List.map (Tuple.pair depth)
+
+            else
+                next
+                    |> Set.toList
+                    |> List.map
+                        (\n ->
+                            forward
+                                (depth + 1)
+                                maxDepth
+                                n
+                                tree
+                        )
+                    |> List.concat
+                    |> List.filter
+                        (Tuple.first >> (>) depth)
+
+
+walkForwardFrom : comparable -> Int -> DTree comparable -> List ( Int, comparable )
+walkForwardFrom current maxDepth tree =
+    forward 0 (max 0 maxDepth) current tree
 
 
 buildBackward :

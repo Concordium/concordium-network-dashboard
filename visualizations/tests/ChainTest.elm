@@ -9,53 +9,10 @@ import Test exposing (..)
 import Tree exposing (singleton, tree)
 
 
-testTree =
-    let
-        seqs =
-            [ [ "a", "b", "c", "d" ], [ "a", "b", "x", "y", "z" ] ]
-    in
-    Api.buildChains seqs
-        |> List.head
-        |> Maybe.withDefault (singleton "This doesn't happen")
-
-
 suite : Test
 suite =
     describe "The Chain.Api module"
-        [ describe "Chain.Api.buildChain"
-            [ test "builds up the expected tree from two lists" <|
-                \_ ->
-                    testTree
-                        |> Expect.equal
-                            (tree "a"
-                                [ tree "b"
-                                    [ tree "c" [ singleton "d" ]
-                                    , tree "x" [ tree "y" [ singleton "z" ] ]
-                                    ]
-                                ]
-                            )
-            ]
-        , describe "Chain.Api.historyUpwards"
-            [ test "constructs the right chain" <|
-                \_ ->
-                    Api.historyUpwards testTree "d"
-                        |> Expect.equal (Just { lastFinalized = "d", history = [ "a", "b", "c" ] })
-            , test "returns [] if the key is the root" <|
-                \_ ->
-                    Api.historyUpwards testTree "a"
-                        |> Expect.equal (Just { lastFinalized = "a", history = [] })
-            , test "returns Nothing if key is not in tree" <|
-                \_ ->
-                    Api.historyUpwards testTree "notInTree"
-                        |> Expect.equal Nothing
-            ]
-        , describe "Chain.Tree.growBranch"
-            [ test "Grows branch from a list" <|
-                \_ ->
-                    CTree.growBranch "a" [ "b", "c", "d" ]
-                        |> Expect.equal (tree "a" [ tree "b" [ tree "c" [ singleton "d" ] ] ])
-            ]
-        , describe "Chain.DTree"
+        [ describe "Chain.DTree"
             [ test "addAll creates a valud DTree" <|
                 \_ ->
                     DTree.init
@@ -69,5 +26,20 @@ suite =
                                     ]
                                 ]
                             )
+            , test "building the tree works from different sequences"
+                (\_ ->
+                    let
+                        treeA =
+                            DTree.init
+                                |> DTree.addAll [ [ "a", "b", "c", "d", "e" ], [ "e", "f", "g" ] ]
+                                |> (\t -> DTree.buildForward 10 (DTree.walkBackward 4 "g" t) t [] Tree.tree)
+
+                        treeB =
+                            DTree.init
+                                |> DTree.addAll [ [ "a", "b", "c", "d", "e" ], [ "e", "f", "g" ] ]
+                                |> (\t -> DTree.buildForward 10 (DTree.walkBackward 4 "g" t) t [] Tree.tree)
+                    in
+                    Expect.equal treeA treeB
+                )
             ]
         ]

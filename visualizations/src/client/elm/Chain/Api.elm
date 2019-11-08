@@ -52,11 +52,6 @@ type BlockStatus
     | Candidate
 
 
-prepareBlockSequence node =
-    node.finalizedBlock
-        :: List.reverse node.ancestorsSinceBestBlock
-
-
 
 -- Requests
 
@@ -98,6 +93,15 @@ encodeNode record =
           , Encode.list Encode.string record.ancestorsSinceBestBlock
           )
         ]
+
+
+
+-- Build the chain
+
+
+prepareBlockSequence node =
+    node.finalizedBlock
+        :: List.reverse node.ancestorsSinceBestBlock
 
 
 

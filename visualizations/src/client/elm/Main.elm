@@ -59,7 +59,7 @@ view model =
                         [ width fill
                         , height (px model.window.height)
                         ]
-                        (Maybe.map (Chain.view >> List.singleton) model.chainModel.viewableTree
+                        (Maybe.map (Chain.view >> List.singleton) model.chainModel.annotatedTree
                             |> Maybe.withDefault []
                         )
                     ]

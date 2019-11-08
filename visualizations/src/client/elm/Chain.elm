@@ -32,13 +32,9 @@ type alias Model =
     , lastFinalized : Maybe String
     , tree : DTree String
     , flatTree : List (Positioned Block)
-    , viewableTree : Maybe (Tree Block)
+    , annotatedTree : Maybe (Tree Block)
     , errors : List Http.Error
     }
-
-
-
--- Put comments around this when checking out the mocked Nodes
 
 
 init : ( Model, Cmd Msg )
@@ -46,7 +42,7 @@ init =
     ( { nodes = []
       , lastFinalized = Nothing
       , flatTree = []
-      , viewableTree = Nothing
+      , annotatedTree = Nothing
       , errors = []
       , tree = DTree.init
       }
@@ -55,48 +51,6 @@ init =
 
 
 
-{--| Mocked init for testing
-
-init : ( Model, Cmd Msg )
-init =
-     { nodes = Deque.fromList [ mockNodes ]
-     , chainTree = []
-     , errors = []
-     }
-        |> update (GotNodeInfo (Success mockNodes))
-
-}
-
-mockNodes =
-    [ [ "a", "b", "c", "d" ]
-    , [ "a", "b", "c", "d" ]
-    , [ "a", "b", "q", "w", "e" ]
-    , [ "a", "b", "q", "w" ]
-    , [ "a", "t", "z", "u" ]
-    , [ "a", "t", "z", "i" ]
-    ]
-        |> List.map
-            (\l ->
-                let
-                    final =
-                        Maybe.withDefault "..." (List.head l)
-
-                    ancestors =
-                        List.drop 1 l |> List.reverse
-                in
-                { nodeName = ""
-                , nodeId = ""
-                , bestBlock = Maybe.withDefault "..." (List.last l)
-                , bestBlockHeight = 0
-                , finalizedBlock = final
-                , finalizedBlockHeight = 0
-                , ancestorsSinceBestBlock = ancestors
-                }
-            )
-
---}
---
---
 -- Update
 
 
@@ -109,47 +63,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotNodeInfo (Success nodeInfo) ->
-            let
-                sequences =
-                    List.map Api.prepareBlockSequence nodeInfo
-
-                shortestSeq =
-                    List.minimumBy List.length sequences
-
-                lastFinalized =
-                    shortestSeq
-                        |> Maybe.andThen List.uncons
-                        |> Maybe.map Tuple.first
-
-                last =
-                    shortestSeq
-                        |> Maybe.andThen List.unconsLast
-                        |> Maybe.map Tuple.first
-
-                tree =
-                    DTree.addAll sequences model.tree
-
-                nBack =
-                    Maybe.map (\lst -> DTree.walkBackward 5 lst tree) last
-
-                viewableTree =
-                    Maybe.map
-                        (\nBackHash ->
-                            DTree.buildForward 1 nBackHash tree [] Tree.tree
-                        )
-                        nBack
-                        |> Maybe.map2 (annotate nodeInfo) lastFinalized
-            in
-            ( { model
-                | nodes = updateNodes nodeInfo model.nodes
-                , lastFinalized = lastFinalized
-                , tree = DTree.addAll sequences model.tree
-                , viewableTree = viewableTree
-                , flatTree =
-                    viewableTree
-                        |> Maybe.map Api.flattenTree
-                        |> Maybe.withDefault []
-              }
+            ( updateChain 5 nodeInfo model
             , Cmd.none
             )
 
@@ -167,6 +81,51 @@ updateNodes : List Node -> List (List Node) -> List (List Node)
 updateNodes new current =
     List.append [ new ] current
         |> List.take 3
+
+
+updateChain : Int -> List Node -> Model -> Model
+updateChain depth nodes model =
+    let
+        sequences =
+            List.map Api.prepareBlockSequence nodes
+
+        shortestSeq =
+            List.minimumBy List.length sequences
+
+        ntree =
+            DTree.addAll sequences model.tree
+
+        maybeLastFinalized =
+            shortestSeq
+                |> Maybe.andThen List.uncons
+                |> Maybe.map Tuple.first
+    in
+    case maybeLastFinalized of
+        Nothing ->
+            model
+
+        Just lastFinalized ->
+            let
+                ( walkedForward, last ) =
+                    ntree
+                        |> DTree.walkForwardFrom lastFinalized depth
+                        |> List.maximumBy Tuple.first
+                        |> Maybe.withDefault ( 0, lastFinalized )
+
+                ( walkedBackward, start ) =
+                    ntree
+                        |> DTree.walkBackwardFrom last depth
+
+                annotatedTree =
+                    DTree.buildForward depth start ntree [] Tree.tree
+                        |> annotate [] lastFinalized
+            in
+            { model
+                | annotatedTree = Just annotatedTree
+                , nodes = updateNodes nodes model.nodes
+                , tree = ntree
+                , lastFinalized = Just lastFinalized
+            }
 
 
 
