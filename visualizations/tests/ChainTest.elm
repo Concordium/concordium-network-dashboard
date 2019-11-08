@@ -1,6 +1,7 @@
 module ChainTest exposing (..)
 
 import Chain.Api as Api exposing (..)
+import Chain.DTree as DTree
 import Chain.Tree as CTree
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
@@ -54,20 +55,19 @@ suite =
                     CTree.growBranch "a" [ "b", "c", "d" ]
                         |> Expect.equal (tree "a" [ tree "b" [ tree "c" [ singleton "d" ] ] ])
             ]
-        , describe "Chain.Tree.growTree"
-            [ test "Growsa tree from a list of branches" <|
+        , describe "Chain.DTree"
+            [ test "addAll creates a valud DTree" <|
                 \_ ->
-                    CTree.growTree Nothing
-                        [ [ "a", "b", "c", "d" ], [ "a", "b", "x", "y", "z" ] ]
+                    DTree.init
+                        |> DTree.addAll [ [ "a", "b", "c", "d" ], [ "a", "b", "x", "y", "z" ], [ "y", "p" ] ]
+                        |> (\t -> DTree.buildForward 10 "a" t [] tree)
                         |> Expect.equal
-                            (Just
-                                (tree "a"
-                                    [ tree "b"
-                                        [ tree "c" [ singleton "d" ]
-                                        , tree "x" [ tree "y" [ singleton "z" ] ]
-                                        ]
+                            (tree "a"
+                                [ tree "b"
+                                    [ tree "c" [ singleton "d" ]
+                                    , tree "x" [ tree "y" [ singleton "p", singleton "z" ] ]
                                     ]
-                                )
+                                ]
                             )
             ]
         ]

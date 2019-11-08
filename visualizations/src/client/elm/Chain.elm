@@ -138,7 +138,7 @@ update msg model =
                             DTree.buildForward 1 nBackHash tree [] Tree.tree
                         )
                         nBack
-                        |> Maybe.map (annotateChain nodeInfo)
+                        |> Maybe.map2 (annotate nodeInfo) lastFinalized
             in
             ( { model
                 | nodes = updateNodes nodeInfo model.nodes
@@ -228,7 +228,7 @@ viewChain label children =
 
 viewBlock : Block -> Element msg
 viewBlock block =
-    row []
+    row [ alignTop ]
         [ column [ spacing 4, alignTop ]
             [ el
                 [ height (px 6)
@@ -248,7 +248,7 @@ viewBlock block =
                 , height (px 36)
                 , alignTop
                 ]
-                (el [ centerX, centerY ] (text block.hash))
+                (el [ centerX, centerY ] (text block.shortHash))
             ]
         , connector spec (fromUI <| blockBackground block.status) block.connectors
         ]
