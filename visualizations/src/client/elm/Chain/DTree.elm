@@ -1,12 +1,9 @@
-module Chain.DTree exposing (DTree, addAll, build, init)
+module Chain.DTree exposing (DTree, addAll, buildBackward, buildForward, init, walkBackward)
 
 import Dict exposing (Dict)
 import Dict.Extra as Dict
+import List.Extra as List
 import Set exposing (Set)
-
-
-type Tree a
-    = Tree a (List a)
 
 
 type alias DTree a =
@@ -51,17 +48,18 @@ addConnection a b dtree =
     }
 
 
-build :
-    comparable
-    -> Dict comparable (List comparable)
+buildForward :
+    Int
+    -> comparable
+    -> DTree comparable
     -> List comparable
     -> (comparable -> List tree -> tree)
     -> tree
-build root connections visited construct =
+buildForward depth root tree visited construct =
     let
         children =
-            Dict.get root connections
-                |> Maybe.withDefault []
+            Dict.get root tree.forward
+                |> Maybe.withDefault Set.empty
 
         isCycle =
             List.any ((==) root) visited
@@ -73,11 +71,59 @@ build root connections visited construct =
         construct root
             (List.map
                 (\child ->
-                    build
+                    buildForward
+                        (depth - 1)
                         child
-                        connections
+                        tree
                         (root :: visited)
                         construct
                 )
-                children
+                (Set.toList children)
             )
+
+
+walkBackward : Int -> comparable -> DTree comparable -> comparable
+walkBackward depth current tree =
+    case Dict.get current tree.backward of
+        Nothing ->
+            current
+
+        Just previous ->
+            if depth <= 0 then
+                current
+
+            else
+                walkBackward
+                    (depth - 1)
+                    previous
+                    tree
+
+
+buildBackward :
+    Int
+    -> comparable
+    -> DTree comparable
+    -> (comparable -> List tree -> tree)
+    -> tree
+buildBackward maxDepth root tree construct =
+    let
+        buildList : Int -> comparable -> List comparable -> List comparable
+        buildList depth current visited =
+            case Dict.get current tree.backward of
+                Nothing ->
+                    visited
+
+                Just previous ->
+                    if List.any ((==) previous) visited || depth >= maxDepth then
+                        visited
+
+                    else
+                        buildList
+                            (depth + 1)
+                            previous
+                            (previous :: visited)
+    in
+    List.foldr
+        (\c acc -> construct c [ acc ])
+        (construct root [])
+        (buildList 0 root [])

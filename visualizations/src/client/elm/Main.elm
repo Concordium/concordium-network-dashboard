@@ -59,9 +59,9 @@ view model =
                         [ width fill
                         , height (px model.window.height)
                         ]
-                        (List.map Chain.view model.chainModel.chainTrees)
-
-                    --([] ++ [ viewFlattenedChain model.chainModel.flatTree ])
+                        (Maybe.map (Chain.view >> List.singleton) model.chainModel.viewableTree
+                            |> Maybe.withDefault []
+                        )
                     ]
         ]
     }

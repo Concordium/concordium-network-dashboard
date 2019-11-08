@@ -29,12 +29,10 @@ import Tree exposing (Tree)
 
 type alias Model =
     { nodes : List (List Node)
-    , chainTrees : List (Tree Block)
-    , grownTree : Maybe (Tree String)
-    , dTree : DTree String
+    , lastFinalized : Maybe String
+    , tree : DTree String
     , flatTree : List (Positioned Block)
-    , history : Maybe (History String)
-    , dhistory : Dict String String
+    , viewableTree : Maybe (Tree Block)
     , errors : List Http.Error
     }
 
@@ -46,13 +44,11 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
     ( { nodes = []
-      , chainTrees = []
-      , grownTree = Nothing
+      , lastFinalized = Nothing
       , flatTree = []
+      , viewableTree = Nothing
       , errors = []
-      , dTree = DTree.init
-      , history = Nothing
-      , dhistory = Dict.fromList []
+      , tree = DTree.init
       }
     , Api.getNodeInfo GotNodeInfo
     )
@@ -117,19 +113,40 @@ update msg model =
                 sequences =
                     List.map Api.prepareBlockSequence nodeInfo
 
-                rawTrees =
-                    Api.buildChains sequences
+                shortestSeq =
+                    List.minimumBy List.length sequences
 
-                chainTrees =
-                    List.map (annotateChain nodeInfo) rawTrees
+                lastFinalized =
+                    shortestSeq
+                        |> Maybe.andThen List.uncons
+                        |> Maybe.map Tuple.first
+
+                last =
+                    shortestSeq
+                        |> Maybe.andThen List.unconsLast
+                        |> Maybe.map Tuple.first
+
+                tree =
+                    DTree.addAll sequences model.tree
+
+                nBack =
+                    Maybe.map (\lst -> DTree.walkBackward 5 lst tree) last
+
+                viewableTree =
+                    Maybe.map
+                        (\nBackHash ->
+                            DTree.buildForward 1 nBackHash tree [] Tree.tree
+                        )
+                        nBack
+                        |> Maybe.map (annotateChain nodeInfo)
             in
             ( { model
                 | nodes = updateNodes nodeInfo model.nodes
-                , chainTrees = chainTrees
-                , dTree = DTree.addAll sequences model.dTree
+                , lastFinalized = lastFinalized
+                , tree = DTree.addAll sequences model.tree
+                , viewableTree = viewableTree
                 , flatTree =
-                    chainTrees
-                        |> List.head
+                    viewableTree
                         |> Maybe.map Api.flattenTree
                         |> Maybe.withDefault []
               }
