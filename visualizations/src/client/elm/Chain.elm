@@ -30,6 +30,7 @@ import Tree exposing (Tree)
 type alias Model =
     { nodes : List (List Node)
     , lastFinalized : Maybe String
+    , bestBlock : Maybe String
     , tree : DTree String
     , flatTree : List (Positioned Block)
     , annotatedTree : Maybe (Tree Block)
@@ -41,6 +42,7 @@ init : ( Model, Cmd Msg )
 init =
     ( { nodes = []
       , lastFinalized = Nothing
+      , bestBlock = Nothing
       , flatTree = []
       , annotatedTree = Nothing
       , errors = []
@@ -86,6 +88,13 @@ updateNodes new current =
 updateChain : Int -> List Node -> Model -> Model
 updateChain depth nodes model =
     let
+        maybeBestBlock =
+            List.map .bestBlock nodes
+                |> List.group
+                |> List.map (Tuple.mapSecond List.length)
+                |> List.maximumBy Tuple.second
+                |> Maybe.map Tuple.first
+
         sequences =
             List.map Api.prepareBlockSequence nodes
 
@@ -100,17 +109,14 @@ updateChain depth nodes model =
                 |> Maybe.andThen List.uncons
                 |> Maybe.map Tuple.first
     in
-    case maybeLastFinalized of
-        Nothing ->
-            model
-
-        Just lastFinalized ->
+    case ( maybeBestBlock, maybeLastFinalized ) of
+        ( Just lastFinalized, Just bestBlock ) ->
             let
                 ( walkedForward, last ) =
                     ntree
-                        |> DTree.walkForwardFrom lastFinalized depth
+                        |> DTree.walkForwardFrom bestBlock depth
                         |> List.maximumBy Tuple.first
-                        |> Maybe.withDefault ( 0, lastFinalized )
+                        |> Maybe.withDefault ( 0, bestBlock )
 
                 ( walkedBackward, start ) =
                     ntree
@@ -118,14 +124,18 @@ updateChain depth nodes model =
 
                 annotatedTree =
                     DTree.buildForward depth start ntree [] Tree.tree
-                        |> annotate [] lastFinalized
+                        |> annotate [] bestBlock
             in
             { model
                 | annotatedTree = Just annotatedTree
                 , nodes = updateNodes nodes model.nodes
                 , tree = ntree
-                , lastFinalized = Just lastFinalized
+                , lastFinalized = maybeLastFinalized
+                , bestBlock = maybeBestBlock
             }
+
+        _ ->
+            model
 
 
 
@@ -206,6 +216,7 @@ viewBlock block =
                 , width (px 64)
                 , height (px 36)
                 , alignTop
+                , animateAll
                 ]
                 (el [ centerX, centerY ] (text block.shortHash))
             ]

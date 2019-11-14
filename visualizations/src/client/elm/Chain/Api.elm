@@ -120,7 +120,6 @@ annotateChain nodes sourceTree =
         (annotateBlock nodes)
         annotateChildren
         sourceTree
-        |> Tree.mapLabel (\label -> { label | status = Finalized })
 
 
 annotateBlock : List Node -> String -> Block
@@ -162,11 +161,8 @@ colorize lastFinalized tree =
             let
                 coloredZipper =
                     Zipper.mapLabel (\label -> { label | status = Finalized }) zipper
-
-                upzipper =
-                    Zipper.parent coloredZipper
             in
-            case upzipper of
+            case Zipper.parent coloredZipper of
                 Nothing ->
                     coloredZipper
 
