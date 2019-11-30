@@ -1,8 +1,8 @@
 module Chain.Api exposing (..)
 
-import Dict exposing (Dict)
-import Dict.Extra as Dict
-import Element exposing (Color)
+import File exposing (File)
+import File.Download as Download
+import File.Select as Select
 import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Decode
@@ -13,6 +13,7 @@ import Tree exposing (Tree(..), singleton, tree)
 import Tree.Zipper as Zipper exposing (Zipper)
 
 
+nodeInfoEndpoint : String
 nodeInfoEndpoint =
     "https://dashboard.eu.prod.concordium.com/nodesBlocksInfo"
 
@@ -50,6 +51,48 @@ type BlockStatus
     = Finalized
     | LastFinalized
     | Candidate
+
+
+
+-- Saving and Loading Histry from Files (mainly for debugging)
+
+
+type alias Replay =
+    { present : List Node
+    , past : List (List Node)
+    , future : List (List Node)
+    }
+
+
+advanceReplay : Replay -> Replay
+advanceReplay replay =
+    case replay.future of
+        [] ->
+            replay
+
+        nearFuture :: farFuture ->
+            { present = nearFuture
+            , past = replay.present :: replay.past
+            , future = farFuture
+            }
+
+
+saveNodeHistory : List (List Node) -> Cmd msg
+saveNodeHistory history =
+    history
+        |> (Encode.list <| Encode.list <| encodeNode)
+        |> Encode.encode 0
+        |> Download.string "history.json" "application/json"
+
+
+loadNodeHistory : (File -> msg) -> Cmd msg
+loadNodeHistory loadedMsg =
+    Select.file [ "application/json" ] loadedMsg
+
+
+decodeHistory : Decode.Decoder (List (List Node))
+decodeHistory =
+    Decode.list <| Decode.list <| decodeNode
 
 
 
@@ -99,6 +142,7 @@ encodeNode record =
 -- Build the chain
 
 
+prepareBlockSequence : Node -> List String
 prepareBlockSequence node =
     node.finalizedBlock
         :: List.reverse node.ancestorsSinceBestBlock
@@ -213,6 +257,13 @@ block nodes height position connectorList hash =
 -- Flatten
 
 
+type alias FlattenedChain =
+    { blocks : List (Positioned Block)
+    , numBlocksX : Int
+    , numBlocksY : Int
+    }
+
+
 flattenTree : Tree Block -> List (Positioned Block)
 flattenTree chain =
     flattenAt (Zipper.fromTree chain) 0 0
@@ -222,6 +273,7 @@ flattenTree chain =
 flattenAt : Zipper Block -> Int -> Int -> ( Zipper Block, List (Positioned Block) )
 flattenAt layer x y =
     let
+        labelAnd : List (Positioned Block) -> List (Positioned Block)
         labelAnd result =
             [ positioned (Zipper.label layer) x y ] ++ result
     in

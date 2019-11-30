@@ -13,6 +13,10 @@ import TypedSvg.Core exposing (..)
 import TypedSvg.Types exposing (..)
 
 
+
+-- dottedConnector : Spec -> Color ->
+
+
 connector : Spec -> Color -> List Int -> Element msg
 connector spec color positions =
     let

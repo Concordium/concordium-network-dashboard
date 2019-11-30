@@ -121,26 +121,26 @@ forward depth maxDepth current tree =
         Nothing ->
             List.singleton ( depth, current )
 
-        Just next ->
+        Just children ->
             if depth >= maxDepth then
-                next
+                children
                     |> Set.toList
                     |> List.map (Tuple.pair depth)
 
             else
-                next
+                children
                     |> Set.toList
                     |> List.map
-                        (\n ->
+                        (\child ->
                             forward
                                 (depth + 1)
                                 maxDepth
-                                n
+                                child
                                 tree
                         )
                     |> List.concat
                     |> List.filter
-                        (Tuple.first >> (>) depth)
+                        (Tuple.first >> (<) depth)
 
 
 walkForwardFrom : comparable -> Int -> DTree comparable -> List ( Int, comparable )

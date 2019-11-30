@@ -14,10 +14,14 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
+import Element.Input exposing (button)
 import Element.Keyed as Keyed
+import File exposing (File)
 import Http
+import Json.Decode as Decode
 import List.Extra as List
 import RemoteData exposing (..)
+import Task
 import Time exposing (..)
 import Transitions exposing (..)
 import Tree exposing (Tree)
@@ -35,6 +39,7 @@ type alias Model =
     , flatTree : List (Positioned Block)
     , annotatedTree : Maybe (Tree Block)
     , errors : List Http.Error
+    , replay : Maybe Replay
     }
 
 
@@ -47,6 +52,7 @@ init =
       , annotatedTree = Nothing
       , errors = []
       , tree = DTree.init
+      , replay = Nothing
       }
     , Api.getNodeInfo GotNodeInfo
     )
@@ -58,6 +64,10 @@ init =
 
 type Msg
     = GotNodeInfo (WebData (List Node))
+    | LoadedHistory File
+    | ReplayHistory
+    | SaveHistory
+    | GotHistoryString String
     | Tick Posix
 
 
@@ -65,7 +75,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotNodeInfo (Success nodeInfo) ->
-            ( updateChain 5 nodeInfo model
+            ( updateChain 6 nodeInfo model
             , Cmd.none
             )
 
@@ -75,14 +85,54 @@ update msg model =
         GotNodeInfo _ ->
             ( model, Cmd.none )
 
+        SaveHistory ->
+            ( model, Api.saveNodeHistory model.nodes )
+
+        ReplayHistory ->
+            ( model, Api.loadNodeHistory LoadedHistory )
+
+        LoadedHistory historyFile ->
+            ( model
+            , Task.perform
+                GotHistoryString
+                (File.toString historyFile)
+            )
+
+        GotHistoryString historyString ->
+            let
+                result =
+                    Decode.decodeString Api.decodeHistory historyString
+            in
+            case result of
+                Ok history ->
+                    ( { model | replay = Just { past = [], present = [], future = List.reverse history } }, Cmd.none )
+
+                Err _ ->
+                    ( model, Cmd.none )
+
         Tick time ->
-            ( model, Api.getNodeInfo GotNodeInfo )
+            case model.replay of
+                Nothing ->
+                    ( model, Api.getNodeInfo GotNodeInfo )
+
+                Just replay ->
+                    let
+                        steppedReplay =
+                            Api.advanceReplay replay
+                    in
+                    update
+                        (GotNodeInfo (Success steppedReplay.present))
+                        { model | replay = Just steppedReplay }
 
 
 updateNodes : List Node -> List (List Node) -> List (List Node)
 updateNodes new current =
-    List.append [ new ] current
-        |> List.take 3
+    if Just new /= List.head current then
+        List.append [ new ] current
+        --|> List.take 3
+
+    else
+        current
 
 
 updateChain : Int -> List Node -> Model -> Model
@@ -110,7 +160,7 @@ updateChain depth nodes model =
                 |> Maybe.map Tuple.first
     in
     case ( maybeBestBlock, maybeLastFinalized ) of
-        ( Just lastFinalized, Just bestBlock ) ->
+        ( Just bestBlock, Just lastFinalized ) ->
             let
                 ( walkedForward, last ) =
                     ntree
@@ -120,16 +170,17 @@ updateChain depth nodes model =
 
                 ( walkedBackward, start ) =
                     ntree
-                        |> DTree.walkBackwardFrom last depth
+                        |> DTree.walkBackwardFrom last (depth - 1)
 
                 annotatedTree =
                     DTree.buildForward depth start ntree [] Tree.tree
-                        |> annotate [] bestBlock
+                        |> annotate nodes lastFinalized
             in
             { model
                 | annotatedTree = Just annotatedTree
                 , nodes = updateNodes nodes model.nodes
                 , tree = ntree
+                , flatTree = flattenTree annotatedTree
                 , lastFinalized = maybeLastFinalized
                 , bestBlock = maybeBestBlock
             }
@@ -171,14 +222,33 @@ viewPositionedBlock positionedBlock =
 -- Tree based view
 
 
-view : Tree Block -> Element msg
+view : Tree Block -> Element Msg
 view tree =
-    column [ centerX, centerY, spacing (round spec.gutterHeight) ]
-        [ Tree.restructure
-            viewBlock
-            viewChain
-            tree
+    column [ width fill, height fill ]
+        [ row []
+            [ viewButton (Just SaveHistory) "Save History"
+            , viewButton (Just ReplayHistory) "Replay History"
+            ]
+        , el [ centerX, centerY, spacing (round spec.gutterHeight) ]
+            (Tree.restructure
+                viewBlock
+                viewChain
+                tree
+            )
         ]
+
+
+viewButton : Maybe msg -> String -> Element msg
+viewButton onPress label =
+    button
+        [ Background.color <| Element.rgba 1 1 1 0.05
+        , Font.color <| Element.rgb 0.2 0.5 0.8
+        , Font.size 14
+        , padding 10
+        ]
+        { onPress = onPress
+        , label = text label
+        }
 
 
 viewChain : Element msg -> List (Element msg) -> Element msg
