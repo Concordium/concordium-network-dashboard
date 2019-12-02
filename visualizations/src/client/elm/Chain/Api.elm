@@ -47,6 +47,18 @@ type alias Positioned a =
     }
 
 
+type alias Animated a =
+    { a
+        | animation : Animation
+    }
+
+
+type Animation
+    = FadeIn Int Int
+    | FadeOut Int Int Int Int
+    | Move Int Int Int Int
+
+
 type BlockStatus
     = Finalized
     | LastFinalized
@@ -259,15 +271,37 @@ block nodes height position connectorList hash =
 
 type alias FlattenedChain =
     { blocks : List (Positioned Block)
-    , numBlocksX : Int
-    , numBlocksY : Int
+    , width : Int
+    , height : Int
     }
 
 
-flattenTree : Tree Block -> List (Positioned Block)
+emptyFlatChain : FlattenedChain
+emptyFlatChain =
+    { blocks = []
+    , width = 0
+    , height = 0
+    }
+
+
+flattenTree : Tree Block -> FlattenedChain
 flattenTree chain =
     flattenAt (Zipper.fromTree chain) 0 0
         |> Tuple.second
+        |> (\blocks ->
+                { blocks = blocks
+                , width =
+                    List.map .x blocks
+                        |> List.maximum
+                        |> Maybe.withDefault 0
+                        |> (+) 1
+                , height =
+                    List.map .y blocks
+                        |> List.maximum
+                        |> Maybe.withDefault 0
+                        |> (+) 1
+                }
+           )
 
 
 flattenAt : Zipper Block -> Int -> Int -> ( Zipper Block, List (Positioned Block) )

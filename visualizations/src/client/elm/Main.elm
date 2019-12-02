@@ -55,14 +55,14 @@ view model =
         [ theme <|
             case model.currentPage of
                 Home ->
-                    [ row
+                    [ el
                         [ width fill
                         , height (px model.window.height)
                         ]
-                        (Maybe.map (Chain.view >> List.singleton) model.chainModel.annotatedTree
-                            |> Maybe.withDefault []
-                        )
+                        (Chain.view model.chainModel.flatTree)
                         |> Element.map ChainMsg
+
+                    --, viewFlattenedChain model.chainModel.flatTree
                     ]
         ]
     }
@@ -188,7 +188,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Events.onResize WindowResized
-        , Time.every 500 (ChainMsg << Chain.Tick)
+        , Time.every 1000 (ChainMsg << Chain.Tick)
 
         --, Events.onAnimationFrameDelta Tick
         --, Time.every 3000 CurrentTime

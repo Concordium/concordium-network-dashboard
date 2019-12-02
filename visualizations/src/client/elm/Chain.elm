@@ -4,6 +4,7 @@ import Chain.Api as Api exposing (..)
 import Chain.Connector exposing (..)
 import Chain.DTree as DTree exposing (DTree)
 import Chain.Spec exposing (..)
+import Chain.SvgView as SvgView
 import Chain.Tree as CTree
 import Color exposing (..)
 import Color.Interpolate exposing (..)
@@ -36,7 +37,7 @@ type alias Model =
     , lastFinalized : Maybe String
     , bestBlock : Maybe String
     , tree : DTree String
-    , flatTree : List (Positioned Block)
+    , flatTree : FlattenedChain
     , annotatedTree : Maybe (Tree Block)
     , errors : List Http.Error
     , replay : Maybe Replay
@@ -48,7 +49,7 @@ init =
     ( { nodes = []
       , lastFinalized = Nothing
       , bestBlock = Nothing
-      , flatTree = []
+      , flatTree = Api.emptyFlatChain
       , annotatedTree = Nothing
       , errors = []
       , tree = DTree.init
@@ -222,8 +223,8 @@ viewPositionedBlock positionedBlock =
 -- Tree based view
 
 
-view : Tree Block -> Element Msg
-view tree =
+viewOld : Tree Block -> Element Msg
+viewOld tree =
     column [ width fill, height fill ]
         [ row []
             [ viewButton (Just SaveHistory) "Save History"
@@ -235,6 +236,18 @@ view tree =
                 viewChain
                 tree
             )
+        ]
+
+
+view : FlattenedChain -> Element Msg
+view chain =
+    column [ width fill, height fill ]
+        [ row []
+            [ viewButton (Just SaveHistory) "Save History"
+            , viewButton (Just ReplayHistory) "Replay History"
+            ]
+        , el [ centerX, centerY, spacing (round spec.gutterHeight) ]
+            (html <| SvgView.viewFlattenedChain chain)
         ]
 
 
