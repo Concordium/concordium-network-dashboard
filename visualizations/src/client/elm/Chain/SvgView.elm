@@ -15,8 +15,8 @@ import TypedSvg.Core exposing (..)
 import TypedSvg.Types exposing (..)
 
 
-viewFlattenedChain : FlattenedChain -> Svg msg
-viewFlattenedChain chain =
+viewAnimatedChain : AnimatedChain -> Svg msg
+viewAnimatedChain chain =
     let
         viewWidth =
             toFloat chain.width
@@ -37,7 +37,7 @@ viewFlattenedChain chain =
         , height (px viewHeight)
         , viewBox 0 0 viewWidth viewHeight
         ]
-        (List.map viewPositionedBlock chain.blocks)
+        (List.map (viewAnimatedBlock chain.stage) chain.blocks)
 
 
 
@@ -47,31 +47,70 @@ viewFlattenedChain chain =
 -- -- viewPositionedBlock : Positioned Block -> Svg msg
 
 
-viewPositionedBlock : Positioned Block -> ( String, Svg msg )
-viewPositionedBlock block =
+viewAnimatedBlock : AnimationStage -> Animated Block -> ( String, Svg msg )
+viewAnimatedBlock stage block =
     let
-        posX =
-            toFloat block.x * (spec.blockWidth + spec.gutterWidth)
+        toCoordinates ( x, y ) =
+            ( toFloat x * (spec.blockWidth + spec.gutterWidth)
+            , toFloat y * (spec.blockHeight + spec.gutterHeight + spec.nodeIndicatorHeight)
+            )
 
-        posY =
-            toFloat block.y * (spec.blockHeight + spec.gutterHeight + spec.nodeIndicatorHeight)
+        ( fromX, fromY ) =
+            (case block.animation of
+                Static x y ->
+                    ( x, y )
+
+                Move x y _ _ ->
+                    ( x, y )
+
+                FadeIn x y shift ->
+                    ( x + shift, y )
+
+                FadeOut x y shift ->
+                    ( x, y )
+            )
+                |> toCoordinates
+
+        ( toX, toY ) =
+            (case block.animation of
+                Static x y ->
+                    ( x, y )
+
+                Move _ _ x y ->
+                    ( x, y )
+
+                FadeIn x y shift ->
+                    ( x, y )
+
+                FadeOut x y shift ->
+                    ( x - shift, y )
+            )
+                |> toCoordinates
+
+        ( animatedLocation, transition ) =
+            case stage of
+                Init ->
+                    ( TypedSvg.Attributes.style "transition: all 0ms", transform [ Translate fromX fromY ] )
+
+                Animate ->
+                    ( TypedSvg.Attributes.style "transition: all 500ms ease-out", transform [ Translate toX toY ] )
     in
     ( block.hash
     , g
-        [ transform [ Translate posX posY ]
+        [ animatedLocation
         , width (px <| spec.blockWidth + spec.gutterWidth)
         , height (px <| spec.blockHeight + spec.nodeIndicatorHeight)
-        , TypedSvg.Attributes.style "transition: all 500ms ease-out"
+        , transition
         , class [ "fadeIn" ]
         ]
-        [ animate [ attributeName "opacity", from 0.0, to 1.0, dur (Duration "500ms") ] []
-        , rect
+        [ rect
             [ y (px spec.nodeIndicatorHeight)
             , width (px spec.blockWidth)
             , height (px spec.blockHeight)
             , rx (px 4)
             , ry (px 4)
             , fill (Fill <| blockBackground block.status)
+            , TypedSvg.Attributes.style "transition: all 500ms ease-out"
             ]
             []
         , viewNodesAtBar block.percentageNodesAt

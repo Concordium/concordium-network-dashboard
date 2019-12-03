@@ -21,6 +21,7 @@ import File exposing (File)
 import Http
 import Json.Decode as Decode
 import List.Extra as List
+import Process exposing (sleep)
 import RemoteData exposing (..)
 import Task
 import Time exposing (..)
@@ -38,6 +39,7 @@ type alias Model =
     , bestBlock : Maybe String
     , tree : DTree String
     , flatTree : FlattenedChain
+    , animatedChain : AnimatedChain
     , annotatedTree : Maybe (Tree Block)
     , errors : List Http.Error
     , replay : Maybe Replay
@@ -50,6 +52,7 @@ init =
       , lastFinalized = Nothing
       , bestBlock = Nothing
       , flatTree = Api.emptyFlatChain
+      , animatedChain = Api.emptyAnimatedChain
       , annotatedTree = Nothing
       , errors = []
       , tree = DTree.init
@@ -69,6 +72,7 @@ type Msg
     | ReplayHistory
     | SaveHistory
     | GotHistoryString String
+    | StartAnimation Posix
     | Tick Posix
 
 
@@ -76,7 +80,21 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotNodeInfo (Success nodeInfo) ->
-            ( updateChain 6 nodeInfo model
+            ( updateChain 3 nodeInfo model
+            , Process.spawn (sleep 500)
+                |> Task.andThen (\_ -> Time.now)
+                |> Task.perform StartAnimation
+            )
+
+        StartAnimation time ->
+            let
+                chain =
+                    model.animatedChain
+
+                startedAnimatedChain =
+                    { chain | stage = Animate }
+            in
+            ( { model | animatedChain = startedAnimatedChain }
             , Cmd.none
             )
 
@@ -176,12 +194,20 @@ updateChain depth nodes model =
                 annotatedTree =
                     DTree.buildForward depth start ntree [] Tree.tree
                         |> annotate nodes lastFinalized
+
+                newFlatChain =
+                    flattenTree annotatedTree
             in
             { model
                 | annotatedTree = Just annotatedTree
                 , nodes = updateNodes nodes model.nodes
                 , tree = ntree
-                , flatTree = flattenTree annotatedTree
+                , flatTree = newFlatChain
+                , animatedChain =
+                    deriveAnimations
+                        model.flatTree
+                        newFlatChain
+                        model.animatedChain.stage
                 , lastFinalized = maybeLastFinalized
                 , bestBlock = maybeBestBlock
             }
@@ -239,7 +265,7 @@ viewOld tree =
         ]
 
 
-view : FlattenedChain -> Element Msg
+view : AnimatedChain -> Element Msg
 view chain =
     column [ width fill, height fill ]
         [ row []
@@ -247,7 +273,7 @@ view chain =
             , viewButton (Just ReplayHistory) "Replay History"
             ]
         , el [ centerX, centerY, spacing (round spec.gutterHeight) ]
-            (html <| SvgView.viewFlattenedChain chain)
+            (html <| SvgView.viewAnimatedChain chain)
         ]
 
 

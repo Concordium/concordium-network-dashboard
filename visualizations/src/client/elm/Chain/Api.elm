@@ -1,5 +1,7 @@
 module Chain.Api exposing (..)
 
+import Dict as Dict exposing (Dict)
+import Dict.Extra as Dict
 import File exposing (File)
 import File.Download as Download
 import File.Select as Select
@@ -54,9 +56,10 @@ type alias Animated a =
 
 
 type Animation
-    = FadeIn Int Int
-    | FadeOut Int Int Int Int
+    = FadeIn Int Int Int
+    | FadeOut Int Int Int
     | Move Int Int Int Int
+    | Static Int Int
 
 
 type BlockStatus
@@ -350,3 +353,145 @@ unPositioned original =
     , status = original.status
     , height = original.height
     }
+
+
+animated : Positioned Block -> Animated Block
+animated original =
+    { hash = original.hash
+    , shortHash = original.shortHash
+    , numNodesAt = original.numNodesAt
+    , percentageNodesAt = original.percentageNodesAt
+    , connectors = original.connectors
+    , status = original.status
+    , height = original.height
+    , animation = Static original.x original.y
+    }
+
+
+
+-- Animate
+
+
+type AnimationStage
+    = Init
+    | Animate
+
+
+type alias AnimatedChain =
+    { blocks : List (Animated Block)
+    , stage : AnimationStage
+    , width : Int
+    , height : Int
+    }
+
+
+emptyAnimatedChain =
+    { blocks = []
+    , stage = Init
+    , width = 0
+    , height = 0
+    }
+
+
+deriveAnimations : FlattenedChain -> FlattenedChain -> AnimationStage -> AnimatedChain
+deriveAnimations current next stage =
+    { blocks = animateBlocks current.blocks next.blocks
+    , stage = Init
+    , width = next.width
+    , height = max current.height next.height
+    }
+
+
+animateMove : Animated Block -> Animated Block -> Animated Block
+animateMove fromBlock toBlock =
+    case ( fromBlock.animation, toBlock.animation ) of
+        ( Static fromX fromY, Static toX toY ) ->
+            if fromX == toX && fromY == toY then
+                toBlock
+
+            else
+                { toBlock | animation = Move fromX fromY toX toY }
+
+        _ ->
+            toBlock
+
+
+animateFadeIn : Int -> Animated Block -> Animated Block
+animateFadeIn shift ablock =
+    case ablock.animation of
+        Static x y ->
+            { ablock | animation = FadeIn x y shift }
+
+        _ ->
+            ablock
+
+
+animateFadeOut : Int -> Animated Block -> Animated Block
+animateFadeOut shift ablock =
+    case ablock.animation of
+        Static x y ->
+            { ablock | animation = FadeOut x y shift }
+
+        _ ->
+            ablock
+
+
+getShift : Animated Block -> Int
+getShift ablock =
+    case ablock.animation of
+        Move fromX fromY toX toY ->
+            fromX - toX
+
+        _ ->
+            0
+
+
+animateBlocks : List (Positioned Block) -> List (Positioned Block) -> List (Animated Block)
+animateBlocks blocksOut blocksIn =
+    let
+        blocksOutTuples =
+            blocksOut |> List.map (\blockOut -> ( blockOut.hash, ( Just (animated blockOut), Nothing ) ))
+
+        blocksInTuples =
+            blocksIn |> List.map (\blockIn -> ( blockIn.hash, ( Nothing, Just (animated blockIn) ) ))
+
+        blockDict =
+            (blocksOutTuples ++ blocksInTuples)
+                |> Dict.fromListDedupe (\blockOut blockIn -> ( Tuple.first blockOut, Tuple.second blockIn ))
+
+        moves =
+            blockDict
+                |> Dict.filterMap
+                    (\hash tuple ->
+                        case tuple of
+                            ( Just fromBlock, Just toBlock ) ->
+                                Just (animateMove fromBlock toBlock)
+
+                            _ ->
+                                Nothing
+                    )
+                |> Dict.values
+
+        shift =
+            moves
+                |> List.head
+                |> Maybe.map getShift
+                |> Maybe.withDefault 0
+    in
+    blockDict
+        |> Dict.filterMap
+            (\hash tuple ->
+                case tuple of
+                    ( Just blockOut, Nothing ) ->
+                        Just <| animateFadeOut shift blockOut
+
+                    ( Nothing, Just blockIn ) ->
+                        Just <| animateFadeIn shift blockIn
+
+                    ( Just blockOut, Just blockIn ) ->
+                        Just <| animateMove blockOut blockIn
+
+                    _ ->
+                        Nothing
+            )
+        |> Dict.values

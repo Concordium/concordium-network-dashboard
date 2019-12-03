@@ -59,7 +59,7 @@ view model =
                         [ width fill
                         , height (px model.window.height)
                         ]
-                        (Chain.view model.chainModel.flatTree)
+                        (Chain.view model.chainModel.animatedChain)
                         |> Element.map ChainMsg
 
                     --, viewFlattenedChain model.chainModel.flatTree
