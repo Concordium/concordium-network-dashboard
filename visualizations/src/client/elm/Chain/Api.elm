@@ -69,7 +69,7 @@ type BlockStatus
 
 
 
--- Saving and Loading Histry from Files (mainly for debugging)
+-- Saving and Loading History from Files (mainly for debugging)
 
 
 type alias Replay =
@@ -108,6 +108,26 @@ loadNodeHistory loadedMsg =
 decodeHistory : Decode.Decoder (List (List Node))
 decodeHistory =
     Decode.list <| Decode.list <| decodeNode
+
+
+
+-- Mocking
+
+
+mockInit : Int -> List Node
+mockInit n =
+    List.map
+        (\nodeId ->
+            { nodeName = "Node" ++ String.fromInt nodeId
+            , nodeId = String.fromInt nodeId
+            , bestBlock = "String"
+            , bestBlockHeight = 0
+            , finalizedBlock = "String"
+            , finalizedBlockHeight = 0
+            , ancestorsSinceBestBlock = []
+            }
+        )
+        (List.range 1 n)
 
 
 
@@ -204,7 +224,7 @@ annotateChildren label children =
                     | height = height
                     , connectors = connectors children
                 }
-                children
+                (children |> List.sortBy (Tree.label >> .numNodesAt))
 
 
 colorize : String -> Tree Block -> Tree Block

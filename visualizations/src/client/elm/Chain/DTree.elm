@@ -70,6 +70,7 @@ buildForward depth root tree visited construct =
         children =
             Dict.get root tree.forward
                 |> Maybe.withDefault Set.empty
+                |> Set.toList
 
         isCycle =
             List.any ((==) root) visited
@@ -88,7 +89,7 @@ buildForward depth root tree visited construct =
                         (root :: visited)
                         construct
                 )
-                (Set.toList children)
+                children
             )
 
 
