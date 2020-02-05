@@ -81,5 +81,9 @@ connectorPath spec color toBlock =
                 }
     in
     Svg.cubicSpline2d
-        [ fill FillNone, stroke color, strokeWidth (px 2) ]
+        [ fill FillNone
+        , stroke color
+        , strokeWidth (px 2)
+        , class [ "fadeIn" ]
+        ]
         spline

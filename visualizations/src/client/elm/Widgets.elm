@@ -1,5 +1,6 @@
 module Widgets exposing (activeNavLink, border_, buttonExternal, buttonInternal, centerTextWhenSmall, centerWhenSmall, h3, h3black, h4, markdown, p_, padding_, responsiveGrid, rounded_, rowToColumnWhenSmall, spinner, standardDropShadow, theme)
 
+import Colors
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -104,7 +105,7 @@ theme x =
             ]
         }
         [ width fill
-        , Background.color darkGrey
+        , Background.color <| Colors.toUI Colors.background
         , Font.color white
         , Font.size 18
         , Font.regular

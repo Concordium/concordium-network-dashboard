@@ -51,11 +51,11 @@ init =
     ( { nodes = []
       , lastFinalized = Nothing
       , bestBlock = Nothing
+      , tree = DTree.init
       , flatTree = Api.emptyFlatChain
       , animatedChain = Api.emptyAnimatedChain
       , annotatedTree = Nothing
       , errors = []
-      , tree = DTree.init
       , replay = Nothing
       }
     , Api.getNodeInfo GotNodeInfo
@@ -170,7 +170,7 @@ updateChain depth nodes model =
         shortestSeq =
             List.minimumBy List.length sequences
 
-        ntree =
+        newTree =
             DTree.addAll sequences model.tree
 
         maybeLastFinalized =
@@ -182,17 +182,17 @@ updateChain depth nodes model =
         ( Just bestBlock, Just lastFinalized ) ->
             let
                 ( walkedForward, last ) =
-                    ntree
+                    newTree
                         |> DTree.walkForwardFrom bestBlock depth
                         |> List.maximumBy Tuple.first
                         |> Maybe.withDefault ( 0, bestBlock )
 
                 ( walkedBackward, start ) =
-                    ntree
+                    newTree
                         |> DTree.walkBackwardFrom last (depth - 1)
 
                 annotatedTree =
-                    DTree.buildForward depth start ntree [] Tree.tree
+                    DTree.buildForward depth start newTree [] Tree.tree
                         |> annotate nodes lastFinalized
 
                 newFlatChain =
@@ -201,7 +201,7 @@ updateChain depth nodes model =
             { model
                 | annotatedTree = Just annotatedTree
                 , nodes = updateNodes nodes model.nodes
-                , tree = ntree
+                , tree = newTree
                 , flatTree = newFlatChain
                 , animatedChain =
                     deriveAnimations
@@ -224,7 +224,9 @@ updateChain depth nodes model =
 viewFlattenedChain : List (Positioned Block) -> Element msg
 viewFlattenedChain blocks =
     el
-        ([ width (px 400), centerX, centerY ] ++ List.map (\b -> inFront (viewPositionedBlock b)) blocks)
+        ([ width (px 400), centerX, centerY ]
+            ++ List.map (\b -> inFront (viewPositionedBlock b)) blocks
+        )
         none
 
 
@@ -232,8 +234,6 @@ viewPositionedBlock : Positioned Block -> Element msg
 viewPositionedBlock positionedBlock =
     Keyed.el
         [ animateAll
-
-        --, animateFromRight
         , moveRight <|
             toFloat positionedBlock.x
                 * (spec.blockWidth + spec.gutterWidth)
@@ -265,15 +265,22 @@ viewOld tree =
         ]
 
 
-view : AnimatedChain -> Element Msg
-view chain =
+view : Model -> Element Msg
+view model =
+    let
+        nodes =
+            model.nodes
+                |> List.uncons
+                |> Maybe.map Tuple.first
+                |> Maybe.withDefault []
+    in
     column [ width fill, height fill ]
         [ row []
             [ viewButton (Just SaveHistory) "Save History"
             , viewButton (Just ReplayHistory) "Replay History"
             ]
         , el [ centerX, centerY, spacing (round spec.gutterHeight) ]
-            (html <| SvgView.viewAnimatedChain chain)
+            (html <| SvgView.viewAnimatedChain model.lastFinalized nodes model.animatedChain)
         ]
 
 

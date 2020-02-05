@@ -15,8 +15,8 @@ import TypedSvg.Core exposing (..)
 import TypedSvg.Types exposing (..)
 
 
-viewAnimatedChain : AnimatedChain -> Svg msg
-viewAnimatedChain chain =
+viewAnimatedChain : Maybe String -> List Node -> AnimatedChain -> Svg msg
+viewAnimatedChain maybeLastFinalized nodes chain =
     let
         viewWidth =
             toFloat chain.width
@@ -30,14 +30,25 @@ viewAnimatedChain chain =
                 * (spec.blockHeight + spec.nodeIndicatorHeight)
                 + (toFloat chain.height - 1)
                 * spec.gutterHeight
+                + spec.nodeIndicatorHeight
                 |> Basics.max 0.0
     in
-    Keyed.node "svg"
-        [ width (px viewWidth)
-        , height (px viewHeight)
-        , viewBox 0 0 viewWidth viewHeight
-        ]
-        (List.map (viewAnimatedBlock chain.stage) chain.blocks)
+    case maybeLastFinalized of
+        Just lastFinalized ->
+            Keyed.node "svg"
+                [ width (px viewWidth)
+                , height (px viewHeight)
+                , viewBox 0 0 viewWidth viewHeight
+                ]
+                (List.map viewAnimatedBlock chain.blocks
+                    ++ [ ( lastFinalized
+                         , viewCollapsedBlocksSummaryHorizontal lastFinalized nodes viewHeight
+                         )
+                       ]
+                )
+
+        _ ->
+            svg [] []
 
 
 
@@ -47,8 +58,8 @@ viewAnimatedChain chain =
 -- -- viewPositionedBlock : Positioned Block -> Svg msg
 
 
-viewAnimatedBlock : AnimationStage -> Animated Block -> ( String, Svg msg )
-viewAnimatedBlock stage block =
+viewAnimatedBlock : Animated Block -> ( String, Svg msg )
+viewAnimatedBlock block =
     let
         toCoordinates ( x, y ) =
             ( toFloat x * (spec.blockWidth + spec.gutterWidth)
@@ -86,21 +97,12 @@ viewAnimatedBlock stage block =
                     ( x - shift, y )
             )
                 |> toCoordinates
-
-        ( animatedLocation, transition ) =
-            case stage of
-                Init ->
-                    ( TypedSvg.Attributes.style "transition: all 0ms", transform [ Translate fromX fromY ] )
-
-                Animate ->
-                    ( TypedSvg.Attributes.style "transition: all 500ms ease-out", transform [ Translate toX toY ] )
     in
     ( block.hash
     , g
-        [ animatedLocation
+        [ transform [ Translate toX toY ]
         , width (px <| spec.blockWidth + spec.gutterWidth)
         , height (px <| spec.blockHeight + spec.nodeIndicatorHeight)
-        , transition
         , class [ "fadeIn" ]
         ]
         [ rect
@@ -217,7 +219,11 @@ viewConnectorPath color toBlock =
                 }
     in
     Svg.cubicSpline2d
-        [ fill FillNone, stroke color, strokeWidth (px 2) ]
+        [ fill FillNone
+        , stroke color
+        , strokeWidth (px 2)
+        , class [ "fadeIn" ]
+        ]
         spline
 
 
@@ -246,3 +252,49 @@ blockBackground status =
                     0.75
     in
     interpolate LAB (blockColor status) Colors.blueishBlack bgAlpha
+
+
+
+{--
+An overlay that is shown on the left, displaying 
+the last finalized Block when it normally would be out
+of view
+--}
+
+
+viewCollapsedBlocksSummaryHorizontal : String -> List Node -> Float -> Svg msg
+viewCollapsedBlocksSummaryHorizontal lastFinalizedHash nodes viewHeight =
+    let
+        numNodes =
+            nodesAt nodes lastFinalizedHash
+
+        lastFinalizedBlock =
+            positioned (annotateBlock nodes lastFinalizedHash) 0 0
+                |> animated
+
+        w =
+            spec.blockWidth + (spec.gutterWidth / 2)
+
+        h =
+            spec.blockHeight
+    in
+    g
+        []
+        [ rect
+            [ width (px <| w + 5)
+            , height (percent 100)
+            , fill <| Fill Colors.background
+            ]
+            []
+        , line
+            [ x1 (px <| w - 1)
+            , x2 (px <| w - 1)
+            , y1 (percent 0)
+            , y2 (percent 100)
+            , stroke <| blockBackground Finalized
+            , strokeDasharray "2"
+            ]
+            []
+        , viewAnimatedBlock { lastFinalizedBlock | status = Finalized }
+            |> Tuple.second
+        ]

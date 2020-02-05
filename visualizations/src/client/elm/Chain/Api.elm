@@ -296,6 +296,8 @@ type alias FlattenedChain =
     { blocks : List (Positioned Block)
     , width : Int
     , height : Int
+    , numCollapsedBlocksHorizontal : Int
+    , numCollapsedBlocksVertical : Int
     }
 
 
@@ -304,11 +306,17 @@ emptyFlatChain =
     { blocks = []
     , width = 0
     , height = 0
+    , numCollapsedBlocksHorizontal = 0
+    , numCollapsedBlocksVertical = 0
     }
 
 
 flattenTree : Tree Block -> FlattenedChain
 flattenTree chain =
+    --let
+    --    collapsedH =
+    --        lastFinalized.height - (Tree.label chain |> .height)
+    --in
     flattenAt (Zipper.fromTree chain) 0 0
         |> Tuple.second
         |> (\blocks ->
@@ -323,6 +331,8 @@ flattenTree chain =
                         |> List.maximum
                         |> Maybe.withDefault 0
                         |> (+) 1
+                , numCollapsedBlocksHorizontal = 0
+                , numCollapsedBlocksVertical = 0
                 }
            )
 
@@ -402,6 +412,8 @@ type alias AnimatedChain =
     , stage : AnimationStage
     , width : Int
     , height : Int
+    , numCollapsedBlocksHorizontal : Int
+    , numCollapsedBlocksVertical : Int
     }
 
 
@@ -410,6 +422,8 @@ emptyAnimatedChain =
     , stage = Init
     , width = 0
     , height = 0
+    , numCollapsedBlocksHorizontal = 0
+    , numCollapsedBlocksVertical = 0
     }
 
 
@@ -419,6 +433,8 @@ deriveAnimations current next stage =
     , stage = Init
     , width = next.width
     , height = max current.height next.height
+    , numCollapsedBlocksHorizontal = next.numCollapsedBlocksHorizontal
+    , numCollapsedBlocksVertical = next.numCollapsedBlocksVertical
     }
 
 
