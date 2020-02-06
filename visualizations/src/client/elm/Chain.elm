@@ -34,9 +34,9 @@ import Tree exposing (Tree)
 
 type alias Model =
     { nodes : List (List Node)
-    , lastFinalized : Maybe String
-    , bestBlock : Maybe String
-    , tree : DTree String
+    , lastFinalized : Maybe ProtoBlock
+    , bestBlock : Maybe ProtoBlock
+    , tree : DTree ProtoBlock
     , flatTree : FlattenedChain
     , animatedChain : AnimatedChain
     , annotatedTree : Maybe (Tree Block)
@@ -157,7 +157,7 @@ updateChain : Int -> List Node -> Model -> Model
 updateChain depth nodes model =
     let
         maybeBestBlock =
-            List.map .bestBlock nodes
+            List.map (\node -> ( node.bestBlockHeight, node.bestBlock )) nodes
                 |> List.group
                 |> List.map (Tuple.mapSecond List.length)
                 |> List.maximumBy Tuple.second
@@ -195,7 +195,7 @@ updateChain depth nodes model =
                         |> annotate nodes lastFinalized
 
                 newFlatChain =
-                    flattenTree annotatedTree
+                    flattenTree (Tuple.first lastFinalized) annotatedTree
             in
             { model
                 | annotatedTree = Just annotatedTree

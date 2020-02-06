@@ -7,6 +7,7 @@ import Color.Interpolate exposing (..)
 import Colors exposing (fromUI, toUI)
 import CubicSpline2d exposing (fromControlPoints)
 import Geometry.Svg as Svg
+import Maybe.Extra as Maybe
 import Point2d
 import Svg.Keyed as Keyed
 import TypedSvg exposing (..)
@@ -15,7 +16,7 @@ import TypedSvg.Core exposing (..)
 import TypedSvg.Types exposing (..)
 
 
-viewAnimatedChain : Maybe String -> List Node -> AnimatedChain -> Svg msg
+viewAnimatedChain : Maybe ProtoBlock -> List Node -> AnimatedChain -> Svg msg
 viewAnimatedChain maybeLastFinalized nodes chain =
     let
         viewWidth =
@@ -33,8 +34,20 @@ viewAnimatedChain maybeLastFinalized nodes chain =
                 + spec.nodeIndicatorHeight
                 |> Basics.max 0.0
 
-        --collapsedBlocksSummary =
-        --case Tree.label chain
+        collapsedBlocksSummary =
+            maybeLastFinalized
+                |> Maybe.unwrap []
+                    (\lastFinalized ->
+                        case chain.numCollapsedBlocksHorizontal > 0 of
+                            True ->
+                                [ ( Tuple.second lastFinalized
+                                  , viewCollapsedBlocksSummaryHorizontal lastFinalized nodes viewHeight
+                                  )
+                                ]
+
+                            False ->
+                                []
+                    )
     in
     case maybeLastFinalized of
         Just lastFinalized ->
@@ -44,10 +57,7 @@ viewAnimatedChain maybeLastFinalized nodes chain =
                 , viewBox 0 0 viewWidth viewHeight
                 ]
                 (List.map viewAnimatedBlock chain.blocks
-                    ++ [ ( lastFinalized
-                         , viewCollapsedBlocksSummaryHorizontal lastFinalized nodes viewHeight
-                         )
-                       ]
+                    ++ collapsedBlocksSummary
                 )
 
         _ ->
@@ -264,14 +274,14 @@ of view
 --}
 
 
-viewCollapsedBlocksSummaryHorizontal : String -> List Node -> Float -> Svg msg
-viewCollapsedBlocksSummaryHorizontal lastFinalizedHash nodes viewHeight =
+viewCollapsedBlocksSummaryHorizontal : ProtoBlock -> List Node -> Float -> Svg msg
+viewCollapsedBlocksSummaryHorizontal lastFinalized nodes viewHeight =
     let
         numNodes =
-            nodesAt nodes lastFinalizedHash
+            nodesAt nodes (Tuple.second lastFinalized)
 
         lastFinalizedBlock =
-            positioned (annotateBlock nodes lastFinalizedHash) 0 0
+            positioned (annotateBlock nodes lastFinalized) 0 0
                 |> animated
 
         w =

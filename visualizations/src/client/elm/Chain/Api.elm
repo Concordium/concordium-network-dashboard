@@ -31,6 +31,10 @@ type alias Node =
     }
 
 
+type alias ProtoBlock =
+    ( Int, String )
+
+
 type alias Block =
     { hash : String
     , shortHash : String
@@ -38,7 +42,8 @@ type alias Block =
     , percentageNodesAt : Float
     , connectors : List Int
     , status : BlockStatus
-    , height : Int
+    , forkWidth : Int
+    , blockHeight : Int
     }
 
 
@@ -177,23 +182,29 @@ encodeNode record =
 -- Build the chain
 
 
-prepareBlockSequence : Node -> List String
+prepareBlockSequence : Node -> List ProtoBlock
 prepareBlockSequence node =
-    node.finalizedBlock
-        :: List.reverse node.ancestorsSinceBestBlock
+    ( node.finalizedBlockHeight, node.finalizedBlock )
+        :: (node.ancestorsSinceBestBlock
+                |> List.reverse
+                |> List.indexedMap
+                    (\index hash ->
+                        ( node.finalizedBlockHeight + (index + 1), hash )
+                    )
+           )
 
 
 
 -- Annotating the chain to prepare for viewing
 
 
-annotate : List Node -> String -> Tree String -> Tree Block
+annotate : List Node -> ProtoBlock -> Tree ProtoBlock -> Tree Block
 annotate nodes lastFinalized sourceTree =
     annotateChain nodes sourceTree
         |> colorize lastFinalized
 
 
-annotateChain : List Node -> Tree String -> Tree Block
+annotateChain : List Node -> Tree ProtoBlock -> Tree Block
 annotateChain nodes sourceTree =
     Tree.restructure
         (annotateBlock nodes)
@@ -201,7 +212,7 @@ annotateChain nodes sourceTree =
         sourceTree
 
 
-annotateBlock : List Node -> String -> Block
+annotateBlock : List Node -> ProtoBlock -> Block
 annotateBlock nodes =
     block nodes 1 ( 0, 0 ) []
 
@@ -214,27 +225,27 @@ annotateChildren label children =
 
         _ ->
             let
-                height =
+                forkWidth =
                     children
-                        |> List.map (Tree.label >> .height)
+                        |> List.map (Tree.label >> .forkWidth)
                         |> List.sum
             in
             tree
                 { label
-                    | height = height
+                    | forkWidth = forkWidth
                     , connectors = connectors children
                 }
                 (children |> List.sortBy (Tree.label >> .numNodesAt))
 
 
-colorize : String -> Tree Block -> Tree Block
+colorize : ProtoBlock -> Tree Block -> Tree Block
 colorize lastFinalized tree =
     let
         startZipper =
             tree
                 |> Zipper.fromTree
                 |> Zipper.findFromRoot
-                    (.hash >> (==) lastFinalized)
+                    (.hash >> (==) (Tuple.second lastFinalized))
 
         colorizeUp zipper =
             let
@@ -262,15 +273,15 @@ nodesAt nodes hash =
 
 connectors : List (Tree Block) -> List Int
 connectors branches =
-    List.map (Tree.label >> .height) branches
+    List.map (Tree.label >> .forkWidth) branches
         |> List.scanl (+) 0
         |> List.unconsLast
         |> Maybe.withDefault ( 0, [] )
         |> Tuple.second
 
 
-block : List Node -> Int -> ( Int, Int ) -> List Int -> String -> Block
-block nodes height position connectorList hash =
+block : List Node -> Int -> ( Int, Int ) -> List Int -> ProtoBlock -> Block
+block nodes forkWidth position connectorList ( height, hash ) =
     let
         numNodes =
             List.length nodes
@@ -284,7 +295,8 @@ block nodes height position connectorList hash =
     , percentageNodesAt = (numNodesAt |> toFloat) / (numNodes |> toFloat)
     , connectors = connectorList
     , status = Candidate
-    , height = height
+    , forkWidth = forkWidth
+    , blockHeight = height
     }
 
 
@@ -311,12 +323,12 @@ emptyFlatChain =
     }
 
 
-flattenTree : Tree Block -> FlattenedChain
-flattenTree chain =
-    --let
-    --    collapsedH =
-    --        lastFinalized.height - (Tree.label chain |> .height)
-    --in
+flattenTree : Int -> Tree Block -> FlattenedChain
+flattenTree lastFinalizedHeight chain =
+    let
+        collapsedH =
+            (Tree.label chain |> .blockHeight) - lastFinalizedHeight
+    in
     flattenAt (Zipper.fromTree chain) 0 0
         |> Tuple.second
         |> (\blocks ->
@@ -331,7 +343,7 @@ flattenTree chain =
                         |> List.maximum
                         |> Maybe.withDefault 0
                         |> (+) 1
-                , numCollapsedBlocksHorizontal = 0
+                , numCollapsedBlocksHorizontal = collapsedH
                 , numCollapsedBlocksVertical = 0
                 }
            )
@@ -367,7 +379,8 @@ positioned original x y =
     , percentageNodesAt = original.percentageNodesAt
     , connectors = original.connectors
     , status = original.status
-    , height = original.height
+    , forkWidth = original.forkWidth
+    , blockHeight = original.blockHeight
     , x = x
     , y = y
     }
@@ -381,7 +394,8 @@ unPositioned original =
     , percentageNodesAt = original.percentageNodesAt
     , connectors = original.connectors
     , status = original.status
-    , height = original.height
+    , forkWidth = original.forkWidth
+    , blockHeight = original.blockHeight
     }
 
 
@@ -393,7 +407,8 @@ animated original =
     , percentageNodesAt = original.percentageNodesAt
     , connectors = original.connectors
     , status = original.status
-    , height = original.height
+    , forkWidth = original.forkWidth
+    , blockHeight = original.blockHeight
     , animation = Static original.x original.y
     }
 
