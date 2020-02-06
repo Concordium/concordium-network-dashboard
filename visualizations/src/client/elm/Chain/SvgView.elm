@@ -5,7 +5,7 @@ import Chain.Spec exposing (spec)
 import Color exposing (Color, rgb)
 import Color.Interpolate exposing (..)
 import Colors exposing (fromUI, toUI)
-import CubicSpline2d exposing (endControlPoint, startControlPoint)
+import CubicSpline2d exposing (fromControlPoints)
 import Geometry.Svg as Svg
 import Point2d
 import Svg.Keyed as Keyed
@@ -32,6 +32,9 @@ viewAnimatedChain maybeLastFinalized nodes chain =
                 * spec.gutterHeight
                 + spec.nodeIndicatorHeight
                 |> Basics.max 0.0
+
+        --collapsedBlocksSummary =
+        --case Tree.label chain
     in
     case maybeLastFinalized of
         Just lastFinalized ->
@@ -111,7 +114,7 @@ viewAnimatedBlock block =
             , height (px spec.blockHeight)
             , rx (px 4)
             , ry (px 4)
-            , fill (Fill <| blockBackground block.status)
+            , fill (Paint <| blockBackground block.status)
             , TypedSvg.Attributes.style "transition: all 500ms ease-out"
             ]
             []
@@ -135,7 +138,7 @@ viewNodesAtBar percentageNodesAt =
             , height (px 6)
             , rx (px 3)
             , ry (px 3)
-            , fill (Fill <| Colors.purple)
+            , fill (Paint <| Colors.purple)
             , TypedSvg.Attributes.style "transition: all 500ms ease-out"
             ]
             []
@@ -151,7 +154,7 @@ viewText line color =
         , y (percent 50)
         , textAnchor AnchorMiddle
         , alignmentBaseline AlignmentCentral
-        , fill <| Fill color
+        , fill <| Paint color
         , fontSize (px 16)
         ]
         [ text line ]
@@ -183,44 +186,43 @@ viewConnectorPath : Color -> Int -> Svg msg
 viewConnectorPath color toBlock =
     let
         spline =
-            CubicSpline2d.with
-                { startPoint =
-                    Point2d.fromCoordinates
-                        ( 0
-                        , spec.nodeIndicatorHeight
-                            + 0.5
-                            * spec.blockHeight
-                        )
-                , startControlPoint =
-                    Point2d.fromCoordinates
-                        ( 2 * spec.gutterWidth / 3.0
-                        , spec.nodeIndicatorHeight
-                            + 0.5
-                            * spec.blockHeight
-                        )
-                , endControlPoint =
-                    Point2d.fromCoordinates
-                        ( spec.gutterWidth / 3.0
-                        , spec.nodeIndicatorHeight
-                            + 0.5
-                            * spec.blockHeight
-                            + toFloat toBlock
-                            * (spec.gutterHeight + spec.blockHeight + spec.nodeIndicatorHeight)
-                        )
-                , endPoint =
-                    Point2d.fromCoordinates
-                        ( spec.gutterWidth
-                        , spec.nodeIndicatorHeight
-                            + 0.5
-                            * spec.blockHeight
-                            + toFloat toBlock
-                            * (spec.gutterHeight + spec.blockHeight + spec.nodeIndicatorHeight)
-                        )
-                }
+            CubicSpline2d.fromControlPoints
+                (Point2d.pixels
+                    0
+                    (spec.nodeIndicatorHeight
+                        + 0.5
+                        * spec.blockHeight
+                    )
+                )
+                (Point2d.pixels
+                    (2 * spec.gutterWidth / 3.0)
+                    (spec.nodeIndicatorHeight
+                        + 0.5
+                        * spec.blockHeight
+                    )
+                )
+                (Point2d.pixels
+                    (spec.gutterWidth / 3.0)
+                    (spec.nodeIndicatorHeight
+                        + 0.5
+                        * spec.blockHeight
+                        + toFloat toBlock
+                        * (spec.gutterHeight + spec.blockHeight + spec.nodeIndicatorHeight)
+                    )
+                )
+                (Point2d.pixels
+                    spec.gutterWidth
+                    (spec.nodeIndicatorHeight
+                        + 0.5
+                        * spec.blockHeight
+                        + toFloat toBlock
+                        * (spec.gutterHeight + spec.blockHeight + spec.nodeIndicatorHeight)
+                    )
+                )
     in
     Svg.cubicSpline2d
-        [ fill FillNone
-        , stroke color
+        [ fill PaintNone
+        , stroke (Paint color)
         , strokeWidth (px 2)
         , class [ "fadeIn" ]
         ]
@@ -283,7 +285,7 @@ viewCollapsedBlocksSummaryHorizontal lastFinalizedHash nodes viewHeight =
         [ rect
             [ width (px <| w + 5)
             , height (percent 100)
-            , fill <| Fill Colors.background
+            , fill <| Paint Colors.background
             ]
             []
         , line
@@ -291,7 +293,7 @@ viewCollapsedBlocksSummaryHorizontal lastFinalizedHash nodes viewHeight =
             , x2 (px <| w - 1)
             , y1 (percent 0)
             , y2 (percent 100)
-            , stroke <| blockBackground Finalized
+            , stroke (Paint <| blockBackground Finalized)
             , strokeDasharray "2"
             ]
             []

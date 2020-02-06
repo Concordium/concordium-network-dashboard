@@ -1,7 +1,6 @@
 module Chain.Tree exposing (..)
 
 import Chain.Api as Api exposing (..)
-import Chain.Connector exposing (..)
 import Chain.Spec exposing (..)
 import List.Extra as List
 import Tree exposing (Tree(..), singleton, tree)

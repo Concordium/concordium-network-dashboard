@@ -19,10 +19,12 @@ module RewardGraph exposing
 import Animation exposing (Animation, animation, duration)
 import Color exposing (Color)
 import Colors
+import GeometryUtils exposing (TopLeftCoordinates)
 import Graph exposing (Edge, Graph, Node, nodes)
 import Grid
 import IntDict
 import LineSegment2d exposing (LineSegment2d)
+import Pixels exposing (Pixels)
 import Point2d exposing (Point2d)
 import Polyline2d exposing (Polyline2d)
 import Rectangle2d exposing (Rectangle2d)
@@ -78,8 +80,8 @@ _fromWaypoints_ is a set of points the edge shoud go through, realtive to the or
 _toWaypoints_ is a set of points the edge should go through relative to the target node
 -}
 type alias EdgeDisplay =
-    { fromWaypoints : List Point2d
-    , toWaypoints : List Point2d
+    { fromWaypoints : List (Point2d Pixels TopLeftCoordinates)
+    , toWaypoints : List (Point2d Pixels TopLeftCoordinates)
     , labelPosition : Float
     , labelOffset : ( Float, Float )
     }
@@ -645,17 +647,16 @@ updateEdgeInterval fromId toId intervalString graph =
     Graph.fromNodesAndEdges nodes newEdges
 
 
-nodeCenter : NodeDisplay -> Point2d
+nodeCenter : NodeDisplay -> Point2d Pixels TopLeftCoordinates
 nodeCenter node =
     case node of
         Circular cnode ->
-            Point2d.fromCoordinates ( cnode.cx, cnode.cy )
+            Point2d.pixels cnode.cx cnode.cy
 
         Rectangular rnode ->
-            Point2d.fromCoordinates
-                ( rnode.x + (rnode.width / 2)
-                , rnode.y + (rnode.height / 2)
-                )
+            Point2d.pixels
+                (rnode.x + (rnode.width / 2))
+                (rnode.y + (rnode.height / 2))
 
 
 nodeColor : NodeSpec -> Color.Color

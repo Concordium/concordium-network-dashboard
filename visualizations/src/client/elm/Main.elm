@@ -5,9 +5,8 @@ import Browser exposing (..)
 import Browser.Dom
 import Browser.Events as Events
 import Browser.Navigation as Nav exposing (Key)
-import Chain exposing (viewFlattenedChain)
+import Chain
 import Chain.Spec exposing (spec)
-import Curve.ParameterValue exposing (value)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
