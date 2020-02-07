@@ -5,7 +5,6 @@ import Browser exposing (..)
 import Browser.Navigation as Nav exposing (Key)
 import Chain exposing (..)
 import Dict
-import Enum
 import Graph exposing (Graph)
 import RewardGraph exposing (..)
 import Time
