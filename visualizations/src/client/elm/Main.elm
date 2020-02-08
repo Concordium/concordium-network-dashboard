@@ -6,7 +6,6 @@ import Browser.Dom
 import Browser.Events as Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
-import Chain.Spec exposing (spec)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background

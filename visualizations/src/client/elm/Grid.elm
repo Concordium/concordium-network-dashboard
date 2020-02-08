@@ -1,41 +1,47 @@
-module Grid exposing (circle, offset, point, rectangle)
+module Grid exposing (..)
 
-import Circle2d exposing (Circle2d)
+import Angle
 import Pixels exposing (Pixels, pixels)
 import Point2d exposing (Point2d)
 import Quantity exposing (Quantity)
 import Rectangle2d exposing (Rectangle2d)
+import Rectangle2d.Extra as Rectangle2d
 
 
-gridSize =
-    15
+type alias GridSpec =
+    { cellWidth : Float
+    , cellHeight : Float
+    , gutterWidth : Float
+    , gutterHeight : Float
+    }
 
 
-offset : Float -> Float
-offset o =
-    o * gridSize
+cell : GridSpec -> Int -> Int -> Rectangle2d Pixels coords
+cell spec x y =
+    cellRegion spec x y
+        |> Rectangle2d.inset (pixels spec.gutterWidth) (pixels spec.gutterHeight)
 
 
-offsetPx : Float -> Quantity Float Pixels
-offsetPx o =
-    Pixels.pixels <| offset o
+cellRegion : GridSpec -> Int -> Int -> Rectangle2d Pixels coords
+cellRegion spec x y =
+    region spec x y (x + 1) (y + 1)
 
 
-rectangle : Float -> Float -> Float -> Float -> Rectangle2d Pixels coordinates
-rectangle x y w h =
-    Rectangle2d.with
-        { x1 = offsetPx x
-        , x2 = offsetPx (x + w)
-        , y1 = offsetPx y
-        , y2 = offsetPx (y + h)
-        }
+intersection : GridSpec -> Int -> Int -> Point2d Pixels coords
+intersection { cellWidth, cellHeight, gutterWidth, gutterHeight } x y =
+    Point2d.pixels
+        (toFloat x * (cellWidth + gutterWidth))
+        (toFloat y * (cellHeight + gutterHeight))
 
 
-circle : Float -> Float -> Float -> Circle2d Pixels coordinates
-circle x y r =
-    Circle2d.withRadius (offsetPx r) (point x y)
+region : GridSpec -> Int -> Int -> Int -> Int -> Rectangle2d Pixels coords
+region spec x1 y1 x2 y2 =
+    Rectangle2d.from
+        (intersection spec x1 y1)
+        (intersection spec x2 y2)
 
 
-point : Float -> Float -> Point2d Pixels coordinates
-point x y =
-    Point2d.xy (offsetPx x) (offsetPx y)
+dimensions : GridSpec -> Int -> Int -> ( Quantity Float Pixels, Quantity Float Pixels )
+dimensions spec cellsX cellsY =
+    region spec 0 0 cellsX cellsY
+        |> Rectangle2d.dimensions

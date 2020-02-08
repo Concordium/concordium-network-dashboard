@@ -21,13 +21,13 @@ import Color exposing (Color)
 import Colors
 import GeometryUtils exposing (TopLeftCoordinates)
 import Graph exposing (Edge, Graph, Node, nodes)
-import Grid
 import IntDict
 import LineSegment2d exposing (LineSegment2d)
 import Pixels exposing (Pixels)
 import Point2d exposing (Point2d)
 import Polyline2d exposing (Polyline2d)
 import Rectangle2d exposing (Rectangle2d)
+import RewardGraph.Grid as Grid
 import Round
 import Vector2d exposing (Vector2d)
 

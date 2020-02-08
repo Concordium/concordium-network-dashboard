@@ -1,10 +1,12 @@
 module SvgWidgets exposing (amountIcon, clock)
 
+import Angle
 import Arc2d exposing (Arc2d)
 import Color
 import Colors exposing (..)
 import Element exposing (Element, el, html)
 import Geometry.Svg exposing (arc2d)
+import Pixels
 import Point2d exposing (Point2d)
 import TypedSvg exposing (..)
 import TypedSvg.Attributes exposing (..)
@@ -24,15 +26,15 @@ clock size progress =
                     [ cx (percent 50)
                     , cy (percent 50)
                     , r (px radius)
-                    , fill <| Fill midGray
+                    , fill <| Paint midGray
                     ]
                     []
-                , arc2d [ stroke lightGray, strokeWidth (px 6), fill FillNone ]
+                , arc2d [ stroke (Paint lightGray), strokeWidth (px 6), fill PaintNone ]
                     (Arc2d.with
-                        { centerPoint = Point2d.fromCoordinates ( radius, radius )
-                        , startAngle = degrees -90
-                        , sweptAngle = degrees (progress * 360)
-                        , radius = radius - 3
+                        { centerPoint = Point2d.pixels radius radius
+                        , startAngle = Angle.degrees -90
+                        , sweptAngle = Angle.degrees (progress * 360)
+                        , radius = Pixels.pixels (radius - 3)
                         }
                     )
                 ]
@@ -47,7 +49,7 @@ amountIcon w h color =
                 [ width (px w)
                 , height (px h)
                 , viewBox 0 0 30 30
-                , fill <| Fill color
+                , fill <| Paint color
                 ]
                 [ polygon
                     [ points

@@ -3,6 +3,7 @@ module Colors exposing
     , blue
     , blueishBlack
     , blueishVeryDarkGray
+    , fadeToBackground
     , fromUI
     , green
     , lightGray
@@ -17,7 +18,7 @@ module Colors exposing
 
 import Color exposing (Color, rgb255)
 import Color.Convert exposing (hexToColor)
-import Color.Interpolate exposing (interpolate)
+import Color.Interpolate exposing (Space(..), interpolate)
 import Element
 
 
@@ -94,3 +95,8 @@ fromUI color =
             Element.toRgb color
     in
     Color.rgb c.red c.green c.blue
+
+
+fadeToBackground : Float -> Color -> Color
+fadeToBackground alpha color =
+    interpolate LAB color background alpha
