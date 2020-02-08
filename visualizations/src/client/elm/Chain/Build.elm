@@ -41,6 +41,7 @@ type alias ProtoBlock =
 type alias Block =
     { hash : String
     , shortHash : String
+    , nodesAt : List String
     , numNodesAt : Int
     , numNodesAtTree : Int
     , connectors : List Int
@@ -267,13 +268,6 @@ colorize lastFinalized tree =
         |> Maybe.withDefault tree
 
 
-nodesAt : List Node -> String -> Int
-nodesAt nodes hash =
-    nodes
-        |> List.filter (\node -> node.bestBlock == hash)
-        |> List.length
-
-
 connectors : List (Tree Block) -> List Int
 connectors branches =
     List.map (Tree.label >> .forkWidth) branches
@@ -286,14 +280,17 @@ connectors branches =
 block : List Node -> Int -> ( Int, Int ) -> List Int -> ProtoBlock -> Block
 block nodes forkWidth position connectorList ( height, hash ) =
     let
-        numNodes =
-            List.length nodes
+        nodesAt =
+            nodes
+                |> List.filter (\node -> node.bestBlock == hash)
+                |> List.map .nodeId
 
         numNodesAt =
-            nodesAt nodes hash
+            List.length nodesAt
     in
     { hash = hash
     , shortHash = String.left 4 hash
+    , nodesAt = nodesAt
     , numNodesAt = numNodesAt
     , numNodesAtTree = numNodesAt
     , connectors = connectorList

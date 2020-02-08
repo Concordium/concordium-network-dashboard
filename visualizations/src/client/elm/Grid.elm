@@ -13,6 +13,7 @@ type alias GridSpec =
     , cellHeight : Float
     , gutterWidth : Float
     , gutterHeight : Float
+    , outerPadding : Float
     }
 
 

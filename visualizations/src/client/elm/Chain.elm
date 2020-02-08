@@ -1,8 +1,10 @@
-module Chain exposing (Model, Msg(..), init, update, view)
+module Chain exposing (Model, Msg(..), init, subscriptions, update, view)
 
+import Browser.Events exposing (onAnimationFrameDelta)
 import Chain.Build as Build exposing (..)
 import Chain.DictTree as DictTree exposing (DictTree)
 import Chain.Flatten as Flatten exposing (DrawableChain, emptyDrawableChain)
+import Chain.Interpolate as Interpolate
 import Chain.View as View
 import Color exposing (..)
 import Color.Interpolate exposing (..)
@@ -23,7 +25,7 @@ import Process exposing (sleep)
 import RemoteData exposing (..)
 import Task
 import Time exposing (..)
-import Transitions exposing (..)
+import Transition exposing (..)
 import Tree exposing (Tree)
 
 
@@ -37,7 +39,7 @@ type alias Model =
     , bestBlock : Maybe ProtoBlock
     , tree : DictTree ProtoBlock
     , annotatedTree : Maybe (Tree Block)
-    , drawableChain : DrawableChain
+    , transition : Transition DrawableChain
     , errors : List Http.Error
     , replay : Maybe Replay
     , gridSpec : GridSpec
@@ -51,7 +53,7 @@ init =
       , bestBlock = Nothing
       , tree = DictTree.init
       , annotatedTree = Nothing
-      , drawableChain = Flatten.emptyDrawableChain
+      , transition = Transition.constant emptyDrawableChain
       , errors = []
       , replay = Nothing
       , gridSpec = spec
@@ -66,6 +68,7 @@ spec =
     , gutterHeight = 24.0
     , cellHeight = 36.0
     , cellWidth = 64.0
+    , outerPadding = 64
     }
 
 
@@ -79,7 +82,8 @@ type Msg
     | ReplayHistory
     | SaveHistory
     | GotHistoryString String
-    | Tick Posix
+    | TickSecond Posix
+    | OnAnimationFrame Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -119,7 +123,7 @@ update msg model =
                 Err _ ->
                     ( model, Cmd.none )
 
-        Tick time ->
+        TickSecond time ->
             case model.replay of
                 Nothing ->
                     ( model, Build.getNodeInfo GotNodeInfo )
@@ -132,6 +136,13 @@ update msg model =
                     update
                         (GotNodeInfo (Success steppedReplay.present))
                         { model | replay = Just steppedReplay }
+
+        OnAnimationFrame time ->
+            ( { model
+                | transition = Transition.step time model.transition
+              }
+            , Cmd.none
+            )
 
 
 updateNodes : List Node -> List (List Node) -> List (List Node)
@@ -192,13 +203,35 @@ updateChain depth nodes model =
                 | annotatedTree = Just annotatedTree
                 , nodes = updateNodes nodes model.nodes
                 , tree = newTree
-                , drawableChain = newDrawableChain
                 , lastFinalized = maybeLastFinalized
                 , bestBlock = maybeBestBlock
+                , transition =
+                    let
+                        oldDrawableChain =
+                            Transition.value model.transition
+                    in
+                    Transition.for 600
+                        (Interpolate.interpoolateDrawableChain oldDrawableChain newDrawableChain)
             }
 
         _ ->
             model
+
+
+
+-- Subscriptione
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    if Transition.isComplete model.transition then
+        Time.every 1000 TickSecond
+
+    else
+        Sub.batch
+            [ Time.every 1000 TickSecond
+            , Browser.Events.onAnimationFrameDelta (round >> OnAnimationFrame)
+            ]
 
 
 
@@ -213,6 +246,9 @@ view model =
                 |> List.uncons
                 |> Maybe.map Tuple.first
                 |> Maybe.withDefault []
+
+        currentDrawableChain =
+            Transition.value model.transition
     in
     case model.lastFinalized of
         Just lastFinalized ->
@@ -222,7 +258,7 @@ view model =
                     , viewButton (Just ReplayHistory) "Replay History"
                     ]
                 , el [ centerX, centerY, spacing (round spec.gutterHeight) ]
-                    (html <| View.viewChain model.gridSpec lastFinalized nodes model.drawableChain)
+                    (html <| View.viewChain model.gridSpec lastFinalized nodes currentDrawableChain)
                 ]
 
         Nothing ->

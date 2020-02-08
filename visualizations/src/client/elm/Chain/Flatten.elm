@@ -6,11 +6,13 @@ import Color exposing (Color, rgb)
 import Colors exposing (fromUI, toUI)
 import GeometryUtils exposing (TopLeftCoordinates)
 import Grid exposing (GridSpec)
+import List.Extra as List
 import Pixels exposing (Pixels)
 import Point2d exposing (Point2d)
 import Rectangle2d exposing (Rectangle2d)
 import Tree exposing (Tree(..), singleton, tree)
 import Tree.Zipper as Zipper exposing (Zipper)
+import Vector2d exposing (Vector2d)
 
 
 type alias DrawableBlock =
@@ -21,20 +23,23 @@ type alias DrawableBlock =
 
 
 type alias DrawableConnector =
-    { start : Point2d Pixels TopLeftCoordinates
+    { id : String
+    , start : Point2d Pixels TopLeftCoordinates
     , end : Point2d Pixels TopLeftCoordinates
     , color : Color
     }
 
 
 type alias DrawableNode =
-    { circle : Circle2d Pixels TopLeftCoordinates }
+    { nodeId : String
+    , circle : Circle2d Pixels TopLeftCoordinates
+    }
 
 
 type alias DrawableChain =
     { blocks : List DrawableBlock
     , connectors : List DrawableConnector
-    , nodes : List DrawableConnector
+    , nodes : List DrawableNode
     , width : Int
     , height : Int
     , numCollapsedBlocksX : Int
@@ -50,27 +55,16 @@ drawableBlock gridSpec x y block =
     }
 
 
-drawableConnectors : GridSpec -> Int -> Int -> Block -> List DrawableConnector
-drawableConnectors gridSpec x y block =
-    List.map
-        (\connectToY ->
-            let
-                block1Rect =
-                    Grid.cell gridSpec x y
-
-                block2Rect =
-                    Grid.cell gridSpec (x + 1) (y + connectToY)
-            in
-            { start = Rectangle2d.interpolate block1Rect 1 0.5
-            , end = Rectangle2d.interpolate block2Rect 0 0.5
-            , color = blockColor block.status
-            }
-        )
-        block.connectors
-
-
-drawableConnector : GridSpec -> Int -> Int -> Int -> Int -> Color -> DrawableConnector
-drawableConnector gridSpec x1 y1 x2 y2 color =
+drawableConnector :
+    GridSpec
+    -> ( Block, Block )
+    -> Int
+    -> Int
+    -> Int
+    -> Int
+    -> Color
+    -> DrawableConnector
+drawableConnector gridSpec ( ba, bb ) x1 y1 x2 y2 color =
     let
         block1Rect =
             Grid.cell gridSpec x1 y1
@@ -78,9 +72,84 @@ drawableConnector gridSpec x1 y1 x2 y2 color =
         block2Rect =
             Grid.cell gridSpec x2 y2
     in
-    { start = Rectangle2d.interpolate block1Rect 1 0.5
+    { id = String.left 4 ba.hash ++ String.left 4 bb.hash
+    , start = Rectangle2d.interpolate block1Rect 1 0.5
     , end = Rectangle2d.interpolate block2Rect 0 0.5
     , color = color
+    }
+
+
+drawableNodes : GridSpec -> Int -> Int -> Block -> List DrawableNode
+drawableNodes gridSpec x y block =
+    let
+        ( size, nx ) =
+            ( 4, 8 )
+
+        blockRect =
+            Grid.cell gridSpec x y
+
+        nodeFromIndices : String -> Int -> Int -> DrawableNode
+        nodeFromIndices nodeId xp yp =
+            Rectangle2d.interpolate blockRect (toFloat (xp + 1) / toFloat (nx + 1)) -0.15
+                |> Point2d.translateBy (Vector2d.pixels 0 (toFloat size * toFloat yp * -1.5))
+                |> Circle2d.withRadius (Pixels.pixels (toFloat size / 2.0))
+                |> (\circle -> { nodeId = nodeId, circle = circle })
+
+        row iy elements =
+            elements
+                |> List.indexedMap
+                    (\ix nodeId ->
+                        nodeFromIndices nodeId ix iy
+                    )
+    in
+    block.nodesAt
+        |> List.greedyGroupsOf nx
+        |> List.indexedMap row
+        |> List.concat
+
+
+mergeDrawables : DrawableChain -> DrawableChain -> DrawableChain
+mergeDrawables chainA chainB =
+    { blocks = chainA.blocks ++ chainB.blocks
+    , connectors = chainA.connectors ++ chainB.connectors
+    , nodes = chainA.nodes ++ chainB.nodes
+    , width = max chainA.width chainB.width
+    , height = max chainA.height chainB.height
+    , numCollapsedBlocksX = 0
+    , numCollapsedBlocksY = 0
+    }
+
+
+addDrawables :
+    GridSpec
+    -> Maybe ( Int, Int )
+    -> Maybe Block
+    -> ( Int, Int )
+    -> Block
+    -> DrawableChain
+    -> DrawableChain
+addDrawables gridSpec maybeParent maybeParentBlock ( x, y ) block chain =
+    { blocks = drawableBlock gridSpec x y block :: chain.blocks
+    , connectors =
+        case ( maybeParent, maybeParentBlock ) of
+            ( Just ( px, py ), Just parent ) ->
+                drawableConnector
+                    gridSpec
+                    ( parent, block )
+                    px
+                    py
+                    x
+                    y
+                    (blockColor block.status)
+                    :: chain.connectors
+
+            _ ->
+                chain.connectors
+    , nodes = drawableNodes gridSpec x y block ++ chain.nodes
+    , width = max (x + 1) chain.width
+    , height = max (y + 1) chain.height
+    , numCollapsedBlocksX = 0
+    , numCollapsedBlocksY = 0
     }
 
 
@@ -111,7 +180,7 @@ emptyDrawableChain =
 
 flattenTree : GridSpec -> Int -> Int -> Tree Block -> DrawableChain
 flattenTree gridSpec lastFinalizedBlockHeight maxNumVertical chain =
-    flattenDepthFirst (Zipper.fromTree chain) gridSpec Nothing ( 0, 0 )
+    flattenDepthFirst (Zipper.fromTree chain) gridSpec Nothing Nothing ( 0, 0 )
         |> (\{ blocks, connectors, nodes, width, height } ->
                 let
                     collapsedH =
@@ -136,9 +205,10 @@ flattenDepthFirst :
     Zipper Block
     -> GridSpec
     -> Maybe ( Int, Int )
+    -> Maybe Block
     -> ( Int, Int )
     -> DrawableChain
-flattenDepthFirst zipper gridSpec parent ( x, y ) =
+flattenDepthFirst zipper gridSpec parentCoords parentBlock ( x, y ) =
     let
         block =
             Zipper.label zipper
@@ -149,59 +219,16 @@ flattenDepthFirst zipper gridSpec parent ( x, y ) =
     (case ( Zipper.firstChild zipper, Zipper.nextSibling zipper ) of
         ( Just child, Just sibling ) ->
             mergeDrawables
-                (flattenDepthFirst child gridSpec current ( x + 1, y ))
-                (flattenDepthFirst sibling gridSpec current ( x, y + block.forkWidth ))
+                (flattenDepthFirst child gridSpec current (Just block) ( x + 1, y ))
+                (flattenDepthFirst sibling gridSpec current (Just block) ( x, y + block.forkWidth ))
 
         ( Just child, Nothing ) ->
-            flattenDepthFirst child gridSpec current ( x + 1, y )
+            flattenDepthFirst child gridSpec current (Just block) ( x + 1, y )
 
         ( Nothing, Just sibling ) ->
-            flattenDepthFirst sibling gridSpec current ( x, y + block.forkWidth )
+            flattenDepthFirst sibling gridSpec current (Just block) ( x, y + block.forkWidth )
 
         ( Nothing, Nothing ) ->
             emptyDrawableChain
     )
-        |> addDrawables gridSpec parent ( x, y ) (Zipper.label zipper)
-
-
-mergeDrawables : DrawableChain -> DrawableChain -> DrawableChain
-mergeDrawables chainA chainB =
-    { blocks = chainA.blocks ++ chainB.blocks
-    , connectors = chainA.connectors ++ chainB.connectors
-    , nodes = chainA.nodes ++ chainB.nodes
-    , width = max chainA.width chainB.width
-    , height = max chainA.height chainB.height
-    , numCollapsedBlocksX = 0
-    , numCollapsedBlocksY = 0
-    }
-
-
-addDrawables :
-    GridSpec
-    -> Maybe ( Int, Int )
-    -> ( Int, Int )
-    -> Block
-    -> DrawableChain
-    -> DrawableChain
-addDrawables gridSpec maybeParent ( x, y ) block chain =
-    { blocks = drawableBlock gridSpec x y block :: chain.blocks
-    , connectors =
-        maybeParent
-            |> Maybe.map
-                (\( px, py ) ->
-                    drawableConnector
-                        gridSpec
-                        px
-                        py
-                        x
-                        y
-                        (blockColor block.status)
-                        :: chain.connectors
-                )
-            |> Maybe.withDefault chain.connectors
-    , nodes = []
-    , width = max (x + 1) chain.width
-    , height = max (y + 1) chain.height
-    , numCollapsedBlocksX = 0
-    , numCollapsedBlocksY = 0
-    }
+        |> addDrawables gridSpec parentCoords parentBlock ( x, y ) (Zipper.label zipper)

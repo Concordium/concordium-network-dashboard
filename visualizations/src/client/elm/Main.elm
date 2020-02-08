@@ -184,13 +184,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ Events.onResize WindowResized
-        , Time.every 1000 (ChainMsg << Chain.Tick)
-
-        --, Events.onAnimationFrameDelta Tick
-        --, Time.every 3000 CurrentTime
-        -- , when
-        --     (model.currentPage == SomePage)
-        --     (Time.every 1000 CurrentTime)
+        , Sub.map ChainMsg (Chain.subscriptions model.chainModel)
         ]
 
 

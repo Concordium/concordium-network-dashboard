@@ -13,6 +13,7 @@ import LineSegment2d exposing (LineSegment2d)
 import Maybe.Extra as Maybe
 import Pixels exposing (Pixels)
 import Point2d exposing (Point2d)
+import Quantity
 import Rectangle2d exposing (Rectangle2d)
 import Rectangle2d.Extra as Rectangle2d
 import Svg.Keyed as Keyed
@@ -29,23 +30,27 @@ viewChain gridSpec lastFinalized nodes chain =
         ( viewWidth, viewHeight ) =
             Grid.dimensions gridSpec chain.width chain.height
                 |> Tuple.mapBoth Pixels.inPixels Pixels.inPixels
+                |> Tuple.mapBoth
+                    ((+) (gridSpec.outerPadding * 2))
+                    ((+) (gridSpec.outerPadding * 2))
     in
-    svg
+    Keyed.node "svg"
         [ width (px viewWidth)
         , height (px viewHeight)
-        , viewBox 0 0 viewWidth viewHeight
+        , viewBox -gridSpec.outerPadding -gridSpec.outerPadding viewWidth viewHeight
         ]
-        (List.map viewBlock chain.blocks
-            ++ List.map viewConnector chain.connectors
+        (List.map viewConnector chain.connectors
+            ++ List.map viewBlock chain.blocks
+            ++ List.map viewNode chain.nodes
             ++ [ viewCollapsedBlocksSummary gridSpec lastFinalized chain ]
         )
 
 
 {-| An overlay displaying the last finalized Block, when it would be out of view
 -}
-viewCollapsedBlocksSummary : GridSpec -> ProtoBlock -> DrawableChain -> Svg msg
+viewCollapsedBlocksSummary : GridSpec -> ProtoBlock -> DrawableChain -> ( String, Svg msg )
 viewCollapsedBlocksSummary gridSpec lastFinalized chain =
-    case chain.numCollapsedBlocksX > 0 of
+    (case chain.numCollapsedBlocksX > 0 of
         True ->
             let
                 lastFinalizedBlock =
@@ -69,14 +74,16 @@ viewCollapsedBlocksSummary gridSpec lastFinalized chain =
                     , strokeDasharray "4"
                     ]
                     rightEdge
-                , viewBlock lastFinalizedBlock
+                , Tuple.second (viewBlock lastFinalizedBlock)
                 ]
 
         False ->
             g [] []
+    )
+        |> (\value -> ( "summaryX", value ))
 
 
-viewBlock : DrawableBlock -> Svg msg
+viewBlock : DrawableBlock -> ( String, Svg msg )
 viewBlock { hash, rect, color } =
     let
         nodesAtBarRect =
@@ -87,7 +94,8 @@ viewBlock { hash, rect, color } =
                 Point2d.origin
                 (Rectangle2d.centerPoint rect)
     in
-    g []
+    ( hash
+    , g []
         [ Svg.rectangle2d
             [ rx (px 4)
             , ry (px 4)
@@ -96,6 +104,7 @@ viewBlock { hash, rect, color } =
             rect
         , Svg.translateBy translation <| viewText (String.left 4 hash) color
         ]
+    )
 
 
 viewText : String -> Color -> Svg msg
@@ -110,8 +119,8 @@ viewText line color =
         [ text line ]
 
 
-viewConnector : DrawableConnector -> Svg msg
-viewConnector { start, end, color } =
+viewConnector : DrawableConnector -> ( String, Svg msg )
+viewConnector { id, start, end, color } =
     let
         spline =
             CubicSpline2d.fromControlPoints
@@ -120,9 +129,16 @@ viewConnector { start, end, color } =
                 (end |> Point2d.translateBy (Vector2d.pixels -30 0))
                 end
     in
-    Svg.cubicSpline2d
+    ( id
+    , Svg.cubicSpline2d
         [ fill PaintNone
         , stroke (Paint <| Colors.fadeToBackground 0.75 color)
         , strokeWidth (px 2)
         ]
         spline
+    )
+
+
+viewNode : DrawableNode -> ( String, Svg msg )
+viewNode node =
+    ( node.nodeId, Svg.circle2d [ fill (Paint Colors.purple) ] node.circle )
