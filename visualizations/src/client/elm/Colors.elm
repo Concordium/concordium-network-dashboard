@@ -20,6 +20,7 @@ import Color exposing (Color, rgb255)
 import Color.Convert exposing (hexToColor)
 import Color.Interpolate exposing (Space(..), interpolate)
 import Element
+import Float.Extra as Float
 
 
 background =
@@ -97,6 +98,20 @@ fromUI color =
     Color.rgb c.red c.green c.blue
 
 
+withAlpha : Float -> Color -> Color
+withAlpha alpha color =
+    let
+        colorRgba =
+            Color.toRgba color
+    in
+    Color.fromRgba { colorRgba | alpha = alpha }
+
+
 fadeToBackground : Float -> Color -> Color
-fadeToBackground alpha color =
-    interpolate LAB color background alpha
+fadeToBackground t color =
+    let
+        colorAlpha =
+            (Color.toRgba color).alpha
+    in
+    interpolate LAB color background t
+        |> withAlpha colorAlpha

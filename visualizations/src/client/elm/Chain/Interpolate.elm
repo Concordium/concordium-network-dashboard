@@ -164,6 +164,7 @@ interpoolateDrawableChain chainA chainB =
         , nodes = interpolateNodes chainA.nodes chainB.nodes t
         , width = chainB.width
         , height = chainB.height
+        , viewBoxOffsetX = 0
         , numCollapsedBlocksX =
             Interpolation.int
                 chainA.numCollapsedBlocksX

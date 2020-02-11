@@ -193,6 +193,7 @@ updateChain depth nodes model =
                         |> DictTree.walkBackwardFrom last (depth - 1)
 
                 annotatedTree =
+                    -- Build.mockTree
                     DictTree.buildForward depth start newTree [] Tree.tree
                         |> annotate nodes lastFinalized
 

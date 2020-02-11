@@ -42,8 +42,16 @@ type alias DrawableChain =
     , nodes : List DrawableNode
     , width : Int
     , height : Int
+    , viewBoxOffsetX : Float
     , numCollapsedBlocksX : Int
     , numCollapsedBlocksY : Int
+    }
+
+
+type alias DrawableBlockSummaryX =
+    { lastFinalized : String
+    , numCollapsedBlocks : Int
+    , color : Color
     }
 
 
@@ -115,6 +123,7 @@ mergeDrawables chainA chainB =
     , nodes = chainA.nodes ++ chainB.nodes
     , width = max chainA.width chainB.width
     , height = max chainA.height chainB.height
+    , viewBoxOffsetX = chainB.viewBoxOffsetX
     , numCollapsedBlocksX = 0
     , numCollapsedBlocksY = 0
     }
@@ -148,6 +157,7 @@ addDrawables gridSpec maybeParent maybeParentBlock ( x, y ) block chain =
     , nodes = drawableNodes gridSpec x y block ++ chain.nodes
     , width = max (x + 1) chain.width
     , height = max (y + 1) chain.height
+    , viewBoxOffsetX = chain.viewBoxOffsetX
     , numCollapsedBlocksX = 0
     , numCollapsedBlocksY = 0
     }
@@ -173,6 +183,7 @@ emptyDrawableChain =
     , nodes = []
     , width = 0
     , height = 0
+    , viewBoxOffsetX = 0
     , numCollapsedBlocksX = 0
     , numCollapsedBlocksY = 0
     }
@@ -195,6 +206,7 @@ flattenTree gridSpec lastFinalizedBlockHeight maxNumVertical chain =
                 , nodes = nodes
                 , width = width
                 , height = height
+                , viewBoxOffsetX = 0
                 , numCollapsedBlocksX = collapsedH
                 , numCollapsedBlocksY = collapsedV
                 }
@@ -220,13 +232,13 @@ flattenDepthFirst zipper gridSpec parentCoords parentBlock ( x, y ) =
         ( Just child, Just sibling ) ->
             mergeDrawables
                 (flattenDepthFirst child gridSpec current (Just block) ( x + 1, y ))
-                (flattenDepthFirst sibling gridSpec current (Just block) ( x, y + block.forkWidth ))
+                (flattenDepthFirst sibling gridSpec parentCoords parentBlock ( x, y + block.forkWidth ))
 
         ( Just child, Nothing ) ->
             flattenDepthFirst child gridSpec current (Just block) ( x + 1, y )
 
         ( Nothing, Just sibling ) ->
-            flattenDepthFirst sibling gridSpec current (Just block) ( x, y + block.forkWidth )
+            flattenDepthFirst sibling gridSpec parentCoords parentBlock ( x, y + block.forkWidth )
 
         ( Nothing, Nothing ) ->
             emptyDrawableChain

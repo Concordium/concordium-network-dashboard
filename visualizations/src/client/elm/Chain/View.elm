@@ -17,6 +17,7 @@ import Quantity
 import Rectangle2d exposing (Rectangle2d)
 import Rectangle2d.Extra as Rectangle2d
 import Svg.Keyed as Keyed
+import Svg.Lazy as Lazy
 import TypedSvg exposing (..)
 import TypedSvg.Attributes exposing (..)
 import TypedSvg.Core exposing (..)
@@ -86,9 +87,6 @@ viewCollapsedBlocksSummary gridSpec lastFinalized chain =
 viewBlock : DrawableBlock -> ( String, Svg msg )
 viewBlock { hash, rect, color } =
     let
-        nodesAtBarRect =
-            Rectangle2d.splitX 0.2 rect
-
         translation =
             Vector2d.from
                 Point2d.origin
