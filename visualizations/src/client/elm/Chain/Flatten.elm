@@ -55,46 +55,45 @@ type alias DrawableBlockSummaryX =
     }
 
 
-drawableBlock : GridSpec -> Int -> Int -> Block -> DrawableBlock
-drawableBlock gridSpec x y block =
+drawableBlock : GridSpec -> Int -> Block -> DrawableBlock
+drawableBlock gridSpec y block =
     { hash = block.hash
     , color = blockColor block.status
-    , rect = Grid.cell gridSpec x y
+    , rect = Grid.cell gridSpec block.blockHeight y
     }
 
 
 drawableConnector :
     GridSpec
-    -> ( Block, Block )
-    -> Int
-    -> Int
+    -> Block
+    -> Block
     -> Int
     -> Int
     -> Color
     -> DrawableConnector
-drawableConnector gridSpec ( ba, bb ) x1 y1 x2 y2 color =
+drawableConnector gridSpec blockA blockB yA yB color =
     let
         block1Rect =
-            Grid.cell gridSpec x1 y1
+            Grid.cell gridSpec blockA.blockHeight yA
 
         block2Rect =
-            Grid.cell gridSpec x2 y2
+            Grid.cell gridSpec blockB.blockHeight yB
     in
-    { id = String.left 4 ba.hash ++ String.left 4 bb.hash
+    { id = String.left 4 blockA.hash ++ String.left 4 blockB.hash
     , start = Rectangle2d.interpolate block1Rect 1 0.5
     , end = Rectangle2d.interpolate block2Rect 0 0.5
     , color = color
     }
 
 
-drawableNodes : GridSpec -> Int -> Int -> Block -> List DrawableNode
-drawableNodes gridSpec x y block =
+drawableNodes : GridSpec -> Int -> Block -> List DrawableNode
+drawableNodes gridSpec y block =
     let
         ( size, nx ) =
             ( 4, 8 )
 
         blockRect =
-            Grid.cell gridSpec x y
+            Grid.cell gridSpec block.blockHeight y
 
         nodeFromIndices : String -> Int -> Int -> DrawableNode
         nodeFromIndices nodeId xp yp =
@@ -138,23 +137,22 @@ addDrawables :
     -> DrawableChain
     -> DrawableChain
 addDrawables gridSpec maybeParent maybeParentBlock ( x, y ) block chain =
-    { blocks = drawableBlock gridSpec x y block :: chain.blocks
+    { blocks = drawableBlock gridSpec y block :: chain.blocks
     , connectors =
         case ( maybeParent, maybeParentBlock ) of
-            ( Just ( px, py ), Just parent ) ->
+            ( Just ( xp, yp ), Just parent ) ->
                 drawableConnector
                     gridSpec
-                    ( parent, block )
-                    px
-                    py
-                    x
+                    parent
+                    block
+                    yp
                     y
                     (blockColor block.status)
                     :: chain.connectors
 
             _ ->
                 chain.connectors
-    , nodes = drawableNodes gridSpec x y block ++ chain.nodes
+    , nodes = drawableNodes gridSpec y block ++ chain.nodes
     , width = max (x + 1) chain.width
     , height = max (y + 1) chain.height
     , viewBoxOffsetX = chain.viewBoxOffsetX
@@ -194,9 +192,11 @@ flattenTree gridSpec lastFinalizedBlockHeight maxNumVertical chain =
     flattenDepthFirst (Zipper.fromTree chain) gridSpec Nothing Nothing ( 0, 0 )
         |> (\{ blocks, connectors, nodes, width, height } ->
                 let
+                    firstBlockHeight =
+                        Tree.label chain |> .blockHeight
+
                     collapsedH =
-                        (Tree.label chain |> .blockHeight)
-                            - lastFinalizedBlockHeight
+                        firstBlockHeight - lastFinalizedBlockHeight
 
                     collapsedV =
                         max 0 (maxNumVertical - height)
@@ -206,7 +206,8 @@ flattenTree gridSpec lastFinalizedBlockHeight maxNumVertical chain =
                 , nodes = nodes
                 , width = width
                 , height = height
-                , viewBoxOffsetX = 0
+                , viewBoxOffsetX =
+                    toFloat firstBlockHeight * (gridSpec.cellWidth + gridSpec.gutterWidth)
                 , numCollapsedBlocksX = collapsedH
                 , numCollapsedBlocksY = collapsedV
                 }

@@ -38,7 +38,7 @@ viewChain gridSpec lastFinalized nodes chain =
     Keyed.node "svg"
         [ width (px viewWidth)
         , height (px viewHeight)
-        , viewBox -gridSpec.outerPadding -gridSpec.outerPadding viewWidth viewHeight
+        , viewBox (chain.viewBoxOffsetX - gridSpec.outerPadding) -gridSpec.outerPadding viewWidth viewHeight
         ]
         (List.map viewConnector chain.connectors
             ++ List.map viewBlock chain.blocks

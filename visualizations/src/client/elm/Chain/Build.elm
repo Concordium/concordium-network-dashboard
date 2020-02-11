@@ -40,7 +40,6 @@ type alias ProtoBlock =
 
 type alias Block =
     { hash : String
-    , shortHash : String
     , nodesAt : List String
     , numNodesAt : Int
     , numNodesAtTree : Int
@@ -106,10 +105,10 @@ decodeHistory =
 mockTree =
     DictTree.init
         |> DictTree.addAll
-            [ [ ( 0, "a1" ), ( 0, "b1" ), ( 0, "c1" ), ( 0, "d1" ), ( 0, "e1" ) ]
-            , [ ( 0, "b1" ), ( 0, "c2" ), ( 0, "d2" ) ]
-            , [ ( 0, "c1" ), ( 0, "x" ), ( 0, "y" ) ]
-            , [ ( 0, "d1" ), ( 0, "y2" ) ]
+            [ [ ( 0, "a1" ), ( 1, "b1" ), ( 2, "c1" ), ( 3, "d1" ), ( 4, "e1" ) ]
+            , [ ( 1, "b1" ), ( 2, "c2" ), ( 3, "d2" ) ]
+            , [ ( 1, "c1" ), ( 2, "x" ), ( 3, "y" ) ]
+            , [ ( 3, "d1" ), ( 4, "y2" ) ]
             ]
         |> (\dtree ->
                 DictTree.buildForward
@@ -213,7 +212,7 @@ annotateChain nodes sourceTree =
 
 annotateBlock : List Node -> ProtoBlock -> Block
 annotateBlock nodes =
-    block nodes 1 ( 0, 0 ) []
+    block nodes 1 []
 
 
 annotateChildren : Block -> List (Tree Block) -> Tree Block
@@ -277,8 +276,8 @@ connectors branches =
         |> Tuple.second
 
 
-block : List Node -> Int -> ( Int, Int ) -> List Int -> ProtoBlock -> Block
-block nodes forkWidth position connectorList ( height, hash ) =
+block : List Node -> Int -> List Int -> ProtoBlock -> Block
+block nodes forkWidth connectorList ( height, hash ) =
     let
         nodesAt =
             nodes
@@ -289,7 +288,6 @@ block nodes forkWidth position connectorList ( height, hash ) =
             List.length nodesAt
     in
     { hash = hash
-    , shortHash = String.left 4 hash
     , nodesAt = nodesAt
     , numNodesAt = numNodesAt
     , numNodesAtTree = numNodesAt

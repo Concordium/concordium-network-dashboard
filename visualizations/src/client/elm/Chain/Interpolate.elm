@@ -153,18 +153,18 @@ interpolateNodes =
         }
 
 
-interpoolateDrawableChain :
+interpolateDrawableChain :
     DrawableChain
     -> DrawableChain
     -> Interpolator DrawableChain
-interpoolateDrawableChain chainA chainB =
+interpolateDrawableChain chainA chainB =
     \t ->
         { blocks = interpolateBlocks chainA.blocks chainB.blocks t
         , connectors = interpolateConnectors chainA.connectors chainB.connectors t
         , nodes = interpolateNodes chainA.nodes chainB.nodes t
         , width = chainB.width
         , height = chainB.height
-        , viewBoxOffsetX = 0
+        , viewBoxOffsetX = Interpolation.float chainA.viewBoxOffsetX chainB.viewBoxOffsetX t
         , numCollapsedBlocksX =
             Interpolation.int
                 chainA.numCollapsedBlocksX

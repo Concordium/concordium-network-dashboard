@@ -35,6 +35,7 @@ import Tree exposing (Tree)
 
 type alias Model =
     { nodes : List (List Node)
+    , initialBlockHeight : Maybe Int
     , lastFinalized : Maybe ProtoBlock
     , bestBlock : Maybe ProtoBlock
     , tree : DictTree ProtoBlock
@@ -49,6 +50,7 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
     ( { nodes = []
+      , initialBlockHeight = Nothing
       , lastFinalized = Nothing
       , bestBlock = Nothing
       , tree = DictTree.init
@@ -193,9 +195,12 @@ updateChain depth nodes model =
                         |> DictTree.walkBackwardFrom last (depth - 1)
 
                 annotatedTree =
-                    -- Build.mockTree
+                    --Build.mockTree
                     DictTree.buildForward depth start newTree [] Tree.tree
                         |> annotate nodes lastFinalized
+
+                firstBlockHeight =
+                    Tree.label annotatedTree |> .blockHeight
 
                 newDrawableChain =
                     Flatten.flattenTree model.gridSpec (Tuple.first lastFinalized) 2 annotatedTree
@@ -211,8 +216,14 @@ updateChain depth nodes model =
                         oldDrawableChain =
                             Transition.value model.transition
                     in
-                    Transition.for 600
-                        (Interpolate.interpoolateDrawableChain oldDrawableChain newDrawableChain)
+                    Transition.for 800
+                        (Interpolate.interpolateDrawableChain oldDrawableChain newDrawableChain)
+                , initialBlockHeight =
+                    Just
+                        (Maybe.withDefault
+                            (Tree.label annotatedTree |> .blockHeight)
+                            model.initialBlockHeight
+                        )
             }
 
         _ ->
