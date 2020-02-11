@@ -131,7 +131,7 @@ forward depth maxDepth current tree =
             else
                 children
                     |> Set.toList
-                    |> List.map
+                    |> List.concatMap
                         (\child ->
                             forward
                                 (depth + 1)
@@ -139,7 +139,6 @@ forward depth maxDepth current tree =
                                 child
                                 tree
                         )
-                    |> List.concat
                     |> List.filter
                         (Tuple.first >> (<) depth)
 
