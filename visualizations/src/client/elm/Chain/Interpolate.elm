@@ -172,7 +172,7 @@ interpolateDrawableChain chainA chainB =
                 t
         , numCollapsedBlocksY =
             Interpolation.int
-                chainA.numCollapsedBlocksX
-                chainB.numCollapsedBlocksX
+                chainA.numCollapsedBlocksY
+                chainB.numCollapsedBlocksY
                 t
         }

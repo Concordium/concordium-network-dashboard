@@ -258,19 +258,18 @@ subscriptions model =
 
 view : Model -> Element Msg
 view model =
-    let
-        nodes =
-            model.nodes
-                |> List.uncons
-                |> Maybe.map Tuple.first
-                |> Maybe.withDefault []
-
-        currentDrawableChain =
-            Transition.value model.transition
-    in
     case model.lastFinalized of
         Just lastFinalized ->
             let
+                nodes =
+                    model.nodes
+                        |> List.uncons
+                        |> Maybe.map Tuple.first
+                        |> Maybe.withDefault []
+
+                currentDrawableChain =
+                    Transition.value model.transition
+
                 vcontext =
                     { gridSpec = model.gridSpec
                     , lastFinalized = lastFinalized
@@ -281,7 +280,15 @@ view model =
             in
             column [ width fill, height fill ]
                 [ viewDebugButtons
-                , el [ centerX, centerY, spacing (round spec.gutterHeight) ]
+                , el
+                    [ centerX
+                    , centerY
+                    , spacing (round spec.gutterHeight)
+                    , inFront
+                        (el [ alignLeft ]
+                            (html <| View.viewCollapsedBlocksSummary vcontext currentDrawableChain)
+                        )
+                    ]
                     (html <| View.viewChain vcontext currentDrawableChain)
                 ]
 

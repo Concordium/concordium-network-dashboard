@@ -62,11 +62,18 @@ viewChain { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } chain 
 
 {-| An overlay displaying the last finalized Block, when it would be out of view
 -}
-viewCollapsedBlocksSummary : GridSpec -> ProtoBlock -> DrawableChain -> ( String, Svg msg )
-viewCollapsedBlocksSummary gridSpec lastFinalized chain =
-    (case chain.numCollapsedBlocksX > 0 of
+viewCollapsedBlocksSummary : Context msg -> DrawableChain -> Svg msg
+viewCollapsedBlocksSummary { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } chain =
+    case chain.numCollapsedBlocksX > 0 of
         True ->
             let
+                ( viewWidth, viewHeight ) =
+                    Grid.dimensions gridSpec 1 chain.height
+                        |> Tuple.mapBoth Pixels.inPixels Pixels.inPixels
+                        |> Tuple.mapBoth
+                            ((+) (gridSpec.outerPadding * 2))
+                            ((+) (gridSpec.outerPadding * 2))
+
                 lastFinalizedBlock =
                     { hash = Tuple.second lastFinalized
                     , color = blockColor Finalized
@@ -81,20 +88,26 @@ viewCollapsedBlocksSummary gridSpec lastFinalized chain =
                         (Rectangle2d.interpolate background 1 0)
                         (Rectangle2d.interpolate background 1 1)
             in
-            g []
+            svg
+                [ width (px (viewWidth - gridSpec.outerPadding))
+                , height (px viewHeight)
+                , viewBox
+                    -gridSpec.outerPadding
+                    -gridSpec.outerPadding
+                    (viewWidth - gridSpec.outerPadding + 1)
+                    viewHeight
+                ]
                 [ Svg.rectangle2d [ fill <| Paint Colors.background ] background
                 , Svg.lineSegment2d
                     [ stroke (Paint <| Colors.fadeToBackground 0.75 lastFinalizedBlock.color)
                     , strokeDasharray "4"
                     ]
                     rightEdge
-                , Tuple.second (viewBlock Nothing Nothing lastFinalizedBlock)
+                , Tuple.second (viewBlock onBlockClick selectedBlock lastFinalizedBlock)
                 ]
 
         False ->
             g [] []
-    )
-        |> (\value -> ( "summaryX", value ))
 
 
 viewBlock : Maybe (String -> msg) -> Maybe String -> DrawableBlock -> ( String, Svg msg )
