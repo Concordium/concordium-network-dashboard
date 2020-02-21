@@ -110,6 +110,7 @@ drawableNodes gridSpec y block =
                     )
     in
     block.nodesAt
+        |> List.sort
         |> List.greedyGroupsOf nx
         |> List.indexedMap row
         |> List.concat

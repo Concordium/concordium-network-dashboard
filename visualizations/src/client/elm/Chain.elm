@@ -44,6 +44,7 @@ type alias Model =
     , errors : List Http.Error
     , replay : Maybe Replay
     , gridSpec : GridSpec
+    , blockClicked : Maybe String
     }
 
 
@@ -59,6 +60,7 @@ init =
       , errors = []
       , replay = Nothing
       , gridSpec = spec
+      , blockClicked = Nothing
       }
     , Build.getNodeInfo GotNodeInfo
     )
@@ -86,6 +88,7 @@ type Msg
     | GotHistoryString String
     | TickSecond Posix
     | OnAnimationFrame Int
+    | BlockClicked String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -146,11 +149,14 @@ update msg model =
             , Cmd.none
             )
 
+        BlockClicked hash ->
+            ( { model | blockClicked = Just hash }, Cmd.none )
+
 
 updateNodes : List Node -> List (List Node) -> List (List Node)
 updateNodes new current =
     if Just new /= List.head current then
-        List.append [ new ] current
+        new :: current
         --|> List.take 3
 
     else
@@ -264,26 +270,44 @@ view model =
     in
     case model.lastFinalized of
         Just lastFinalized ->
+            let
+                vcontext =
+                    { gridSpec = model.gridSpec
+                    , lastFinalized = lastFinalized
+                    , nodes = nodes
+                    , onBlockClick = Just BlockClicked
+                    , selectedBlock = model.blockClicked
+                    }
+            in
             column [ width fill, height fill ]
-                [ row []
-                    [ viewButton (Just SaveHistory) "Save History"
-                    , viewButton (Just ReplayHistory) "Replay History"
-                    ]
+                [ viewDebugButtons
                 , el [ centerX, centerY, spacing (round spec.gutterHeight) ]
-                    (html <| View.viewChain model.gridSpec lastFinalized nodes currentDrawableChain)
+                    (html <| View.viewChain vcontext currentDrawableChain)
                 ]
 
         Nothing ->
             none
 
 
+viewDebugButtons : Element Msg
+viewDebugButtons =
+    row [ padding 10, spacing 10 ]
+        [ viewButton (Just SaveHistory) "Save History"
+        , viewButton (Just ReplayHistory) "Replay History"
+        ]
+
+
 viewButton : Maybe msg -> String -> Element msg
 viewButton onPress label =
     button
-        [ Background.color <| Element.rgba 1 1 1 0.05
+        [ Background.color <| Element.rgba 1 1 1 0.03
         , Font.color <| Element.rgb 0.2 0.5 0.8
         , Font.size 14
+        , Border.rounded 4
         , padding 10
+        , mouseOver
+            [ Background.color <| Element.rgba 1 1 1 0.05
+            ]
         ]
         { onPress = onPress
         , label = text label

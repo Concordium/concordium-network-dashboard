@@ -21,12 +21,22 @@ import Svg.Lazy as Lazy
 import TypedSvg exposing (..)
 import TypedSvg.Attributes exposing (..)
 import TypedSvg.Core exposing (..)
+import TypedSvg.Events exposing (onClick)
 import TypedSvg.Types exposing (..)
 import Vector2d exposing (Vector2d)
 
 
-viewChain : GridSpec -> ProtoBlock -> List Node -> DrawableChain -> Svg msg
-viewChain gridSpec lastFinalized nodes chain =
+type alias Context msg =
+    { gridSpec : GridSpec
+    , lastFinalized : ProtoBlock
+    , nodes : List Node
+    , onBlockClick : Maybe (String -> msg)
+    , selectedBlock : Maybe String
+    }
+
+
+viewChain : Context msg -> DrawableChain -> Svg msg
+viewChain { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } chain =
     let
         ( viewWidth, viewHeight ) =
             Grid.dimensions gridSpec chain.width chain.height
@@ -38,12 +48,15 @@ viewChain gridSpec lastFinalized nodes chain =
     Keyed.node "svg"
         [ width (px viewWidth)
         , height (px viewHeight)
-        , viewBox (chain.viewBoxOffsetX - gridSpec.outerPadding) -gridSpec.outerPadding viewWidth viewHeight
+        , viewBox
+            (chain.viewBoxOffsetX - gridSpec.outerPadding)
+            -gridSpec.outerPadding
+            viewWidth
+            viewHeight
         ]
         (List.map viewConnector chain.connectors
-            ++ List.map viewBlock chain.blocks
+            ++ List.map (viewBlock onBlockClick selectedBlock) chain.blocks
             ++ List.map viewNode chain.nodes
-            ++ [ viewCollapsedBlocksSummary gridSpec lastFinalized chain ]
         )
 
 
@@ -75,7 +88,7 @@ viewCollapsedBlocksSummary gridSpec lastFinalized chain =
                     , strokeDasharray "4"
                     ]
                     rightEdge
-                , Tuple.second (viewBlock lastFinalizedBlock)
+                , Tuple.second (viewBlock Nothing Nothing lastFinalizedBlock)
                 ]
 
         False ->
@@ -84,20 +97,32 @@ viewCollapsedBlocksSummary gridSpec lastFinalized chain =
         |> (\value -> ( "summaryX", value ))
 
 
-viewBlock : DrawableBlock -> ( String, Svg msg )
-viewBlock { hash, rect, color } =
+viewBlock : Maybe (String -> msg) -> Maybe String -> DrawableBlock -> ( String, Svg msg )
+viewBlock clickMsg selectedBlock { hash, rect, color } =
     let
         translation =
             Vector2d.from
                 Point2d.origin
                 (Rectangle2d.centerPoint rect)
+
+        click =
+            clickMsg
+                |> Maybe.map (\cmsg -> [ onClick <| cmsg hash ])
+                |> Maybe.withDefault []
+
+        highlight =
+            selectedBlock
+                |> Maybe.filter ((==) hash)
+                |> Maybe.map (\h -> stroke (Paint <| color))
+                |> Maybe.withDefault (stroke PaintNone)
     in
     ( hash
-    , g []
+    , g (click ++ [ TypedSvg.Attributes.cursor CursorPointer ])
         [ Svg.rectangle2d
             [ rx (px 4)
             , ry (px 4)
             , fill (Paint <| Colors.fadeToBackground 0.75 color)
+            , highlight
             ]
             rect
         , Svg.translateBy translation <| viewText (String.left 4 hash) color
