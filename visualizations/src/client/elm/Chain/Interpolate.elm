@@ -3,11 +3,13 @@ module Chain.Interpolate exposing (..)
 import Chain.Flatten exposing (..)
 import Circle2d exposing (Circle2d)
 import Color.Manipulate
+import Direction2d exposing (Direction2d)
 import Interpolation exposing (Interpolator)
 import Pixels exposing (Pixels, pixels)
 import Point2d exposing (Point2d)
 import Quantity exposing (Quantity)
 import Rectangle2d exposing (Rectangle2d)
+import Vector2d exposing (Vector2d)
 
 
 interpolateFloatQuantity :
@@ -26,6 +28,22 @@ interpolatePoint2d pointA pointB =
     Point2d.interpolateFrom pointA pointB
 
 
+parabola : Float -> Float -> Float
+parabola height t =
+    height * (1 - ((2 * t - 1) ^ 2))
+
+
+interpolatePoint2dParabolic :
+    Float
+    -> Point2d Pixels coords
+    -> Point2d Pixels coords
+    -> Interpolator (Point2d Pixels coords)
+interpolatePoint2dParabolic yoffset pointA pointB =
+    \t ->
+        Point2d.interpolateFrom pointA pointB t
+            |> Point2d.translateIn Direction2d.y (Pixels.pixels (parabola yoffset t))
+
+
 interpolateCircle2d :
     Circle2d units coords
     -> Circle2d units coords
@@ -33,6 +51,17 @@ interpolateCircle2d :
 interpolateCircle2d circleA circleB =
     Interpolation.map2 Circle2d.atPoint
         (interpolatePoint2d (Circle2d.centerPoint circleA) (Circle2d.centerPoint circleB))
+        (Quantity.interpolateFrom (Circle2d.radius circleA) (Circle2d.radius circleB))
+
+
+interpolateCircle2dParabolic :
+    Float
+    -> Circle2d Pixels coords
+    -> Circle2d Pixels coords
+    -> Interpolator (Circle2d Pixels coords)
+interpolateCircle2dParabolic yoffset circleA circleB =
+    Interpolation.map2 Circle2d.atPoint
+        (interpolatePoint2dParabolic yoffset (Circle2d.centerPoint circleA) (Circle2d.centerPoint circleB))
         (Quantity.interpolateFrom (Circle2d.radius circleA) (Circle2d.radius circleB))
 
 
@@ -118,7 +147,7 @@ interpolateConnectors =
 interpolateNode : DrawableNode -> DrawableNode -> Interpolator DrawableNode
 interpolateNode nodeA nodeB =
     \t ->
-        { nodeB | circle = interpolateCircle2d nodeA.circle nodeB.circle t }
+        { nodeB | circle = interpolateCircle2dParabolic -20 nodeA.circle nodeB.circle t }
 
 
 interpolateNodes :
@@ -165,14 +194,6 @@ interpolateDrawableChain chainA chainB =
         , width = chainB.width
         , height = chainB.height
         , viewBoxOffsetX = Interpolation.float chainA.viewBoxOffsetX chainB.viewBoxOffsetX t
-        , numCollapsedBlocksX =
-            Interpolation.int
-                chainA.numCollapsedBlocksX
-                chainB.numCollapsedBlocksX
-                t
-        , numCollapsedBlocksY =
-            Interpolation.int
-                chainA.numCollapsedBlocksY
-                chainB.numCollapsedBlocksY
-                t
+        , numCollapsedBlocksX = chainB.numCollapsedBlocksX
+        , numCollapsedBlocksY = chainB.numCollapsedBlocksY
         }

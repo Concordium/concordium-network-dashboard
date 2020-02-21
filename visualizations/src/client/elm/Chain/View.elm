@@ -35,15 +35,20 @@ type alias Context msg =
     }
 
 
+viewDimensions : GridSpec -> Int -> Int -> ( Float, Float )
+viewDimensions gridSpec vwidth vheight =
+    Grid.dimensions gridSpec vwidth vheight
+        |> Tuple.mapBoth Pixels.inPixels Pixels.inPixels
+        |> Tuple.mapBoth
+            ((+) (gridSpec.outerPadding * 2))
+            ((+) (gridSpec.outerPadding * 2))
+
+
 viewChain : Context msg -> DrawableChain -> Svg msg
 viewChain { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } chain =
     let
         ( viewWidth, viewHeight ) =
-            Grid.dimensions gridSpec chain.width chain.height
-                |> Tuple.mapBoth Pixels.inPixels Pixels.inPixels
-                |> Tuple.mapBoth
-                    ((+) (gridSpec.outerPadding * 2))
-                    ((+) (gridSpec.outerPadding * 2))
+            viewDimensions gridSpec chain.width chain.height
     in
     Keyed.node "svg"
         [ width (px viewWidth)
@@ -68,11 +73,7 @@ viewCollapsedBlocksSummary { gridSpec, lastFinalized, nodes, onBlockClick, selec
         True ->
             let
                 ( viewWidth, viewHeight ) =
-                    Grid.dimensions gridSpec 1 chain.height
-                        |> Tuple.mapBoth Pixels.inPixels Pixels.inPixels
-                        |> Tuple.mapBoth
-                            ((+) (gridSpec.outerPadding * 2))
-                            ((+) (gridSpec.outerPadding * 2))
+                    viewDimensions gridSpec 1 chain.height
 
                 lastFinalizedBlock =
                     { hash = Tuple.second lastFinalized
@@ -81,20 +82,28 @@ viewCollapsedBlocksSummary { gridSpec, lastFinalized, nodes, onBlockClick, selec
                     }
 
                 background =
-                    Grid.region gridSpec 0 0 1 chain.height
+                    Grid.region gridSpec -1 0 1 chain.height
 
                 rightEdge =
                     LineSegment2d.from
-                        (Rectangle2d.interpolate background 1 0)
+                        (Rectangle2d.interpolate background 1 0.2)
                         (Rectangle2d.interpolate background 1 1)
+
+                translation =
+                    Vector2d.from
+                        Point2d.origin
+                        (Rectangle2d.interpolate background 1 0)
+
+                color =
+                    Colors.fadeToBackground 0.75 lastFinalizedBlock.color
             in
             svg
-                [ width (px (viewWidth - gridSpec.outerPadding))
+                [ width (px (viewWidth - gridSpec.outerPadding + 5))
                 , height (px viewHeight)
                 , viewBox
                     -gridSpec.outerPadding
                     -gridSpec.outerPadding
-                    (viewWidth - gridSpec.outerPadding + 1)
+                    (viewWidth - gridSpec.outerPadding + 5)
                     viewHeight
                 ]
                 [ Svg.rectangle2d [ fill <| Paint Colors.background ] background
@@ -103,6 +112,7 @@ viewCollapsedBlocksSummary { gridSpec, lastFinalized, nodes, onBlockClick, selec
                     , strokeDasharray "4"
                     ]
                     rightEdge
+                , Svg.translateBy translation <| viewText (String.fromInt chain.numCollapsedBlocksX) color
                 , Tuple.second (viewBlock onBlockClick selectedBlock lastFinalizedBlock)
                 ]
 
