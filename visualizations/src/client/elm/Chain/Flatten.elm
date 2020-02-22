@@ -108,12 +108,32 @@ drawableNodes gridSpec y block =
                     (\ix nodeId ->
                         nodeFromIndices nodeId ix iy
                     )
+
+        onTop =
+            Rectangle2d.interpolate blockRect 0.5 -0.2
     in
     block.nodesAt
-        |> List.sort
         |> List.greedyGroupsOf nx
         |> List.indexedMap row
         |> List.concat
+
+
+simplerDrawableNodes : GridSpec -> Int -> Block -> List DrawableNode
+simplerDrawableNodes gridSpec y block =
+    let
+        ( size, nx ) =
+            ( 2 + 4 * (toFloat block.numNodesAt / 5), 8 )
+
+        blockRect =
+            Grid.cell gridSpec block.blockHeight y
+    in
+    block.nodesAt
+        |> List.map
+            (\nodeId ->
+                Rectangle2d.interpolate blockRect 0.5 (-0.2 * (1 + (toFloat block.numNodesAt / 20)))
+                    |> Circle2d.withRadius (Pixels.pixels (size / 2.0))
+                    |> (\circle -> { nodeId = nodeId, circle = circle })
+            )
 
 
 mergeDrawables : DrawableChain -> DrawableChain -> DrawableChain
@@ -153,7 +173,7 @@ addDrawables gridSpec maybeParent maybeParentBlock ( x, y ) block chain =
 
             _ ->
                 chain.connectors
-    , nodes = drawableNodes gridSpec y block ++ chain.nodes
+    , nodes = simplerDrawableNodes gridSpec y block ++ chain.nodes
     , width = max (x + 1) chain.width
     , height = max (y + 1) chain.height
     , viewBoxOffsetX = chain.viewBoxOffsetX

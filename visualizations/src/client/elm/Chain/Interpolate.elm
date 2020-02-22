@@ -146,8 +146,15 @@ interpolateConnectors =
 
 interpolateNode : DrawableNode -> DrawableNode -> Interpolator DrawableNode
 interpolateNode nodeA nodeB =
+    let
+        distance =
+            Point2d.distanceFrom
+                (Circle2d.centerPoint nodeA.circle)
+                (Circle2d.centerPoint nodeB.circle)
+                |> Quantity.divideBy 3
+    in
     \t ->
-        { nodeB | circle = interpolateCircle2dParabolic -20 nodeA.circle nodeB.circle t }
+        { nodeB | circle = interpolateCircle2dParabolic -(Pixels.inPixels distance) nodeA.circle nodeB.circle t }
 
 
 interpolateNodes :
