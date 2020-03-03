@@ -7,9 +7,4 @@ import WidgetsDashboard exposing (..)
 
 
 view model =
-    [ row
-        [ width fill
-        , height fill
-        ]
-        [ map ChainMsg <| Chain.view model.chainModel ]
-    ]
+    map ChainMsg <| Chain.view model.chainModel

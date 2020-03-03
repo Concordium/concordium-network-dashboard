@@ -145,12 +145,11 @@ view model =
                     Pages.Graph.view model
 
                 ChainViz ->
-                    [ column [ height fill ]
-                        ([ header
-                         , summaryWidgets model
-                         ]
-                            ++ Pages.ChainViz.view model
-                        )
+                    [ column [ height fill, width fill ]
+                        [ header
+                        , summaryWidgets model
+                        , Pages.ChainViz.view model
+                        ]
                     ]
         ]
     }
