@@ -1,5 +1,7 @@
 module Pages.Graph exposing (nodeView, view)
 
+-- import NetworkGraph
+
 import ColorsDashboard exposing (..)
 import Element exposing (..)
 import Element.Background as Background
@@ -9,7 +11,6 @@ import Element.Font as Font
 import Element.Input as Input
 import Html
 import Html.Attributes exposing (style)
-import NetworkGraph
 import NodeHelpers exposing (..)
 import TypesDashboard exposing (..)
 import WidgetsDashboard exposing (..)
@@ -25,8 +26,8 @@ view model =
             , Border.rounded 5
             , alignTop
             ]
-            [ html <| NetworkGraph.agedRelations model model.nodes
-            , row [ spacing 5 ]
+            [ --html <| NetworkGraph.agedRelations model model.nodes,
+              row [ spacing 5 ]
                 [ el [ padding 10, onClick (GraphZoom 100) ] (text "Zoom Out")
                 , el [ padding 10, onClick (GraphZoom -100) ] (text "Zoom In")
                 ]

@@ -2,6 +2,7 @@ module Pages.ChainViz exposing (..)
 
 import Chain
 import Element exposing (..)
+import TypesDashboard exposing (Msg(..))
 import WidgetsDashboard exposing (..)
 
 
@@ -10,5 +11,5 @@ view model =
         [ width fill
         , height fill
         ]
-        [ Chain.viewFlattenedChain model.chainModel.flatTree ]
+        [ map ChainMsg <| Chain.view model.chainModel ]
     ]

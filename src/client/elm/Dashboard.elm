@@ -1,11 +1,12 @@
 port module Dashboard exposing (..)
 
+-- import Chart
+
 import Browser exposing (..)
 import Browser.Dom
 import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
-import Chart
 import ColorsDashboard exposing (..)
 import Dict exposing (Dict)
 import Dict.Extra as Dict
@@ -297,37 +298,38 @@ widgetNumber color title icon value =
         ]
 
 
-widgetNumberChart color title icon value =
-    row [ Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
-        [ column []
-            [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 40), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
-        , column [ spacing 20 ]
-            [ row [ Font.color color ] [ text <| String.toUpper title ]
-            , row [ Font.color color, Font.size 30 ]
-                [ text <|
-                    if value >= 0 then
-                        String.fromFloat value
 
-                    else
-                        "-"
-                ]
-            ]
-        , column [ width (px 200) ]
-            [ html Chart.test ]
-        ]
-
-
-chartTimeseries color title icon value =
-    row [ Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
-        -- @TODO play with this later to finish the chart effect
-        -- Background.gradient { angle = pi, steps = [ rgba255 49 178 239 1, rgba255 0 0 0 0 ] }
-        [ column [ spacing 20 ]
-            [ row [ Font.color color ] [ text <| String.toUpper title ]
-            , row [ Font.color color, Font.size 30 ] [ text <| String.fromFloat value ]
-            ]
-        , column [ width (px 200) ]
-            [ html Chart.test ]
-        ]
+-- widgetNumberChart color title icon value =
+--     row [ Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
+--         [ column []
+--             [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 40), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
+--         , column [ spacing 20 ]
+--             [ row [ Font.color color ] [ text <| String.toUpper title ]
+--             , row [ Font.color color, Font.size 30 ]
+--                 [ text <|
+--                     if value >= 0 then
+--                         String.fromFloat value
+--
+--                     else
+--                         "-"
+--                 ]
+--             ]
+--         , column [ width (px 200) ]
+--             [ html Chart.test ]
+--         ]
+--
+--
+-- chartTimeseries color title icon value =
+--     row [ Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
+--         -- @TODO play with this later to finish the chart effect
+--         -- Background.gradient { angle = pi, steps = [ rgba255 49 178 239 1, rgba255 0 0 0 0 ] }
+--         [ column [ spacing 20 ]
+--             [ row [ Font.color color ] [ text <| String.toUpper title ]
+--             , row [ Font.color color, Font.size 30 ] [ text <| String.fromFloat value ]
+--             ]
+--         , column [ width (px 200) ]
+--             [ html Chart.test ]
+--         ]
 
 
 worldMap =
@@ -579,7 +581,7 @@ update msg model =
             ( { model | nodes = Dict.insert node.nodeId node model.nodes }, Cmd.none )
 
         FetchNodeSummaries _ ->
-            ( model, Http.get { url = "/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
+            ( model, Http.get { url = "https://dashboard.eu.prod.concordium.com/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
 
         FetchedNodeSummaries r ->
             case r of
@@ -680,7 +682,7 @@ subscriptions model =
         , Browser.Events.onResize WindowResized
         , Time.every 1000 CurrentTime
         , Time.every 1000 FetchNodeSummaries
-        , Time.every 1000 (ChainMsg << Chain.Tick)
+        , Time.every 1000 (ChainMsg << Chain.TickSecond)
         ]
 
 

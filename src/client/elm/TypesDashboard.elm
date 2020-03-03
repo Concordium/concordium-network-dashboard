@@ -95,9 +95,9 @@ type SortBy
     | SortSent
     | SortReceived
     | SortBlock
-    | SortLength
+    | SortHeight
     | SortFinalizedBlock
-    | SortFinalizedLength
+    | SortFinalizedHeight
 
 
 parserRoutes =
