@@ -677,12 +677,19 @@ scrollPageToTop =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ nodeInfo NodeInfoReceived
-        , Browser.Events.onResize WindowResized
-        , Time.every 1000 CurrentTime
-        , Time.every 1000 FetchNodeSummaries
-        , Time.every 1000 (ChainMsg << Chain.TickSecond)
-        ]
+        ([ nodeInfo NodeInfoReceived
+         , Browser.Events.onResize WindowResized
+         , Time.every 1000 CurrentTime
+         , Time.every 1000 FetchNodeSummaries
+         ]
+            ++ (case model.currentPage of
+                    ChainViz ->
+                        [ Sub.map ChainMsg <| Chain.subscriptions model.chainModel ]
+
+                    _ ->
+                        []
+               )
+        )
 
 
 main : Program Flags Model Msg
