@@ -23,8 +23,8 @@ header =
         [ link [] { url = "/", label = image [ height (px 20) ] { src = "/assets/images/concordium-logo.png", description = "Concordium Logo" } }
         , row [ alignRight, spacing 20 ]
             [ link [] { url = "/", label = text "Dashboard" }
-            , link [] { url = "/nodegraph", label = text "Graph" }
             , link [] { url = "/chain", label = text "Chain" }
+            , link [] { url = "/nodegraph", label = text "Graph" }
             ]
         ]
 

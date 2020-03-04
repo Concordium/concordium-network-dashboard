@@ -27,7 +27,8 @@ view model =
             , alignTop
             ]
             [ --html <| NetworkGraph.agedRelations model model.nodes,
-              row [ spacing 5 ]
+              row [] [ paragraph [] [ text "The network graph is temporarily disabled, it will be restored soon." ] ]
+            , row [ spacing 5 ]
                 [ el [ padding 10, onClick (GraphZoom 100) ] (text "Zoom Out")
                 , el [ padding 10, onClick (GraphZoom -100) ] (text "Zoom In")
                 ]
