@@ -173,7 +173,7 @@ addDrawables gridSpec maybeParent maybeParentBlock ( x, y ) block chain =
 
             _ ->
                 chain.connectors
-    , nodes = simplerDrawableNodes gridSpec y block ++ chain.nodes
+    , nodes = drawableNodes gridSpec y block ++ chain.nodes
     , width = max (x + 1) chain.width
     , height = max (y + 1) chain.height
     , viewBoxOffsetX = chain.viewBoxOffsetX
