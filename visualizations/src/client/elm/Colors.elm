@@ -24,7 +24,8 @@ import Float.Extra as Float
 
 
 background =
-    blueishBlack
+    --blueishBlack
+    fromUI (Element.rgb255 13 19 23)
 
 
 nodeBackground =
