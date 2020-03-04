@@ -1,6 +1,8 @@
 module Pages.Graph exposing (nodeView, view)
 
-import Colors exposing (..)
+-- import NetworkGraph
+
+import ColorsDashboard exposing (..)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -9,10 +11,9 @@ import Element.Font as Font
 import Element.Input as Input
 import Html
 import Html.Attributes exposing (style)
-import NetworkGraph
 import NodeHelpers exposing (..)
-import Types exposing (..)
-import Widgets exposing (..)
+import TypesDashboard exposing (..)
+import WidgetsDashboard exposing (..)
 
 
 view model =
@@ -25,7 +26,8 @@ view model =
             , Border.rounded 5
             , alignTop
             ]
-            [ html <| NetworkGraph.agedRelations model model.nodes
+            [ --html <| NetworkGraph.agedRelations model model.nodes,
+              row [] [ paragraph [] [ text "The network graph is temporarily disabled, it will be restored soon." ] ]
             , row [ spacing 5 ]
                 [ el [ padding 10, onClick (GraphZoom 100) ] (text "Zoom Out")
                 , el [ padding 10, onClick (GraphZoom -100) ] (text "Zoom In")

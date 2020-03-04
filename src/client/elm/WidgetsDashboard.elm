@@ -1,6 +1,6 @@
-module Widgets exposing (..)
+module WidgetsDashboard exposing (..)
 
-import Colors exposing (..)
+import ColorsDashboard exposing (..)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
@@ -15,7 +15,7 @@ import Time
 import Time.Distance exposing (inWordsWithConfig)
 import Time.Distance.I18n as I18n
 import Time.Extra
-import Types exposing (..)
+import TypesDashboard exposing (..)
 
 
 header =
@@ -23,6 +23,7 @@ header =
         [ link [] { url = "/", label = image [ height (px 20) ] { src = "/assets/images/concordium-logo.png", description = "Concordium Logo" } }
         , row [ alignRight, spacing 20 ]
             [ link [] { url = "/", label = text "Dashboard" }
+            , link [] { url = "/chain", label = text "Chain" }
             , link [] { url = "/nodegraph", label = text "Graph" }
             ]
         ]

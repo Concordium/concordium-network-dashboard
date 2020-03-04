@@ -1,12 +1,12 @@
-import * as proxy from 'http-proxy-middleware';
+const { createProxyMiddleware } = require('http-proxy-middleware');
 import * as express from 'express';
 
-export function staticsDevRouter(nodesSummary) {
+export function staticsDevRouter() {
   const router = express.Router();
-  router.use(express.json()) 
+  router.use(express.json())
 
-// All the assets are hosted by Webpack on localhost:8080 (Webpack-dev-server)
-  router.use('/public', proxy(
+  // All the assets are hosted by Webpack on localhost:8080 (Webpack-dev-server)
+  router.use('/public', createProxyMiddleware(
     {
       target: 'http://localhost:8080/'
     }));
@@ -14,13 +14,8 @@ export function staticsDevRouter(nodesSummary) {
   // @TODO need to figure out why normal assets aren't routing through webpack
   router.use('/assets', express.static('assets'))
 
-  router.post('/post/nodes', function(request, response){
-    nodesSummary[request.body.nodeName] = request.body;
-    response.status(200).end()
-  });
-
-// Any route should render the web app html (hosted by by Webpack-dev-server)
-  router.use('**', proxy(
+  // Any route should render the web app html (hosted by by Webpack-dev-server)
+  router.use('**', createProxyMiddleware(
     {
       target: 'http://localhost:8080/',
       pathRewrite: path => '/public/index.html',

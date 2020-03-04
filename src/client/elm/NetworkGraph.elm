@@ -17,7 +17,7 @@ import TypedSvg.Attributes exposing (class, fill, points, stroke, viewBox)
 import TypedSvg.Attributes.InPx exposing (cx, cy, r, strokeWidth, x1, x2, y1, y2)
 import TypedSvg.Core exposing (Attribute, Svg, text)
 import TypedSvg.Types exposing (Fill(..))
-import Types exposing (..)
+import TypesDashboard exposing (..)
 
 
 

@@ -1,11 +1,13 @@
 port module Dashboard exposing (..)
 
+-- import Chart
+
 import Browser exposing (..)
 import Browser.Dom
 import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
-import Chart
-import Colors exposing (..)
+import Chain
+import ColorsDashboard exposing (..)
 import Dict exposing (Dict)
 import Dict.Extra as Dict
 import Element exposing (..)
@@ -24,6 +26,7 @@ import Json.Encode as E
 import List.Extra as List
 import Markdown
 import NodeHelpers exposing (..)
+import Pages.ChainViz
 import Pages.Graph
 import Round
 import String
@@ -33,9 +36,9 @@ import Time.Distance exposing (inWordsWithConfig)
 import Time.Distance.I18n as I18n
 import Time.Extra
 import Trend.Math
-import Types exposing (..)
+import TypesDashboard exposing (..)
 import Url exposing (Url)
-import Widgets exposing (..)
+import WidgetsDashboard exposing (..)
 
 
 port hello : String -> Cmd msg
@@ -80,6 +83,10 @@ type alias Flags =
 
 init : Flags -> Url -> Key -> ( Model, Cmd Msg )
 init flags url key =
+    let
+        ( chainInit, chainCmd ) =
+            Chain.init
+    in
     ( { nodes = Dict.empty
       , currentTime = Time.millisToPosix 0
       , key = key
@@ -88,8 +95,12 @@ init flags url key =
       , window = flags
       , selectedNode = Nothing
       , graph = { width = 800, height = 800 }
+      , chainModel = chainInit
       }
-    , hello "Hello from Elm!"
+    , Cmd.batch
+        [ hello "Hello from Elm!"
+        , Cmd.map ChainMsg chainCmd
+        ]
     )
 
 
@@ -102,57 +113,7 @@ view model =
                 Dashboard ->
                     [ column [ spacing 20, width fill ]
                         [ header
-                        , wrappedRow [ spacing 20, width fill ]
-                            [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (toFloat <| Dict.size <| nodePeersOnly model.nodes)
-                            , widgetSeconds blue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.bestArrivedTime)) "" model.nodes)
-                            , widgetSeconds green
-                                "Last finalized block"
-                                "/assets/images/icon-blocklastfinal-green.png"
-                                -- Take the highest finalised block height and then the oldest (smallest) time of those
-                                (asSecondsAgo model.currentTime
-                                    (Maybe.withDefault ""
-                                        (withinHighestStatFor
-                                            .finalizedBlockHeight
-                                            ""
-                                            model.nodes
-                                            .finalizedTime
-                                        )
-                                    )
-                                )
-                            , widgetNumber blue "Block Height" "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
-                            , widgetNumber green "Finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
-                            , widgetTextSub pink
-                                "Last Block EMA"
-                                "/assets/images/icon-rocket-pink.png"
-                                (averageStatSecondsFor .blockArrivePeriodEMA model.nodes)
-                                (model.nodes
-                                    |> Dict.toList
-                                    |> List.map Tuple.second
-                                    |> List.map .blockArrivePeriodEMA
-                                    |> justs
-                                    |> Trend.Math.stddev
-                                    |> Result.map (Round.round 2)
-                                    |> Result.withDefault "-"
-                                    |> (++) "stddev: "
-                                )
-                            , widgetTextSub pink
-                                "Last Finalization EMA"
-                                "/assets/images/icon-rocket-pink.png"
-                                (averageStatSecondsFor .finalizationPeriodEMA model.nodes)
-                                (model.nodes
-                                    |> Dict.toList
-                                    |> List.map Tuple.second
-                                    |> List.map .blockArrivePeriodEMA
-                                    |> justs
-                                    |> Trend.Math.stddev
-                                    |> Result.map (Round.round 2)
-                                    |> Result.withDefault "-"
-                                    |> (++) "stddev: "
-                                )
-
-                            -- , worldMap
-                            -- , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
-                            ]
+                        , summaryWidgets model
                         , let
                             listNodes =
                                 model.nodes |> Dict.toList |> List.map Tuple.second
@@ -182,8 +143,70 @@ view model =
 
                 NodeView nodeName ->
                     Pages.Graph.view model
+
+                ChainViz ->
+                    [ column [ height fill, width fill ]
+                        [ header
+                        , summaryWidgets model
+                        , Pages.ChainViz.view model
+                        ]
+                    ]
         ]
     }
+
+
+summaryWidgets model =
+    wrappedRow [ spacing 20, width fill ]
+        [ widgetNumber purple "Active Nodes" "/assets/images/icon-nodes-purple.png" (toFloat <| Dict.size <| nodePeersOnly model.nodes)
+        , widgetSeconds blue "Last Block" "/assets/images/icon-lastblock-lightblue.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.bestArrivedTime)) "" model.nodes)
+        , widgetSeconds green
+            "Last finalized block"
+            "/assets/images/icon-blocklastfinal-green.png"
+            -- Take the highest finalised block height and then the oldest (smallest) time of those
+            (asSecondsAgo model.currentTime
+                (Maybe.withDefault ""
+                    (withinHighestStatFor
+                        .finalizedBlockHeight
+                        ""
+                        model.nodes
+                        .finalizedTime
+                    )
+                )
+            )
+        , widgetNumber blue "Chain Len." "/assets/images/icon-blocks-blue.png" (majorityStatFor .bestBlockHeight -1 model.nodes)
+        , widgetNumber green "Finalized Len." "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 model.nodes)
+        , widgetTextSub pink
+            "Last Block EMA"
+            "/assets/images/icon-rocket-pink.png"
+            (averageStatSecondsFor .blockArrivePeriodEMA model.nodes)
+            (model.nodes
+                |> Dict.toList
+                |> List.map Tuple.second
+                |> List.map .blockArrivePeriodEMA
+                |> justs
+                |> Trend.Math.stddev
+                |> Result.map (Round.round 2)
+                |> Result.withDefault "-"
+                |> (++) "stddev: "
+            )
+        , widgetTextSub pink
+            "Last Finalization EMA"
+            "/assets/images/icon-rocket-pink.png"
+            (averageStatSecondsFor .finalizationPeriodEMA model.nodes)
+            (model.nodes
+                |> Dict.toList
+                |> List.map Tuple.second
+                |> List.map .blockArrivePeriodEMA
+                |> justs
+                |> Trend.Math.stddev
+                |> Result.map (Round.round 2)
+                |> Result.withDefault "-"
+                |> (++) "stddev: "
+            )
+
+        -- , worldMap
+        -- , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
+        ]
 
 
 widgetsForWebsite model =
@@ -274,37 +297,38 @@ widgetNumber color title icon value =
         ]
 
 
-widgetNumberChart color title icon value =
-    row [ Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
-        [ column []
-            [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 40), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
-        , column [ spacing 20 ]
-            [ row [ Font.color color ] [ text <| String.toUpper title ]
-            , row [ Font.color color, Font.size 30 ]
-                [ text <|
-                    if value >= 0 then
-                        String.fromFloat value
 
-                    else
-                        "-"
-                ]
-            ]
-        , column [ width (px 200) ]
-            [ html Chart.test ]
-        ]
-
-
-chartTimeseries color title icon value =
-    row [ Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
-        -- @TODO play with this later to finish the chart effect
-        -- Background.gradient { angle = pi, steps = [ rgba255 49 178 239 1, rgba255 0 0 0 0 ] }
-        [ column [ spacing 20 ]
-            [ row [ Font.color color ] [ text <| String.toUpper title ]
-            , row [ Font.color color, Font.size 30 ] [ text <| String.fromFloat value ]
-            ]
-        , column [ width (px 200) ]
-            [ html Chart.test ]
-        ]
+-- widgetNumberChart color title icon value =
+--     row [ Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
+--         [ column []
+--             [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 40), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
+--         , column [ spacing 20 ]
+--             [ row [ Font.color color ] [ text <| String.toUpper title ]
+--             , row [ Font.color color, Font.size 30 ]
+--                 [ text <|
+--                     if value >= 0 then
+--                         String.fromFloat value
+--
+--                     else
+--                         "-"
+--                 ]
+--             ]
+--         , column [ width (px 200) ]
+--             [ html Chart.test ]
+--         ]
+--
+--
+-- chartTimeseries color title icon value =
+--     row [ Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
+--         -- @TODO play with this later to finish the chart effect
+--         -- Background.gradient { angle = pi, steps = [ rgba255 49 178 239 1, rgba255 0 0 0 0 ] }
+--         [ column [ spacing 20 ]
+--             [ row [ Font.color color ] [ text <| String.toUpper title ]
+--             , row [ Font.color color, Font.size 30 ] [ text <| String.fromFloat value ]
+--             ]
+--         , column [ width (px 200) ]
+--             [ html Chart.test ]
+--         ]
 
 
 worldMap =
@@ -556,7 +580,7 @@ update msg model =
             ( { model | nodes = Dict.insert node.nodeId node model.nodes }, Cmd.none )
 
         FetchNodeSummaries _ ->
-            ( model, Http.get { url = "/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
+            ( model, Http.get { url = "https://dashboard.eu.prod.concordium.com/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
 
         FetchedNodeSummaries r ->
             case r of
@@ -616,6 +640,13 @@ update msg model =
         NoopHttp r ->
             ( model, Cmd.none )
 
+        ChainMsg chainMsg ->
+            let
+                ( newChainModel, newChainMsg ) =
+                    Chain.update chainMsg model.chainModel
+            in
+            ( { model | chainModel = newChainModel }, Cmd.map ChainMsg newChainMsg )
+
         Noop ->
             ( model, Cmd.none )
 
@@ -646,11 +677,19 @@ scrollPageToTop =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ nodeInfo NodeInfoReceived
-        , Browser.Events.onResize WindowResized
-        , Time.every 1000 CurrentTime
-        , Time.every 1000 FetchNodeSummaries
-        ]
+        ([ nodeInfo NodeInfoReceived
+         , Browser.Events.onResize WindowResized
+         , Time.every 1000 CurrentTime
+         , Time.every 1000 FetchNodeSummaries
+         ]
+            ++ (case model.currentPage of
+                    ChainViz ->
+                        [ Sub.map ChainMsg <| Chain.subscriptions model.chainModel ]
+
+                    _ ->
+                        []
+               )
+        )
 
 
 main : Program Flags Model Msg
@@ -669,6 +708,7 @@ theme : List (Element msg) -> Html.Html msg
 theme x =
     layout
         [ width fill
+        , height fill
         , padding 20
         , bgDarkGrey
         , Font.color grey
@@ -676,7 +716,7 @@ theme x =
         , Font.size 14
         ]
     <|
-        column [ width fill ]
+        column [ width fill, height fill ]
             x
 
 
