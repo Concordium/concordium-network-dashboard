@@ -16,35 +16,35 @@ import TypesDashboard exposing (..)
 import WidgetsDashboard exposing (..)
 
 
+view : Model -> Element Msg
 view model =
-    [ header
-    , row [ paddingXY 0 20, spacing 20 ]
-        [ column
-            [ height (px 800)
-            , width (px 800)
-            , Background.color moduleGrey
-            , Border.rounded 5
-            , alignTop
-            ]
-            [ --html <| NetworkGraph.agedRelations model model.nodes,
-              row [ spacing 5 ]
-                [ el [ padding 10, onClick (GraphZoom 100) ] (text "Zoom Out")
-                , el [ padding 10, onClick (GraphZoom -100) ] (text "Zoom In")
+    content <|
+        row [ paddingXY 0 20, spacing 20 ]
+            [ column
+                [ height (px 800)
+                , width (px 800)
+                , Background.color moduleGrey
+                , Border.rounded 5
+                , alignTop
                 ]
+                [ --html <| NetworkGraph.agedRelations model model.nodes,
+                  row [ spacing 5 ]
+                    [ el [ padding 10, onClick (GraphZoom 100) ] (text "Zoom Out")
+                    , el [ padding 10, onClick (GraphZoom -100) ] (text "Zoom In")
+                    ]
+                ]
+            , case model.selectedNode of
+                Just node ->
+                    nodeView node model
+
+                Nothing ->
+                    case model.currentPage of
+                        NodeView _ ->
+                            el [ alignTop ] (text "Loading...")
+
+                        _ ->
+                            el [ alignTop ] (text "Click on a node to see an overview")
             ]
-        , case model.selectedNode of
-            Just node ->
-                nodeView node model
-
-            Nothing ->
-                case model.currentPage of
-                    NodeView _ ->
-                        el [ alignTop ] (text "Loading...")
-
-                    _ ->
-                        el [ alignTop ] (text "Click on a node to see an overview")
-        ]
-    ]
 
 
 nodeView node model =
