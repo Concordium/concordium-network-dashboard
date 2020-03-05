@@ -16,7 +16,7 @@ import IntDict
 import Ionicon.Ios
 import RewardGraph exposing (..)
 import RewardGraph.Static exposing (..)
-import SvgWidgets exposing (..)
+import RewardGraph.SvgWidgets exposing (..)
 import Types exposing (..)
 import Widgets exposing (..)
 

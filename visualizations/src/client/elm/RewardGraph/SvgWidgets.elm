@@ -1,4 +1,4 @@
-module SvgWidgets exposing (amountIcon, clock)
+module RewardGraph.SvgWidgets exposing (amountIcon, clock)
 
 import Angle
 import Arc2d exposing (Arc2d)

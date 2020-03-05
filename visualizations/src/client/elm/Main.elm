@@ -6,6 +6,7 @@ import Browser.Dom
 import Browser.Events as Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
+import Colors
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
@@ -14,12 +15,12 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Graph
+import Html exposing (Html)
 import RewardGraph exposing (updateEdgeInterval, updateEdgeValue)
 import Task
 import Time
 import Types exposing (..)
 import Url exposing (Url)
-import Widgets exposing (..)
 
 
 init : Flags -> Url -> Key -> ( Model, Cmd Msg )
@@ -44,6 +45,32 @@ init flags url key =
     ( model
     , Cmd.batch [ onPageInit (pathToPage url) model, Cmd.map ChainMsg chainCmd ]
     )
+
+
+theme : List (Element msg) -> Html.Html msg
+theme x =
+    layoutWith
+        { options =
+            [ focusStyle
+                { borderColor = Nothing
+                , backgroundColor = Nothing
+                , shadow = Nothing
+                }
+            ]
+        }
+        [ width fill
+        , Background.color <| Colors.toUI Colors.background
+        , Font.color <| Colors.toUI Colors.white
+        , Font.size 18
+        , Font.regular
+        , Font.family
+            [ Font.typeface "Poppins"
+            , Font.sansSerif
+            ]
+        ]
+        (column [ width fill, spacing 20 ]
+            x
+        )
 
 
 view : Model -> Browser.Document Msg

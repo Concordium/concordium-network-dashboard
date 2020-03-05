@@ -8,6 +8,11 @@ module Chain.DictTree exposing
     , walkForwardFrom
     )
 
+{-| A Rose Tree data structure with unique labels, used to build
+up a tree from a set of sequences that represent single paths from
+the root.
+-}
+
 import Dict exposing (Dict)
 import Dict.Extra as Dict
 import List.Extra as List
@@ -58,6 +63,10 @@ addConnection a b dtree =
     }
 
 
+{-| Builds an actual tree structure from the Dict. The functions
+for building up the tree are given as parameters so different data strucutres
+can be used as output.
+-}
 buildForward :
     Int
     -> comparable
@@ -148,6 +157,9 @@ walkForwardFrom current maxDepth tree =
     forward 0 (max 0 maxDepth) current tree
 
 
+{-| Builds up a tree that contains a single sequence from
+the given node towards the root.
+-}
 buildBackward :
     Int
     -> comparable

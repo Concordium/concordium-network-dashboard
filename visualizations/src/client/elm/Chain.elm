@@ -95,7 +95,11 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotNodeInfo (Success nodeInfo) ->
-            ( updateChain 3 nodeInfo model, Cmd.none )
+            let
+                depth =
+                    3
+            in
+            ( updateChain depth nodeInfo model, Cmd.none )
 
         GotNodeInfo (Failure error) ->
             ( { model | errors = error :: model.errors }, Cmd.none )
@@ -157,7 +161,7 @@ updateNodes : List Node -> List (List Node) -> List (List Node)
 updateNodes new current =
     if Just new /= List.head current then
         new :: current
-        --|> List.take 3
+        --|> List.take 3 -- @TODO reenable this for production
 
     else
         current
@@ -278,9 +282,8 @@ view model =
                     , selectedBlock = model.blockClicked
                     }
             in
-            column [ width fill, height fill ]
-                [ viewDebugButtons
-                , el
+            column [ width fill, height fill, inFront viewDebugButtons ]
+                [ el
                     [ centerX
                     , centerY
                     , spacing (round spec.gutterHeight)

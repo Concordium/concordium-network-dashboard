@@ -26,7 +26,7 @@ import TypedSvg.Types exposing (..)
 import Vector2d exposing (Vector2d)
 
 
-type alias Context msg =
+type alias ViewSettings msg =
     { gridSpec : GridSpec
     , lastFinalized : ProtoBlock
     , nodes : List Node
@@ -44,7 +44,7 @@ viewDimensions gridSpec vwidth vheight =
             ((+) (gridSpec.outerPadding * 2))
 
 
-viewChain : Context msg -> DrawableChain -> Svg msg
+viewChain : ViewSettings msg -> DrawableChain -> Svg msg
 viewChain { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } chain =
     let
         ( viewWidth, viewHeight ) =
@@ -67,7 +67,7 @@ viewChain { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } chain 
 
 {-| An overlay displaying the last finalized Block, when it would be out of view
 -}
-viewCollapsedBlocksSummary : Context msg -> DrawableChain -> Svg msg
+viewCollapsedBlocksSummary : ViewSettings msg -> DrawableChain -> Svg msg
 viewCollapsedBlocksSummary { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } chain =
     case chain.numCollapsedBlocksX > 0 of
         True ->

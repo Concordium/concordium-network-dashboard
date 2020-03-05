@@ -1,6 +1,5 @@
 module Grid exposing (..)
 
-import Angle
 import Pixels exposing (Pixels, pixels)
 import Point2d exposing (Point2d)
 import Quantity exposing (Quantity)

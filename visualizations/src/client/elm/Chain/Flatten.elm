@@ -1,6 +1,6 @@
 module Chain.Flatten exposing (..)
 
-import Chain.Build exposing (Block, BlockStatus)
+import Chain.Build exposing (Block, BlockStatus(..))
 import Circle2d exposing (Circle2d)
 import Color exposing (Color, rgb)
 import Colors exposing (fromUI, toUI)
@@ -185,13 +185,13 @@ addDrawables gridSpec maybeParent maybeParentBlock ( x, y ) block chain =
 blockColor : BlockStatus -> Color
 blockColor status =
     case status of
-        Chain.Build.Finalized ->
+        Finalized ->
             Colors.green
 
-        Chain.Build.LastFinalized ->
+        LastFinalized ->
             Colors.green
 
-        Chain.Build.Candidate ->
+        Candidate ->
             Colors.blue
 
 
