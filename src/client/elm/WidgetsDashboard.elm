@@ -31,8 +31,8 @@ header =
             }
         , row [ alignRight, spacing 20 ]
             [ link [] { url = "/", label = text "Dashboard" }
-            , link [] { url = "/nodegraph", label = text "Graph" }
             , link [] { url = "/chain", label = text "Chain" }
+            , link [] { url = "/nodegraph", label = text "Graph" }
             ]
         ]
 
