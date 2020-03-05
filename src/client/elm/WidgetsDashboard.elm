@@ -18,15 +18,28 @@ import Time.Extra
 import TypesDashboard exposing (..)
 
 
+header : Element msg
 header =
-    row [ width fill ]
-        [ link [] { url = "/", label = image [ height (px 20) ] { src = "/assets/images/concordium-logo.png", description = "Concordium Logo" } }
+    row [ width fill, height (px 70), paddingXY 30 0 ]
+        [ link []
+            { url = "/"
+            , label =
+                image [ height (px 20) ]
+                    { src = "/assets/images/concordium-logo.png"
+                    , description = "Concordium Logo"
+                    }
+            }
         , row [ alignRight, spacing 20 ]
             [ link [] { url = "/", label = text "Dashboard" }
             , link [] { url = "/chain", label = text "Chain" }
             , link [] { url = "/nodegraph", label = text "Graph" }
             ]
         ]
+
+
+content : Element msg -> Element msg
+content e =
+    el [ paddingXY 30 0 ] e
 
 
 asTimeAgoDuration duration =
@@ -96,8 +109,10 @@ secondsAsText secondsAgo =
     String.concat partsString
 
 
+{-| For the given node attribute, finds majority value across all nodes
+and returns that, or the default if unknown.
+-}
 majorityStatFor getter default nodes =
-    -- For the given node attribute, finds majority value across all nodes and returns that, or the default if unknown
     let
         stats =
             nodes
@@ -132,9 +147,16 @@ majorityStatFor getter default nodes =
             default
 
 
-withinHighestStatFor : (NetworkNode -> Float) -> b -> Dict.Dict String NetworkNode -> (NetworkNode -> Maybe String) -> Maybe String
+{-| For the given node attribute, finds highest value across all
+nodes and returns that, or the default if unknown
+-}
+withinHighestStatFor :
+    (NetworkNode -> Float)
+    -> b
+    -> Dict.Dict String NetworkNode
+    -> (NetworkNode -> Maybe String)
+    -> Maybe String
 withinHighestStatFor getter default nodes withinGetter =
-    -- For the given node attribute, finds highest value across all nodes and returns that, or the default if unknown
     nodes
         |> Dict.toList
         |> List.map Tuple.second
