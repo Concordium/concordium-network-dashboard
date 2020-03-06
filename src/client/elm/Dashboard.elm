@@ -8,6 +8,8 @@ import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
 import ColorsDashboard exposing (..)
+import Dashboard.Formatting exposing (..)
+import Dashboard.Widgets exposing (..)
 import Dict exposing (Dict)
 import Dict.Extra as Dict
 import Element exposing (..)
@@ -37,8 +39,6 @@ import Time.Distance.I18n as I18n
 import Time.Extra
 import TypesDashboard exposing (..)
 import Url exposing (Url)
-import View.SummaryWidgets exposing (..)
-import WidgetsDashboard exposing (..)
 
 
 port hello : String -> Cmd msg
@@ -185,7 +185,12 @@ update msg model =
             ( { model | nodes = Dict.insert node.nodeId node model.nodes }, Cmd.none )
 
         FetchNodeSummaries _ ->
-            ( model, Http.get { url = "https://dashboard.eu.prod.concordium.com/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
+            ( model
+            , Http.get
+                { url = "https://dashboard.eu.prod.concordium.com/nodesSummary"
+                , expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder
+                }
+            )
 
         FetchedNodeSummaries r ->
             case r of
@@ -248,7 +253,7 @@ update msg model =
                     Chain.update chainMsg model.chainModel
             in
             ( { model | chainModel = chainModel }, Cmd.map ChainMsg chainCmd )
-                |> updateOnDispatch (Chain.dispatchMsgs chainMsg { onBlockClicked = BlockSelected })
+                |> triggerOnDispatch (Chain.dispatchMsgs chainMsg { onBlockClicked = BlockSelected })
 
         BlockSelected hash ->
             ( model, Cmd.none )
@@ -260,12 +265,16 @@ update msg model =
             ( model, Cmd.none )
 
 
-updateOnDispatch : Maybe Msg -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
-updateOnDispatch maybeMsg ( currentModel, currentCmd ) =
+triggerOnDispatch : Maybe Msg -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
+triggerOnDispatch maybeMsg ( currentModel, currentCmd ) =
     case maybeMsg of
         Just message ->
-            update message currentModel
-                |> Tuple.mapSecond (\cmd -> Cmd.batch [ currentCmd, cmd ])
+            ( currentModel
+            , Cmd.batch
+                [ currentCmd
+                , Task.perform identity (Task.succeed message)
+                ]
+            )
 
         Nothing ->
             ( currentModel, currentCmd )

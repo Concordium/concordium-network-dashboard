@@ -3,6 +3,8 @@ module Pages.Graph exposing (nodeView, view)
 -- import NetworkGraph
 
 import ColorsDashboard exposing (..)
+import Dashboard.Formatting exposing (..)
+import Dashboard.Widgets exposing (..)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -13,7 +15,6 @@ import Html
 import Html.Attributes exposing (style)
 import NodeHelpers exposing (..)
 import TypesDashboard exposing (..)
-import WidgetsDashboard exposing (..)
 
 
 view : Model -> Element Msg
