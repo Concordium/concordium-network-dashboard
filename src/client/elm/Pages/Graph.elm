@@ -100,7 +100,8 @@ peersListView model peersList =
     column [ width fill ]
         (List.map
             (\peerNodeId ->
-                paragraph [ onClick <| NodeClicked peerNodeId, pointer ] [ text <| "(" ++ nodeTypeById peerNodeId model.nodes ++ ") " ++ peerNodeId ]
+                paragraph [ onClick <| NodeClicked peerNodeId, pointer ]
+                    [ text <| "(" ++ nodeTypeById peerNodeId model.nodes ++ ") " ++ peerNodeId ]
             )
             peersList
         )
