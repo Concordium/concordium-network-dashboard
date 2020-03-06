@@ -7,7 +7,7 @@ import Element.Background as Background
 import Element.Border as Border
 import TypesDashboard exposing (Model, Msg(..))
 import View.SummaryWidgets exposing (summaryWidgets)
-import WidgetsDashboard exposing (content, header)
+import WidgetsDashboard exposing (content)
 
 
 view : Model -> Element Msg
