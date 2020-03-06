@@ -1,4 +1,4 @@
-module Chain exposing (Model, Msg(..), init, subscriptions, update, view)
+module Chain exposing (Model, Msg(..), dispatchMsgs, init, subscriptions, update, view)
 
 import Browser.Events exposing (onAnimationFrameDelta)
 import Chain.Build as Build exposing (..)
