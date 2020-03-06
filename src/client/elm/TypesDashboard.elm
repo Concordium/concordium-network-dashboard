@@ -48,6 +48,7 @@ type Msg
     | DevResetCache
     | NoopHttp (Result Http.Error ())
     | ChainMsg Chain.Msg
+    | BlockSelected String
     | Noop
 
 

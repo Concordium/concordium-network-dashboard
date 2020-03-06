@@ -129,6 +129,25 @@ view model =
     }
 
 
+viewHeader : Element msg
+viewHeader =
+    row [ width fill, height (px 70), paddingXY 30 0 ]
+        [ link []
+            { url = "/"
+            , label =
+                image [ height (px 20) ]
+                    { src = "/assets/images/concordium-logo.png"
+                    , description = "Concordium Logo"
+                    }
+            }
+        , row [ alignRight, spacing 20 ]
+            [ link [] { url = "/", label = text "Dashboard" }
+            , link [] { url = "/chain", label = text "Chain" }
+            , link [] { url = "/nodegraph", label = text "Graph" }
+            ]
+        ]
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -223,18 +242,33 @@ update msg model =
         DevResetCache ->
             ( model, Http.get { url = "/dev/reset", expect = Http.expectWhatever NoopHttp } )
 
+        ChainMsg chainMsg ->
+            let
+                ( chainModel, chainCmd ) =
+                    Chain.update chainMsg model.chainModel
+            in
+            ( { model | chainModel = chainModel }, Cmd.map ChainMsg chainCmd )
+                |> updateOnDispatch (Chain.dispatchMsgs chainMsg { onBlockClicked = BlockSelected })
+
+        BlockSelected hash ->
+            ( model, Cmd.none )
+
         NoopHttp r ->
             ( model, Cmd.none )
 
-        ChainMsg chainMsg ->
-            let
-                ( newChainModel, newChainMsg ) =
-                    Chain.update chainMsg model.chainModel
-            in
-            ( { model | chainModel = newChainModel }, Cmd.map ChainMsg newChainMsg )
-
         Noop ->
             ( model, Cmd.none )
+
+
+updateOnDispatch : Maybe Msg -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
+updateOnDispatch maybeMsg ( currentModel, currentCmd ) =
+    case maybeMsg of
+        Just message ->
+            update message currentModel
+                |> Tuple.mapSecond (\cmd -> Cmd.batch [ currentCmd, cmd ])
+
+        Nothing ->
+            ( currentModel, currentCmd )
 
 
 onPageInit : Page -> Model -> ( Model, Cmd Msg )
