@@ -97,7 +97,7 @@ update msg model =
         GotNodeInfo (Success nodeInfo) ->
             let
                 depth =
-                    3
+                    5
             in
             ( updateChain depth nodeInfo model, Cmd.none )
 
@@ -127,7 +127,16 @@ update msg model =
             in
             case result of
                 Ok history ->
-                    ( { model | replay = Just { past = [], present = [], future = List.reverse history } }, Cmd.none )
+                    ( { model
+                        | replay =
+                            Just
+                                { past = []
+                                , present = []
+                                , future = List.reverse history
+                                }
+                      }
+                    , Cmd.none
+                    )
 
                 Err _ ->
                     ( model, Cmd.none )
@@ -155,6 +164,21 @@ update msg model =
 
         BlockClicked hash ->
             ( { model | blockClicked = Just hash }, Cmd.none )
+
+
+type alias OutputMsgs msg =
+    { onBlockClicked : String -> msg
+    }
+
+
+dispatchMsgs : Msg -> OutputMsgs msg -> Maybe msg
+dispatchMsgs internalMsg outputMsgs =
+    case internalMsg of
+        BlockClicked hash ->
+            Just (outputMsgs.onBlockClicked hash)
+
+        _ ->
+            Nothing
 
 
 updateNodes : List Node -> List (List Node) -> List (List Node)
