@@ -18,25 +18,6 @@ import Time.Extra
 import TypesDashboard exposing (..)
 
 
-header : Element msg
-header =
-    row [ width fill, height (px 70), paddingXY 30 0 ]
-        [ link []
-            { url = "/"
-            , label =
-                image [ height (px 20) ]
-                    { src = "/assets/images/concordium-logo.png"
-                    , description = "Concordium Logo"
-                    }
-            }
-        , row [ alignRight, spacing 20 ]
-            [ link [] { url = "/", label = text "Dashboard" }
-            , link [] { url = "/chain", label = text "Chain" }
-            , link [] { url = "/nodegraph", label = text "Graph" }
-            ]
-        ]
-
-
 content : Element msg -> Element msg
 content e =
     el [ paddingXY 30 0 ] e

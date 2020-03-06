@@ -110,7 +110,7 @@ view model =
     , body =
         [ theme <|
             [ column [ width fill ]
-                [ header
+                [ viewHeader
                 , case model.currentPage of
                     Dashboard ->
                         Pages.Home.view model
