@@ -2,12 +2,11 @@ module Pages.ChainViz exposing (..)
 
 import Chain
 import ColorsDashboard exposing (..)
+import Dashboard.Widgets exposing (content, summaryWidgets)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import TypesDashboard exposing (Model, Msg(..))
-import View.SummaryWidgets exposing (summaryWidgets)
-import WidgetsDashboard exposing (content)
 
 
 view : Model -> Element Msg

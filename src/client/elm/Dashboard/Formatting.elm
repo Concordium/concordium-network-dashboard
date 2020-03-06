@@ -1,4 +1,4 @@
-module WidgetsDashboard exposing (..)
+module Dashboard.Formatting exposing (..)
 
 import ColorsDashboard exposing (..)
 import Dict exposing (Dict)
@@ -16,11 +16,6 @@ import Time.Distance exposing (inWordsWithConfig)
 import Time.Distance.I18n as I18n
 import Time.Extra
 import TypesDashboard exposing (..)
-
-
-content : Element msg -> Element msg
-content e =
-    el [ paddingXY 30 0 ] e
 
 
 asTimeAgoDuration duration =

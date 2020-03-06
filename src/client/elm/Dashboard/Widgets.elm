@@ -1,6 +1,7 @@
-module View.SummaryWidgets exposing (..)
+module Dashboard.Widgets exposing (..)
 
 import ColorsDashboard exposing (..)
+import Dashboard.Formatting exposing (..)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
@@ -11,81 +12,89 @@ import Element.Input as Input
 import Round
 import Trend.Math
 import TypesDashboard exposing (..)
-import WidgetsDashboard exposing (..)
+
+
+content : Element msg -> Element msg
+content e =
+    el [ width fill, height fill, paddingXY 30 0 ] e
 
 
 summaryWidgets : Model -> Element msg
 summaryWidgets model =
-    wrappedRow [ spacing 20, width fill ]
-        [ widgetNumber purple
-            "Active Nodes"
-            "/assets/images/icon-nodes-purple.png"
-            (toFloat <| Dict.size <| nodePeersOnly model.nodes)
-        , widgetSeconds blue
-            "Last Block"
-            "/assets/images/icon-lastblock-lightblue.png"
-            (majorityStatFor
-                (\n ->
-                    asSecondsAgo
-                        model.currentTime
-                        (Maybe.withDefault "" n.bestArrivedTime)
+    column [ spacing 20, width fill ]
+        [ wrappedRow [ spacing 20, width fill ]
+            [ widgetNumber purple
+                "Active Nodes"
+                "/assets/images/icon-nodes-purple.png"
+                (toFloat <| Dict.size <| nodePeersOnly model.nodes)
+            , widgetSeconds blue
+                "Last Block"
+                "/assets/images/icon-lastblock-lightblue.png"
+                (majorityStatFor
+                    (\n ->
+                        asSecondsAgo
+                            model.currentTime
+                            (Maybe.withDefault "" n.bestArrivedTime)
+                    )
+                    ""
+                    model.nodes
                 )
-                ""
-                model.nodes
-            )
-        , widgetSeconds green
-            "Last finalized block"
-            "/assets/images/icon-blocklastfinal-green.png"
-            -- Take the highest finalised block height and then the oldest (smallest) time of those
-            (asSecondsAgo model.currentTime
-                (Maybe.withDefault ""
-                    (withinHighestStatFor
-                        .finalizedBlockHeight
-                        ""
-                        model.nodes
-                        .finalizedTime
+            , widgetSeconds green
+                "Last finalized block"
+                "/assets/images/icon-blocklastfinal-green.png"
+                -- Take the highest finalised block height and then the oldest (smallest) time of those
+                (asSecondsAgo model.currentTime
+                    (Maybe.withDefault ""
+                        (withinHighestStatFor
+                            .finalizedBlockHeight
+                            ""
+                            model.nodes
+                            .finalizedTime
+                        )
                     )
                 )
-            )
-        , widgetNumber blue
-            "Chain Len."
-            "/assets/images/icon-blocks-blue.png"
-            (majorityStatFor .bestBlockHeight -1 model.nodes)
-        , widgetNumber green
-            "Finalized Len."
-            "/assets/images/icon-blocksfinal-green.png"
-            (majorityStatFor .finalizedBlockHeight -1 model.nodes)
-        , widgetTextSub pink
-            "Last Block EMA"
-            "/assets/images/icon-rocket-pink.png"
-            (averageStatSecondsFor .blockArrivePeriodEMA model.nodes)
-            (model.nodes
-                |> Dict.toList
-                |> List.map Tuple.second
-                |> List.map .blockArrivePeriodEMA
-                |> justs
-                |> Trend.Math.stddev
-                |> Result.map (Round.round 2)
-                |> Result.withDefault "-"
-                |> (++) "stddev: "
-            )
-        , widgetTextSub pink
-            "Last Finalization EMA"
-            "/assets/images/icon-rocket-pink.png"
-            (averageStatSecondsFor .finalizationPeriodEMA model.nodes)
-            (model.nodes
-                |> Dict.toList
-                |> List.map Tuple.second
-                |> List.map .blockArrivePeriodEMA
-                |> justs
-                |> Trend.Math.stddev
-                |> Result.map (Round.round 2)
-                |> Result.withDefault "-"
-                |> (++) "stddev: "
-            )
+            , widgetNumber blue
+                "Chain Len."
+                "/assets/images/icon-blocks-blue.png"
+                (majorityStatFor .bestBlockHeight -1 model.nodes)
+            , widgetNumber green
+                "Finalized Len."
+                "/assets/images/icon-blocksfinal-green.png"
+                (majorityStatFor .finalizedBlockHeight -1 model.nodes)
+            ]
+        , wrappedRow [ spacing 20, width fill ]
+            [ widgetTextSub pink
+                "Last Block EMA"
+                "/assets/images/icon-rocket-pink.png"
+                (averageStatSecondsFor .blockArrivePeriodEMA model.nodes)
+                (model.nodes
+                    |> Dict.toList
+                    |> List.map Tuple.second
+                    |> List.map .blockArrivePeriodEMA
+                    |> justs
+                    |> Trend.Math.stddev
+                    |> Result.map (Round.round 2)
+                    |> Result.withDefault "-"
+                    |> (++) "stddev: "
+                )
+            , widgetTextSub pink
+                "Last Finalization EMA"
+                "/assets/images/icon-rocket-pink.png"
+                (averageStatSecondsFor .finalizationPeriodEMA model.nodes)
+                (model.nodes
+                    |> Dict.toList
+                    |> List.map Tuple.second
+                    |> List.map .blockArrivePeriodEMA
+                    |> justs
+                    |> Trend.Math.stddev
+                    |> Result.map (Round.round 2)
+                    |> Result.withDefault "-"
+                    |> (++) "stddev: "
+                )
 
-        -- , worldMap
-        -- , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
+            -- , worldMap
+            -- , chartTimeseries blue "Active Nodes" "/assets/images/icon-blocks-blue.png" (Dict.size model.nodes)
+            ]
         ]
 
 
@@ -135,10 +144,24 @@ widgetsForWebsite model =
 
 widgetText : Color -> String -> String -> String -> Element msg
 widgetText color title icon value =
-    row [ height (px 140), width (fillPortion 1), Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
+    row
+        [ height (px 120)
+        , width (fillPortion 1)
+        , Background.color moduleGrey
+        , padding 20
+        , spacing 20
+        , Border.rounded 5
+        ]
         [ column []
-            [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 35), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
-        , column [ spacing 20 ]
+            [ row
+                [ Background.color darkGrey
+                , Border.rounded 100
+                , height (px 70)
+                , width (px 70)
+                ]
+                [ image [ height (px 35), centerY, centerX ] { src = icon, description = "Decorative icon" } ]
+            ]
+        , column [ spacing 12 ]
             [ row [ Font.color color ] [ text <| String.toUpper title ]
             , row [ Font.color color, Font.size 30 ]
                 [ text value
@@ -149,10 +172,24 @@ widgetText color title icon value =
 
 widgetTextSub : Color -> String -> String -> String -> String -> Element msg
 widgetTextSub color title icon value subvalue =
-    row [ height (px 140), width (fillPortion 1), Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
+    row
+        [ height (px 120)
+        , width (fillPortion 1)
+        , paddingXY 28 20
+        , Background.color moduleGrey
+        , spacing 20
+        , Border.rounded 5
+        ]
         [ column []
-            [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 35), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
-        , column [ spacing 20 ]
+            [ row
+                [ Background.color darkGrey
+                , Border.rounded 100
+                , height (px 70)
+                , width (px 70)
+                ]
+                [ image [ height (px 35), centerY, centerX ] { src = icon, description = "Decorative icon" } ]
+            ]
+        , column [ spacing 12 ]
             [ row [ Font.color color ] [ text <| String.toUpper title ]
             , column [ Font.color color, Font.size 30 ]
                 [ text value
@@ -168,10 +205,26 @@ widgetTextSub color title icon value subvalue =
 
 widgetSeconds : Color -> String -> String -> String -> Element msg
 widgetSeconds color title icon value =
-    row [ height (px 140), width (fillPortion 1), Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
+    row
+        [ height (px 120)
+        , width (fillPortion 1)
+        , Background.color moduleGrey
+        , padding 20
+        , spacing 20
+        , Border.rounded 5
+        ]
         [ column []
-            [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 35), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
-        , column [ spacing 20 ]
+            [ row
+                [ Background.color darkGrey
+                , Border.rounded 100
+                , height (px 70)
+                , width (px 70)
+                ]
+                [ image [ height (px 35), centerY, centerX ]
+                    { src = icon, description = "Decorative icon" }
+                ]
+            ]
+        , column [ spacing 12 ]
             [ row [ Font.color color ] [ text <| String.toUpper title ]
             , row [ Font.color color, Font.size 30 ] [ text <| value ]
             ]
@@ -180,10 +233,26 @@ widgetSeconds color title icon value =
 
 widgetNumber : Color -> String -> String -> Float -> Element msg
 widgetNumber color title icon value =
-    row [ height (px 140), width (fillPortion 1), Background.color moduleGrey, padding 20, spacing 30, Border.rounded 5 ]
+    row
+        [ height (px 120)
+        , width (fillPortion 1)
+        , Background.color moduleGrey
+        , padding 20
+        , spacing 20
+        , Border.rounded 5
+        ]
         [ column []
-            [ row [ Background.color darkGrey, Border.rounded 100, height (px 70), width (px 70) ] [ image [ height (px 35), centerY, centerX ] { src = icon, description = "Decorative icon" } ] ]
-        , column [ spacing 20 ]
+            [ row
+                [ Background.color darkGrey
+                , Border.rounded 100
+                , height (px 70)
+                , width (px 70)
+                ]
+                [ image [ height (px 35), centerY, centerX ]
+                    { src = icon, description = "Decorative icon" }
+                ]
+            ]
+        , column [ spacing 12 ]
             [ row [ Font.color color ] [ text <| String.toUpper title ]
             , row [ Font.color color, Font.size 30 ]
                 [ text <|
@@ -247,7 +316,7 @@ nodesTable model nodes =
         row [ Font.color green ] [ text "Waiting for node statistics..." ]
 
     else
-        Element.table [ spacing 10, Font.color green, alignTop, width fill ]
+        Element.table [ spacing 12, Font.color green, alignTop, width fill ]
             { data = nodes
             , columns =
                 [ { header = sortableHeader model SortName "Name"

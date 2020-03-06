@@ -1,6 +1,8 @@
 module Pages.Home exposing (..)
 
 import ColorsDashboard exposing (..)
+import Dashboard.Formatting exposing (..)
+import Dashboard.Widgets exposing (..)
 import Dict
 import Element exposing (..)
 import Element.Background as Background
@@ -10,8 +12,6 @@ import Element.Font as Font
 import Element.Input as Input
 import List.Extra as List
 import TypesDashboard exposing (..)
-import View.SummaryWidgets exposing (..)
-import WidgetsDashboard exposing (..)
 
 
 view : Model -> Element Msg
