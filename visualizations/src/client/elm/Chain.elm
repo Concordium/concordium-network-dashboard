@@ -95,11 +95,11 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotNodeInfo (Success nodeInfo) ->
-            let
-                depth =
-                    5
-            in
-            ( updateChain depth nodeInfo model, Cmd.none )
+            if Just nodeInfo /= List.head model.nodes then
+                ( updateChain 5 nodeInfo model, Cmd.none )
+
+            else
+                ( model, Cmd.none )
 
         GotNodeInfo (Failure error) ->
             ( { model | errors = error :: model.errors }, Cmd.none )
@@ -248,7 +248,7 @@ updateChain depth nodes model =
                 , transition =
                     let
                         oldDrawableChain =
-                            Transition.value model.transition
+                            model.transition |> Transition.value
                     in
                     Transition.for 800
                         (Interpolate.interpolateDrawableChain oldDrawableChain newDrawableChain)
