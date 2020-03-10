@@ -1,6 +1,7 @@
 module ColorsDashboard exposing (asC, blue, darkGrey, green, grey, lightBlue, lightGrey, moduleGrey, orange, pink, purple, red, rgbac255, white)
 
 import Color
+import Color.Convert exposing (hexToColor)
 import Element
 
 
@@ -23,16 +24,30 @@ asC ec =
     Color.fromRgba ecc
 
 
+fromHex : String -> Element.Color
+fromHex str =
+    case hexToColor str of
+        Ok col ->
+            let
+                x =
+                    Color.toRgba col
+            in
+            Element.rgba x.red x.green x.blue x.alpha
+
+        Err _ ->
+            Element.rgb 255 0 0
+
+
 lightGrey =
     Element.rgb255 140 145 149
 
 
 darkGrey =
-    Element.rgb255 13 19 23
+    fromHex "#0A1117"
 
 
 moduleGrey =
-    Element.rgb255 19 25 32
+    fromHex "#121922"
 
 
 purple =
