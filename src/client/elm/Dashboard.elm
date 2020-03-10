@@ -580,7 +580,7 @@ update msg model =
             ( { model | nodes = Dict.insert node.nodeId node model.nodes }, Cmd.none )
 
         FetchNodeSummaries _ ->
-            ( model, Http.get { url = "https://dashboard.eu.prod.concordium.com/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
+            ( model, Http.get { url = "https://dashboard.eu.test.concordium.com/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
 
         FetchedNodeSummaries r ->
             case r of
