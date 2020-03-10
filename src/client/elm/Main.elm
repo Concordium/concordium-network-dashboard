@@ -19,6 +19,9 @@ import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
+import Explorer
+import Explorer.Request
+import Explorer.View
 import Html exposing (Html)
 import Html.Attributes exposing (style)
 import Http
@@ -104,10 +107,12 @@ init flags url key =
       , selectedNode = Nothing
       , graph = { width = 800, height = 800 }
       , chainModel = chainInit
+      , explorerModel = Explorer.init
       }
     , Cmd.batch
         [ hello "Hello from Elm!"
         , Cmd.map ChainMsg chainCmd
+        , Cmd.map ExplorerMsg <| Explorer.Request.getConsensusStatus Explorer.ReceivedConsensusStatus
         ]
     )
 
@@ -130,7 +135,10 @@ view model =
                         Pages.Graph.view model
 
                     ChainViz ->
-                        Pages.ChainViz.view model
+                        column []
+                            [ Pages.ChainViz.view model
+                            , Explorer.View.view model
+                            ]
                 ]
             ]
         ]
@@ -198,7 +206,7 @@ update msg model =
             ( { model | nodes = RemoteData.map (Dict.insert node.nodeId node) model.nodes }, Cmd.none )
 
         FetchNodeSummaries _ ->
-            ( model, Http.get { url = "https://dashboard.eu.test.concordium.com/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
+            ( model, Http.get { url = "https://dashboard.eu.prod.concordium.com/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
 
         FetchedNodeSummaries r ->
             case r of
@@ -287,6 +295,13 @@ update msg model =
         NoopHttp r ->
             ( model, Cmd.none )
 
+        ExplorerMsg eMsg ->
+            let
+                ( newExplorerModel, newExplorerCmd ) =
+                    Explorer.update eMsg model.explorerModel
+            in
+            ( { model | explorerModel = newExplorerModel }, Cmd.map ExplorerMsg newExplorerCmd )
+
         Noop ->
             ( model, Cmd.none )
 
@@ -343,7 +358,7 @@ subscriptions model =
         ([ nodeInfo NodeInfoReceived
          , Browser.Events.onResize WindowResized
          , Time.every 1000 CurrentTime
-         , Time.every 1000 FetchNodeSummaries
+         , Time.every 5000 FetchNodeSummaries
          ]
             ++ (case model.currentPage of
                     ChainViz ->
@@ -385,3 +400,14 @@ theme palette x =
 markdown : String -> Element msg
 markdown string =
     Element.html <| Markdown.toHtml [] string
+
+
+bgWhite : Attr decorative msg
+bgWhite =
+    Background.color <| white
+
+
+nodePeersOnly : Dict Host NetworkNode -> Dict Host NetworkNode
+nodePeersOnly nodes =
+    -- @TODO remove "" case when new collector is deployed
+    nodes |> Dict.filter (\k n -> n.peerType == "Node" || n.peerType == "")
