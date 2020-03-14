@@ -2,6 +2,7 @@ module Pages.Home exposing (..)
 
 import ColorsDashboard exposing (..)
 import Dashboard.Formatting exposing (..)
+import Dashboard.NodesTable exposing (..)
 import Dashboard.Widgets exposing (..)
 import Dict
 import Element exposing (..)
@@ -18,26 +19,32 @@ view : Model -> Element Msg
 view model =
     content <|
         column [ spacing 30, width fill ]
-            [ summaryWidgets model
-            , let
-                listNodes =
-                    model.nodes |> Dict.toList |> List.map Tuple.second
+            [ summaryWidgets model model.nodes
+            , remoteDataView model.palette
+                (\nodes ->
+                    let
+                        listNodes =
+                            nodes
+                                |> Dict.toList
+                                |> List.map Tuple.second
 
-                sortedNodes =
-                    sortNodesMode model.sortMode listNodes
-              in
-              if model.window.width < 1800 then
-                content <| nodesTable model sortedNodes
+                        sortedNodes =
+                            sortNodesMode model.sortMode listNodes
+                    in
+                    if model.window.width < 1800 then
+                        content <| nodesTable model model.sortMode sortedNodes
 
-              else
-                let
-                    ( nodes1, nodes2 ) =
-                        -- Ceiling so we always end up with longer part of odd-numbered list first
-                        List.splitAt (toFloat (List.length listNodes) / 2 |> ceiling) sortedNodes
-                in
-                row [ spacing 20, width fill ]
-                    [ nodesTable model (sortNodesMode model.sortMode nodes1)
-                    , column [ height fill, width (px 4), Background.color blue ] []
-                    , nodesTable model (sortNodesMode model.sortMode nodes2)
-                    ]
+                    else
+                        let
+                            ( nodes1, nodes2 ) =
+                                -- Ceiling so we always end up with longer part of odd-numbered list first
+                                List.splitAt (toFloat (List.length listNodes) / 2 |> ceiling) sortedNodes
+                        in
+                        row [ spacing 20, width fill ]
+                            [ nodesTable model model.sortMode (sortNodesMode model.sortMode nodes1)
+                            , column [ height fill, width (px 4), Background.color blue ] []
+                            , nodesTable model model.sortMode (sortNodesMode model.sortMode nodes2)
+                            ]
+                )
+                model.nodes
             ]

@@ -10,6 +10,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Iso8601
 import List.Extra as List
+import Palette exposing (Palette)
 import Round
 import Time
 import Time.Distance exposing (inWordsWithConfig)
@@ -18,21 +19,51 @@ import Time.Extra
 import TypesDashboard exposing (..)
 
 
+formatTimeInterval : Int -> String
+formatTimeInterval milliseconds =
+    let
+        wholeDivisionAndRemainder a b =
+            ( a // b, remainderBy b a )
+
+        ( tS, ms ) =
+            wholeDivisionAndRemainder milliseconds 1000
+
+        ( tM, s ) =
+            wholeDivisionAndRemainder tS 60
+
+        ( tH, m ) =
+            wholeDivisionAndRemainder tM 60
+
+        ( tD, h ) =
+            wholeDivisionAndRemainder tH 24
+
+        formatIfNotZero n unit =
+            if n > 0 then
+                String.fromInt n ++ unit
+
+            else
+                ""
+    in
+    formatIfNotZero tD "d"
+        ++ formatIfNotZero h "h"
+        ++ formatIfNotZero m "m"
+        ++ formatIfNotZero s "s"
+
+
+
+--++ formatIfNotZero ms "ms"
+
+
+asTimeAgoDuration : Float -> String
 asTimeAgoDuration duration =
     let
-        point =
-            -- Arbitrary point, doesn't matter we care about figuring out the duration
-            1552573958904
-
-        timePoint =
-            Time.millisToPosix point
-
-        offsetTimePoint =
-            Time.millisToPosix (point - round duration)
+        offset =
+            Time.millisToPosix (-1 * round duration)
     in
-    inWordsWithConfig { withAffix = False } I18n.en offsetTimePoint timePoint
+    inWordsWithConfig { withAffix = False } I18n.en offset (Time.millisToPosix 0)
 
 
+asSecondsAgo : Time.Posix -> String -> String
 asSecondsAgo currentTime targetTime =
     case Iso8601.toTime targetTime of
         Err x ->
@@ -51,6 +82,7 @@ asSecondsAgo currentTime targetTime =
                 secondsAsText secondsAgo
 
 
+secondsAsText : Int -> String
 secondsAsText secondsAgo =
     let
         seconds =
@@ -88,6 +120,11 @@ secondsAsText secondsAgo =
 {-| For the given node attribute, finds majority value across all nodes
 and returns that, or the default if unknown.
 -}
+majorityStatFor :
+    (NetworkNode -> comparable)
+    -> comparable
+    -> Dict Host NetworkNode
+    -> comparable
 majorityStatFor getter default nodes =
     let
         stats =
@@ -163,20 +200,21 @@ averageStatSecondsFor getter nodes =
         Round.round 2 result ++ "s"
 
 
-formatPing averagePing =
+formatPing : Palette Color -> Maybe Float -> Element msg
+formatPing palette averagePing =
     case averagePing of
         Just ping ->
             if ping < 1000 then
                 text <| Round.round 2 ping ++ "ms"
 
             else if ping < 1000 * 60 then
-                el [ Font.color orange ] (text <| Round.round 2 (ping / 1000) ++ "s")
+                el [ Font.color palette.danger ] (text <| Round.round 2 (ping / 1000) ++ "s")
 
             else
-                el [ Font.color red ] (text <| "> 60s")
+                el [ Font.color palette.failure ] (text <| "> 60s")
 
         Nothing ->
-            el [ Font.color red ] (text "n/a")
+            el [ Font.color palette.failure ] (text "n/a")
 
 
 justs =

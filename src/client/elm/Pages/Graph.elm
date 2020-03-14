@@ -5,6 +5,7 @@ module Pages.Graph exposing (nodeView, view)
 import ColorsDashboard exposing (..)
 import Dashboard.Formatting exposing (..)
 import Dashboard.Widgets exposing (..)
+import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -48,6 +49,7 @@ view model =
             ]
 
 
+nodeView : NetworkNode -> Model -> Element Msg
 nodeView node model =
     let
         pairs =
@@ -55,7 +57,7 @@ nodeView node model =
             , ( "nodeId", text node.nodeId )
             , ( "uptime", text <| asTimeAgoDuration node.uptime )
             , ( "client", text node.client )
-            , ( "averagePing", formatPing node.averagePing )
+            , ( "averagePing", formatPing model.palette node.averagePing )
             , ( "peersCount", text <| String.fromFloat node.peersCount )
             , ( "bestBlock", text node.bestBlock )
             , ( "bestBlockHeight", text <| String.fromFloat node.bestBlockHeight )
@@ -69,7 +71,7 @@ nodeView node model =
             , ( "finalizationPeriodEMSD", text <| String.fromFloat <| Maybe.withDefault 0 node.finalizationPeriodEMSD )
             , ( "packetsSent", text <| String.fromFloat node.packetsSent )
             , ( "packetsReceived", text <| String.fromFloat node.packetsReceived )
-            , ( "peersList", peersListView model node.peersList )
+            , ( "peersList", remoteDataView model.palette (\nodes -> peersListView nodes node.peersList) model.nodes )
             ]
 
         statRows =
@@ -97,12 +99,13 @@ forceWrapTextElement t =
             ]
 
 
-peersListView model peersList =
+peersListView : Dict Host NetworkNode -> List String -> Element Msg
+peersListView nodes peersList =
     column [ width fill ]
         (List.map
             (\peerNodeId ->
                 paragraph [ onClick <| NodeClicked peerNodeId, pointer ]
-                    [ text <| "(" ++ nodeTypeById peerNodeId model.nodes ++ ") " ++ peerNodeId ]
+                    [ text <| "(" ++ nodeTypeById peerNodeId nodes ++ ") " ++ peerNodeId ]
             )
             peersList
         )

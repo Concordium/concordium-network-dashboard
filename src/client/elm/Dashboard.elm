@@ -8,6 +8,7 @@ import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
 import ColorsDashboard exposing (..)
+import Context exposing (Context)
 import Dashboard.Formatting exposing (..)
 import Dashboard.Widgets exposing (..)
 import Dict exposing (Dict)
@@ -27,10 +28,15 @@ import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import Json.Encode as E
 import List.Extra as List
 import Markdown
+import Material.Icons.Sharp as Icon
+import Material.Icons.Types exposing (Coloring(..))
+import Maybe.Extra as Maybe
 import NodeHelpers exposing (..)
 import Pages.ChainViz
 import Pages.Graph
 import Pages.Home
+import Palette exposing (Palette)
+import RemoteData exposing (RemoteData(..))
 import String
 import Task
 import Time
@@ -87,12 +93,13 @@ init flags url key =
         ( chainInit, chainCmd ) =
             Chain.init
     in
-    ( { nodes = Dict.empty
-      , currentTime = Time.millisToPosix 0
-      , key = key
-      , currentPage = pathToPage url
-      , sortMode = SortNone
+    ( { key = key
       , window = flags
+      , time = Time.millisToPosix 0
+      , palette = Palette.defaultLight
+      , currentPage = pathToPage url
+      , nodes = Loading
+      , sortMode = SortNone
       , selectedNode = Nothing
       , graph = { width = 800, height = 800 }
       , chainModel = chainInit
@@ -108,9 +115,9 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Concordium Dashboard"
     , body =
-        [ theme <|
+        [ theme model.palette <|
             [ column [ width fill ]
-                [ viewHeader
+                [ viewHeader model
                 , case model.currentPage of
                     Dashboard ->
                         Pages.Home.view model
@@ -129,8 +136,12 @@ view model =
     }
 
 
-viewHeader : Element msg
-viewHeader =
+viewHeader : Context a -> Element Msg
+viewHeader ctx =
+    let
+        linkstyle =
+            [ mouseOver [ Font.color ctx.palette.fg1 ] ]
+    in
     row [ width fill, height (px 70), paddingXY 30 0 ]
         [ link []
             { url = "/"
@@ -140,10 +151,11 @@ viewHeader =
                     , description = "Concordium Logo"
                     }
             }
-        , row [ alignRight, spacing 20 ]
-            [ link [] { url = "/", label = text "Dashboard" }
-            , link [] { url = "/chain", label = text "Chain" }
-            , link [] { url = "/nodegraph", label = text "Graph" }
+        , row [ alignRight, spacing 20, Font.color ctx.palette.fg2 ]
+            [ link linkstyle { url = "/", label = text "Dashboard" }
+            , link linkstyle { url = "/chain", label = text "Chain" }
+            , link linkstyle { url = "/nodegraph", label = text "Graph" }
+            , el [ onClick ToggleDarkMode ] (html <| Icon.brightness_7 16 Inherit)
             ]
         ]
 
@@ -152,7 +164,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         CurrentTime time ->
-            ( { model | currentTime = time }, Cmd.none )
+            ( { model | time = time }, Cmd.none )
 
         UrlClicked urlRequest ->
             case urlRequest of
@@ -182,7 +194,7 @@ update msg model =
             ( { model | window = { width = width, height = height } }, Cmd.none )
 
         NodeInfoReceived node ->
-            ( { model | nodes = Dict.insert node.nodeId node model.nodes }, Cmd.none )
+            ( { model | nodes = RemoteData.map (Dict.insert node.nodeId node) model.nodes }, Cmd.none )
 
         FetchNodeSummaries _ ->
             ( model
@@ -198,11 +210,13 @@ update msg model =
                     let
                         newModel =
                             { model
-                                | nodes = nodes
+                                | nodes = Success nodes
                             }
 
                         nodes =
-                            nodeSummaries |> List.map (\node -> ( node.nodeId, node )) |> Dict.fromList
+                            nodeSummaries
+                                |> List.map (\node -> ( node.nodeId, node ))
+                                |> Dict.fromList
                     in
                     case model.currentPage of
                         NodeView nodeId ->
@@ -239,7 +253,15 @@ update msg model =
             ( { model | sortMode = newSortMode }, Cmd.none )
 
         NodeClicked nodeId ->
-            ( { model | selectedNode = findNodeById nodeId model.nodes }, Cmd.batch [ Nav.pushUrl model.key (pageToPath (NodeView nodeId)), scrollPageToTop ] )
+            ( { model
+                | selectedNode =
+                    model.nodes
+                        |> RemoteData.map (findNodeById nodeId)
+                        |> RemoteData.toMaybe
+                        |> Maybe.join
+              }
+            , Cmd.batch [ Nav.pushUrl model.key (pageToPath (NodeView nodeId)), scrollPageToTop ]
+            )
 
         GraphZoom zoom ->
             ( { model | graph = { width = model.graph.width + zoom, height = model.graph.height + zoom } }, Cmd.none )
@@ -257,6 +279,9 @@ update msg model =
 
         BlockSelected hash ->
             ( model, Cmd.none )
+
+        ToggleDarkMode ->
+            ( { model | palette = Palette.mapPalette Palette.invert model.palette }, Cmd.none )
 
         NoopHttp r ->
             ( model, Cmd.none )
@@ -284,7 +309,15 @@ onPageInit : Page -> Model -> ( Model, Cmd Msg )
 onPageInit page model =
     case page of
         NodeView nodeId ->
-            ( { model | selectedNode = findNodeById nodeId model.nodes }, Cmd.none )
+            ( { model
+                | selectedNode =
+                    model.nodes
+                        |> RemoteData.map (findNodeById nodeId)
+                        |> RemoteData.toMaybe
+                        |> Maybe.join
+              }
+            , Cmd.none
+            )
 
         NodeGraph ->
             ( { model | selectedNode = Nothing }, Cmd.none )
@@ -333,12 +366,12 @@ main =
         }
 
 
-theme : List (Element msg) -> Html.Html msg
-theme x =
+theme : Palette Color -> List (Element msg) -> Html.Html msg
+theme palette x =
     layout
         [ width fill
         , height fill
-        , bgDarkGrey
+        , Background.color <| palette.bg1
         , Font.color grey
         , Font.family [ Font.typeface "IBM Plex Mono" ]
         , Font.size 14
@@ -351,11 +384,6 @@ theme x =
 markdown : String -> Element msg
 markdown string =
     Element.html <| Markdown.toHtml [] string
-
-
-bgDarkGrey : Attr decorative msg
-bgDarkGrey =
-    Background.color <| darkGrey
 
 
 bgWhite : Attr decorative msg
