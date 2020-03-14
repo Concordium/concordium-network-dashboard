@@ -4,18 +4,22 @@ import Browser exposing (..)
 import Browser.Navigation as Nav exposing (Key)
 import Chain
 import Dict exposing (..)
+import Element
 import Http
+import Palette exposing (Palette)
+import RemoteData exposing (WebData)
 import Time
 import Url exposing (Url)
 import Url.Parser exposing (..)
 
 
 type alias Model =
-    { window : { width : Int, height : Int }
-    , currentTime : Time.Posix
-    , key : Key
+    { key : Key
+    , time : Time.Posix
+    , window : { width : Int, height : Int }
+    , palette : Palette Element.Color
     , currentPage : Page
-    , nodes : Dict Host NetworkNode
+    , nodes : WebData (Dict Host NetworkNode)
     , sortMode : SortMode
     , selectedNode : Maybe NetworkNode
     , graph : { width : Float, height : Float }
@@ -49,6 +53,7 @@ type Msg
     | NoopHttp (Result Http.Error ())
     | ChainMsg Chain.Msg
     | BlockSelected String
+    | ToggleDarkMode
     | Noop
 
 
