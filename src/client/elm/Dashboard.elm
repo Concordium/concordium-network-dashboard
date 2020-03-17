@@ -10,6 +10,7 @@ import Chain
 import ColorsDashboard exposing (..)
 import Context exposing (Context)
 import Dashboard.Formatting exposing (..)
+import Dashboard.Logo as Logo
 import Dashboard.Widgets exposing (..)
 import Dict exposing (Dict)
 import Dict.Extra as Dict
@@ -35,7 +36,7 @@ import NodeHelpers exposing (..)
 import Pages.ChainViz
 import Pages.Graph
 import Pages.Home
-import Palette exposing (Palette)
+import Palette exposing (ColorMode(..), Palette)
 import RemoteData exposing (RemoteData(..))
 import String
 import Task
@@ -96,7 +97,8 @@ init flags url key =
     ( { key = key
       , window = flags
       , time = Time.millisToPosix 0
-      , palette = Palette.defaultDark
+      , palette = Palette.defaultLight
+      , colorMode = Light
       , currentPage = pathToPage url
       , nodes = Loading
       , sortMode = SortNone
@@ -146,10 +148,10 @@ viewHeader ctx =
         [ link []
             { url = "/"
             , label =
-                image [ height (px 20) ]
-                    { src = "/assets/images/concordium-logo.png"
-                    , description = "Concordium Logo"
-                    }
+                row [ spacing 12 ]
+                    [ el [] (html <| Logo.concordiumLogo 24 (Palette.uiToColor ctx.palette.c1))
+                    , el [] (html <| Logo.concordiumText 110 (Palette.uiToColor ctx.palette.fg1))
+                    ]
             }
         , row [ alignRight, spacing 20, Font.color ctx.palette.fg2 ]
             [ link linkstyle { url = "/", label = text "Dashboard" }
@@ -281,7 +283,12 @@ update msg model =
             ( model, Cmd.none )
 
         ToggleDarkMode ->
-            ( { model | palette = Palette.mapPalette Palette.invert model.palette }, Cmd.none )
+            case model.colorMode of
+                Dark ->
+                    ( { model | palette = Palette.defaultLight, colorMode = Light }, Cmd.none )
+
+                Light ->
+                    ( { model | palette = Palette.defaultDark, colorMode = Dark }, Cmd.none )
 
         NoopHttp r ->
             ( model, Cmd.none )
