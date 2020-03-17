@@ -58,7 +58,7 @@ asTimeAgoDuration : Float -> String
 asTimeAgoDuration duration =
     let
         offset =
-            Time.millisToPosix (-1 * round duration)
+            Time.millisToPosix (round duration)
     in
     inWordsWithConfig { withAffix = False } I18n.en offset (Time.millisToPosix 0)
 

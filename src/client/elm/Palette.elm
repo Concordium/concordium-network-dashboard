@@ -1,31 +1,22 @@
 module Palette exposing
-    ( Palette
-    , blue
-    , blueishDarkGray
-    , blueishGray
+    ( ColorMode(..)
+    , Palette
     , colorToUI
     , dark
     , darkish
     , defaultDark
     , defaultLight
     , desaturate
-    , green
     , invert
     , light
-    , lightGray
     , lightish
     , mapPalette
-    , midGray
-    , nearWhite
-    , pink
-    , purple
     , toHex
+    , uiToColor
     , uiToHsluv
     , veryDark
     , veryLight
-    , white
     , withAlpha
-    , yellow
     )
 
 import Color exposing (Color, rgb255)
@@ -35,7 +26,11 @@ import Element
 import HSLuv exposing (..)
 import HSLuv.Manipulate exposing (..)
 
-type ColorMode = LightMode | DarkMode
+
+type ColorMode
+    = Light
+    | Dark
+
 
 type alias Palette a =
     { bg1 : a
@@ -82,7 +77,24 @@ defaultDark =
 
 defaultLight : Palette Element.Color
 defaultLight =
-    mapPalette invert defaultDark
+    { bg1 = fromHex "#f8f0e0"
+    , bg2 = white
+    , bg3 = lightBrown
+    , fg1 = fromHex "#181817"
+    , fg2 = darkBrown
+    , fg3 = blueishVeryDarkGray
+    , c1 = darkish lightBlueNew
+    , c2 = brown
+    , c3 = darkish purple
+    , c4 = dark pink
+    , c5 = darkish yellow
+    , success = dark midGray
+    , failure = red
+    , danger = orange
+    , warning = yellow
+    , info = fromHex "#A0A0A0"
+    , deactivated = dark blueishGray
+    }
 
 
 mapPalette : (a -> b) -> Palette a -> Palette b
@@ -107,6 +119,38 @@ mapPalette fn original =
     }
 
 
+
+-- Light
+
+
+brownishLightGray =
+    fromHex ""
+
+
+lightBrown =
+    fromHex "#C0B2A4"
+
+
+brown =
+    fromHex "#8F8479"
+
+
+darkBrown =
+    fromHex "#343231"
+
+
+lightBlueNew =
+    fromHex "#4486AB"
+
+
+mediumBlue =
+    fromHex "#325D76"
+
+
+
+-- DARK
+
+
 blueishBlack =
     fromHex "#0a1117"
 
@@ -121,10 +165,6 @@ green =
 
 pink =
     fromHex "#fa9fff"
-
-
-pink2 =
-    Element.rgb255 255 43 188
 
 
 blue =
@@ -171,12 +211,16 @@ lightGray =
     fromHex "#9999aa"
 
 
-white =
-    fromHex "#ffffff"
-
-
 nearWhite =
     fromHex "#eeeeee"
+
+
+veryLightGray =
+    fromHex "#f7f7f4"
+
+
+white =
+    fromHex "#ffffff"
 
 
 

@@ -6,7 +6,7 @@ import Chain
 import Dict exposing (..)
 import Element
 import Http
-import Palette exposing (Palette)
+import Palette exposing (ColorMode, Palette)
 import RemoteData exposing (WebData)
 import Time
 import Url exposing (Url)
@@ -18,6 +18,7 @@ type alias Model =
     , time : Time.Posix
     , window : { width : Int, height : Int }
     , palette : Palette Element.Color
+    , colorMode : ColorMode
     , currentPage : Page
     , nodes : WebData (Dict Host NetworkNode)
     , sortMode : SortMode
