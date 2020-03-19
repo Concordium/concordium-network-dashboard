@@ -5,6 +5,7 @@ import Chain.Flatten as Flatten exposing (..)
 import Color exposing (Color, rgb)
 import Color.Interpolate exposing (..)
 import Colors exposing (fromUI, toUI)
+import Context exposing (..)
 import CubicSpline2d exposing (fromControlPoints)
 import Geometry.Svg as Svg
 import GeometryUtils exposing (TopLeftCoordinates)
@@ -44,8 +45,8 @@ viewDimensions gridSpec vwidth vheight =
             ((+) (gridSpec.outerPadding * 2))
 
 
-viewChain : ViewSettings msg -> DrawableChain -> Svg msg
-viewChain { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } chain =
+viewChain : Context a -> ViewSettings msg -> DrawableChain -> Svg msg
+viewChain ctx { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } chain =
     let
         ( viewWidth, viewHeight ) =
             viewDimensions gridSpec chain.width chain.height
@@ -67,8 +68,8 @@ viewChain { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } chain 
 
 {-| An overlay displaying the last finalized Block, when it would be out of view
 -}
-viewCollapsedBlocksSummary : ViewSettings msg -> DrawableChain -> Svg msg
-viewCollapsedBlocksSummary { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } chain =
+viewCollapsedBlocksSummary : Context a -> ViewSettings msg -> DrawableChain -> Svg msg
+viewCollapsedBlocksSummary ctx { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } chain =
     case chain.numCollapsedBlocksX > 0 of
         True ->
             let
@@ -77,7 +78,7 @@ viewCollapsedBlocksSummary { gridSpec, lastFinalized, nodes, onBlockClick, selec
 
                 lastFinalizedBlock =
                     { hash = Tuple.second lastFinalized
-                    , color = blockColor Finalized
+                    , color = blockColor ctx.palette Finalized
                     , rect = Grid.cell gridSpec 0 0
                     }
 

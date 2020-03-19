@@ -1,4 +1,4 @@
-module RewardGraph exposing
+module RewardGraph.Graph exposing
     ( CircularNodeDisplay
     , EdgeDisplay
     , EdgeSpec

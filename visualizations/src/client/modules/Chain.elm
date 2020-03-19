@@ -9,6 +9,7 @@ import Chain.View as View
 import Color exposing (..)
 import Color.Interpolate exposing (..)
 import Colors exposing (..)
+import Context exposing (..)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
@@ -91,12 +92,12 @@ type Msg
     | BlockClicked String
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Context a -> Msg -> Model -> ( Model, Cmd Msg )
+update ctx msg model =
     case msg of
         GotNodeInfo (Success nodeInfo) ->
             if Just nodeInfo /= List.head model.nodes then
-                ( updateChain 5 nodeInfo model, Cmd.none )
+                ( updateChain ctx 5 nodeInfo model, Cmd.none )
 
             else
                 ( model, Cmd.none )
@@ -151,7 +152,7 @@ update msg model =
                         steppedReplay =
                             Build.advanceReplay replay
                     in
-                    update
+                    update ctx
                         (GotNodeInfo (Success steppedReplay.present))
                         { model | replay = Just steppedReplay }
 
@@ -191,8 +192,8 @@ updateNodes new current =
         current
 
 
-updateChain : Int -> List Node -> Model -> Model
-updateChain depth nodes model =
+updateChain : Context a -> Int -> List Node -> Model -> Model
+updateChain ctx depth nodes model =
     let
         maybeBestBlock =
             List.map (\node -> ( node.bestBlockHeight, node.bestBlock )) nodes
@@ -237,7 +238,7 @@ updateChain depth nodes model =
                     Tree.label annotatedTree |> .blockHeight
 
                 newDrawableChain =
-                    Flatten.flattenTree model.gridSpec (Tuple.first lastFinalized) 2 annotatedTree
+                    Flatten.flattenTree ctx model.gridSpec (Tuple.first lastFinalized) 2 annotatedTree
             in
             { model
                 | annotatedTree = Just annotatedTree
@@ -284,8 +285,8 @@ subscriptions model =
 -- View
 
 
-view : Model -> Element Msg
-view model =
+view : Context a -> Model -> Bool -> Element Msg
+view ctx model showDebugButtons =
     case model.lastFinalized of
         Just lastFinalized ->
             let
@@ -306,29 +307,34 @@ view model =
                     , selectedBlock = model.blockClicked
                     }
             in
-            column [ width fill, height fill, inFront viewDebugButtons ]
+            column [ width fill, height fill, inFront (viewDebugButtons showDebugButtons) ]
                 [ el
                     [ centerX
                     , centerY
                     , spacing (round spec.gutterHeight)
                     , inFront
                         (el [ alignLeft ]
-                            (html <| View.viewCollapsedBlocksSummary vcontext currentDrawableChain)
+                            (html <| View.viewCollapsedBlocksSummary ctx vcontext currentDrawableChain)
                         )
                     ]
-                    (html <| View.viewChain vcontext currentDrawableChain)
+                    (html <| View.viewChain ctx vcontext currentDrawableChain)
                 ]
 
         Nothing ->
             none
 
 
-viewDebugButtons : Element Msg
-viewDebugButtons =
-    row [ padding 10, spacing 10 ]
-        [ viewButton (Just SaveHistory) "Save History"
-        , viewButton (Just ReplayHistory) "Replay History"
-        ]
+viewDebugButtons : Bool -> Element Msg
+viewDebugButtons show =
+    case show of
+        True ->
+            row [ padding 10, spacing 10 ]
+                [ viewButton (Just SaveHistory) "Save History"
+                , viewButton (Just ReplayHistory) "Replay History"
+                ]
+
+        False ->
+            none
 
 
 viewButton : Maybe msg -> String -> Element msg

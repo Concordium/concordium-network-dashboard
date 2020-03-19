@@ -4,9 +4,12 @@ import Chain.Build exposing (Block, BlockStatus(..))
 import Circle2d exposing (Circle2d)
 import Color exposing (Color, rgb)
 import Colors exposing (fromUI, toUI)
+import Context exposing (Context)
+import Element
 import GeometryUtils exposing (TopLeftCoordinates)
 import Grid exposing (GridSpec)
 import List.Extra as List
+import Palette exposing (Palette)
 import Pixels exposing (Pixels)
 import Point2d exposing (Point2d)
 import Rectangle2d exposing (Rectangle2d)
@@ -55,10 +58,10 @@ type alias DrawableBlockSummaryX =
     }
 
 
-drawableBlock : GridSpec -> Int -> Block -> DrawableBlock
-drawableBlock gridSpec y block =
+drawableBlock : Context a -> GridSpec -> Int -> Block -> DrawableBlock
+drawableBlock ctx gridSpec y block =
     { hash = block.hash
-    , color = blockColor block.status
+    , color = blockColor ctx.palette block.status
     , rect = Grid.cell gridSpec block.blockHeight y
     }
 
@@ -150,15 +153,16 @@ mergeDrawables chainA chainB =
 
 
 addDrawables :
-    GridSpec
+    Context a
+    -> GridSpec
     -> Maybe ( Int, Int )
     -> Maybe Block
     -> ( Int, Int )
     -> Block
     -> DrawableChain
     -> DrawableChain
-addDrawables gridSpec maybeParent maybeParentBlock ( x, y ) block chain =
-    { blocks = drawableBlock gridSpec y block :: chain.blocks
+addDrawables ctx gridSpec maybeParent maybeParentBlock ( x, y ) block chain =
+    { blocks = drawableBlock ctx gridSpec y block :: chain.blocks
     , connectors =
         case ( maybeParent, maybeParentBlock ) of
             ( Just ( xp, yp ), Just parent ) ->
@@ -168,7 +172,7 @@ addDrawables gridSpec maybeParent maybeParentBlock ( x, y ) block chain =
                     block
                     yp
                     y
-                    (blockColor block.status)
+                    (blockColor ctx.palette block.status)
                     :: chain.connectors
 
             _ ->
@@ -182,17 +186,17 @@ addDrawables gridSpec maybeParent maybeParentBlock ( x, y ) block chain =
     }
 
 
-blockColor : BlockStatus -> Color
-blockColor status =
+blockColor : Palette Element.Color -> BlockStatus -> Color
+blockColor palette status =
     case status of
         Finalized ->
-            Colors.green
+            palette.c2 |> fromUI
 
         LastFinalized ->
-            Colors.green
+            palette.c2 |> fromUI
 
         Candidate ->
-            Colors.blue
+            palette.c1 |> fromUI
 
 
 emptyDrawableChain : DrawableChain
@@ -208,9 +212,9 @@ emptyDrawableChain =
     }
 
 
-flattenTree : GridSpec -> Int -> Int -> Tree Block -> DrawableChain
-flattenTree gridSpec lastFinalizedBlockHeight maxNumVertical chain =
-    flattenDepthFirst (Zipper.fromTree chain) gridSpec Nothing Nothing ( 0, 0 )
+flattenTree : Context a -> GridSpec -> Int -> Int -> Tree Block -> DrawableChain
+flattenTree ctx gridSpec lastFinalizedBlockHeight maxNumVertical chain =
+    flattenDepthFirst ctx (Zipper.fromTree chain) gridSpec Nothing Nothing ( 0, 0 )
         |> (\{ blocks, connectors, nodes, width, height } ->
                 let
                     firstBlockHeight =
@@ -236,13 +240,14 @@ flattenTree gridSpec lastFinalizedBlockHeight maxNumVertical chain =
 
 
 flattenDepthFirst :
-    Zipper Block
+    Context a
+    -> Zipper Block
     -> GridSpec
     -> Maybe ( Int, Int )
     -> Maybe Block
     -> ( Int, Int )
     -> DrawableChain
-flattenDepthFirst zipper gridSpec parentCoords parentBlock ( x, y ) =
+flattenDepthFirst ctx zipper gridSpec parentCoords parentBlock ( x, y ) =
     let
         block =
             Zipper.label zipper
@@ -253,16 +258,16 @@ flattenDepthFirst zipper gridSpec parentCoords parentBlock ( x, y ) =
     (case ( Zipper.firstChild zipper, Zipper.nextSibling zipper ) of
         ( Just child, Just sibling ) ->
             mergeDrawables
-                (flattenDepthFirst child gridSpec current (Just block) ( x + 1, y ))
-                (flattenDepthFirst sibling gridSpec parentCoords parentBlock ( x, y + block.forkWidth ))
+                (flattenDepthFirst ctx child gridSpec current (Just block) ( x + 1, y ))
+                (flattenDepthFirst ctx sibling gridSpec parentCoords parentBlock ( x, y + block.forkWidth ))
 
         ( Just child, Nothing ) ->
-            flattenDepthFirst child gridSpec current (Just block) ( x + 1, y )
+            flattenDepthFirst ctx child gridSpec current (Just block) ( x + 1, y )
 
         ( Nothing, Just sibling ) ->
-            flattenDepthFirst sibling gridSpec parentCoords parentBlock ( x, y + block.forkWidth )
+            flattenDepthFirst ctx sibling gridSpec parentCoords parentBlock ( x, y + block.forkWidth )
 
         ( Nothing, Nothing ) ->
             emptyDrawableChain
     )
-        |> addDrawables gridSpec parentCoords parentBlock ( x, y ) (Zipper.label zipper)
+        |> addDrawables ctx gridSpec parentCoords parentBlock ( x, y ) (Zipper.label zipper)

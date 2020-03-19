@@ -14,13 +14,44 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
-import Graph
+import Graph exposing (Graph)
 import Html exposing (Html)
-import RewardGraph exposing (updateEdgeInterval, updateEdgeValue)
+import Page exposing (..)
+import Palette exposing (..)
+import RewardGraph exposing (..)
 import Task
-import Time
-import Types exposing (..)
+import Time exposing (Posix)
 import Url exposing (Url)
+
+
+type alias Flags =
+    { width : Int, height : Int }
+
+
+type alias Window =
+    { width : Int, height : Int }
+
+
+type alias Model =
+    { currentTime : Time.Posix
+    , window : Window
+    , key : Key
+    , palette : Palette Color
+    , time : Posix
+    , currentPage : Page
+    , chainModel : Chain.Model
+    }
+
+
+type Msg
+    = CurrentTime Time.Posix
+    | UrlClicked UrlRequest
+    | UrlChanged Url
+    | OpenPage Page
+    | OpenUrl String
+    | WindowResized Int Int
+    | ChainMsg Chain.Msg
+    | Noop
 
 
 init : Flags -> Url -> Key -> ( Model, Cmd Msg )
@@ -33,12 +64,9 @@ init flags url key =
             { currentTime = Time.millisToPosix 0
             , window = flags
             , key = key
+            , palette = Palette.defaultDark
+            , time = Time.millisToPosix 0
             , currentPage = pathToPage url
-            , graph = RewardGraph.init
-            , selectedNode = Nothing
-            , clock = 0
-            , transfer = animation 0 |> duration 0.7
-            , ticks = 0
             , chainModel = chainModel
             }
     in
@@ -84,7 +112,7 @@ view model =
                         [ width fill
                         , height (px model.window.height)
                         ]
-                        (Chain.view model.chainModel)
+                        (Chain.view model model.chainModel True)
                         |> Element.map ChainMsg
                     ]
         ]
@@ -124,9 +152,6 @@ update msg model =
         WindowResized width height ->
             ( { model | window = { width = width, height = height } }, Cmd.none )
 
-        NodeHovered maybeNodeId ->
-            ( { model | selectedNode = maybeNodeId }, Cmd.none )
-
         CurrentTime time ->
             ( { model
                 | currentTime = time
@@ -134,56 +159,10 @@ update msg model =
             , Cmd.none
             )
 
-        Tick timeDelta ->
-            let
-                animatedGraph =
-                    Graph.mapEdges
-                        (\edge ->
-                            let
-                                updatedAnimation =
-                                    if isDone model.clock edge.animation then
-                                        animation model.clock
-                                            |> duration (RewardGraph.millisecondsFromInterval edge.interval)
-
-                                    else
-                                        edge.animation
-                            in
-                            { edge
-                                | animationValue = animate model.clock edge.animation
-                                , animation = updatedAnimation
-                            }
-                        )
-                        model.graph
-
-                updatedGraph =
-                    animatedGraph |> RewardGraph.tick model.ticks
-            in
-            ( { model
-                | clock = model.clock + timeDelta
-                , ticks = model.ticks + 1
-                , graph = updatedGraph
-              }
-            , Cmd.none
-            )
-
-        EdgeValueChanged originId targetId valueString ->
-            let
-                updatedGraph =
-                    updateEdgeValue originId targetId valueString model.graph
-            in
-            ( { model | graph = updatedGraph }, Cmd.none )
-
-        EdgeIntervalChanged originId targetId intervalString ->
-            let
-                updatedGraph =
-                    updateEdgeInterval originId targetId intervalString model.graph
-            in
-            ( { model | graph = updatedGraph }, Cmd.none )
-
         ChainMsg chainMsg ->
             let
                 ( subModel, subCmd ) =
-                    Chain.update chainMsg model.chainModel
+                    Chain.update model chainMsg model.chainModel
             in
             ( { model | chainModel = subModel }, Cmd.map ChainMsg subCmd )
 

@@ -9,7 +9,7 @@ import Rectangle2d exposing (Rectangle2d)
 
 gridSize =
     15
-
+ 
 
 offset : Float -> Float
 offset o =

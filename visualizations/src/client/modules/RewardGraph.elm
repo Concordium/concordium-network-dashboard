@@ -1,9 +1,12 @@
-module RewardGraph.Static exposing (view, viewEdges, viewNodes)
+module RewardGraph exposing (view, viewEdges, viewNodes)
 
+import Angle
+import Animation exposing (Animation, animation, duration)
 import Arc2d exposing (sweptAngle)
 import Color exposing (Color)
 import Color.Interpolate as Interpolate exposing (interpolate)
 import Colors
+import Context exposing (..)
 import Direction2d exposing (Direction2d)
 import Element exposing (paddingXY)
 import EllipticalArc2d exposing (startAngle)
@@ -12,15 +15,40 @@ import Geometry.Svg as Svg
 import Graph exposing (Edge, Graph, Node, nodes)
 import Html.Attributes exposing (selected)
 import LineSegment2d exposing (LineSegment2d)
+import Pixels exposing (Pixels)
 import Point2d exposing (Point2d)
 import Polyline2d exposing (Polyline2d)
-import RewardGraph exposing (..)
+import Quantity
+import RewardGraph.Graph exposing (..)
 import Svg exposing (Svg)
 import TypedSvg exposing (..)
 import TypedSvg.Attributes exposing (..)
 import TypedSvg.Events exposing (onClick, onMouseOut, onMouseOver)
 import TypedSvg.Types exposing (..)
-import Types exposing (Msg(..), Window)
+
+
+type alias Model =
+    { graph : Graph NodeSpec EdgeSpec
+    , selectedNode : Maybe Int
+    , clock : Float
+    , transfer : Animation
+    , ticks : Int
+    }
+
+
+init : Model
+init =
+    { graph = RewardGraph.Graph.init
+    , selectedNode = Nothing
+    , clock = 0
+    , transfer = animation 0 |> duration 0.7
+    , ticks = 0
+    }
+
+
+
+-- THIS NEES SOME UPDATES:
+-- Updated elm-geometry, move messages into module with own update function and model
 
 
 view : Window -> Maybe Int -> Graph NodeSpec EdgeSpec -> Svg Msg
@@ -94,7 +122,7 @@ viewRectangularNode current selected label value display =
             , ry (px 6)
             , width (percent 100)
             , height (percent 100)
-            , fill <| Fill (nodeFill current selected display.color Colors.nodeBackground)
+            , fill <| Paint (nodeFill current selected display.color Colors.nodeBackground)
             ]
             []
         , rect
@@ -102,7 +130,7 @@ viewRectangularNode current selected label value display =
             , y (px (display.height - padding - valueDisplayHeight))
             , width (px 4)
             , height (px valueDisplayHeight)
-            , fill <| Fill (interpolate Interpolate.LAB display.color Colors.nodeBackground 0.5)
+            , fill <| Paint (interpolate Interpolate.LAB display.color Colors.nodeBackground 0.5)
             ]
             []
         , viewTextLines label display.color 24 0 16
@@ -129,10 +157,10 @@ viewCircularNode current selected label value display =
 
         valueArc =
             Arc2d.with
-                { centerPoint = Point2d.fromCoordinates ( display.radius, display.radius )
-                , radius = display.radius - padding
-                , startAngle = degrees 160
-                , sweptAngle = degrees valueDisplayHeight
+                { centerPoint = Point2d.pixels display.radius display.radius
+                , radius = Pixels.pixels (display.radius - padding)
+                , startAngle = Angle.degrees 160
+                , sweptAngle = Angle.degrees valueDisplayHeight
                 }
     in
     svg
@@ -147,7 +175,7 @@ viewCircularNode current selected label value display =
             [ cx (percent 50)
             , cy (percent 50)
             , r (px display.radius)
-            , fill <| Fill (nodeFill current selected display.color Colors.nodeBackground)
+            , fill <| Paint (nodeFill current selected display.color Colors.nodeBackground)
             ]
             []
         , image
@@ -161,9 +189,9 @@ viewCircularNode current selected label value display =
             []
         , viewTextLines label display.color 24 30 16
         , Svg.arc2d
-            [ stroke (interpolate Interpolate.LAB display.color Colors.nodeBackground 0.5)
+            [ stroke (Paint (interpolate Interpolate.LAB display.color Colors.nodeBackground 0.5))
             , strokeWidth (px 4)
-            , fill <| FillNone
+            , fill <| PaintNone
             ]
             valueArc
         ]
@@ -200,7 +228,7 @@ viewTextLines lines color lineHeight baseOffset textSize =
                     , dy (px (offset + toFloat index * lineHeight))
                     , textAnchor AnchorMiddle
                     , alignmentBaseline AlignmentCentral
-                    , fill <| Fill color
+                    , fill <| Paint color
                     , fontSize (px textSize)
                     ]
                     [ Svg.text line ]
@@ -213,7 +241,7 @@ viewTextLines lines color lineHeight baseOffset textSize =
 -- EDGES
 
 
-viewEdges : Maybe Int -> Graph NodeSpec EdgeSpec -> Svg Msg
+viewEdges : Maybe Int -> Graph NodeSpec EdgeSpec -> Svg msg
 viewEdges selected graph =
     svg [ width (px 1024), height (px 768), viewBox 0 0 1024 768 ]
         (List.map
@@ -237,11 +265,11 @@ viewEdges selected graph =
         )
 
 
-viewEdge : Maybe Int -> Edge EdgeSpec -> Node NodeSpec -> Node NodeSpec -> List (Svg Msg)
+viewEdge : Maybe Int -> Edge EdgeSpec -> Node NodeSpec -> Node NodeSpec -> List (Svg msg)
 viewEdge selected edge fromNode toNode =
     let
         baseColor =
-            RewardGraph.nodeColor fromNode.label
+            RewardGraph.Graph.nodeColor fromNode.label
 
         isSelected =
             Maybe.withDefault -1 selected == fromNode.id
@@ -289,26 +317,26 @@ viewEdge selected edge fromNode toNode =
                 []
     in
     [ Svg.polyline2d
-        [ stroke trackColor
+        [ stroke (Paint trackColor)
         , strokeWidth (px 2)
-        , fill <| FillNone
+        , fill <| PaintNone
         , strokeDasharray "4 2"
         , strokeDashoffset (String.fromFloat <| -24 * edge.label.animationValue)
         ]
         polyline
     , Svg.polyline2d
-        [ stroke transferColor
+        [ stroke (Paint transferColor)
         , strokeWidth (px 4)
-        , fill <| FillNone
+        , fill <| PaintNone
         , strokeDasharray
             (String.fromFloat dashLength
                 ++ " "
-                ++ String.fromFloat (lineLength + dashLength)
+                ++ String.fromFloat (Pixels.inPixels lineLength + dashLength)
             )
         , strokeDashoffset
             (((dashLength + 10)
                 + (1 - edge.label.animationValue)
-                * (lineLength + dashLength)
+                * (Pixels.inPixels lineLength + dashLength)
              )
                 |> String.fromFloat
             )
@@ -320,7 +348,7 @@ viewEdge selected edge fromNode toNode =
 
 {-| Finds the longest segment of a polyline and places a label next to it
 -}
-viewEdgeLabel : EdgeSpec -> Color -> Polyline2d -> Svg msg
+viewEdgeLabel : EdgeSpec -> Color -> Polyline2d Pixels coords -> Svg msg
 viewEdgeLabel edge color edgeLine =
     let
         display =
@@ -352,10 +380,10 @@ viewEdgeLabel edge color edgeLine =
     Maybe.withDefault
         (svg [] [])
         (Maybe.map
-            (\( posX, posY ) ->
+            (\point ->
                 svg
-                    [ x (px <| posX - 100 + offX)
-                    , y (px <| posY - 100 + offY)
+                    [ x (px <| point.x - 100 + offX)
+                    , y (px <| point.y - 100 + offY)
                     , width (px 200)
                     , height (px 200)
                     ]
@@ -363,7 +391,7 @@ viewEdgeLabel edge color edgeLine =
                         [ viewTextLines edge.label color 24 0 12 ]
                     ]
             )
-            (Maybe.map Point2d.coordinates position)
+            (Maybe.map Point2d.toPixels position)
         )
 
 
@@ -377,11 +405,14 @@ fallbackIfEmpty fallback list =
             list
 
 
-pointAndDirectionAt : Polyline2d -> Float -> ( Maybe Point2d, Maybe Direction2d )
+pointAndDirectionAt :
+    Polyline2d Pixels coords
+    -> Float
+    -> ( Maybe (Point2d Pixels coords), Maybe (Direction2d coords) )
 pointAndDirectionAt polyline position =
     let
         length =
-            Polyline2d.length polyline
+            Polyline2d.length polyline |> Pixels.inPixels
 
         toTravel =
             if position == 0 then
@@ -398,7 +429,7 @@ pointAndDirectionAt polyline position =
                 seg :: rest ->
                     let
                         segLength =
-                            LineSegment2d.length seg
+                            LineSegment2d.length seg |> Pixels.inPixels
                     in
                     if distance > segLength then
                         step rest (distance - segLength)
@@ -409,3 +440,67 @@ pointAndDirectionAt polyline position =
                         )
     in
     step (Polyline2d.segments polyline) toTravel
+
+
+
+-- UPDATE
+
+
+type Msg
+    = NodeHovered (Maybe Int)
+    | EdgeValueChanged Int Int String
+    | EdgeIntervalChanged Int Int String
+    | Tick Float
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        EdgeValueChanged originId targetId valueString ->
+            let
+                updatedGraph =
+                    updateEdgeValue originId targetId valueString model.graph
+            in
+            ( { model | graph = updatedGraph }, Cmd.none )
+
+        EdgeIntervalChanged originId targetId intervalString ->
+            let
+                updatedGraph =
+                    updateEdgeInterval originId targetId intervalString model.graph
+            in
+            ( { model | graph = updatedGraph }, Cmd.none )
+
+        NodeHovered _ ->
+            ( model, Cmd.none )
+
+        Tick timeDelta ->
+            let
+                animatedGraph =
+                    Graph.mapEdges
+                        (\edge ->
+                            let
+                                updatedAnimation =
+                                    if Animation.isDone model.clock edge.animation then
+                                        animation model.clock
+                                            |> duration (RewardGraph.Graph.millisecondsFromInterval edge.interval)
+
+                                    else
+                                        edge.animation
+                            in
+                            { edge
+                                | animationValue = Animation.animate model.clock edge.animation
+                                , animation = updatedAnimation
+                            }
+                        )
+                        model.graph
+
+                updatedGraph =
+                    animatedGraph |> RewardGraph.Graph.tick model.ticks
+            in
+            ( { model
+                | clock = model.clock + timeDelta
+                , ticks = model.ticks + 1
+                , graph = updatedGraph
+              }
+            , Cmd.none
+            )
