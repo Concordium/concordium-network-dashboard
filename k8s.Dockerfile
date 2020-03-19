@@ -19,6 +19,7 @@ RUN npm run build
 FROM nginx:alpine
 
 COPY --from=build /home/node/app/dist/public /usr/share/nginx/html/
+RUN sed -i 's/index.*$/try_files \$uri \/index.html =404;/g' /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
