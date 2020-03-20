@@ -33,7 +33,7 @@ view ({ explorerModel } as ctx) =
 
 viewBlockLoaded : Context a -> BlockInfo -> BlockSummary -> Element Msg
 viewBlockLoaded ctx blockInfo blockSummary =
-    column [ width fill, padding 30, spacing 10 ]
+    column [ width fill, spacing 10 ]
         [ row [ width fill, spacing 10 ]
             [ paragraph
                 [ Background.color ctx.palette.bg2
