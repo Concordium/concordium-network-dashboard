@@ -8,7 +8,6 @@ import Chain.Interpolate as Interpolate
 import Chain.View as View
 import Color exposing (..)
 import Color.Interpolate exposing (..)
-import Colors exposing (..)
 import Context exposing (..)
 import Dict exposing (Dict)
 import Element exposing (..)
