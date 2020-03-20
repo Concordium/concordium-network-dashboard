@@ -17,4 +17,5 @@ type alias Context a =
         , time : Posix
         , window : Window
         , palette : Palette Color
+        , colorMode : Palette.ColorMode
     }

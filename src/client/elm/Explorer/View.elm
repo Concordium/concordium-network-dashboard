@@ -31,9 +31,9 @@ view { explorerModel } =
             viewBlockLoaded blockInfoStub_ summary
 
 
-viewBlockLoaded : BlockInfo -> BlockSummary -> Element Msg
-viewBlockLoaded blockInfo blockSummary =
-    column [ width fill, padding 30, spacing 10 ]
+viewBlockLoaded : Context a -> BlockInfo -> BlockSummary -> Element Msg
+viewBlockLoaded ctx blockInfo blockSummary =
+    column [ width fill, spacing 10 ]
         [ row [ width fill, spacing 10 ]
             [ paragraph
                 [ Background.color moduleGrey
