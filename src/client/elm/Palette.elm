@@ -89,7 +89,7 @@ defaultLight =
     , c3 = darkish purple
     , c4 = dark pink
     , c5 = darkish yellow
-    , success = dark midGray
+    , success = fromHex "#33A61E"
     , failure = red
     , danger = orange
     , warning = yellow
@@ -193,7 +193,7 @@ orange =
 
 
 blueishLightGray =
-    fromHex "#687181"
+    fromHex "#646C78"
 
 
 blueishDarkGray =
@@ -213,7 +213,7 @@ lightGray =
 
 
 nearWhite =
-    fromHex "#eeeeee"
+    fromHex "#dddddd"
 
 
 veryLightGray =

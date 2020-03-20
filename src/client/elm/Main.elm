@@ -406,7 +406,7 @@ theme palette elements =
         [ width fill
         , height fill
         , Background.color <| palette.bg1
-        , Font.color palette.fg1
+        , Font.color palette.fg2
         , Font.family [ Font.typeface "IBM Plex Mono" ]
         , Font.size 14
         ]
