@@ -1,13 +1,13 @@
-import { Elm } from "./elm/Dashboard"
+import { Elm } from "./elm/Main"
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
 
   const layoutViewportSize = () => ({
-		width: document.documentElement.clientWidth,
-		height: document.documentElement.clientHeight
-	})
+    width: document.documentElement.clientWidth,
+    height: document.documentElement.clientHeight
+  })
 
-  let app = Elm.Dashboard.init({
+  let app = Elm.Main.init({
     flags: layoutViewportSize()
   })
 

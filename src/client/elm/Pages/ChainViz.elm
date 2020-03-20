@@ -1,25 +1,24 @@
 module Pages.ChainViz exposing (..)
 
 import Chain
-import ColorsDashboard exposing (..)
-import Dashboard.Widgets exposing (content, remoteDataView, summaryWidgets)
+import Dashboard.Widgets exposing (content, remoteDataView, viewSummaryWidgets)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import TypesDashboard exposing (Model, Msg(..))
+import Types exposing (Model, Msg(..))
 
 
 view : Model -> Element Msg
 view model =
     content <|
         column [ width fill, spacing 20 ]
-            [ summaryWidgets model model.nodes
+            [ viewSummaryWidgets model model.nodes
             , el
                 [ width fill
-                , Border.color <| moduleGrey
+                , Border.color <| model.palette.bg2
                 , Border.rounded 4
                 , Border.width 2
                 ]
-                (Chain.view model.chainModel)
+                (Chain.view model model.chainModel False)
                 |> Element.map ChainMsg
             ]

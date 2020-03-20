@@ -16,7 +16,8 @@ module Palette exposing
     , uiToHsluv
     , veryDark
     , veryLight
-    , withAlpha
+    , withAlphaCo
+    , withAlphaEl
     )
 
 import Color exposing (Color, rgb255)
@@ -263,13 +264,22 @@ uiToHsluv =
 -- Modification
 
 
-withAlpha : Float -> Element.Color -> Element.Color
-withAlpha alpha color =
+withAlphaEl : Float -> Element.Color -> Element.Color
+withAlphaEl alpha color =
     let
         crgb =
             Element.toRgb color
     in
     Element.fromRgb { crgb | alpha = alpha }
+
+
+withAlphaCo : Float -> Color -> Color
+withAlphaCo alpha color =
+    let
+        colorRgba =
+            Color.toRgba color
+    in
+    Color.fromRgba { colorRgba | alpha = alpha }
 
 
 apply : (HSLuv -> HSLuv) -> Element.Color -> Element.Color

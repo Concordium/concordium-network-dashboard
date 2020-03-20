@@ -1,4 +1,4 @@
-port module Dashboard exposing (..)
+port module Main exposing (..)
 
 -- import Chart
 
@@ -7,7 +7,6 @@ import Browser.Dom
 import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
-import ColorsDashboard exposing (..)
 import Context exposing (Context)
 import Dashboard.Formatting exposing (..)
 import Dashboard.Logo as Logo
@@ -44,7 +43,7 @@ import Time
 import Time.Distance exposing (inWordsWithConfig)
 import Time.Distance.I18n as I18n
 import Time.Extra
-import TypesDashboard exposing (..)
+import Types exposing (..)
 import Url exposing (Url)
 
 
@@ -274,7 +273,7 @@ update msg model =
         ChainMsg chainMsg ->
             let
                 ( chainModel, chainCmd ) =
-                    Chain.update chainMsg model.chainModel
+                    Chain.update model chainMsg model.chainModel
             in
             ( { model | chainModel = chainModel }, Cmd.map ChainMsg chainCmd )
                 |> triggerOnDispatch (Chain.dispatchMsgs chainMsg { onBlockClicked = BlockSelected })
@@ -379,7 +378,7 @@ theme palette x =
         [ width fill
         , height fill
         , Background.color <| palette.bg1
-        , Font.color grey
+        , Font.color palette.fg1
         , Font.family [ Font.typeface "IBM Plex Mono" ]
         , Font.size 14
         ]
@@ -391,8 +390,3 @@ theme palette x =
 markdown : String -> Element msg
 markdown string =
     Element.html <| Markdown.toHtml [] string
-
-
-bgWhite : Attr decorative msg
-bgWhite =
-    Background.color <| white

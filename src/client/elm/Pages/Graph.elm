@@ -2,7 +2,6 @@ module Pages.Graph exposing (nodeView, view)
 
 -- import NetworkGraph
 
-import ColorsDashboard exposing (..)
 import Dashboard.Formatting exposing (..)
 import Dashboard.Widgets exposing (..)
 import Dict exposing (Dict)
@@ -15,7 +14,7 @@ import Element.Input as Input
 import Html
 import Html.Attributes exposing (style)
 import NodeHelpers exposing (..)
-import TypesDashboard exposing (..)
+import Types exposing (..)
 
 
 view : Model -> Element Msg
@@ -25,7 +24,7 @@ view model =
             [ column
                 [ height (px 800)
                 , width (px 800)
-                , Background.color moduleGrey
+                , Background.color model.palette.bg2
                 , Border.rounded 5
                 , alignTop
                 ]
@@ -79,12 +78,12 @@ nodeView node model =
                 |> List.map
                     (\( label, elem ) ->
                         row [ height (shrink |> minimum 30) ]
-                            [ column [ width (px 170), Font.color lightGrey ] [ text label ]
+                            [ column [ width (px 170), Font.color model.palette.fg1 ] [ text label ]
                             , column [ width fill ] [ elem ]
                             ]
                     )
     in
-    column [ Font.color green, alignTop ]
+    column [ Font.color model.palette.success, alignTop ]
         statRows
 
 

@@ -1,6 +1,5 @@
 module Pages.Home exposing (..)
 
-import ColorsDashboard exposing (..)
 import Dashboard.Formatting exposing (..)
 import Dashboard.NodesTable exposing (..)
 import Dashboard.Widgets exposing (..)
@@ -12,14 +11,14 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import List.Extra as List
-import TypesDashboard exposing (..)
+import Types exposing (..)
 
 
 view : Model -> Element Msg
 view model =
     content <|
         column [ spacing 30, width fill ]
-            [ summaryWidgets model model.nodes
+            [ viewSummaryWidgets model model.nodes
             , remoteDataView model.palette
                 (\nodes ->
                     let
@@ -42,7 +41,7 @@ view model =
                         in
                         row [ spacing 20, width fill ]
                             [ nodesTable model model.sortMode (sortNodesMode model.sortMode nodes1)
-                            , column [ height fill, width (px 4), Background.color blue ] []
+                            , column [ height fill, width (px 4), Background.color model.palette.bg1 ] []
                             , nodesTable model model.sortMode (sortNodesMode model.sortMode nodes2)
                             ]
                 )
