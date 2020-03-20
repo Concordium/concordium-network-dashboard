@@ -4,6 +4,7 @@ module Palette exposing
     , colorToUI
     , defaultDark
     , defaultLight
+    , fadeWithoutAlpha
     , mapPalette
     , toHex
     , uiToColor
@@ -12,7 +13,7 @@ module Palette exposing
 
 import Color exposing (Color, rgb255)
 import Color.Convert exposing (colorToHex, hexToColor)
-import Color.Interpolate exposing (interpolate)
+import Color.Interpolate exposing (Space(..), interpolate)
 import Element
 
 
@@ -244,8 +245,17 @@ uiToColor =
 -- Modification
 
 
-withAlpha : Float -> Element.Color -> Element.Color
+withAlpha : Float -> Color -> Color
 withAlpha alpha color =
+    let
+        colorRgba =
+            Color.toRgba color
+    in
+    Color.fromRgba { colorRgba | alpha = alpha }
+
+
+withAlphaUi : Float -> Element.Color -> Element.Color
+withAlphaUi alpha color =
     let
         crgb =
             Element.toRgb color
@@ -253,5 +263,11 @@ withAlpha alpha color =
     Element.fromRgb { crgb | alpha = alpha }
 
 
-increment =
-    0.05
+fadeWithoutAlpha : Float -> Color -> Color -> Color
+fadeWithoutAlpha t colorA colorB =
+    let
+        colorAlpha =
+            (Color.toRgba colorA).alpha
+    in
+    interpolate LAB colorA colorB t
+        |> withAlpha colorAlpha

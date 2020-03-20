@@ -3,7 +3,6 @@ module Chain.Flatten exposing (..)
 import Chain.Build exposing (Block, BlockStatus(..))
 import Circle2d exposing (Circle2d)
 import Color exposing (Color, rgb)
-import Colors exposing (fromUI, toUI)
 import Context exposing (Context)
 import Element
 import GeometryUtils exposing (TopLeftCoordinates)
@@ -190,13 +189,13 @@ blockColor : Palette Element.Color -> BlockStatus -> Color
 blockColor palette status =
     case status of
         Finalized ->
-            palette.c2 |> fromUI
+            palette.c2 |> Palette.uiToColor
 
         LastFinalized ->
-            palette.c2 |> fromUI
+            palette.c2 |> Palette.uiToColor
 
         Candidate ->
-            palette.c1 |> fromUI
+            palette.c1 |> Palette.uiToColor
 
 
 emptyDrawableChain : DrawableChain

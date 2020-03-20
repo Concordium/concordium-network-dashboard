@@ -4,14 +4,15 @@ import Chain.Build as Build exposing (..)
 import Chain.Flatten as Flatten exposing (..)
 import Color exposing (Color, rgb)
 import Color.Interpolate exposing (..)
-import Colors exposing (fromUI, toUI)
 import Context exposing (..)
 import CubicSpline2d exposing (fromControlPoints)
+import Element
 import Geometry.Svg as Svg
 import GeometryUtils exposing (TopLeftCoordinates)
 import Grid exposing (GridSpec)
 import LineSegment2d exposing (LineSegment2d)
 import Maybe.Extra as Maybe
+import Palette exposing (Palette)
 import Pixels exposing (Pixels)
 import Point2d exposing (Point2d)
 import Quantity
@@ -62,7 +63,7 @@ viewChain ctx { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } ch
         ]
         (List.map viewConnector chain.connectors
             ++ List.map (viewBlock onBlockClick selectedBlock) chain.blocks
-            ++ List.map viewNode chain.nodes
+            ++ List.map (viewNode ctx.palette) chain.nodes
         )
 
 
@@ -96,7 +97,7 @@ viewCollapsedBlocksSummary ctx { gridSpec, lastFinalized, nodes, onBlockClick, s
                         (Rectangle2d.interpolate background 1 0)
 
                 color =
-                    Colors.fadeToBackground 0.75 lastFinalizedBlock.color
+                    Palette.withAlpha 0.3 lastFinalizedBlock.color
             in
             svg
                 [ width (px (viewWidth - gridSpec.outerPadding + 5))
@@ -107,9 +108,12 @@ viewCollapsedBlocksSummary ctx { gridSpec, lastFinalized, nodes, onBlockClick, s
                     (viewWidth - gridSpec.outerPadding + 5)
                     viewHeight
                 ]
-                [ Svg.rectangle2d [ fill <| Paint Colors.background ] background
+                [ Svg.rectangle2d [ fill <| Paint (Palette.uiToColor ctx.palette.bg1) ] background
                 , Svg.lineSegment2d
-                    [ stroke (Paint <| Colors.fadeToBackground 0.75 lastFinalizedBlock.color)
+                    [ stroke
+                        (Paint <|
+                            Palette.withAlpha 0.3 lastFinalizedBlock.color
+                        )
                     , strokeDasharray "4"
                     ]
                     rightEdge
@@ -121,7 +125,11 @@ viewCollapsedBlocksSummary ctx { gridSpec, lastFinalized, nodes, onBlockClick, s
             g [] []
 
 
-viewBlock : Maybe (String -> msg) -> Maybe String -> DrawableBlock -> ( String, Svg msg )
+viewBlock :
+    Maybe (String -> msg)
+    -> Maybe String
+    -> DrawableBlock
+    -> ( String, Svg msg )
 viewBlock clickMsg selectedBlock { hash, rect, color } =
     let
         translation =
@@ -145,7 +153,7 @@ viewBlock clickMsg selectedBlock { hash, rect, color } =
         [ Svg.rectangle2d
             [ rx (px 4)
             , ry (px 4)
-            , fill (Paint <| Colors.fadeToBackground 0.75 color)
+            , fill (Paint <| Palette.withAlpha 0.3 color)
             , highlight
             ]
             rect
@@ -179,13 +187,17 @@ viewConnector { id, start, end, color } =
     ( id
     , Svg.cubicSpline2d
         [ fill PaintNone
-        , stroke (Paint <| Colors.fadeToBackground 0.75 color)
+        , stroke (Paint <| Palette.withAlpha 0.3 color)
         , strokeWidth (px 2)
         ]
         spline
     )
 
 
-viewNode : DrawableNode -> ( String, Svg msg )
-viewNode node =
-    ( node.nodeId, Svg.circle2d [ fill (Paint Colors.purple) ] node.circle )
+viewNode : Palette Element.Color -> DrawableNode -> ( String, Svg msg )
+viewNode palette node =
+    ( node.nodeId
+    , Svg.circle2d
+        [ fill (Paint <| Palette.uiToColor palette.c3) ]
+        node.circle
+    )
