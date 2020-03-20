@@ -8,7 +8,7 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Palette exposing (Palette)
 import Round
-import TypesDashboard exposing (..)
+import Types exposing (..)
 
 
 nodesTable : Context a -> SortMode -> List NetworkNode -> Element Msg
@@ -214,9 +214,3 @@ sortNodesBy sortBy listNodes =
 
         SortFinalizedHeight ->
             List.sortBy .finalizedBlockHeight listNodes
-
-
-nodePeersOnly : Dict Host NetworkNode -> Dict Host NetworkNode
-nodePeersOnly nodes =
-    -- @TODO remove "" case when new collector is deployed
-    nodes |> Dict.filter (\k n -> n.peerType == "Node" || n.peerType == "")

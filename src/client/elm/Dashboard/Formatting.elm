@@ -1,6 +1,5 @@
 module Dashboard.Formatting exposing (..)
 
-import ColorsDashboard exposing (..)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
@@ -16,7 +15,7 @@ import Time
 import Time.Distance exposing (inWordsWithConfig)
 import Time.Distance.I18n as I18n
 import Time.Extra
-import TypesDashboard exposing (..)
+import Types exposing (..)
 
 
 formatTimeInterval : Int -> String

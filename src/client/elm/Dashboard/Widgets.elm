@@ -1,6 +1,5 @@
 module Dashboard.Widgets exposing (..)
 
-import ColorsDashboard exposing (..)
 import Context exposing (Context)
 import Dashboard.Formatting exposing (..)
 import Dict exposing (Dict)
@@ -11,11 +10,20 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
 import Loading
-import Palette exposing (Palette, toHex, veryDark, withAlpha)
+import Palette exposing (Palette, toHex, veryDark, withAlphaEl)
 import RemoteData exposing (RemoteData(..), WebData)
 import Round
 import Trend.Math
-import TypesDashboard exposing (..)
+import Types exposing (..)
+
+
+type alias Widget =
+    { color : Color
+    , title : String
+    , icon : String
+    , value : WebData String
+    , subvalue : Maybe String
+    }
 
 
 content : Element msg -> Element msg
@@ -23,8 +31,8 @@ content e =
     el [ width fill, height fill, paddingXY 30 0 ] e
 
 
-summaryWidgets : Context a -> WebData (Dict Host NetworkNode) -> Element msg
-summaryWidgets ctx remoteNodes =
+viewSummaryWidgets : Context a -> WebData (Dict Host NetworkNode) -> Element msg
+viewSummaryWidgets ctx remoteNodes =
     column [ spacing 12, width fill ]
         [ wrappedRow [ spacing 12, width fill ]
             (List.map (viewWidget ctx.palette)
@@ -58,7 +66,7 @@ summaryWidgets ctx remoteNodes =
                   , subvalue = Nothing
                   }
                 , { color = ctx.palette.c2
-                  , title = "Last finalized block"
+                  , title = "Last Finalized Block"
                   , icon = "/assets/images/icon-blocklastfinal-green.png"
                   , value =
                         RemoteData.map
@@ -152,87 +160,72 @@ summaryWidgets ctx remoteNodes =
         ]
 
 
-widgetsForWebsite : Context a -> Dict Host NetworkNode -> List (Element msg)
-widgetsForWebsite ctx nodes =
-    [ widgetNumber purple
-        "Active Nodes"
-        "/assets/images/icon-nodes-purple.png"
-        (toFloat <| Dict.size nodes)
-    , widgetSeconds ctx.palette
-        lightBlue
-        "Last Block"
-        "/assets/images/icon-lastblock-lightblue.png"
-        (majorityStatFor
-            (\n ->
-                asSecondsAgo ctx.time (Maybe.withDefault "" n.bestArrivedTime)
-            )
-            ""
-            nodes
-        )
-
-    -- , widgetSeconds green "Last finalized block" "/assets/images/icon-blocklastfinal-green.png" (majorityStatFor (\n -> asSecondsAgo model.currentTime (Maybe.withDefault "" n.finalizedTime)) -1 nodes)
-    , widgetNumber blue
-        "Block Height"
-        "/assets/images/icon-blocks-blue.png"
-        (majorityStatFor .bestBlockHeight -1 nodes)
-
-    -- , widgetNumber green "Finalized height" "/assets/images/icon-blocksfinal-green.png" (majorityStatFor .finalizedBlockHeight -1 nodes)
-    , widgetTextSub ctx.palette
-        ctx.palette.c3
-        "Last Block EMA"
-        "/assets/images/icon-rocket-pink.png"
-        (averageStatSecondsFor .blockArrivePeriodEMA nodes)
-        (nodes
-            |> Dict.toList
-            |> List.map Tuple.second
-            |> List.map .blockArrivePeriodEMA
-            |> justs
-            |> Trend.Math.stddev
-            |> Result.map (Round.round 2)
-            |> Result.withDefault "-"
-            |> (++) "stddev: "
-        )
-
-    -- , widgetText pink "Avg Finalization Time" "/assets/images/icon-rocket-pink.png" <|
-    --     averageStatSecondsFor .finalizationPeriodEMA nodes
-    ]
-
-
-widgetText : Palette Color -> Color -> String -> String -> String -> Element msg
-widgetText palette color title icon value =
-    row
-        [ height (px 120)
-        , width (fillPortion 1)
-        , Background.color palette.bg2
-        , padding 20
-        , spacing 20
-        , Border.rounded 5
+widgetsForWebsite : Context a -> WebData (Dict Host NetworkNode) -> List (Element msg)
+widgetsForWebsite ctx remoteNodes =
+    -- active nodes, last block, block height, last block ema
+    List.map (viewWidget ctx.palette)
+        [ { color = ctx.palette.c3
+          , title = "Active nodes"
+          , icon = "/assets/images/icon-nodes-purple.png"
+          , value =
+                RemoteData.map
+                    (\nodes ->
+                        String.fromInt <| Dict.size <| nodePeersOnly nodes
+                    )
+                    remoteNodes
+          , subvalue = Nothing
+          }
+        , { color = ctx.palette.c1
+          , title = "Last Block"
+          , icon = "/assets/images/icon-lastblock-lightblue.png"
+          , value =
+                RemoteData.map
+                    (\nodes ->
+                        majorityStatFor
+                            (\n ->
+                                asSecondsAgo
+                                    ctx.time
+                                    (Maybe.withDefault "" n.bestArrivedTime)
+                            )
+                            ""
+                            nodes
+                    )
+                    remoteNodes
+          , subvalue = Nothing
+          }
+        , { color = ctx.palette.c1
+          , title = "Chain Len."
+          , icon = "/assets/images/icon-blocks-blue.png"
+          , value =
+                RemoteData.map
+                    (\nodes -> String.fromInt <| round (majorityStatFor .bestBlockHeight -1 nodes))
+                    remoteNodes
+          , subvalue = Nothing
+          }
+        , { color = ctx.palette.c4
+          , title = "Last Block EMA"
+          , icon = "/assets/images/icon-rocket-pink.png"
+          , value =
+                RemoteData.map
+                    (\nodes -> averageStatSecondsFor .blockArrivePeriodEMA nodes)
+                    remoteNodes
+          , subvalue =
+                RemoteData.map
+                    (\nodes ->
+                        nodes
+                            |> Dict.toList
+                            |> List.map Tuple.second
+                            |> List.map .blockArrivePeriodEMA
+                            |> justs
+                            |> Trend.Math.stddev
+                            |> Result.map (Round.round 2)
+                            |> Result.withDefault "-"
+                            |> (++) "stddev: "
+                    )
+                    remoteNodes
+                    |> RemoteData.toMaybe
+          }
         ]
-        [ column []
-            [ row
-                [ Background.color green
-                , Border.rounded 100
-                , height (px 70)
-                , width (px 70)
-                ]
-                [ image [ height (px 35), centerY, centerX ] { src = icon, description = "Decorative icon" } ]
-            ]
-        , column [ spacing 12 ]
-            [ row [ Font.color color ] [ text <| String.toUpper title ]
-            , row [ Font.color color, Font.size 30 ]
-                [ text value
-                ]
-            ]
-        ]
-
-
-type alias Widget =
-    { color : Color
-    , title : String
-    , icon : String
-    , value : WebData String
-    , subvalue : Maybe String
-    }
 
 
 viewTile : Palette Color -> Element msg -> Element msg
@@ -261,7 +254,7 @@ viewWidget palette widget =
                     { src = widget.icon, description = "Decorative Icon" }
                 )
             , column [ spacing 10 ]
-                [ el [ Font.color (withAlpha 0.5 widget.color) ]
+                [ el [ Font.color (withAlphaEl 0.5 widget.color) ]
                     (text <| String.toUpper widget.title)
                 , column [ Font.color widget.color, Font.size 30 ]
                     [ remoteDataView palette text widget.value ]
@@ -269,110 +262,13 @@ viewWidget palette widget =
                     |> Maybe.map
                         (\subvalue ->
                             el
-                                [ Font.color (withAlpha 0.5 widget.color) ]
+                                [ Font.color (withAlphaEl 0.5 widget.color) ]
                                 (text subvalue)
                         )
                     |> Maybe.withDefault none
                 ]
             ]
         )
-
-
-widgetTextSub : Palette Color -> Color -> String -> String -> String -> String -> Element msg
-widgetTextSub palette color title icon value subvalue =
-    row
-        [ height (px 120)
-        , width (fillPortion 1)
-        , paddingXY 28 20
-        , Background.color palette.bg2
-        , spacing 20
-        , Border.rounded 5
-        ]
-        [ column []
-            [ row
-                [ Background.color palette.bg1
-                , Border.rounded 100
-                , height (px 70)
-                , width (px 70)
-                ]
-                [ image [ height (px 35), centerY, centerX ]
-                    { src = icon, description = "Decorative icon" }
-                ]
-            ]
-        , column [ spacing 12 ]
-            [ row [ Font.color (withAlpha 0.5 color) ] [ text <| String.toUpper title ]
-            , column [ Font.color color, Font.size 30 ]
-                [ text value ]
-            , if value == "-" then
-                none
-
-              else
-                column [ Font.color (withAlpha 0.5 color) ] [ text subvalue ]
-            ]
-        ]
-
-
-widgetSeconds : Palette Color -> Color -> String -> String -> String -> Element msg
-widgetSeconds palette color title icon value =
-    row
-        [ height (px 120)
-        , width (fillPortion 1)
-        , Background.color palette.bg2
-        , padding 20
-        , spacing 20
-        , Border.rounded 5
-        ]
-        [ column []
-            [ row
-                [ Background.color palette.bg1
-                , Border.rounded 100
-                , height (px 70)
-                , width (px 70)
-                ]
-                [ image [ height (px 35), centerY, centerX ]
-                    { src = icon, description = "Decorative icon" }
-                ]
-            ]
-        , column [ spacing 12 ]
-            [ row [ Font.color color ] [ text <| String.toUpper title ]
-            , row [ Font.color color, Font.size 30 ] [ text <| value ]
-            ]
-        ]
-
-
-widgetNumber : Color -> String -> String -> Float -> Element msg
-widgetNumber color title icon value =
-    row
-        [ height (px 120)
-        , width (fillPortion 1)
-        , Background.color moduleGrey
-        , padding 20
-        , spacing 20
-        , Border.rounded 5
-        ]
-        [ column []
-            [ row
-                [ Background.color darkGrey
-                , Border.rounded 100
-                , height (px 70)
-                , width (px 70)
-                ]
-                [ image [ height (px 35), centerY, centerX ]
-                    { src = icon, description = "Decorative icon" }
-                ]
-            ]
-        , column [ spacing 12 ]
-            [ row [ Font.color color ] [ text <| String.toUpper title ]
-            , row [ Font.color color, Font.size 30 ]
-                [ text <|
-                    if value >= 0 then
-                        String.fromFloat value
-
-                    else
-                        "-"
-                ]
-            ]
-        ]
 
 
 
@@ -409,11 +305,11 @@ widgetNumber color title icon value =
 --         ]
 
 
-worldMap : Element msg
-worldMap =
-    row [ height (px 260), width (fillPortion 1), Background.color moduleGrey, Border.rounded 5 ]
+worldMap : Palette Color -> Element msg
+worldMap palette =
+    row [ height (px 260), width (fillPortion 1), Background.color palette.bg2, Border.rounded 5 ]
         [ column [ spacing 0 ]
-            [ row [ Font.color blue, paddingXY 20 0 ] [ text <| String.toUpper "Node Locations" ]
+            [ row [ Font.color palette.c2, paddingXY 20 0 ] [ text <| String.toUpper "Node Locations" ]
             , image [ height (px 220), centerY, centerX ] { src = "/assets/images/world.svg", description = "World Map" }
             ]
         ]

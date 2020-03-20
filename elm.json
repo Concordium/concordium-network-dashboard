@@ -2,7 +2,7 @@
     "type": "application",
     "source-directories": [
         "src/client/elm",
-        "visualizations/src/client/elm"
+        "visualizations/src/client/modules"
     ],
     "elm-version": "0.19.1",
     "dependencies": {
@@ -26,7 +26,7 @@
             "elm-community/graph": "6.0.0",
             "elm-community/intdict": "3.0.0",
             "elm-community/list-extra": "8.2.3",
-            "elm-community/maybe-extra": "5.1.0",
+            "elm-community/maybe-extra": "5.2.0",
             "elm-community/typed-svg": "6.0.0",
             "elm-explorations/markdown": "1.0.0",
             "gingko/time-distance": "2.2.0",

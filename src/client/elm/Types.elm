@@ -1,4 +1,4 @@
-module TypesDashboard exposing (..)
+module Types exposing (..)
 
 import Browser exposing (..)
 import Browser.Navigation as Nav exposing (Key)

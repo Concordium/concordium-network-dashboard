@@ -4,7 +4,6 @@ module Chart exposing (main, test)
 
 import Axis
 import Color
-import ColorsDashboard exposing (..)
 import Path exposing (Path)
 import Scale exposing (ContinuousScale)
 import Shape
