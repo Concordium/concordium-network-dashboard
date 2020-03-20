@@ -5,6 +5,7 @@ import Browser.Navigation as Nav exposing (Key)
 import Chain
 import Dict exposing (..)
 import Element
+import Explorer
 import Http
 import Palette exposing (ColorMode, Palette)
 import RemoteData exposing (WebData)
@@ -25,6 +26,7 @@ type alias Model =
     , selectedNode : Maybe NetworkNode
     , graph : { width : Float, height : Float }
     , chainModel : Chain.Model
+    , explorerModel : Explorer.Model
     }
 
 
@@ -55,6 +57,7 @@ type Msg
     | ChainMsg Chain.Msg
     | BlockSelected String
     | ToggleDarkMode
+    | ExplorerMsg Explorer.Msg
     | Noop
 
 

@@ -1,5 +1,5 @@
 config:
-  target: "https://dashboard.eu.prod.concordium.com/frontends"
+  target: "https://dashboard.eu.test.concordium.com/frontends"
 
   phases:
     - duration: 100

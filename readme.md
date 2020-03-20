@@ -22,7 +22,7 @@ Running local bakers requires a hefty build process, so if you just want quick d
 ```
 // Change in src/client/elm/Dashboard.elm
 FetchNodeSummaries _ ->
-    ( model, Http.get { url = "https://dashboard.eu.prod.concordium.com/data/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
+    ( model, Http.get { url = "https://dashboard.eu.test.concordium.com/data/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
 ```
 
 #### Local bakers

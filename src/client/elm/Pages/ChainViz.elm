@@ -11,7 +11,7 @@ import Types exposing (Model, Msg(..))
 view : Model -> Element Msg
 view model =
     content <|
-        column [ width fill, spacing 20 ]
+        column [ width fill, height fill, spacing 20 ]
             [ viewSummaryWidgets model model.nodes
             , el
                 [ width fill
