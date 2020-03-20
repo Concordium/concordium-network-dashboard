@@ -97,7 +97,7 @@ viewCollapsedBlocksSummary ctx { gridSpec, lastFinalized, nodes, onBlockClick, s
                         (Rectangle2d.interpolate background 1 0)
 
                 color =
-                    Palette.withAlpha 0.3 lastFinalizedBlock.color
+                    Palette.withAlphaCo 0.3 lastFinalizedBlock.color
             in
             svg
                 [ width (px (viewWidth - gridSpec.outerPadding + 5))
@@ -112,7 +112,7 @@ viewCollapsedBlocksSummary ctx { gridSpec, lastFinalized, nodes, onBlockClick, s
                 , Svg.lineSegment2d
                     [ stroke
                         (Paint <|
-                            Palette.withAlpha 0.3 lastFinalizedBlock.color
+                            Palette.withAlphaCo 0.3 lastFinalizedBlock.color
                         )
                     , strokeDasharray "4"
                     ]
@@ -153,7 +153,7 @@ viewBlock clickMsg selectedBlock { hash, rect, color } =
         [ Svg.rectangle2d
             [ rx (px 4)
             , ry (px 4)
-            , fill (Paint <| Palette.withAlpha 0.3 color)
+            , fill (Paint <| Palette.withAlphaCo 0.3 color)
             , highlight
             ]
             rect
@@ -187,7 +187,7 @@ viewConnector { id, start, end, color } =
     ( id
     , Svg.cubicSpline2d
         [ fill PaintNone
-        , stroke (Paint <| Palette.withAlpha 0.3 color)
+        , stroke (Paint <| Palette.withAlphaCo 0.3 color)
         , strokeWidth (px 2)
         ]
         spline

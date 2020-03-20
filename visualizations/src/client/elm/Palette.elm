@@ -8,7 +8,8 @@ module Palette exposing
     , mapPalette
     , toHex
     , uiToColor
-    , withAlpha
+    , withAlphaCo
+    , withAlphaEl
     )
 
 import Color exposing (Color, rgb255)
@@ -245,8 +246,8 @@ uiToColor =
 -- Modification
 
 
-withAlpha : Float -> Color -> Color
-withAlpha alpha color =
+withAlphaCo : Float -> Color -> Color
+withAlphaCo alpha color =
     let
         colorRgba =
             Color.toRgba color
@@ -254,8 +255,8 @@ withAlpha alpha color =
     Color.fromRgba { colorRgba | alpha = alpha }
 
 
-withAlphaUi : Float -> Element.Color -> Element.Color
-withAlphaUi alpha color =
+withAlphaEl : Float -> Element.Color -> Element.Color
+withAlphaEl alpha color =
     let
         crgb =
             Element.toRgb color
@@ -270,4 +271,4 @@ fadeWithoutAlpha t colorA colorB =
             (Color.toRgba colorA).alpha
     in
     interpolate LAB colorA colorB t
-        |> withAlpha colorAlpha
+        |> withAlphaCo colorAlpha
