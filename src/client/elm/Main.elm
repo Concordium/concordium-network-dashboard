@@ -7,6 +7,7 @@ import Browser.Dom
 import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
+import Config
 import Context exposing (Context)
 import Dashboard.Formatting exposing (..)
 import Dashboard.Logo as Logo
@@ -224,7 +225,7 @@ update msg model =
             ( { model | nodes = RemoteData.map (Dict.insert node.nodeId node) model.nodes }, Cmd.none )
 
         FetchNodeSummaries _ ->
-            ( model, Http.get { url = "https://dashboard.eu.prod.concordium.com/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
+            ( model, Http.get { url = Config.summariesUrl, expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
 
         FetchedNodeSummaries r ->
             case r of
