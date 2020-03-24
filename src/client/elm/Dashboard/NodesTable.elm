@@ -14,10 +14,10 @@ import Types exposing (..)
 nodesTable : Context a -> SortMode -> List NetworkNode -> Element Msg
 nodesTable ctx sortMode nodes =
     if List.length nodes == 0 then
-        row [ Font.color ctx.palette.success ] [ text "Waiting for node statistics..." ]
+        row [ Font.color ctx.palette.fg2 ] [ text "Waiting for node statistics..." ]
 
     else
-        Element.table [ spacing 12, Font.color ctx.palette.success, alignTop, width fill ]
+        Element.table [ spacing 12, Font.color ctx.palette.fg2, alignTop, width fill ]
             { data = nodes
             , columns =
                 [ { header = sortableHeader ctx.palette sortMode SortName "Name"
@@ -100,19 +100,19 @@ nodesTable ctx sortMode nodes =
                         \node ->
                             text <| String.fromFloat node.finalizedBlockHeight
                   }
-                , { header = text "Finalized Time"
+                , { header = el [ Font.color ctx.palette.fg1 ] (text "Finalized Time")
                   , width = fill
                   , view =
                         \node ->
                             text <| asSecondsAgo ctx.time (Maybe.withDefault "" node.finalizedTime)
                   }
-                , { header = text "Last Block EMA"
+                , { header = el [ Font.color ctx.palette.fg1 ] (text "Last Block EMA")
                   , width = fill
                   , view =
                         \node ->
                             text <| Round.round 2 <| Maybe.withDefault 0 node.blockArrivePeriodEMA
                   }
-                , { header = text "Last Finalization EMA"
+                , { header = el [ Font.color ctx.palette.fg1 ] (text "Last Finalization EMA")
                   , width = fill
                   , view =
                         \node ->
@@ -130,13 +130,13 @@ sortableHeader : Palette Color -> SortMode -> SortBy -> String -> Element Msg
 sortableHeader palette sortMode sortBy name =
     let
         withIcon url =
-            row [ spacing 5, Font.color palette.fg2, pointer ]
+            row [ spacing 5, Font.color palette.fg1, pointer ]
                 [ el [ onClick <| SortSet sortBy ] (text name)
                 , image [ width (px 10) ] { src = url, description = "Sort Ascending Icon" }
                 ]
 
         withoutIcon =
-            el [ onClick <| SortSet sortBy, Font.color palette.fg2, pointer ] (text name)
+            el [ onClick <| SortSet sortBy, Font.color palette.fg1, pointer ] (text name)
     in
     case sortMode of
         SortAsc sortBy_ ->

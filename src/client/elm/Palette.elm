@@ -78,17 +78,17 @@ defaultDark =
 
 defaultLight : Palette Element.Color
 defaultLight =
-    { bg1 = fromHex "#f8f0e0"
+    { bg1 = veryLightGray
     , bg2 = white
     , bg3 = lightBrown
     , fg1 = fromHex "#181817"
     , fg2 = darkBrown
     , fg3 = blueishVeryDarkGray
     , c1 = darkish lightBlueNew
-    , c2 = brown
+    , c2 = fromHex "#33A61E"
     , c3 = darkish purple
     , c4 = dark pink
-    , c5 = darkish yellow
+    , c5 = brown
     , success = fromHex "#33A61E"
     , failure = red
     , danger = orange
@@ -146,6 +146,10 @@ lightBlueNew =
 
 mediumBlue =
     fromHex "#325D76"
+
+
+veryLightGray =
+    fromHex "#f4f4f1"
 
 
 
@@ -214,10 +218,6 @@ lightGray =
 
 nearWhite =
     fromHex "#dddddd"
-
-
-veryLightGray =
-    fromHex "#f7f7f4"
 
 
 white =
