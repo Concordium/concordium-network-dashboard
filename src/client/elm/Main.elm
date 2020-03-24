@@ -157,7 +157,7 @@ viewHeader ctx =
             { url = "/"
             , label =
                 row [ spacing 12 ]
-                    [ el [] (html <| Logo.concordiumLogo 24 (Palette.uiToColor ctx.palette.c1))
+                    [ el [] (html <| Logo.concordiumLogo 24 (Palette.uiToColor ctx.palette.fg1))
                     , el [] (html <| Logo.concordiumText 110 (Palette.uiToColor ctx.palette.fg1))
                     ]
             }
