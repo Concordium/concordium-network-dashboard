@@ -1,5 +1,6 @@
 module Explorer.Request exposing (..)
 
+import Config
 import Http exposing (..)
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (hardcoded, optional, required)
@@ -27,7 +28,7 @@ getConsensusStatus msg =
             Debug.log "calling" "get consensus status!"
     in
     Http.get
-        { url = "http://localhost:8081/v1/consensusStatus"
+        { url = Config.middleware ++ "/v1/consensusStatus"
         , expect = expectJson_ msg consensusStatusDecoder
         }
 
@@ -67,7 +68,7 @@ getBlockInfo blockhash msg =
             Debug.log "calling" "get Block info!"
     in
     Http.get
-        { url = "http://localhost:8081/v1/getBlockInfo/" ++ blockhash
+        { url = Config.middleware ++ "/v1/blockInfo/" ++ blockhash
         , expect = expectJson_ msg blockInfoDecoder
         }
 
