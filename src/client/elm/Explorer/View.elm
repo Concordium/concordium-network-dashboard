@@ -1,6 +1,5 @@
 module Explorer.View exposing (..)
 
-import ColorsDashboard exposing (..)
 import Context exposing (Context)
 import Element exposing (..)
 import Element.Background as Background
@@ -12,7 +11,7 @@ import Explorer.Request exposing (..)
 import Types exposing (..)
 
 
-view { explorerModel } =
+view ({ explorerModel } as ctx) =
     let
         block =
             stubBlock
@@ -26,18 +25,18 @@ view { explorerModel } =
     in
     case explorerModel.currentBlockInfo of
         Just blockInfo ->
-            viewBlockLoaded blockInfo summary
+            viewBlockLoaded ctx blockInfo summary
 
         Nothing ->
-            viewBlockLoaded blockInfoStub_ summary
+            viewBlockLoaded ctx blockInfoStub_ summary
 
 
-viewBlockLoaded : BlockInfo -> BlockSummary -> Element Msg
-viewBlockLoaded blockInfo blockSummary =
-    column [ width fill, spacing 10 ]
+viewBlockLoaded : Context a -> BlockInfo -> BlockSummary -> Element Msg
+viewBlockLoaded ctx blockInfo blockSummary =
+    column [ width fill, padding 30, spacing 10 ]
         [ row [ width fill, spacing 10 ]
             [ paragraph
-                [ Background.color moduleGrey
+                [ Background.color ctx.palette.bg2
                 , padding 10
                 , Border.rounded 5
                 ]
@@ -46,27 +45,27 @@ viewBlockLoaded blockInfo blockSummary =
             , paragraph
                 [ alignLeft
                 , width (fillPortion 1)
-                , Background.color moduleGrey
+                , Background.color ctx.palette.bg2
                 , padding 10
                 , Border.rounded 5
                 , onClick (ExplorerMsg (Explorer.RequestedBlockInfo blockInfo.blockParent))
                 ]
                 [ text <| "Parent: " ++ hashSnippet blockInfo.blockParent ]
-            , paragraph [ centerX, width (fillPortion 1), Background.color moduleGrey, padding 10, Border.rounded 5 ]
+            , paragraph [ centerX, width (fillPortion 1), Background.color ctx.palette.bg2, padding 10, Border.rounded 5 ]
                 [ text <| "Block: " ++ hashSnippet blockInfo.blockHash ]
-            , row [ alignRight, width (fillPortion 1), Background.color moduleGrey, padding 10, Border.rounded 5 ]
+            , row [ alignRight, width (fillPortion 1), Background.color ctx.palette.bg2, padding 10, Border.rounded 5 ]
                 [ paragraph [ Font.center ]
                     [ if blockInfo.finalized then
-                        paragraph [ Font.color green ] [ text "Finalized" ]
+                        paragraph [ Font.color ctx.palette.success ] [ text "Finalized" ]
 
                       else
-                        paragraph [ Font.color blue ] [ text "Pending" ]
+                        paragraph [ Font.color ctx.palette.c1 ] [ text "Pending" ]
                     ]
                 ]
             ]
         , row [ width fill, spacing 10 ]
-            [ paragraph [ Background.color moduleGrey, padding 10, Border.rounded 5 ] [ text <| "Slot: " ++ blockInfo.blockSlotTime ]
-            , paragraph [ Background.color moduleGrey, padding 10, Border.rounded 5 ] [ text <| "Seen: " ++ blockInfo.blockReceiveTime ]
+            [ paragraph [ Background.color ctx.palette.bg2, padding 10, Border.rounded 5 ] [ text <| "Slot: " ++ blockInfo.blockSlotTime ]
+            , paragraph [ Background.color ctx.palette.bg2, padding 10, Border.rounded 5 ] [ text <| "Seen: " ++ blockInfo.blockReceiveTime ]
             ]
         , column []
             [ case blockInfo.transactionsSize of
@@ -76,12 +75,13 @@ viewBlockLoaded blockInfo blockSummary =
                 _ ->
                     paragraph [] [ text "Todo: implement transaction listing" ]
             ]
-        , column [ width fill, Background.color moduleGrey, padding 10, Border.rounded 5 ] <|
+        , column [ width fill, Background.color ctx.palette.bg2, padding 10, Border.rounded 5 ] <|
             List.map viewTransactionSummary blockSummary.transactionSummaries
         , column [] <| List.map viewSpecialEvent blockSummary.specialEvents
         ]
 
 
+viewTransactionSummary : TransactionSummary -> Element msg
 viewTransactionSummary s =
     let
         events =
@@ -114,6 +114,7 @@ viewTransactionSummary s =
         ]
 
 
+viewSpecialEvent : SpecialEvent -> Element msg
 viewSpecialEvent e =
     row []
         [ text <|

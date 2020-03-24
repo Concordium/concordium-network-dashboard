@@ -30,20 +30,7 @@ view model =
                         sortedNodes =
                             sortNodesMode model.sortMode listNodes
                     in
-                    if model.window.width < 1800 then
-                        content <| nodesTable model model.sortMode sortedNodes
-
-                    else
-                        let
-                            ( nodes1, nodes2 ) =
-                                -- Ceiling so we always end up with longer part of odd-numbered list first
-                                List.splitAt (toFloat (List.length listNodes) / 2 |> ceiling) sortedNodes
-                        in
-                        row [ spacing 20, width fill ]
-                            [ nodesTable model model.sortMode (sortNodesMode model.sortMode nodes1)
-                            , column [ height fill, width (px 4), Background.color model.palette.bg1 ] []
-                            , nodesTable model model.sortMode (sortNodesMode model.sortMode nodes2)
-                            ]
+                    content <| nodesTable model model.sortMode sortedNodes
                 )
                 model.nodes
             ]

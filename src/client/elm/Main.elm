@@ -100,8 +100,8 @@ init flags url key =
     ( { key = key
       , window = flags
       , time = Time.millisToPosix 0
-      , palette = Palette.defaultLight
-      , colorMode = Light
+      , palette = Palette.defaultDark
+      , colorMode = Dark
       , currentPage = pathToPage url
       , nodes = Loading
       , sortMode = SortNone
@@ -123,11 +123,7 @@ view model =
     { title = "Concordium Dashboard"
     , body =
         [ theme model.palette <|
-            column
-                [ width fill
-                , Background.color model.palette.bg1
-                , paddingEach { bottom = 60, left = 0, right = 0, top = 0 }
-                ]
+            [ column [ width fill ]
                 [ viewHeader model
                 , case model.currentPage of
                     Dashboard ->
@@ -140,8 +136,12 @@ view model =
                         Pages.Graph.view model
 
                     ChainViz ->
-                        Pages.ChainViz.view model
+                        column [ width fill, height fill ]
+                            [ Pages.ChainViz.view model
+                            , Explorer.View.view model
+                            ]
                 ]
+            ]
         ]
     }
 
@@ -165,27 +165,9 @@ viewHeader ctx =
             [ link linkstyle { url = "/", label = text "Dashboard" }
             , link linkstyle { url = "/chain", label = text "Chain" }
             , link linkstyle { url = "/nodegraph", label = text "Graph" }
-            , viewColorModeToggle ctx
+            , el [ onClick ToggleDarkMode ] (html <| Icon.brightness_7 16 Inherit)
             ]
         ]
-
-
-viewColorModeToggle : Context a -> Element Msg
-viewColorModeToggle ctx =
-    case ctx.colorMode of
-        Palette.Dark ->
-            el
-                [ onClick ToggleDarkMode
-                , mouseOver [ Font.color ctx.palette.fg1 ]
-                ]
-                (html <| Icon.brightness_5 14 Inherit)
-
-        Palette.Light ->
-            el
-                [ onClick ToggleDarkMode
-                , mouseOver [ Font.color ctx.palette.fg1 ]
-                ]
-                (html <| Icon.brightness_2 14 Inherit)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -301,7 +283,7 @@ update msg model =
                 |> triggerOnDispatch (Chain.dispatchMsgs chainMsg { onBlockClicked = BlockSelected })
 
         BlockSelected hash ->
-            ( model, Cmd.none )
+            ( model, Explorer.Request.getBlockInfo hash (ExplorerMsg << Explorer.ReceivedBlockInfo) )
 
         ToggleDarkMode ->
             case model.colorMode of
@@ -401,25 +383,21 @@ main =
         }
 
 
-theme : Palette Color -> Element msg -> Html.Html msg
-theme palette elements =
+theme : Palette Color -> List (Element msg) -> Html.Html msg
+theme palette x =
     layout
         [ width fill
         , height fill
         , Background.color <| palette.bg1
-        , Font.color palette.fg2
+        , Font.color palette.fg1
         , Font.family [ Font.typeface "IBM Plex Mono" ]
         , Font.size 14
         ]
-        elements
+    <|
+        column [ width fill, height fill ]
+            x
 
 
 markdown : String -> Element msg
 markdown string =
     Element.html <| Markdown.toHtml [] string
-
-
-nodePeersOnly : Dict Host NetworkNode -> Dict Host NetworkNode
-nodePeersOnly nodes =
-    -- @TODO remove "" case when new collector is deployed
-    nodes |> Dict.filter (\k n -> n.peerType == "Node" || n.peerType == "")
