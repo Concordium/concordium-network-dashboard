@@ -169,7 +169,7 @@ viewText line color =
         , alignmentBaseline AlignmentCentral
         , fill <| Paint color
         , fontSize (px 16)
-        , fontFamily [ "Roboto Mono", "monospaces" ]
+        , fontFamily [ "IBM Plex Mono, monospaces" ]
         ]
         [ text line ]
 
