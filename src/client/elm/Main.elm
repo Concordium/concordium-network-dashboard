@@ -123,7 +123,11 @@ view model =
     { title = "Concordium Dashboard"
     , body =
         [ theme model.palette <|
-            [ column [ width fill ]
+            column
+                [ width fill
+                , Background.color model.palette.bg1
+                , paddingEach { bottom = 60, left = 0, right = 0, top = 0 }
+                ]
                 [ viewHeader model
                 , case model.currentPage of
                     Dashboard ->
@@ -136,12 +140,8 @@ view model =
                         Pages.Graph.view model
 
                     ChainViz ->
-                        column [ width fill, height fill ]
-                            [ Pages.ChainViz.view model
-                            , Explorer.View.view model
-                            ]
+                        Pages.ChainViz.view model
                 ]
-            ]
         ]
     }
 
@@ -165,9 +165,27 @@ viewHeader ctx =
             [ link linkstyle { url = "/", label = text "Dashboard" }
             , link linkstyle { url = "/chain", label = text "Chain" }
             , link linkstyle { url = "/nodegraph", label = text "Graph" }
-            , el [ onClick ToggleDarkMode ] (html <| Icon.brightness_7 16 Inherit)
+            , viewColorModeToggle ctx
             ]
         ]
+
+
+viewColorModeToggle : Context a -> Element Msg
+viewColorModeToggle ctx =
+    case ctx.colorMode of
+        Palette.Dark ->
+            el
+                [ onClick ToggleDarkMode
+                , mouseOver [ Font.color ctx.palette.fg1 ]
+                ]
+                (html <| Icon.brightness_5 14 Inherit)
+
+        Palette.Light ->
+            el
+                [ onClick ToggleDarkMode
+                , mouseOver [ Font.color ctx.palette.fg1 ]
+                ]
+                (html <| Icon.brightness_2 14 Inherit)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -383,19 +401,17 @@ main =
         }
 
 
-theme : Palette Color -> List (Element msg) -> Html.Html msg
-theme palette x =
+theme : Palette Color -> Element msg -> Html.Html msg
+theme palette elements =
     layout
         [ width fill
         , height fill
         , Background.color <| palette.bg1
-        , Font.color palette.fg1
+        , Font.color palette.fg2
         , Font.family [ Font.typeface "IBM Plex Mono" ]
         , Font.size 14
         ]
-    <|
-        column [ width fill, height fill ]
-            x
+        elements
 
 
 markdown : String -> Element msg
