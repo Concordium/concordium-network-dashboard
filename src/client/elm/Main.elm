@@ -419,11 +419,6 @@ markdown string =
     Element.html <| Markdown.toHtml [] string
 
 
-bgWhite : Attr decorative msg
-bgWhite =
-    Background.color <| white
-
-
 nodePeersOnly : Dict Host NetworkNode -> Dict Host NetworkNode
 nodePeersOnly nodes =
     -- @TODO remove "" case when new collector is deployed

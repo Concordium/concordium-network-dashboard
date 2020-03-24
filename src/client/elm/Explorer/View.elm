@@ -1,6 +1,7 @@
 module Explorer.View exposing (..)
 
 import ColorsDashboard exposing (..)
+import Context exposing (Context)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -8,7 +9,7 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Explorer
 import Explorer.Request exposing (..)
-import TypesDashboard exposing (..)
+import Types exposing (..)
 
 
 view { explorerModel } =
@@ -31,8 +32,8 @@ view { explorerModel } =
             viewBlockLoaded blockInfoStub_ summary
 
 
-viewBlockLoaded : Context a -> BlockInfo -> BlockSummary -> Element Msg
-viewBlockLoaded ctx blockInfo blockSummary =
+viewBlockLoaded : BlockInfo -> BlockSummary -> Element Msg
+viewBlockLoaded blockInfo blockSummary =
     column [ width fill, spacing 10 ]
         [ row [ width fill, spacing 10 ]
             [ paragraph

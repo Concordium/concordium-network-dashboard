@@ -71,7 +71,7 @@ grey =
 
 
 white =
-    Element.rgb 1 1 1
+    fromHex "#fff"
 
 
 red =
