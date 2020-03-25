@@ -11,18 +11,21 @@ type alias BlockHash =
 type alias Model =
     { currentBlockhash : Maybe String
     , currentBlockInfo : Maybe BlockInfo
+    , currentBlockSummary : Maybe BlockSummary
     }
 
 
 type Msg
     = ReceivedBlockInfo (Result Http.Error BlockInfo)
-    | ReceivedConsensusStatus (Result Http.Error ConsensusStatus)
     | RequestedBlockInfo BlockHash
+    | ReceivedConsensusStatus (Result Http.Error ConsensusStatus)
+    | ReceivedBlockSummary (Result Http.Error BlockSummary)
 
 
 init =
     { currentBlockhash = Nothing
     , currentBlockInfo = Nothing
+    , currentBlockSummary = Nothing
     }
 
 
@@ -41,6 +44,9 @@ update msg model =
                     in
                     ( model, Cmd.none )
 
+        RequestedBlockInfo blockHash ->
+            ( model, getBlockInfo blockHash ReceivedBlockInfo )
+
         ReceivedBlockInfo blockInfoRes ->
             let
                 y =
@@ -52,7 +58,11 @@ update msg model =
                         | currentBlockInfo =
                             Just blockInfo
                       }
-                    , Cmd.none
+                    , if blockInfo.transactionCount > 0 then
+                        getBlockSummary blockInfo.blockHash ReceivedBlockSummary
+
+                      else
+                        Cmd.none
                     )
 
                 Err err ->
@@ -62,5 +72,23 @@ update msg model =
                     in
                     ( model, Cmd.none )
 
-        RequestedBlockInfo blockHash ->
-            ( model, getBlockInfo blockHash ReceivedBlockInfo )
+        ReceivedBlockSummary blockSummaryRes ->
+            let
+                y =
+                    Debug.log "ReceivedBlockSummary" blockSummaryRes
+            in
+            case blockSummaryRes of
+                Ok blockSummary ->
+                    ( { model
+                        | currentBlockSummary =
+                            Just blockSummary
+                      }
+                    , Cmd.none
+                    )
+
+                Err err ->
+                    let
+                        x =
+                            Debug.log <| "ReceivedBlockSummary:err" ++ httpErrorToString err
+                    in
+                    ( model, Cmd.none )

@@ -99,6 +99,21 @@ getBlockInfoStub_ blockhash =
             blockInfoStub
 
 
+
+-- BlockSummary
+
+
+getBlockSummary blockhash msg =
+    let
+        x =
+            Debug.log "calling" "get Block summary!"
+    in
+    Http.get
+        { url = Config.middleware ++ "/v1/blockSummary/" ++ blockhash
+        , expect = expectJson_ msg blockSummaryDecoder
+        }
+
+
 getBlockSummaryStub_ =
     case D.decodeString blockSummaryDecoder getBlockSummaryResponseStub of
         Ok blockSummary ->
@@ -252,25 +267,39 @@ specialEventDecoder =
 
 type alias TransactionSummary =
     { hash : String
-    , sender : String
+    , sender : Maybe String
     , cost : Int
     , events : List TransactionEvent
     , energycost : Int
-    , tipe : String
+    , tipe : Maybe String
     }
 
 
 transactionSummaryDecoder =
     D.succeed TransactionSummary
         |> required "hash" D.string
-        |> required "sender" D.string
+        |> required "sender" (D.nullable D.string)
         |> required "cost" D.int
-        |> required "result" (D.field "events" (D.list transactionEventDecoder))
+        |> required "result" (D.field "events" (D.list transactionEventsDecoder))
         |> required "energycost" D.int
-        |> required "type" D.string
+        |> required "type" (D.nullable D.string)
 
 
-type alias TransactionEvent =
+type TransactionEvent
+    = TransactionEventTransfer EventTransfer
+    | TransactionEventAccountCreated EventAccountCreated
+    | TransactionEventCredentialDeployed EventCredentialDeployed
+
+
+transactionEventsDecoder =
+    D.oneOf
+        [ D.map TransactionEventTransfer eventTransferDecoder
+        , D.map TransactionEventAccountCreated eventAccountCreatedDecoder
+        , D.map TransactionEventCredentialDeployed eventCredentialDeployedDecoder
+        ]
+
+
+type alias EventTransfer =
     { amount : Int
     , tag : String
     , to : AccountInfo
@@ -278,12 +307,38 @@ type alias TransactionEvent =
     }
 
 
-transactionEventDecoder =
-    D.succeed TransactionEvent
+eventTransferDecoder =
+    D.succeed EventTransfer
         |> required "amount" D.int
         |> required "tag" D.string
         |> required "to" accountInfoDecoder
         |> required "from" accountInfoDecoder
+
+
+type alias EventAccountCreated =
+    { tag : String
+    , account : String
+    }
+
+
+eventAccountCreatedDecoder =
+    D.succeed EventAccountCreated
+        |> required "tag" D.string
+        |> required "contents" D.string
+
+
+type alias EventCredentialDeployed =
+    { tag : String
+    , regid : String
+    , account : String
+    }
+
+
+eventCredentialDeployedDecoder =
+    D.succeed EventCredentialDeployed
+        |> required "tag" D.string
+        |> required "regid" D.string
+        |> required "account" D.string
 
 
 type AccountInfo
@@ -320,6 +375,28 @@ getBlockSummaryResponseStub =
     }
   ],
   "transactionSummaries": [
+    {
+      "hash": "ae3154e1ee8a64d9e9718e57fbc979175be2ee8526b23fcddab2d626ebaeb72d",
+      "sender": null,
+      "cost": 0,
+      "result": {
+        "events": [
+          {
+            "tag": "AccountCreated",
+            "contents": "3P2Qsi8FeMB6AijMi3kpD9FrcFfAkoHDMu8kf7Fbd3cYYJpk2s"
+          },
+          {
+            "tag": "CredentialDeployed",
+            "regid": "ac64aac1da15afd90d185475705935fbe224d5f7ddc43988e7db511656c787b452820b5096a2b323cf7612f5609d4cfb",
+            "account": "3P2Qsi8FeMB6AijMi3kpD9FrcFfAkoHDMu8kf7Fbd3cYYJpk2s"
+          }
+        ],
+        "outcome": "success"
+      },
+      "energycost": 35000,
+      "type": null,
+      "index": 0
+    },
     {
       "hash": "2ecde309ea6b48cebfbb73eb1ee3364c4f10330955a4a13acb7d87076461ab2d",
       "sender": "4KYJHs49FX7tPD2pFY2whbfZ8AjupEtX8yNSLwWMFQFUZgRobL",
