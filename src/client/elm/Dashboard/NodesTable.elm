@@ -17,7 +17,7 @@ nodesTable ctx sortMode nodes =
         row [ Font.color ctx.palette.fg2 ] [ text "Waiting for node statistics..." ]
 
     else
-        Element.table [ spacing 12, Font.color ctx.palette.fg2, alignTop, width fill ]
+        Element.table [ spacing 12, Font.color ctx.palette.fg2, alignTop, width fill, scrollbarX ]
             { data = nodes
             , columns =
                 [ { header = sortableHeader ctx.palette sortMode SortName "Name"
