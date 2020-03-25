@@ -164,7 +164,8 @@ viewHeader ctx =
         , row [ alignRight, spacing 20, Font.color ctx.palette.fg2 ]
             [ link linkstyle { url = "/", label = text "Dashboard" }
             , link linkstyle { url = "/chain", label = text "Chain" }
-            , link linkstyle { url = "/nodegraph", label = text "Graph" }
+
+            -- , link linkstyle { url = "/nodegraph", label = text "Graph" }
             , viewColorModeToggle ctx
             ]
         ]
@@ -377,7 +378,7 @@ subscriptions model =
         ([ nodeInfo NodeInfoReceived
          , Browser.Events.onResize WindowResized
          , Time.every 1000 CurrentTime
-         , Time.every 5000 FetchNodeSummaries
+         , Time.every 2000 FetchNodeSummaries
          ]
             ++ (case model.currentPage of
                     ChainViz ->

@@ -23,5 +23,6 @@ view model =
                 ]
                 (Chain.view model model.chainModel False)
                 |> Element.map ChainMsg
-            , Explorer.View.view model
+
+            -- , Explorer.View.view model
             ]
