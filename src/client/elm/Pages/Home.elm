@@ -30,7 +30,7 @@ view model =
                         sortedNodes =
                             sortNodesMode model.sortMode listNodes
                     in
-                    content <| nodesTable model model.sortMode sortedNodes
+                    nodesTable model model.sortMode sortedNodes
                 )
                 model.nodes
             ]

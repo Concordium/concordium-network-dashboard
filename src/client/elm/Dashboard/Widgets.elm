@@ -66,7 +66,7 @@ viewSummaryWidgets ctx remoteNodes =
                   , subvalue = Nothing
                   }
                 , { color = ctx.palette.c2
-                  , title = "Last Finalized Block"
+                  , title = "Last Finality"
                   , icon = "/assets/images/icon-blocklastfinal-green.png"
                   , value =
                         RemoteData.map
@@ -85,7 +85,7 @@ viewSummaryWidgets ctx remoteNodes =
                   , subvalue = Nothing
                   }
                 , { color = ctx.palette.c1
-                  , title = "Chain Len."
+                  , title = "Chain Len"
                   , icon = "/assets/images/icon-blocks-blue.png"
                   , value =
                         RemoteData.map
@@ -94,7 +94,7 @@ viewSummaryWidgets ctx remoteNodes =
                   , subvalue = Nothing
                   }
                 , { color = ctx.palette.c2
-                  , title = "Finalized Len."
+                  , title = "Fin Len"
                   , icon = "/assets/images/icon-blocksfinal-green.png"
                   , value =
                         RemoteData.map
@@ -130,7 +130,7 @@ viewSummaryWidgets ctx remoteNodes =
                             |> RemoteData.toMaybe
                   }
                 , { color = ctx.palette.c4
-                  , title = "Last Finalization EMA"
+                  , title = "Last Fin EMA"
                   , icon = "/assets/images/icon-rocket-pink.png"
                   , value =
                         RemoteData.map
@@ -194,7 +194,7 @@ widgetsForWebsite ctx remoteNodes =
           , subvalue = Nothing
           }
         , { color = ctx.palette.c1
-          , title = "Chain Len."
+          , title = "Chain Len"
           , icon = "/assets/images/icon-blocks-blue.png"
           , value =
                 RemoteData.map

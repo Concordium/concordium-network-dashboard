@@ -17,16 +17,17 @@ nodesTable ctx sortMode nodes =
         row [ Font.color ctx.palette.fg2 ] [ text "Waiting for node statistics..." ]
 
     else
-        Element.table [ spacing 12, Font.color ctx.palette.fg2, alignTop, width fill, scrollbarX ]
+        Element.table [ spacing 12, Font.color ctx.palette.fg2, scrollbarX, Font.alignRight, paddingXY 0 2 ]
             { data = nodes
             , columns =
-                [ { header = sortableHeader ctx.palette sortMode SortName "Name"
+                [ { header = el [ Font.alignLeft ] <| sortableHeader ctx.palette sortMode SortName "Name"
                   , width = fill
                   , view =
                         \node ->
                             el
                                 [ pointer
                                 , onClick (NodeClicked node.nodeId)
+                                , Font.alignLeft
                                 ]
                                 (text <| ellipsis 30 node.nodeName)
                   }
@@ -80,39 +81,39 @@ nodesTable ctx sortMode nodes =
                   , width = fill
                   , view =
                         \node ->
-                            text <| hashSnippet node.bestBlock
+                            text <| String.left 6 node.bestBlock
                   }
-                , { header = sortableHeader ctx.palette sortMode SortHeight "Block Height"
+                , { header = sortableHeader ctx.palette sortMode SortHeight "Length"
                   , width = fill
                   , view =
                         \node ->
                             text <| String.fromFloat node.bestBlockHeight
                   }
-                , { header = sortableHeader ctx.palette sortMode SortFinalizedBlock "Finalized Block"
+                , { header = sortableHeader ctx.palette sortMode SortFinalizedBlock "Fin Block"
                   , width = fill
                   , view =
                         \node ->
-                            text <| hashSnippet node.finalizedBlock
+                            text <| String.left 6 node.finalizedBlock
                   }
-                , { header = sortableHeader ctx.palette sortMode SortFinalizedHeight "Finalized Height"
+                , { header = sortableHeader ctx.palette sortMode SortFinalizedHeight "Fin Length"
                   , width = fill
                   , view =
                         \node ->
                             text <| String.fromFloat node.finalizedBlockHeight
                   }
-                , { header = el [ Font.color ctx.palette.fg1 ] (text "Finalized Time")
+                , { header = el [ Font.color ctx.palette.fg1 ] (text "Last Fin")
                   , width = fill
                   , view =
                         \node ->
                             text <| asSecondsAgo ctx.time (Maybe.withDefault "" node.finalizedTime)
                   }
-                , { header = el [ Font.color ctx.palette.fg1 ] (text "Last Block EMA")
+                , { header = el [ Font.color ctx.palette.fg1 ] (text "Block EMA")
                   , width = fill
                   , view =
                         \node ->
                             text <| Round.round 2 <| Maybe.withDefault 0 node.blockArrivePeriodEMA
                   }
-                , { header = el [ Font.color ctx.palette.fg1 ] (text "Last Finalization EMA")
+                , { header = el [ Font.color ctx.palette.fg1 ] (text "Fin EMA")
                   , width = fill
                   , view =
                         \node ->

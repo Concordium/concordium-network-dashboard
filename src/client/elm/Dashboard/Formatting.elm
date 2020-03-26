@@ -14,6 +14,7 @@ import Round
 import Time
 import Time.Distance exposing (inWordsWithConfig)
 import Time.Distance.I18n as I18n
+import Time.Distance.Types exposing (..)
 import Time.Extra
 import Types exposing (..)
 
@@ -59,7 +60,103 @@ asTimeAgoDuration duration =
         offset =
             Time.millisToPosix (round duration)
     in
-    inWordsWithConfig { withAffix = False } I18n.en offset (Time.millisToPosix 0)
+    inWordsWithConfig { withAffix = False } enCompact offset (Time.millisToPosix 0)
+
+
+{-| A more compact version of I18n.en
+-}
+enCompact : Locale
+enCompact { withAffix } tense distanceId =
+    let
+        toStr =
+            String.fromInt
+
+        maybeAffix str =
+            case ( withAffix, tense ) of
+                ( True, Past ) ->
+                    str ++ " ago"
+
+                ( True, Future ) ->
+                    "in " ++ str
+
+                ( False, _ ) ->
+                    str
+    in
+    (case distanceId of
+        LessThanXSeconds i ->
+            if i == 1 then
+                "1s"
+
+            else
+                toStr i ++ "s"
+
+        HalfAMinute ->
+            "30s"
+
+        LessThanXMinutes i ->
+            if i == 1 then
+                "< 1m"
+
+            else
+                "< " ++ toStr i ++ "m"
+
+        XMinutes i ->
+            if i == 1 then
+                "1m"
+
+            else
+                toStr i ++ "m"
+
+        AboutXHours i ->
+            if i == 1 then
+                "1h"
+
+            else
+                toStr i ++ "h"
+
+        XDays i ->
+            if i == 1 then
+                "1d"
+
+            else
+                toStr i ++ "d"
+
+        AboutXMonths i ->
+            if i == 1 then
+                "1mon"
+
+            else
+                toStr i ++ "mon"
+
+        XMonths i ->
+            if i == 1 then
+                "1mon"
+
+            else
+                toStr i ++ "mon"
+
+        AboutXYears i ->
+            if i == 1 then
+                "1y"
+
+            else
+                toStr i ++ "y"
+
+        OverXYears i ->
+            if i == 1 then
+                "> 1y"
+
+            else
+                "> " ++ toStr i ++ "y"
+
+        AlmostXYears i ->
+            if i == 1 then
+                "1y"
+
+            else
+                toStr i ++ "y"
+    )
+        |> maybeAffix
 
 
 asSecondsAgo : Time.Posix -> String -> String
@@ -207,10 +304,10 @@ formatPing palette averagePing =
                 text <| Round.round 2 ping ++ "ms"
 
             else if ping < 1000 * 60 then
-                el [ Font.color palette.danger ] (text <| Round.round 2 (ping / 1000) ++ "s")
+                el [ Font.alignRight, Font.color palette.danger ] (text <| Round.round 2 (ping / 1000) ++ "s")
 
             else
-                el [ Font.color palette.failure ] (text <| "> 60s")
+                el [ Font.alignRight, Font.color palette.failure ] (text <| "> 60s")
 
         Nothing ->
             el [ Font.color palette.failure ] (text "n/a")

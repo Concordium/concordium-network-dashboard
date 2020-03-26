@@ -21,20 +21,8 @@ view : Model -> Element Msg
 view model =
     content <|
         row [ paddingXY 0 20, spacing 20 ]
-            [ column
-                [ height (px 800)
-                , width (px 800)
-                , Background.color model.palette.bg2
-                , Border.rounded 5
-                , alignTop
-                ]
-                [ --html <| NetworkGraph.agedRelations model model.nodes,
-                  row [ spacing 5 ]
-                    [ el [ padding 10, onClick (GraphZoom 100) ] (text "Zoom Out")
-                    , el [ padding 10, onClick (GraphZoom -100) ] (text "Zoom In")
-                    ]
-                ]
-            , case model.selectedNode of
+            [ -- networkGraph model
+              case model.selectedNode of
                 Just node ->
                     nodeView node model
 
@@ -46,6 +34,22 @@ view model =
                         _ ->
                             el [ alignTop ] (text "Click on a node to see an overview")
             ]
+
+
+networkGraph model =
+    column
+        [ height (px 800)
+        , width (px 800)
+        , Background.color model.palette.bg2
+        , Border.rounded 5
+        , alignTop
+        ]
+        [ --html <| NetworkGraph.agedRelations model model.nodes,
+          row [ spacing 5 ]
+            [ el [ padding 10, onClick (GraphZoom 100) ] (text "Zoom Out")
+            , el [ padding 10, onClick (GraphZoom -100) ] (text "Zoom In")
+            ]
+        ]
 
 
 nodeView : NetworkNode -> Model -> Element Msg
@@ -78,7 +82,7 @@ nodeView node model =
                 |> List.map
                     (\( label, elem ) ->
                         row [ height (shrink |> minimum 30) ]
-                            [ column [ width (px 170), Font.color model.palette.fg1 ] [ text label ]
+                            [ column [ width (px 200), Font.color model.palette.fg1 ] [ text label ]
                             , column [ width fill ] [ elem ]
                             ]
                     )

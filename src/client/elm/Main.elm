@@ -44,8 +44,6 @@ import RemoteData exposing (RemoteData(..))
 import String
 import Task
 import Time
-import Time.Distance exposing (inWordsWithConfig)
-import Time.Distance.I18n as I18n
 import Time.Extra
 import Types exposing (..)
 import Url exposing (Url)
