@@ -7,6 +7,7 @@ import Browser.Events as Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
 import Colors
+import Context exposing (Context)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
@@ -75,8 +76,8 @@ init flags url key =
     )
 
 
-theme : List (Element msg) -> Html.Html msg
-theme x =
+theme : Context a -> List (Element msg) -> Html.Html msg
+theme ctx x =
     layoutWith
         { options =
             [ focusStyle
@@ -87,9 +88,9 @@ theme x =
             ]
         }
         [ width fill
-        , Background.color <| Colors.toUI Colors.background
-        , Font.color <| Colors.toUI Colors.white
-        , Font.size 18
+        , Background.color <| ctx.palette.bg1
+        , Font.color <| ctx.palette.fg1
+        , Font.size 16
         , Font.regular
         , Font.family
             [ Font.typeface "Poppins"
@@ -105,7 +106,7 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Concordium Visualizations"
     , body =
-        [ theme <|
+        [ theme model <|
             case model.currentPage of
                 Home ->
                     [ el

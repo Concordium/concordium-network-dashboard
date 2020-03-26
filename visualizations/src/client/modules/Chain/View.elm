@@ -4,6 +4,7 @@ import Chain.Build as Build exposing (..)
 import Chain.Flatten as Flatten exposing (..)
 import Color exposing (Color, rgb)
 import Color.Interpolate exposing (..)
+import Color.Manipulate exposing (fadeOut)
 import Context exposing (..)
 import CubicSpline2d exposing (fromControlPoints)
 import Element
@@ -97,32 +98,48 @@ viewCollapsedBlocksSummary ctx { gridSpec, lastFinalized, nodes, onBlockClick, s
                         (Rectangle2d.interpolate background 1 0)
 
                 color =
-                    Palette.withAlphaCo 0.3 lastFinalizedBlock.color
+                    Palette.withAlphaCo 0.3 (blockColor ctx.palette Candidate)
             in
             svg
-                [ width (px (viewWidth - gridSpec.outerPadding + 5))
+                [ width (px (viewWidth - gridSpec.outerPadding + (gridSpec.gutterWidth / 2)))
                 , height (px viewHeight)
                 , viewBox
                     -gridSpec.outerPadding
                     -gridSpec.outerPadding
-                    (viewWidth - gridSpec.outerPadding + 5)
+                    (viewWidth - gridSpec.outerPadding + (gridSpec.gutterWidth / 2))
                     viewHeight
                 ]
-                [ Svg.rectangle2d [ fill <| Paint (Palette.uiToColor ctx.palette.bg1) ] background
+                [ Svg.rectangle2d [ fill <| Paint (Palette.uiToColor ctx.palette.bg1) ]
+                    background
                 , Svg.lineSegment2d
                     [ stroke
                         (Paint <|
-                            Palette.withAlphaCo 0.3 lastFinalizedBlock.color
+                            Palette.withAlphaCo 0.3 color
                         )
                     , strokeDasharray "4"
                     ]
                     rightEdge
-                , Svg.translateBy translation <| viewText (String.fromInt chain.numCollapsedBlocksX) color
-                , Tuple.second (viewBlock onBlockClick selectedBlock lastFinalizedBlock)
+                , Svg.translateBy translation <|
+                    viewText (fromSignedInt chain.numCollapsedBlocksX) 15 color
+                , Tuple.second
+                    (viewBlock
+                        onBlockClick
+                        selectedBlock
+                        lastFinalizedBlock
+                    )
                 ]
 
         False ->
             g [] []
+
+
+fromSignedInt : Int -> String
+fromSignedInt number =
+    if number > 0 then
+        "+" ++ String.fromInt number
+
+    else
+        String.fromInt number
 
 
 viewBlock :
@@ -153,22 +170,22 @@ viewBlock clickMsg selectedBlock { hash, rect, color } =
         [ Svg.rectangle2d
             [ rx (px 4)
             , ry (px 4)
-            , fill (Paint <| Palette.withAlphaCo 0.3 color)
+            , fill (Paint <| fadeOut 0.7 color)
             , highlight
             ]
             rect
-        , Svg.translateBy translation <| viewText (String.left 4 hash) color
+        , Svg.translateBy translation <| viewText (String.left 4 hash) 16 color
         ]
     )
 
 
-viewText : String -> Color -> Svg msg
-viewText line color =
+viewText : String -> Float -> Color -> Svg msg
+viewText line size color =
     text_
         [ textAnchor AnchorMiddle
         , alignmentBaseline AlignmentCentral
         , fill <| Paint color
-        , fontSize (px 16)
+        , fontSize (px size)
         , fontFamily [ "IBM Plex Mono, monospaces" ]
         ]
         [ text line ]
@@ -187,7 +204,7 @@ viewConnector { id, start, end, color } =
     ( id
     , Svg.cubicSpline2d
         [ fill PaintNone
-        , stroke (Paint <| Palette.withAlphaCo 0.3 color)
+        , stroke (Paint <| fadeOut 0.7 color)
         , strokeWidth (px 2)
         ]
         spline

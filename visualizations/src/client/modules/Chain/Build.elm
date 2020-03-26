@@ -42,8 +42,6 @@ type alias Block =
     { hash : String
     , nodesAt : List String
     , numNodesAt : Int
-    , numNodesAtTree : Int
-    , connectors : List Int
     , status : BlockStatus
     , forkWidth : Int
     , blockHeight : Int
@@ -222,23 +220,32 @@ annotateChildren label children =
             singleton label
 
         _ ->
+            tree
+                { label
+                    | forkWidth =
+                        children
+                            |> List.map (Tree.label >> .forkWidth)
+                            |> List.sum
+                }
+                (List.sortBy
+                    (Tree.map .numNodesAt >> Tree.flatten >> List.sum >> (*) -1)
+                    children
+                )
+
+
+
+{--
+annotateTree : List Node -> Tree ProtoBlock -> Tree Block 
+annotateTree nodes tree = 
+    case tree of 
+        Tree { label, []} -> 
+            block nodes 1 [] label 
+
+        Tree { label, children } -> 
             children
-                |> List.sortBy (Tree.label >> .numNodesAtTree >> (*) -1)
-                |> (\sortedChildren ->
-                        tree
-                            { label
-                                | forkWidth =
-                                    sortedChildren
-                                        |> List.map (Tree.label >> .forkWidth)
-                                        |> List.sum
-                                , numNodesAtTree =
-                                    sortedChildren
-                                        |> List.map (Tree.label >> .numNodesAt)
-                                        |> List.sum
-                                , connectors = connectors sortedChildren
-                            }
-                            sortedChildren
-                   )
+                |> List.map (annotateTree nodes)
+                |> 
+--}
 
 
 colorize : ProtoBlock -> Tree Block -> Tree Block
@@ -267,15 +274,6 @@ colorize lastFinalized tree =
         |> Maybe.withDefault tree
 
 
-connectors : List (Tree Block) -> List Int
-connectors branches =
-    List.map (Tree.label >> .forkWidth) branches
-        |> List.scanl (+) 0
-        |> List.unconsLast
-        |> Maybe.withDefault ( 0, [] )
-        |> Tuple.second
-
-
 block : List Node -> Int -> List Int -> ProtoBlock -> Block
 block nodes forkWidth connectorList ( height, hash ) =
     let
@@ -290,8 +288,6 @@ block nodes forkWidth connectorList ( height, hash ) =
     { hash = hash
     , nodesAt = nodesAt
     , numNodesAt = numNodesAt
-    , numNodesAtTree = numNodesAt
-    , connectors = connectorList
     , status = Candidate
     , forkWidth = forkWidth
     , blockHeight = height
