@@ -288,7 +288,7 @@ apply fn color =
 
 
 increment =
-    0.05
+    0.02
 
 
 veryLight : Element.Color -> Element.Color
