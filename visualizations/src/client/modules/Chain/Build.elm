@@ -18,7 +18,9 @@ import Tree.Zipper as Zipper exposing (Zipper)
 
 nodeInfoEndpoint : String
 nodeInfoEndpoint =
-    "https://dashboard.eu.prod.concordium.com/nodesBlocksInfo"
+    -- "http://127.0.0.1:12000/nodesBlocksInfo"
+    -- "https://dashboard.eu.staging.concordium.com/nodesBlocksInfo"
+    "/nodesBlocksInfo"
 
 
 type alias Node =
