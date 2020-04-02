@@ -16,13 +16,6 @@ import Tree exposing (Tree(..), singleton, tree)
 import Tree.Zipper as Zipper exposing (Zipper)
 
 
-nodeInfoEndpoint : String
-nodeInfoEndpoint =
-    -- "http://127.0.0.1:12000/nodesBlocksInfo"
-    -- "https://dashboard.eu.staging.concordium.com/nodesBlocksInfo"
-    "/nodesBlocksInfo"
-
-
 type alias Node =
     { nodeName : String
     , nodeId : String
@@ -137,8 +130,8 @@ mockNodes =
 -- Requests
 
 
-getNodeInfo : (WebData (List Node) -> msg) -> Cmd msg
-getNodeInfo responseMsg =
+getNodeInfo : String -> (WebData (List Node) -> msg) -> Cmd msg
+getNodeInfo nodeInfoEndpoint responseMsg =
     Http.get
         { url = nodeInfoEndpoint
         , expect = Http.expectJson (RemoteData.fromResult >> responseMsg) (Decode.list decodeNode)

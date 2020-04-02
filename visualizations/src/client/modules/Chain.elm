@@ -34,7 +34,8 @@ import Tree exposing (Tree)
 
 
 type alias Model =
-    { nodes : List (List Node)
+    { endpoint : String
+    , nodes : List (List Node)
     , initialBlockHeight : Maybe Int
     , lastFinalized : Maybe ProtoBlock
     , bestBlock : Maybe ProtoBlock
@@ -48,9 +49,10 @@ type alias Model =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( { nodes = []
+init : String -> ( Model, Cmd Msg )
+init middlewareEndpoint =
+    ( { endpoint = middlewareEndpoint
+      , nodes = []
       , initialBlockHeight = Nothing
       , lastFinalized = Nothing
       , bestBlock = Nothing
@@ -62,7 +64,7 @@ init =
       , gridSpec = spec
       , blockClicked = Nothing
       }
-    , Build.getNodeInfo GotNodeInfo
+    , Build.getNodeInfo middlewareEndpoint GotNodeInfo
     )
 
 
@@ -144,7 +146,9 @@ update ctx msg model =
         TickSecond time ->
             case model.replay of
                 Nothing ->
-                    ( model, Build.getNodeInfo GotNodeInfo )
+                    ( model
+                    , Build.getNodeInfo model.endpoint GotNodeInfo 
+                    )
 
                 Just replay ->
                     let

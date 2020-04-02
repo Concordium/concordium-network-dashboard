@@ -24,6 +24,9 @@ import Task
 import Time exposing (Posix)
 import Url exposing (Url)
 
+nodeInfoEndpoint = 
+    "https://dashboard.eu.staging.concordium.com/nodesBlocksInfo"
+
 
 type alias Flags =
     { width : Int, height : Int }
@@ -59,7 +62,7 @@ init : Flags -> Url -> Key -> ( Model, Cmd Msg )
 init flags url key =
     let
         ( chainModel, chainCmd ) =
-            Chain.init
+            Chain.init nodeInfoEndpoint
 
         model =
             { currentTime = Time.millisToPosix 0
