@@ -5,7 +5,8 @@ import Dashboard.Widgets exposing (content, remoteDataView, viewSummaryWidgets)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Explorer.View
+import Explorer.ViewNext
+import Palette
 import Types exposing (Model, Msg(..))
 
 
@@ -16,13 +17,13 @@ view model =
             [ viewSummaryWidgets model model.nodes
             , el
                 [ width fill
-                , height fill
+                , height (fill |> minimum 200)
+                , Background.color <| Palette.darkish model.palette.bg2
                 , Border.color <| model.palette.bg2
-                , Border.rounded 4
-                , Border.width 2
+                , Border.rounded 6
+                , Border.width 1
                 ]
                 (Chain.view model model.chainModel False)
                 |> Element.map ChainMsg
-
-            -- , Explorer.View.view model
+            , Explorer.ViewNext.view model
             ]

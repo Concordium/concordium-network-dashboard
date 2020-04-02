@@ -21,9 +21,10 @@ summariesUrl =
 
 
 middleware =
+    -- "/"
     case config of
         Local ->
             "http://localhost:8081"
 
         Staging ->
-            "https://dashboard.eu.staging.concordium.com/"
+            "https://dashboard.eu.staging.concordium.com/nodesBlocksInfo"

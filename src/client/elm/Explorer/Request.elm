@@ -172,6 +172,7 @@ blockInfoStub =
     }
 
 
+blockInfoDecoder : D.Decoder BlockInfo
 blockInfoDecoder =
     D.succeed BlockInfo
         |> required "transactionsSize" D.int
@@ -245,6 +246,7 @@ type alias BlockSummary =
     }
 
 
+blockSummaryDecoder : D.Decoder BlockSummary
 blockSummaryDecoder =
     D.succeed BlockSummary
         |> required "specialEvents" (D.list specialEventDecoder)
@@ -258,6 +260,7 @@ type alias SpecialEvent =
     }
 
 
+specialEventDecoder : D.Decoder SpecialEvent
 specialEventDecoder =
     D.succeed SpecialEvent
         |> required "bakerid" D.int
@@ -275,6 +278,7 @@ type alias TransactionSummary =
     }
 
 
+transactionSummaryDecoder : D.Decoder TransactionSummary
 transactionSummaryDecoder =
     D.succeed TransactionSummary
         |> required "hash" D.string
@@ -291,6 +295,7 @@ type TransactionEvent
     | TransactionEventCredentialDeployed EventCredentialDeployed
 
 
+transactionEventsDecoder : D.Decoder TransactionEvent
 transactionEventsDecoder =
     D.oneOf
         [ D.map TransactionEventTransfer eventTransferDecoder
@@ -307,6 +312,7 @@ type alias EventTransfer =
     }
 
 
+eventTransferDecoder : D.Decoder EventTransfer
 eventTransferDecoder =
     D.succeed EventTransfer
         |> required "amount" D.int
@@ -321,6 +327,7 @@ type alias EventAccountCreated =
     }
 
 
+eventAccountCreatedDecoder : D.Decoder EventAccountCreated
 eventAccountCreatedDecoder =
     D.succeed EventAccountCreated
         |> required "tag" D.string
@@ -334,6 +341,7 @@ type alias EventCredentialDeployed =
     }
 
 
+eventCredentialDeployedDecoder : D.Decoder EventCredentialDeployed
 eventCredentialDeployedDecoder =
     D.succeed EventCredentialDeployed
         |> required "tag" D.string
@@ -347,6 +355,7 @@ type AccountInfo
     | AddressUnknown
 
 
+accountInfoDecoder : D.Decoder AccountInfo
 accountInfoDecoder =
     D.succeed
         (\tipe address ->

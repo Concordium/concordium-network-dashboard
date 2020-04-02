@@ -235,7 +235,7 @@ viewTile palette tileContent =
         , width (fillPortion 1)
         , paddingXY 28 20
         , Background.color palette.bg2
-        , Border.rounded 8
+        , Border.rounded 6
         , Border.shadow
             { offset = ( 0, 0 )
             , size = 0

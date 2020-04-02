@@ -93,7 +93,7 @@ init : Flags -> Url -> Key -> ( Model, Cmd Msg )
 init flags url key =
     let
         ( chainInit, chainCmd ) =
-            Chain.init
+            Chain.init Config.middleware
     in
     ( { key = key
       , window = flags
