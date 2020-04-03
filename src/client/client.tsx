@@ -15,4 +15,4 @@ document.addEventListener("DOMContentLoaded", function () {
 })
 
 // Reload every 15 minutes or so - dumb way to keep our office screens on latest UI version
-setTimeout(() => { window.location.reload() }, 15 * 60 * 1000);
+setTimeout(function() { window.location.reload() }, 15 * 60 * 1000);
