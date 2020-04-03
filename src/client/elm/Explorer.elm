@@ -2,6 +2,7 @@ module Explorer exposing (..)
 
 import Explorer.Request exposing (..)
 import Http
+import RemoteData exposing (..)
 
 
 type alias BlockHash =
@@ -9,9 +10,9 @@ type alias BlockHash =
 
 
 type alias Model =
-    { currentBlockhash : Maybe String
-    , currentBlockInfo : Maybe BlockInfo
-    , currentBlockSummary : Maybe BlockSummary
+    { blockHash : Maybe String
+    , blockInfo : WebData BlockInfo
+    , blockSummary : WebData BlockSummary
     }
 
 
@@ -22,10 +23,11 @@ type Msg
     | ReceivedBlockSummary (Result Http.Error BlockSummary)
 
 
+init : Model
 init =
-    { currentBlockhash = Nothing
-    , currentBlockInfo = Nothing
-    , currentBlockSummary = Nothing
+    { blockHash = Nothing
+    , blockInfo = Success blockInfoStub
+    , blockSummary = Success getBlockSummaryStub_
     }
 
 
@@ -55,8 +57,8 @@ update msg model =
             case blockInfoRes of
                 Ok blockInfo ->
                     ( { model
-                        | currentBlockInfo =
-                            Just blockInfo
+                        | blockInfo =
+                            Success blockInfo
                       }
                     , if blockInfo.transactionCount > 0 then
                         getBlockSummary blockInfo.blockHash ReceivedBlockSummary
@@ -72,23 +74,14 @@ update msg model =
                     in
                     ( model, Cmd.none )
 
-        ReceivedBlockSummary blockSummaryRes ->
+        ReceivedBlockSummary blockSummaryResult ->
             let
                 y =
-                    Debug.log "ReceivedBlockSummary" blockSummaryRes
+                    Debug.log "ReceivedBlockSummary" blockSummaryResult
             in
-            case blockSummaryRes of
-                Ok blockSummary ->
-                    ( { model
-                        | currentBlockSummary =
-                            Just blockSummary
-                      }
-                    , Cmd.none
-                    )
-
-                Err err ->
-                    let
-                        x =
-                            Debug.log <| "ReceivedBlockSummary:err" ++ httpErrorToString err
-                    in
-                    ( model, Cmd.none )
+            ( { model
+                | blockSummary =
+                    RemoteData.fromResult blockSummaryResult
+              }
+            , Cmd.none
+            )

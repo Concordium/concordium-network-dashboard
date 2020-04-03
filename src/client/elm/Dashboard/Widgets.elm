@@ -236,12 +236,15 @@ viewTile palette tileContent =
         , paddingXY 28 20
         , Background.color palette.bg2
         , Border.rounded 6
-        , Border.shadow
-            { offset = ( 0, 0 )
-            , size = 0
-            , blur = 15
-            , color = rgba 0 0 0 0.1
-            }
+
+        --, Border.shadow
+        --  { offset = ( 0, 0 )
+        -- , size = 0
+        --, blur = 15
+        --, color = rgba 0 0 0 0.1
+        --  }
+        , Border.color (Palette.lightish palette.bg2)
+        , Border.width 1
         ]
         tileContent
 

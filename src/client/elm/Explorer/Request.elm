@@ -152,11 +152,11 @@ type alias BlockInfo =
 blockInfoStub : BlockInfo
 blockInfoStub =
     { transactionsSize = 0
-    , blockParent = "STUB"
+    , blockParent = "957c2ae05d82e9ba30142e02cda3b3c2ab779329d359c665abc7059dbb88cc61"
     , mintedAmountPerSlot = 100
     , totalEncryptedAmount = 0
-    , blockHash = "STUB"
-    , finalized = True
+    , blockHash = "d06708ea234df3189aa212008d8f0a97ba68384482d25fbeebdc2c822421f8ff"
+    , finalized = False
     , totalAmount = 15000628024800
     , blockArriveTime = "2020-03-05T17:04:10.8763399Z"
     , blockReceiveTime = "2020-03-05T17:04:10.8763399Z"
