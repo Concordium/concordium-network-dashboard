@@ -38,6 +38,7 @@ iconBase size group =
 -- baking/bread
 
 
+baking_bread : Float -> Svg msg
 baking_bread size =
     iconBase size
         [ g
@@ -60,6 +61,7 @@ baking_bread size =
 -- baking/oven
 
 
+baking_oven : Float -> Svg msg
 baking_oven size =
     iconBase size
         [ g
@@ -86,6 +88,7 @@ baking_oven size =
 -- account/user
 
 
+account_user : Float -> Svg msg
 account_user size =
     iconBase size
         [ g
@@ -109,6 +112,7 @@ account_user size =
 -- account/add
 
 
+account_add : Float -> Svg msg
 account_add size =
     iconBase size
         [ g
@@ -132,6 +136,7 @@ account_add size =
 -- account/credentials_deployed
 
 
+account_credentials_deployed : Float -> Svg msg
 account_credentials_deployed size =
     iconBase size
         [ g
@@ -155,6 +160,7 @@ account_credentials_deployed size =
 -- account/key_deployed
 
 
+account_key_deployed : Float -> Svg msg
 account_key_deployed size =
     iconBase size
         [ g
@@ -181,6 +187,7 @@ account_key_deployed size =
 -- arrow/left
 
 
+arrow_left : Float -> Svg msg
 arrow_left size =
     iconBase size
         [ g
@@ -190,7 +197,7 @@ arrow_left size =
             , fillRule "evenodd"
             ]
             [ polygon
-                [ id "Transactions-Copy-2"
+                [ id "Arrow/Left"
                 , fill "currentColor"
                 , fillRule "nonzero"
                 , transform "translate(21.000000, 21.000000) rotate(-180.000000) translate(-21.000000, -21.000000) "
@@ -205,6 +212,7 @@ arrow_left size =
 -- arrow/right
 
 
+arrow_right : Float -> Svg msg
 arrow_right size =
     iconBase size
         [ g
@@ -214,7 +222,7 @@ arrow_right size =
             , fillRule "evenodd"
             ]
             [ polygon
-                [ id "Transactions-Copy"
+                [ id "Arrow/Right"
                 , fill "currentColor"
                 , fillRule "nonzero"
                 , points "23.4257692 13.9973077 28.8875641 19.474359 7.26923077 19.474359 7.26923077 22.525641 28.8875641 22.525641 23.4105128 28.0026923 25.5769231 30.1538462 34.7307692 21 25.5769231 11.8461538"
@@ -231,6 +239,7 @@ arrow_right size =
 -- block/finalized
 
 
+block_finalized : Float -> Svg msg
 block_finalized size =
     iconBase size
         [ g
@@ -250,6 +259,7 @@ block_finalized size =
         ]
 
 
+block_not_finalized : Float -> Svg msg
 block_not_finalized size =
     iconBase size
         [ g
@@ -281,6 +291,7 @@ block_not_finalized size =
 -- menu/more
 
 
+menu_more : Float -> Svg msg
 menu_more size =
     iconBase size
         [ g
@@ -306,6 +317,7 @@ menu_more size =
 -- status/failure
 
 
+status_failure : Float -> Svg msg
 status_failure size =
     iconBase size
         [ g
@@ -330,6 +342,7 @@ status_failure size =
 -- status/success
 
 
+status_success : Float -> Svg msg
 status_success size =
     iconBase size
         [ g
@@ -356,6 +369,7 @@ status_success size =
 -- delegation/delegated
 
 
+delegation_delegated : Float -> Svg msg
 delegation_delegated size =
     iconBase size
         [ g
@@ -379,6 +393,7 @@ delegation_delegated size =
 -- delegation/election
 
 
+delegation_election : Float -> Svg msg
 delegation_election size =
     iconBase size
         [ g
@@ -402,6 +417,7 @@ delegation_election size =
 -- delegation/undelegated
 
 
+delegation_undelegated : Float -> Svg msg
 delegation_undelegated size =
     iconBase size
         [ g
@@ -428,6 +444,7 @@ delegation_undelegated size =
 -- system/cog
 
 
+system_cog : Float -> Svg msg
 system_cog size =
     iconBase size
         [ g
@@ -454,6 +471,7 @@ system_cog size =
 -- time/stopwatch
 
 
+time_stopwatch : Float -> Svg msg
 time_stopwatch size =
     iconBase size
         [ g
@@ -477,6 +495,7 @@ time_stopwatch size =
 -- blockheight
 
 
+blockheight : Float -> Svg msg
 blockheight size =
     iconBase size
         [ g
@@ -500,6 +519,7 @@ blockheight size =
 -- close
 
 
+close : Float -> Svg msg
 close size =
     iconBase size
         [ g
@@ -541,6 +561,7 @@ close size =
 -- transaction
 
 
+transaction : Float -> Svg msg
 transaction size =
     iconBase size
         [ g
@@ -564,6 +585,7 @@ transaction size =
 -- speed
 
 
+speed : Float -> Svg msg
 speed size =
     iconBase size
         [ g
@@ -575,6 +597,63 @@ speed size =
             [ Svg.path
                 [ d "M9.12893467,13.1590981 C14.5050837,7.4029386 23.2349825,6.33048384 29.8445174,10.6142204 L29.8445174,10.6142204 L26.8217551,12.6293953 C21.6894048,10.0620068 15.4808267,11.1632601 11.5445816,15.3392004 C7.60833654,19.5151407 6.87558109,25.7779092 9.7415227,30.7497179 L9.7415227,30.7497179 L32.2659776,30.7497179 C34.4473244,26.9644147 34.581641,22.3365952 32.6235086,18.4311488 L32.6235086,18.4311488 L34.6302701,15.42 L34.8209779,15.7217254 C38.25929,21.2865393 38.023796,28.3761474 34.2237799,33.7005274 L34.0048785,34 L8.00262178,34 C3.27813825,27.6979681 3.75278566,18.9152577 9.12893467,13.1590981 Z M32.5097487,12.7431552 L23.3114504,26.5406026 C22.7018007,27.150931 21.8745308,27.493867 21.0118758,27.493867 C20.1492209,27.493867 19.321951,27.150931 18.7123013,26.5406026 C18.1019729,25.9309529 17.7590369,25.103683 17.7590369,24.241028 C17.7590369,23.3783731 18.1019729,22.5511032 18.7123013,21.9414535 L18.7123013,21.9414535 L32.5097487,12.7431552 Z"
                 , id "Path-2"
+                , fill "currentColor"
+                , fillRule "nonzero"
+                ]
+                []
+            ]
+        ]
+
+
+smart_contract : Float -> Svg msg
+smart_contract size =
+    iconBase size
+        [ g
+            [ id "/Icons/SmartContract"
+            , stroke "none"
+            , strokeWidth "1"
+            , fillRule "evenodd"
+            ]
+            [ Svg.path
+                [ d "M22.6839275,8.61610372 L22.6839275,12.2283614 L10.0410256,12.2283614 L10.0410256,34.2992557 L31.7145716,34.2992557 L31.7145716,21.2590055 L35.3268293,21.2590055 L35.3268293,37.514165 L6.42876798,37.514165 L6.42876798,8.61610372 L22.6839275,8.61610372 Z M28.1023139,26.677392 L28.1023139,30.2896497 L13.6532833,30.2896497 L13.6532833,26.677392 L28.1023139,26.677392 Z M28.1023139,21.2590055 L28.1023139,24.8712632 L13.6532833,24.8712632 L13.6532833,21.2590055 L28.1023139,21.2590055 Z M22.6839275,15.840619 L22.6839275,19.4528767 L13.6532833,19.4528767 L13.6532833,15.840619 L22.6839275,15.840619 Z M33.7193746,0.509274266 C35.9961916,0.736955961 37.6616115,2.76486215 37.7604553,5.04494388 L37.7651032,5.25939309 L37.7651032,5.90959947 L39.571232,5.90959947 L39.571232,16.7463725 L26.9283302,16.7463725 L26.9283302,5.90959947 L28.734459,5.90959947 L28.734459,5.00653505 C28.734459,2.35152567 31.0101814,0.238354941 33.7193746,0.509274266 Z M33.2497811,2.29734181 C31.8062159,2.29734181 30.6306218,3.41947057 30.5455209,4.84120586 L30.5405879,5.00653505 L30.5405879,5.90959947 L35.9589744,5.90959947 L35.9589744,5.00653505 C35.9589744,3.50744812 34.748868,2.29734181 33.2497811,2.29734181 Z"
+                , fill "currentColor"
+                , fillRule "nonzero"
+                ]
+                []
+            ]
+        ]
+
+
+smart_contract_add : Float -> Svg msg
+smart_contract_add size =
+    iconBase size
+        [ g
+            [ id "/Icons/SmartContractAdd"
+            , stroke "none"
+            , strokeWidth "1"
+            , fillRule "evenodd"
+            ]
+            [ Svg.path
+                [ d "M22.6839275,8.61610372 L22.6839275,12.2283614 L10.0410256,12.2283614 L10.0410256,34.2992557 L31.7145716,34.2992557 L31.7145716,21.2590055 L35.3268293,21.2590055 L35.3268293,37.514165 L6.42876798,37.514165 L6.42876798,8.61610372 L22.6839275,8.61610372 Z M22.6839275,15.840619 L22.683768,21.258835 L28.1023139,21.2590055 L28.1023139,24.8712632 L22.683768,24.870835 L22.6839275,30.2896497 L19.0716698,30.2896497 L19.070768,24.870835 L13.6532833,24.8712632 L13.6532833,21.2590055 L19.070768,21.258835 L19.0716698,15.840619 L22.6839275,15.840619 Z M33.7193746,0.509274266 C35.9961916,0.736955961 37.6616115,2.76486215 37.7604553,5.04494388 L37.7651032,5.25939309 L37.7651032,5.90959947 L39.571232,5.90959947 L39.571232,16.7463725 L26.9283302,16.7463725 L26.9283302,5.90959947 L28.734459,5.90959947 L28.734459,5.00653505 C28.734459,2.35152567 31.0101814,0.238354941 33.7193746,0.509274266 Z M33.2497811,2.29734181 C31.8062159,2.29734181 30.6306218,3.41947057 30.5455209,4.84120586 L30.5405879,5.00653505 L30.5405879,5.90959947 L35.9589744,5.90959947 L35.9589744,5.00653505 C35.9589744,3.50744812 34.748868,2.29734181 33.2497811,2.29734181 Z"
+                , fill "currentColor"
+                , fillRule "nonzero"
+                ]
+                []
+            ]
+        ]
+
+
+smart_contract_update : Float -> Svg msg
+smart_contract_update size =
+    iconBase size
+        [ g
+            [ id "/Icons/SmartContractUpdate"
+            , stroke "none"
+            , strokeWidth "1"
+            , fillRule "evenodd"
+            ]
+            [ Svg.path
+                [ d "M22.6839275,8.61610372 L22.6839275,12.2283614 L10.0410256,12.2283614 L10.0410256,34.2992557 L31.7145716,34.2992557 L31.7145716,21.2590055 L35.3268293,21.2590055 L35.3268293,37.514165 L6.42876798,37.514165 L6.42876798,8.61610372 L22.6839275,8.61610372 Z M22.6839275,15.840619 L22.683768,21.258835 L28.1023139,21.2590055 L28.1023139,24.8712632 L22.683768,24.870835 L22.6839275,30.2896497 L19.0716698,30.2896497 L19.070768,24.870835 L13.6532833,24.8712632 L13.6532833,21.2590055 L19.070768,21.258835 L19.0716698,15.840619 L22.6839275,15.840619 Z M33.7193746,0.509274266 C35.9961916,0.736955961 37.6616115,2.76486215 37.7604553,5.04494388 L37.7651032,5.25939309 L37.7651032,5.90959947 L39.571232,5.90959947 L39.571232,16.7463725 L26.9283302,16.7463725 L26.9283302,5.90959947 L28.734459,5.90959947 L28.734459,5.00653505 C28.734459,2.35152567 31.0101814,0.238354941 33.7193746,0.509274266 Z M33.2497811,2.29734181 C31.8062159,2.29734181 30.6306218,3.41947057 30.5455209,4.84120586 L30.5405879,5.00653505 L30.5405879,5.90959947 L35.9589744,5.90959947 L35.9589744,5.00653505 C35.9589744,3.50744812 34.748868,2.29734181 33.2497811,2.29734181 Z"
                 , fill "currentColor"
                 , fillRule "nonzero"
                 ]

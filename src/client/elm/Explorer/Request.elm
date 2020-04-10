@@ -2,10 +2,12 @@ module Explorer.Request exposing (..)
 
 import Config
 import Http exposing (..)
+import Iso8601
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import RemoteData exposing (..)
 import Task
+import Time exposing (Posix)
 
 
 
@@ -135,13 +137,13 @@ type alias BlockInfo =
     , blockHash : String
     , finalized : Bool
     , totalAmount : Int
-    , blockArriveTime : String
-    , blockReceiveTime : String
+    , blockArriveTime : Posix
+    , blockReceiveTime : Posix
     , transactionCount : Int
     , transactionEnergyCost : Int
     , blockSlot : Int
     , blockLastFinalized : String
-    , blockSlotTime : String
+    , blockSlotTime : Posix
     , blockHeight : Int
     , blockBaker : Int
     , executionCost : Int
@@ -158,13 +160,19 @@ blockInfoStub =
     , blockHash = "d06708ea234df3189aa212008d8f0a97ba68384482d25fbeebdc2c822421f8ff"
     , finalized = False
     , totalAmount = 15000628024800
-    , blockArriveTime = "2020-03-05T17:04:10.8763399Z"
-    , blockReceiveTime = "2020-03-05T17:04:10.8763399Z"
+    , blockArriveTime =
+        Iso8601.toTime "2020-04-05T17:04:10.8763399Z"
+            |> Result.withDefault (Time.millisToPosix 1586459410)
+    , blockReceiveTime =
+        Iso8601.toTime "2020-04-05T17:04:10.8763399Z"
+            |> Result.withDefault (Time.millisToPosix 1586459410)
     , transactionCount = 0
     , transactionEnergyCost = 0
     , blockSlot = 6280248
     , blockLastFinalized = "a0cdd5b7e51d83bef2d0ed55cb35cdc8c42280add22e9e59c893ecb492ff609a"
-    , blockSlotTime = "2020-03-05T16:08:00Z"
+    , blockSlotTime =
+        Iso8601.toTime "2020-04-05T16:08:00Z"
+            |> Result.withDefault (Time.millisToPosix 1586459410)
     , blockHeight = 79
     , blockBaker = 2
     , executionCost = 0
@@ -182,13 +190,13 @@ blockInfoDecoder =
         |> required "blockHash" D.string
         |> required "finalized" D.bool
         |> required "totalAmount" D.int
-        |> required "blockArriveTime" D.string
-        |> required "blockReceiveTime" D.string
+        |> required "blockArriveTime" Iso8601.decoder
+        |> required "blockReceiveTime" Iso8601.decoder
         |> required "transactionCount" D.int
         |> required "transactionEnergyCost" D.int
         |> required "blockSlot" D.int
         |> required "blockLastFinalized" D.string
-        |> required "blockSlotTime" D.string
+        |> required "blockSlotTime" Iso8601.decoder
         |> required "blockHeight" D.int
         |> required "blockBaker" D.int
         |> required "executionCost" D.int
@@ -489,7 +497,7 @@ getBlockSummaryResponseStub =
             "tag": "Transferred",
             "to": {
               "address": "4KYJHs49FX7tPD2pFY2whbfZ8AjupEtX8yNSLwWMFQFUZgRobL",
-              "type": "AddressAccount"
+              "type": "AddressContract"
             },
             "from": {
               "address": "4KYJHs49FX7tPD2pFY2whbfZ8AjupEtX8yNSLwWMFQFUZgRobL",
@@ -517,7 +525,7 @@ getBlockSummaryResponseStub =
             },
             "from": {
               "address": "4KYJHs49FX7tPD2pFY2whbfZ8AjupEtX8yNSLwWMFQFUZgRobL",
-              "type": "AddressAccount"
+              "type": "AddressContract"
             }
           }
         ],

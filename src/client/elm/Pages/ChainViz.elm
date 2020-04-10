@@ -25,5 +25,7 @@ view model =
                 ]
                 (Chain.view model model.chainModel False)
                 |> Element.map ChainMsg
-            , Explorer.ViewNext.view model model.explorerModel.blockInfo
+            , Explorer.ViewNext.view model
+                model.explorerModel.blockInfo
+                model.explorerModel.blockSummary
             ]

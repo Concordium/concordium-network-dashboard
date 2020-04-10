@@ -2,6 +2,7 @@ module Explorer.ViewNext exposing (..)
 
 import Chain.Flatten exposing (DrawableBlock)
 import Context exposing (Context)
+import Dashboard.Formatting as Formatting
 import Dashboard.Widgets exposing (remoteDataView)
 import Element exposing (..)
 import Element.Background as Background
@@ -9,26 +10,27 @@ import Element.Border as Border
 import Element.Font as Font
 import Explorer.Request exposing (..)
 import Icons exposing (..)
+import Iso8601
 import Material.Icons.Sharp as MIcons
 import Material.Icons.Types exposing (Coloring(..))
 import Palette exposing (withAlphaEl)
 import RemoteData exposing (RemoteData(..), WebData)
 
 
-view : Context a -> WebData BlockInfo -> Element msg
-view ctx remoteBlockInfo =
+view : Context a -> WebData BlockInfo -> WebData BlockSummary -> Element msg
+view ctx remoteBlockInfo remoteBlockSummary =
     viewContainer ctx
         (remoteDataView ctx.palette
-            (\blockInfo ->
+            (\( blockInfo, blockSummary ) ->
                 column
                     [ width fill ]
                     ([ viewHeader ctx blockInfo
                      , viewContentHeadline ctx
                      ]
-                        ++ List.map (viewTransaction ctx) (List.range 0 10)
+                        ++ List.map (viewTransaction ctx) blockSummary.transactionSummaries
                     )
             )
-            remoteBlockInfo
+            (RemoteData.map2 Tuple.pair remoteBlockInfo remoteBlockSummary)
         )
 
 
@@ -45,6 +47,8 @@ viewContainer ctx content =
             , blur = 15
             , color = rgba 0 0 0 0.1
             }
+        , Border.color (Palette.lightish ctx.palette.bg2)
+        , Border.width 1
         ]
         content
 
@@ -125,6 +129,9 @@ viewSlotTime ctx blockInfo =
     let
         color =
             blockColor ctx blockInfo
+
+        slotTime =
+            Formatting.formatTimeBetween blockInfo.blockSlotTime ctx.time
     in
     row
         [ height fill
@@ -134,7 +141,7 @@ viewSlotTime ctx blockInfo =
         ]
         [ el [ Font.color (withAlphaEl 0.5 <| color) ]
             (html <| Icons.time_stopwatch 20)
-        , text "2m12s"
+        , text slotTime
         ]
 
 
@@ -167,25 +174,73 @@ viewContentHeadline ctx =
         [ el [ paddingXY 10 0, Font.color ctx.palette.fg3 ] <| text "CONTENT" ]
 
 
-viewTransaction : Context a -> Int -> Element msg
-viewTransaction ctx number =
-    row ([ width fill, height (px 46), paddingXY 10 0 ] ++ bottomBorder ctx)
+viewTransaction : Context a -> TransactionSummary -> Element msg
+viewTransaction ctx txSummary =
+    let
+        event =
+            List.head txSummary.events
+    in
+    row
+        ([ width fill
+         , height (px 46)
+         , paddingXY 10 0
+         , mouseOver [ Background.color <| Palette.lightish ctx.palette.bg2 ]
+         ]
+            ++ bottomBorder ctx
+        )
         [ el [ paddingEach { top = 0, bottom = 0, left = 0, right = 20 } ]
             (html <| Icons.transaction 18)
-        , el [ paddingXY 30 0 ] (text "1234.00")
-        , viewBadge ctx
-            { icon = el [] (html <| Icons.account_user 18)
-            , label = text "12345678"
-            }
-        , el [ paddingXY 8 0 ] (html <| Icons.arrow_right 18)
-        , viewBadge ctx
-            { icon = el [] (html <| Icons.account_user 18)
-            , label = text "a8b7e8ff"
-            }
+        , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
+            (el [ alignRight ] <| text <| String.fromInt txSummary.cost)
+        , viewTransactionEvent ctx event
         , el [ alignRight ] (html <| Icons.status_success 20)
         ]
+
+
+viewTransactionEvent : Context a -> Maybe TransactionEvent -> Element msg
+viewTransactionEvent ctx txEvent =
+    case txEvent of
+        Just (TransactionEventAccountCreated event) ->
+            row []
+                [ viewAddress ctx (AddressAccount event.account)
+                ]
+
+        Just (TransactionEventCredentialDeployed event) ->
+            none
+
+        Just (TransactionEventTransfer event) ->
+            row []
+                [ viewAddress ctx event.from
+                , el [ paddingXY 8 0 ] (html <| Icons.arrow_right 18)
+                , viewAddress ctx event.to
+                ]
+
+        Nothing ->
+            none
 
 
 viewBadge : Context a -> { icon : Element msg, label : Element msg } -> Element msg
 viewBadge ctx { icon, label } =
     row [ padding 5, spacing 4 ] [ icon, label ]
+
+
+viewAddress : Context a -> AccountInfo -> Element msg
+viewAddress ctx addr =
+    case addr of
+        AddressAccount address ->
+            viewBadge ctx
+                { icon = el [] (html <| Icons.account_user 18)
+                , label = text (String.left 8 address)
+                }
+
+        AddressContract address ->
+            viewBadge ctx
+                { icon = el [] (html <| Icons.smart_contract 18)
+                , label = text (String.left 8 address)
+                }
+
+        AddressUnknown ->
+            viewBadge ctx
+                { icon = el [ Font.color ctx.palette.danger ] (html <| Icons.close 18)
+                , label = text "(Error: Address Failed)"
+                }

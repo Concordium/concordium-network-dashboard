@@ -8,6 +8,7 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Explorer
 import Explorer.Request exposing (..)
+import Iso8601
 import Types exposing (..)
 
 
@@ -66,8 +67,18 @@ viewBlockLoaded ctx blockInfo blockSummaryM =
                 ]
             ]
         , row [ width fill, spacing 10 ]
-            [ paragraph [ Background.color ctx.palette.bg2, padding 10, Border.rounded 5 ] [ text <| "Slot: " ++ blockInfo.blockSlotTime ]
-            , paragraph [ Background.color ctx.palette.bg2, padding 10, Border.rounded 5 ] [ text <| "Seen: " ++ blockInfo.blockReceiveTime ]
+            [ paragraph
+                [ Background.color ctx.palette.bg2
+                , padding 10
+                , Border.rounded 5
+                ]
+                [ text <| "Slot: " ++ Iso8601.fromTime blockInfo.blockSlotTime ]
+            , paragraph
+                [ Background.color ctx.palette.bg2
+                , padding 10
+                , Border.rounded 5
+                ]
+                [ text <| "Seen: " ++ Iso8601.fromTime blockInfo.blockReceiveTime ]
             ]
         , column []
             [ if blockInfo.transactionCount == 0 then
