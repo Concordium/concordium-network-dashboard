@@ -131,9 +131,9 @@ mockNodes =
 
 
 getNodeInfo : String -> (WebData (List Node) -> msg) -> Cmd msg
-getNodeInfo nodeInfoEndpoint responseMsg =
+getNodeInfo middlewareEndpoint responseMsg =
     Http.get
-        { url = nodeInfoEndpoint
+        { url = middlewareEndpoint ++ "/nodesBlocksInfo"
         , expect = Http.expectJson (RemoteData.fromResult >> responseMsg) (Decode.list decodeNode)
         }
 
@@ -230,16 +230,16 @@ annotateChildren label children =
 
 
 {--
-annotateTree : List Node -> Tree ProtoBlock -> Tree Block 
-annotateTree nodes tree = 
-    case tree of 
-        Tree { label, []} -> 
-            block nodes 1 [] label 
+annotateTree : List Node -> Tree ProtoBlock -> Tree Block
+annotateTree nodes tree =
+    case tree of
+        Tree { label, []} ->
+            block nodes 1 [] label
 
-        Tree { label, children } -> 
+        Tree { label, children } ->
             children
                 |> List.map (annotateTree nodes)
-                |> 
+                |>
 --}
 
 

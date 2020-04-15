@@ -147,7 +147,7 @@ update ctx msg model =
             case model.replay of
                 Nothing ->
                     ( model
-                    , Build.getNodeInfo model.endpoint GotNodeInfo 
+                    , Build.getNodeInfo model.endpoint GotNodeInfo
                     )
 
                 Just replay ->
