@@ -131,9 +131,9 @@ mockNodes =
 
 
 getNodeInfo : String -> (WebData (List Node) -> msg) -> Cmd msg
-getNodeInfo middlewareEndpoint responseMsg =
+getNodeInfo collectorEndpoint responseMsg =
     Http.get
-        { url = middlewareEndpoint ++ "/nodesBlocksInfo"
+        { url = collectorEndpoint ++ "/nodesBlocksInfo"
         , expect = Http.expectJson (RemoteData.fromResult >> responseMsg) (Decode.list decodeNode)
         }
 

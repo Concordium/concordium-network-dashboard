@@ -50,8 +50,8 @@ type alias Model =
 
 
 init : String -> ( Model, Cmd Msg )
-init middlewareEndpoint =
-    ( { endpoint = middlewareEndpoint
+init collectorEndpoint =
+    ( { endpoint = collectorEndpoint
       , nodes = []
       , initialBlockHeight = Nothing
       , lastFinalized = Nothing
@@ -64,7 +64,7 @@ init middlewareEndpoint =
       , gridSpec = spec
       , blockClicked = Nothing
       }
-    , Build.getNodeInfo middlewareEndpoint GotNodeInfo
+    , Build.getNodeInfo collectorEndpoint GotNodeInfo
     )
 
 
