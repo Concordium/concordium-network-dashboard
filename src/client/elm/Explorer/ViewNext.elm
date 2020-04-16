@@ -21,16 +21,30 @@ view : Context a -> WebData BlockInfo -> WebData BlockSummary -> Element msg
 view ctx remoteBlockInfo remoteBlockSummary =
     viewContainer ctx
         (remoteDataView ctx.palette
-            (\( blockInfo, blockSummary ) ->
+            (\blockInfo ->
+                let
+                    summaries =
+                        if blockInfo.transactionCount == 0 then
+                            paragraph [ padding 10, Font.color ctx.palette.fg2 ]
+                                [ text "This block has no transactions in it." ]
+
+                        else
+                            remoteDataView ctx.palette
+                                (\blockSummary ->
+                                    blockSummary.transactionSummaries
+                                        |> List.map (viewTransaction ctx)
+                                        |> column [ width fill ]
+                                )
+                                remoteBlockSummary
+                in
                 column
                     [ width fill ]
-                    ([ viewHeader ctx blockInfo
-                     , viewContentHeadline ctx
-                     ]
-                        ++ List.map (viewTransaction ctx) blockSummary.transactionSummaries
-                    )
+                    [ viewHeader ctx blockInfo
+                    , viewContentHeadline ctx
+                    , summaries
+                    ]
             )
-            (RemoteData.map2 Tuple.pair remoteBlockInfo remoteBlockSummary)
+            remoteBlockInfo
         )
 
 
