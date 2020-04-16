@@ -7,7 +7,7 @@ type Mode
 
 
 config =
-    Local
+    Staging
 
 
 collector =
