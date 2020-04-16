@@ -7,17 +7,17 @@ type Mode
 
 
 config =
-    Staging
+    Local
 
 
-summariesUrl =
-    -- "http://127.0.0.1:12000/nodesSummary"
+collector =
     case config of
         Local ->
-            "/nodesSummary"
+            "http://127.0.0.1:12000"
 
         Staging ->
-            "https://dashboard.eu.staging.concordium.com/nodesSummary"
+            -- Once deployed the routing for both collector and middleware is through the same URL
+            "https://dashboard.eu.staging.concordium.com"
 
 
 middleware =
@@ -27,4 +27,5 @@ middleware =
             "http://localhost:8081"
 
         Staging ->
-            "https://dashboard.eu.staging.concordium.com/nodesBlocksInfo"
+            -- Once deployed the routing for both collector and middleware is through the same URL
+            "https://dashboard.eu.staging.concordium.com"
