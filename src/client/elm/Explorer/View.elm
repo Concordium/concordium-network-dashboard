@@ -13,24 +13,29 @@ import Types exposing (..)
 
 
 view ({ explorerModel } as ctx) =
-    let
-        block =
-            stubBlock
+    Debug.todo "remove me once migrated to ViewNext"
 
-        blockInfoStub_ =
-            -- Explorer.Request.getBlockInfoStub_ "blah"
-            Explorer.Request.blockInfoStub
 
-        summary =
-            Explorer.Request.getBlockSummaryStub_
-    in
-    case explorerModel.currentBlockInfo of
-        Just blockInfo ->
-            -- viewBlockLoaded ctx blockInfo explorerModel.currentBlockSummary
-            viewBlockLoaded ctx blockInfo (Just summary)
 
-        Nothing ->
-            viewBlockLoaded ctx blockInfoStub_ explorerModel.currentBlockSummary
+-- let
+--     block =
+--         stubBlock
+--
+--     blockInfoStub_ =
+--         -- Explorer.Request.getBlockInfoStub_ "blah"
+--         Explorer.Request.blockInfoStub
+--
+--     summary =
+--         Explorer.Request.getBlockSummaryStub_
+-- in
+-- case explorerModel.currentBlockInfo of
+--     Just blockInfo ->
+--         viewBlockLoaded ctx blockInfo explorerModel.currentBlockSummary
+--
+--     -- viewBlockLoaded ctx blockInfo (Just summary)
+--     Nothing ->
+--         text "Error: no block info loaded"
+-- viewBlockLoaded ctx blockInfoStub_ explorerModel.currentBlockSummary
 
 
 viewBlockLoaded : Context a -> BlockInfo -> Maybe BlockSummary -> Element Msg
@@ -108,9 +113,14 @@ viewTransactionSummaryTransfer : Context a -> TransactionSummary -> Element msg
 viewTransactionSummaryTransfer ctx s =
     let
         events =
-            s.events
-                |> List.map
-                    viewEvent
+            case s.result of
+                TransactionAccepted events_ ->
+                    events_
+                        |> List.map
+                            viewEvent
+
+                TransactionRejected tag contents ->
+                    []
 
         viewEvent e =
             case e of
@@ -125,6 +135,12 @@ viewTransactionSummaryTransfer ctx s =
                 TransactionEventCredentialDeployed eventCredentialDeployed ->
                     -- Is there value in showing this?
                     none
+
+                TransactionEventStakeDelegated event ->
+                    text "more details StakeDelegated"
+
+                TransactionEventBakerAdded event ->
+                    text "more details BakerAdded"
 
         -- paragraph [] [ text <| "Credentials Deployed: " ++ eventCredentialDeployed.regid ]
     in

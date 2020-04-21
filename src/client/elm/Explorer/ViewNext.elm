@@ -190,25 +190,65 @@ viewContentHeadline ctx =
 
 viewTransaction : Context a -> TransactionSummary -> Element msg
 viewTransaction ctx txSummary =
-    let
-        event =
-            List.head txSummary.events
-    in
-    row
-        ([ width fill
-         , height (px 46)
-         , paddingXY 10 0
-         , mouseOver [ Background.color <| Palette.lightish ctx.palette.bg2 ]
-         ]
-            ++ bottomBorder ctx
-        )
-        [ el [ paddingEach { top = 0, bottom = 0, left = 0, right = 20 } ]
-            (html <| Icons.transaction 18)
-        , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
-            (el [ alignRight ] <| text <| String.fromInt txSummary.cost)
-        , viewTransactionEvent ctx event
-        , el [ alignRight ] (html <| Icons.status_success 20)
-        ]
+    case txSummary.result of
+        TransactionAccepted events ->
+            let
+                event =
+                    List.head events
+            in
+            row
+                ([ width fill
+                 , height (px 46)
+                 , paddingXY 10 0
+                 , mouseOver [ Background.color <| Palette.lightish ctx.palette.bg2 ]
+                 ]
+                    ++ bottomBorder ctx
+                )
+                [ el [ paddingEach { top = 0, bottom = 0, left = 0, right = 20 } ]
+                    (iconForEvent event)
+                , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
+                    (el [ alignRight ] <| text <| String.fromInt txSummary.cost)
+                , viewTransactionEvent ctx event
+                , el [ alignRight ] (html <| Icons.status_success 20)
+                ]
+
+        TransactionRejected tag contents ->
+            row
+                ([ width fill
+                 , height (px 46)
+                 , paddingXY 10 0
+                 , mouseOver [ Background.color <| Palette.lightish ctx.palette.bg2 ]
+                 ]
+                    ++ bottomBorder ctx
+                )
+                [ el [ paddingEach { top = 0, bottom = 0, left = 0, right = 20 } ]
+                    (html <| Icons.status_failure 18)
+                , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
+                    (el [ alignRight ] <| text <| String.fromInt txSummary.cost)
+                , text <| "Rejected: " ++ tag ++ " " ++ contents
+                , el [ alignRight ] (html <| Icons.status_failure 20)
+                ]
+
+
+iconForEvent event_ =
+    case event_ of
+        Just (TransactionEventAccountCreated event) ->
+            html <| Icons.account_key_deployed 18
+
+        Just (TransactionEventCredentialDeployed event) ->
+            html <| Icons.account_credentials_deployed 18
+
+        Just (TransactionEventTransfer event) ->
+            html <| Icons.transaction 18
+
+        Just (TransactionEventStakeDelegated event) ->
+            html <| Icons.delegation_delegated 20
+
+        Just (TransactionEventBakerAdded event) ->
+            html <| Icons.baking_oven 18
+
+        Nothing ->
+            html <| Icons.transaction 18
 
 
 viewTransactionEvent : Context a -> Maybe TransactionEvent -> Element msg
@@ -227,6 +267,25 @@ viewTransactionEvent ctx txEvent =
                 [ viewAddress ctx event.from
                 , el [ paddingXY 8 0 ] (html <| Icons.arrow_right 18)
                 , viewAddress ctx event.to
+                ]
+
+        Just (TransactionEventStakeDelegated event) ->
+            -- type alias EventStakeDelegated =
+            --     { tag : String
+            --     , account : String
+            --     , baker : Int
+            --     }
+            row []
+                [ viewAddress ctx (AddressAccount event.account)
+                ]
+
+        Just (TransactionEventBakerAdded event) ->
+            -- type alias EventBakerAdded =
+            --     { tag : String
+            --     , contents : Int
+            --     }
+            row []
+                [ text <| String.fromInt event.contents
                 ]
 
         Nothing ->
