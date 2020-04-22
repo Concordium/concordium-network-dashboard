@@ -207,6 +207,8 @@ viewTransaction ctx txSummary =
                 [ el [ paddingEach { top = 0, bottom = 0, left = 0, right = 20 } ]
                     (iconForEvent event)
                 , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
+                    (el [ alignRight ] <| text <| String.left 6 txSummary.hash)
+                , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
                     (el [ alignRight ] <| text <| String.fromInt txSummary.cost)
                 , viewTransactionEvent ctx event
                 , el [ alignRight ] (html <| Icons.status_success 20)
@@ -218,11 +220,14 @@ viewTransaction ctx txSummary =
                  , height (px 46)
                  , paddingXY 10 0
                  , mouseOver [ Background.color <| Palette.lightish ctx.palette.bg2 ]
+                 , Font.color ctx.palette.failure
                  ]
                     ++ bottomBorder ctx
                 )
                 [ el [ paddingEach { top = 0, bottom = 0, left = 0, right = 20 } ]
-                    (html <| Icons.status_failure 18)
+                    (iconForTag tag)
+                , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
+                    (el [ alignRight ] <| text <| String.left 6 txSummary.hash)
                 , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
                     (el [ alignRight ] <| text <| String.fromInt txSummary.cost)
                 , text <| "Rejected: " ++ tag ++ " " ++ contents
@@ -245,10 +250,33 @@ iconForEvent event_ =
             html <| Icons.delegation_delegated 20
 
         Just (TransactionEventBakerAdded event) ->
-            html <| Icons.baking_oven 18
+            html <| Icons.baking_bread 20
 
         Nothing ->
             html <| Icons.transaction 18
+
+
+iconForTag tag =
+    case tag of
+        -- "TransactionEventAccountCreated" ->
+        --     html <| Icons.account_key_deployed 18
+        --
+        -- "TransactionEventCredentialDeployed" ->
+        --     html <| Icons.account_credentials_deployed 18
+        --
+        -- "TransactionEventTransfer" ->
+        --     html <| Icons.transaction 18
+        "InvalidStakeDelegationTarget" ->
+            html <| Icons.delegation_delegated 20
+
+        "InvalidBakerRemoveSource" ->
+            html <| Icons.baking_bread 20
+
+        "SerializationFailure" ->
+            html <| Icons.status_failure 20
+
+        _ ->
+            text tag
 
 
 viewTransactionEvent : Context a -> Maybe TransactionEvent -> Element msg
@@ -285,7 +313,7 @@ viewTransactionEvent ctx txEvent =
             --     , contents : Int
             --     }
             row []
-                [ text <| String.fromInt event.contents
+                [ text <| event.tag ++ ": " ++ String.fromInt event.contents
                 ]
 
         Nothing ->
