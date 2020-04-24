@@ -24,18 +24,27 @@ view ctx remoteBlockInfo remoteBlockSummary =
             (\blockInfo ->
                 let
                     summaries =
-                        if blockInfo.transactionCount == 0 then
-                            paragraph [ padding 10, Font.color ctx.palette.fg2 ]
-                                [ text "This block has no transactions in it." ]
+                        remoteDataView ctx.palette
+                            (\blockSummary ->
+                                let
+                                    transactionSummaries =
+                                        blockSummary.transactionSummaries
+                                            |> List.map (viewTransaction ctx)
 
-                        else
-                            remoteDataView ctx.palette
-                                (\blockSummary ->
-                                    blockSummary.transactionSummaries
-                                        |> List.map (viewTransaction ctx)
-                                        |> column [ width fill ]
-                                )
-                                remoteBlockSummary
+                                    specialEvents =
+                                        blockSummary.specialEvents
+                                            |> List.map (viewSpecialEvent ctx)
+
+                                    summaryItems =
+                                        transactionSummaries ++ specialEvents
+                                in
+                                if List.length summaryItems > 0 then
+                                    column [ width fill ] summaryItems
+
+                                else
+                                    column [ width fill ] [ text "This block has no transactions in it." ]
+                            )
+                            remoteBlockSummary
                 in
                 column
                     [ width fill ]
@@ -220,7 +229,6 @@ viewTransaction ctx txSummary =
                  , height (px 46)
                  , paddingXY 10 0
                  , mouseOver [ Background.color <| Palette.lightish ctx.palette.bg2 ]
-                 , Font.color ctx.palette.failure
                  ]
                     ++ bottomBorder ctx
                 )
@@ -230,9 +238,34 @@ viewTransaction ctx txSummary =
                     (el [ alignRight ] <| text <| String.left 6 txSummary.hash)
                 , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
                     (el [ alignRight ] <| text <| String.fromInt txSummary.cost)
-                , text <| "Rejected: " ++ tag ++ " " ++ contents
-                , el [ alignRight ] (html <| Icons.status_failure 20)
+                , el [ Font.color ctx.palette.failure ] (text <| "Rejected: " ++ tag ++ " " ++ contents)
+                , el [ alignRight, Font.color ctx.palette.failure ] (html <| Icons.status_failure 20)
                 ]
+
+
+viewSpecialEvent : Context a -> SpecialEvent -> Element msg
+viewSpecialEvent ctx specialEvent =
+    row
+        ([ width fill
+         , height (px 46)
+         , paddingXY 10 0
+         , mouseOver [ Background.color <| Palette.lightish ctx.palette.bg2 ]
+         ]
+            ++ bottomBorder ctx
+        )
+        [ el [ paddingEach { top = 0, bottom = 0, left = 0, right = 20 } ]
+            (html <| Icons.baking_oven 20)
+        , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
+            (el [ alignRight ] <| none)
+        , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
+            (el [ alignRight ] <| text <| String.fromInt specialEvent.rewardAmount)
+        , row []
+            [ viewAddress ctx
+                (AddressAccount specialEvent.bakerAccount)
+            , el [] <| text <| "(Baker: " ++ String.fromInt specialEvent.bakerId ++ ")"
+            ]
+        , el [ alignRight ] (html <| Icons.status_success 20)
+        ]
 
 
 iconForEvent event_ =

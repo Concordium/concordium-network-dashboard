@@ -64,11 +64,7 @@ update msg model =
                         | blockInfo =
                             Success blockInfo
                       }
-                    , if blockInfo.transactionCount > 0 then
-                        getBlockSummary blockInfo.blockHash ReceivedBlockSummary
-
-                      else
-                        Cmd.none
+                    , getBlockSummary blockInfo.blockHash ReceivedBlockSummary
                     )
 
                 Err err ->

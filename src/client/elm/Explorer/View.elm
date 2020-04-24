@@ -86,20 +86,16 @@ viewBlockLoaded ctx blockInfo blockSummaryM =
                 [ text <| "Seen: " ++ Iso8601.fromTime blockInfo.blockReceiveTime ]
             ]
         , column []
-            [ if blockInfo.transactionCount == 0 then
-                paragraph [] [ text "This block has no transactions in it." ]
+            [ case blockSummaryM of
+                Just blockSummary ->
+                    column [ spacing 10, width fill ]
+                        [ column [] <| List.map (viewSpecialEvent ctx) blockSummary.specialEvents
+                        , column [ width fill, spacing 10 ] <|
+                            List.map (viewTransactionSummary ctx) blockSummary.transactionSummaries
+                        ]
 
-              else
-                case blockSummaryM of
-                    Just blockSummary ->
-                        column [ spacing 10, width fill ]
-                            [ column [] <| List.map (viewSpecialEvent ctx) blockSummary.specialEvents
-                            , column [ width fill, spacing 10 ] <|
-                                List.map (viewTransactionSummary ctx) blockSummary.transactionSummaries
-                            ]
-
-                    Nothing ->
-                        paragraph [] [ text "No summary loaded" ]
+                Nothing ->
+                    paragraph [] [ text "No summary loaded" ]
             ]
         ]
 
@@ -169,9 +165,9 @@ viewSpecialEvent ctx e =
             -- ++ " Baker: "
             -- ++ String.fromInt e.bakerid
             "Baker: "
-                ++ hashSnippet e.bakeraccount
+                ++ hashSnippet e.bakerAccount
                 ++ " Reward: "
-                ++ String.fromInt e.rewardamount
+                ++ String.fromInt e.rewardAmount
         ]
 
 

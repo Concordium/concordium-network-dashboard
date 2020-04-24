@@ -233,9 +233,9 @@ getBlockSumaryResponseStub =
 {
   "specialEvents": [
     {
-      "bakerid": 2,
-      "rewardamount": 474,
-      "bakeraccount": "2yFPDKmDDYxSep2UWHQyzNuNAZ1RU4EXGih7itesLziKcuQRAG"
+      "bakerId": 2,
+      "rewardAmount": 474,
+      "bakerAccount": "2yFPDKmDDYxSep2UWHQyzNuNAZ1RU4EXGih7itesLziKcuQRAG"
     }
   ],
   "transactionSummaries": []
@@ -262,18 +262,18 @@ blockSummaryDecoder =
 
 
 type alias SpecialEvent =
-    { bakerid : Int
-    , rewardamount : Int
-    , bakeraccount : String
+    { bakerId : Int
+    , rewardAmount : Int
+    , bakerAccount : String
     }
 
 
 specialEventDecoder : D.Decoder SpecialEvent
 specialEventDecoder =
     D.succeed SpecialEvent
-        |> required "bakerid" D.int
-        |> required "rewardamount" D.int
-        |> required "bakeraccount" D.string
+        |> required "bakerId" D.int
+        |> required "rewardAmount" D.int
+        |> required "bakerAccount" D.string
 
 
 type alias TransactionSummary =
@@ -438,9 +438,9 @@ getBlockSummary_stub_allTransactions =
 {
   "specialEvents": [
     {
-      "bakerid": 2,
-      "rewardamount": 5610,
-      "bakeraccount": "3fS4u95Sx9SKzU83kxxYP4SWaWirVix4T7P9bgswmceqvcs4vR"
+      "bakerId": 2,
+      "rewardAmount": 5610,
+      "bakerAccount": "3fS4u95Sx9SKzU83kxxYP4SWaWirVix4T7P9bgswmceqvcs4vR"
     }
   ],
   "transactionSummaries": [
@@ -565,9 +565,9 @@ getBlockSummary_stub_failure =
   {
     "specialEvents": [
       {
-        "bakerid": 2,
-        "rewardamount": 1751,
-        "bakeraccount": "3fS4u95Sx9SKzU83kxxYP4SWaWirVix4T7P9bgswmceqvcs4vR"
+        "bakerId": 2,
+        "rewardAmount": 1751,
+        "bakerAccount": "3fS4u95Sx9SKzU83kxxYP4SWaWirVix4T7P9bgswmceqvcs4vR"
       }
     ],
     "transactionSummaries": [
@@ -596,9 +596,9 @@ getBlockSummaryResponseStub =
 {
   "specialEvents": [
     {
-      "bakerid": 4,
-      "rewardamount": 207,
-      "bakeraccount": "4c7SXWg5bD3YpWQ2mmS8DSQiFm9MRpTd7Novo4ESPb1QLSYrts"
+      "bakerId": 4,
+      "rewardAmount": 207,
+      "bakerAccount": "4c7SXWg5bD3YpWQ2mmS8DSQiFm9MRpTd7Novo4ESPb1QLSYrts"
     }
   ],
   "transactionSummaries": [
