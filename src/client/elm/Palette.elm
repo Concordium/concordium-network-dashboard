@@ -201,7 +201,7 @@ blueishLightGray =
 
 
 blueishDarkGray =
-    fromHex "#232933"
+    fromHex "#152030"
 
 
 blueishGray =

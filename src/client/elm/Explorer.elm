@@ -26,12 +26,12 @@ type Msg
 init : Model
 init =
     { blockHash = Nothing
+    , blockInfo = Success blockInfoStub
 
-    -- , blockInfo = Success blockInfoStub
-    , blockInfo = NotAsked
+    --, blockInfo = NotAsked
+    , blockSummary = Success getBlockSummaryStub_
 
-    -- , blockSummary = Success getBlockSummaryStub_
-    , blockSummary = NotAsked
+    --, blockSummary = NotAsked
     }
 
 

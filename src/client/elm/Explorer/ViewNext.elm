@@ -9,6 +9,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Explorer.Request exposing (..)
+import Html.Attributes exposing (style)
 import Icons exposing (..)
 import Iso8601
 import Material.Icons.Sharp as MIcons
@@ -92,7 +93,11 @@ viewParentLink ctx blockInfo =
             blockColor ctx blockInfo
                 |> withAlphaEl 0.5
     in
-    row [ Font.color color, paddingXY 30 0 ]
+    row
+        [ Font.color color
+        , paddingXY 30 0
+        , stringTooltipAbove ctx "select parent"
+        ]
         [ el [] (html <| Icons.block_not_finalized 20)
         , el [] (html <| Icons.arrow_left 20)
         , el [ width (px 2) ] none
@@ -161,6 +166,7 @@ viewSlotTime ctx blockInfo =
         , spacing 10
         , Font.color color
         , alignRight
+        , stringTooltipAbove ctx "slot time"
         ]
         [ el [ Font.color (withAlphaEl 0.5 <| color) ]
             (html <| Icons.time_stopwatch 20)
@@ -179,6 +185,7 @@ viewBlockHeight ctx blockInfo =
         , spacing 10
         , Font.color color
         , alignRight
+        , stringTooltipAbove ctx "block length"
         ]
         [ el [ moveUp 1, Font.color (withAlphaEl 0.5 <| color) ] (html <| Icons.blockheight 20)
         , text (blockInfo.blockHeight |> String.fromInt)
@@ -214,7 +221,7 @@ viewTransaction ctx txSummary =
                     ++ bottomBorder ctx
                 )
                 [ el [ paddingEach { top = 0, bottom = 0, left = 0, right = 20 } ]
-                    (iconForEvent event)
+                    (iconForEvent ctx event)
                 , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
                     (el [ alignRight ] <| text <| String.left 6 txSummary.hash)
                 , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
@@ -233,7 +240,7 @@ viewTransaction ctx txSummary =
                     ++ bottomBorder ctx
                 )
                 [ el [ paddingEach { top = 0, bottom = 0, left = 0, right = 20 } ]
-                    (iconForTag tag)
+                    (iconForTag ctx tag)
                 , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
                     (el [ alignRight ] <| text <| String.left 6 txSummary.hash)
                 , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
@@ -268,28 +275,34 @@ viewSpecialEvent ctx specialEvent =
         ]
 
 
-iconForEvent event_ =
+iconForEvent ctx event_ =
     case event_ of
         Just (TransactionEventAccountCreated event) ->
-            html <| Icons.account_key_deployed 18
+            el [ stringTooltipAbove ctx "account key deployed" ]
+                (html <| Icons.account_key_deployed 18)
 
         Just (TransactionEventCredentialDeployed event) ->
-            html <| Icons.account_credentials_deployed 18
+            el [ stringTooltipAbove ctx "account credentials deployed" ]
+                (html <| Icons.account_credentials_deployed 18)
 
         Just (TransactionEventTransfer event) ->
-            html <| Icons.transaction 18
+            el [ stringTooltipAbove ctx "transfer" ]
+                (html <| Icons.transaction 18)
 
         Just (TransactionEventStakeDelegated event) ->
-            html <| Icons.delegation_delegated 20
+            el [ stringTooltipAbove ctx "stake delegated" ]
+                (html <| Icons.delegation_delegated 20)
 
         Just (TransactionEventBakerAdded event) ->
-            html <| Icons.baking_bread 20
+            el [ stringTooltipAbove ctx "baker added" ]
+                (html <| Icons.baking_bread 20)
 
         Nothing ->
-            html <| Icons.transaction 18
+            el [ stringTooltipAbove ctx "unknown event type" ]
+                (html <| Icons.transaction 18)
 
 
-iconForTag tag =
+iconForTag ctx tag =
     case tag of
         -- "TransactionEventAccountCreated" ->
         --     html <| Icons.account_key_deployed 18
@@ -300,13 +313,16 @@ iconForTag tag =
         -- "TransactionEventTransfer" ->
         --     html <| Icons.transaction 18
         "InvalidStakeDelegationTarget" ->
-            html <| Icons.delegation_delegated 20
+            el [ stringTooltipAbove ctx "invalid delegation target" ]
+                (html <| Icons.delegation_delegated 20)
 
         "InvalidBakerRemoveSource" ->
-            html <| Icons.baking_bread 20
+            el [ stringTooltipAbove ctx "invalid baker remove source" ]
+                (html <| Icons.baking_bread 20)
 
         "SerializationFailure" ->
-            html <| Icons.status_failure 20
+            el [ stringTooltipAbove ctx "invalid baker remove source" ]
+                (html <| Icons.status_failure 20)
 
         _ ->
             text tag
@@ -378,3 +394,42 @@ viewAddress ctx addr =
                 { icon = el [ Font.color ctx.palette.danger ] (html <| Icons.close 18)
                 , label = text "(Error: Address Failed)"
                 }
+
+
+tooltip : (Element msg -> Attribute msg) -> Element Never -> Attribute msg
+tooltip placement content =
+    inFront <|
+        el
+            [ width fill
+            , height fill
+            , transparent True
+            , mouseOver [ transparent False ]
+            , htmlAttribute <| style "transition" "opacity 200ms ease-out"
+            , (placement << Element.map never) <|
+                el
+                    [ htmlAttribute (style "pointerEvents" "none")
+                    , moveUp 10
+                    , alignLeft
+                    ]
+                    content
+            ]
+            none
+
+
+stringTooltipAbove : Context a -> String -> Attribute msg
+stringTooltipAbove ctx content =
+    tooltip above
+        (el
+            [ paddingXY 12 8
+            , Border.rounded 50
+            , Border.shadow
+                { offset = ( 0, 0 )
+                , size = 0
+                , color = rgb 0 0 0 |> withAlphaEl 0.5
+                , blur = 20
+                }
+            , Background.color ctx.palette.bg3
+            , Font.color ctx.palette.fg2
+            ]
+            (text content)
+        )
