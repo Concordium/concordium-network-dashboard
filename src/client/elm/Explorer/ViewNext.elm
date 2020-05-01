@@ -1,5 +1,6 @@
 module Explorer.ViewNext exposing (..)
 
+import Chain exposing (Msg(..))
 import Chain.Flatten exposing (DrawableBlock)
 import Context exposing (Context)
 import Dashboard.Formatting as Formatting
@@ -7,7 +8,9 @@ import Dashboard.Widgets exposing (remoteDataView)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Events exposing (onClick)
 import Element.Font as Font
+import Explorer
 import Explorer.Request exposing (..)
 import Html.Attributes exposing (style)
 import Icons exposing (..)
@@ -16,9 +19,12 @@ import Material.Icons.Sharp as MIcons
 import Material.Icons.Types exposing (Coloring(..))
 import Palette exposing (withAlphaEl)
 import RemoteData exposing (RemoteData(..), WebData)
+import Transaction.Event exposing (..)
+import Transaction.Summary exposing (..)
+import Types exposing (Msg(..))
 
 
-view : Context a -> WebData BlockInfo -> WebData BlockSummary -> Element msg
+view : Context a -> WebData BlockInfo -> WebData BlockSummary -> Element Msg
 view ctx remoteBlockInfo remoteBlockSummary =
     viewContainer ctx
         (remoteDataView ctx.palette
@@ -58,7 +64,7 @@ view ctx remoteBlockInfo remoteBlockSummary =
         )
 
 
-viewContainer : Context a -> Element msg -> Element msg
+viewContainer : Context a -> Element Msg -> Element Msg
 viewContainer ctx content =
     el
         [ height fill
@@ -77,7 +83,7 @@ viewContainer ctx content =
         content
 
 
-viewHeader : Context a -> BlockInfo -> Element msg
+viewHeader : Context a -> BlockInfo -> Element Msg
 viewHeader ctx blockInfo =
     row ([ width fill ] ++ bottomBorder ctx)
         [ viewBlockHash ctx blockInfo
@@ -86,7 +92,7 @@ viewHeader ctx blockInfo =
         ]
 
 
-viewParentLink : Context a -> BlockInfo -> Element msg
+viewParentLink : Context a -> BlockInfo -> Element Msg
 viewParentLink ctx blockInfo =
     let
         color =
@@ -97,6 +103,11 @@ viewParentLink ctx blockInfo =
         [ Font.color color
         , paddingXY 30 0
         , stringTooltipAbove ctx "select parent"
+        , pointer
+
+        -- @TODO figure out right way to do this
+        -- , onClick (ExplorerMsg (Explorer.RequestedBlockInfo blockInfo.blockParent))
+        , onClick (ChainMsg (BlockClicked blockInfo.blockParent))
         ]
         [ el [] (html <| Icons.block_not_finalized 20)
         , el [] (html <| Icons.arrow_left 20)

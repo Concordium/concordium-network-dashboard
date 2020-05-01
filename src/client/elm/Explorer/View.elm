@@ -9,6 +9,8 @@ import Element.Font as Font
 import Explorer
 import Explorer.Request exposing (..)
 import Iso8601
+import Transaction.Event exposing (..)
+import Transaction.Summary exposing (..)
 import Types exposing (..)
 
 

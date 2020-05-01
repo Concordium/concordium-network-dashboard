@@ -8,6 +8,8 @@ import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import RemoteData exposing (..)
 import Task
 import Time exposing (Posix)
+import Transaction.Event exposing (..)
+import Transaction.Summary exposing (..)
 
 
 
@@ -276,178 +278,47 @@ specialEventDecoder =
         |> required "bakerAccount" D.string
 
 
-type alias TransactionSummary =
-    { hash : String
-    , sender : Maybe String
-    , cost : Int
-    , result : TransactionResult
-    , energycost : Int
-    , tipe : Maybe String
-    }
-
-
-type TransactionResult
-    = TransactionAccepted (List TransactionEvent)
-    | TransactionRejected String String -- String:Tag, String:Contents
-
-
-decodeTransactionResult : D.Decoder TransactionResult
-decodeTransactionResult =
-    D.oneOf
-        [ D.field "events" (D.list transactionEventsDecoder)
-            |> D.map TransactionAccepted
-        , D.field "rejectreason"
-            (D.succeed TransactionRejected
-                |> required "tag" D.string
-                -- This is unfortunate but seems depending on the type of transaction,
-                -- the value of "contents" can be either a string or an int
-                |> optional "contents" (D.oneOf [ D.string, D.int |> D.map String.fromInt ]) ""
-            )
-        ]
-
-
-transactionSummaryDecoder : D.Decoder TransactionSummary
-transactionSummaryDecoder =
-    D.succeed TransactionSummary
-        |> required "hash" D.string
-        |> required "sender" (D.nullable D.string)
-        |> required "cost" D.int
-        |> required "result" decodeTransactionResult
-        |> required "energycost" D.int
-        |> required "type" (D.nullable D.string)
-
-
-type TransactionEvent
-    = TransactionEventTransfer EventTransfer
-    | TransactionEventAccountCreated EventAccountCreated
-    | TransactionEventCredentialDeployed EventCredentialDeployed
-    | TransactionEventStakeDelegated EventStakeDelegated
-    | TransactionEventBakerAdded EventBakerAdded
-
-
-transactionEventsDecoder : D.Decoder TransactionEvent
-transactionEventsDecoder =
-    D.oneOf
-        [ D.map TransactionEventTransfer eventTransferDecoder
-        , D.map TransactionEventAccountCreated eventAccountCreatedDecoder
-        , D.map TransactionEventCredentialDeployed eventCredentialDeployedDecoder
-        , D.map TransactionEventStakeDelegated eventStakeDelegatedDecoder
-        , D.map TransactionEventBakerAdded eventBakerAddedDecoder
-        ]
-
-
-type alias EventTransfer =
-    { amount : Int
-    , tag : String
-    , to : AccountInfo
-    , from : AccountInfo
-    }
-
-
-eventTransferDecoder : D.Decoder EventTransfer
-eventTransferDecoder =
-    D.succeed EventTransfer
-        |> required "amount" D.int
-        |> required "tag" D.string
-        |> required "to" accountInfoDecoder
-        |> required "from" accountInfoDecoder
-
-
-type alias EventAccountCreated =
-    { tag : String
-    , account : String
-    }
-
-
-eventAccountCreatedDecoder : D.Decoder EventAccountCreated
-eventAccountCreatedDecoder =
-    D.succeed EventAccountCreated
-        |> required "tag" D.string
-        |> required "contents" D.string
-
-
-type alias EventCredentialDeployed =
-    { tag : String
-    , regid : String
-    , account : String
-    }
-
-
-eventCredentialDeployedDecoder : D.Decoder EventCredentialDeployed
-eventCredentialDeployedDecoder =
-    D.succeed EventCredentialDeployed
-        |> required "tag" D.string
-        |> required "regid" D.string
-        |> required "account" D.string
-
-
-type alias EventStakeDelegated =
-    { tag : String
-    , account : String
-    , baker : Int
-    }
-
-
-eventStakeDelegatedDecoder : D.Decoder EventStakeDelegated
-eventStakeDelegatedDecoder =
-    D.succeed EventStakeDelegated
-        |> required "tag" D.string
-        |> required "account" D.string
-        |> required "baker" D.int
-
-
-type alias EventBakerAdded =
-    { tag : String
-    , contents : Int
-    }
-
-
-eventBakerAddedDecoder : D.Decoder EventBakerAdded
-eventBakerAddedDecoder =
-    D.succeed EventBakerAdded
-        |> required "tag" D.string
-        |> required "contents" D.int
-
-
-type AccountInfo
-    = AddressAccount String
-    | AddressContract String
-    | AddressUnknown
-
-
-accountInfoDecoder : D.Decoder AccountInfo
-accountInfoDecoder =
-    D.succeed
-        (\tipe address ->
-            case tipe of
-                "AddressAccount" ->
-                    AddressAccount address
-
-                "AddressContract" ->
-                    AddressContract address
-
-                _ ->
-                    AddressUnknown
-        )
-        |> required "type" D.string
-        |> required "address" D.string
-
-
 getBlockSummary_stub_allTransactions =
     """
 {
   "specialEvents": [
     {
-      "bakerId": 2,
-      "rewardAmount": 5610,
-      "bakerAccount": "3fS4u95Sx9SKzU83kxxYP4SWaWirVix4T7P9bgswmceqvcs4vR"
+      "bakerId": 1,
+      "rewardAmount": 12463,
+      "bakerAccount": "3siDnxannkQYYjCTgwEUvE9WThEaHy1J3RjyMA4ZBQmrR9hw1K"
     }
   ],
   "transactionSummaries": [
     {
+      "hash": "4b7e1b22ff9365e29c57d7f85a0fd7a7dd3c50245cb9d04c560c520298013c3f",
+      "sender": "43TULx3kDPDeQy1C1iLwBbS5EEV96cYPw5ZRdA9Dm4D23hxGZt",
+      "cost": 165,
+      "energyCost": 165,
+      "result": {
+        "events": [
+          {
+            "amount": 1000000,
+            "tag": "Transferred",
+            "to": {
+              "address": "43TULx3kDPDeQy1C1iLwBbS5EEV96cYPw5ZRdA9Dm4D23hxGZt",
+              "type": "AddressAccount"
+            },
+            "from": {
+              "address": "43TULx3kDPDeQy1C1iLwBbS5EEV96cYPw5ZRdA9Dm4D23hxGZt",
+              "type": "AddressAccount"
+            }
+          }
+        ],
+        "outcome": "success"
+      },
+      "type": "transfer",
+      "index": 0
+    },
+    {
       "hash": "15c2c8a0a9d496630dff603d4d404a6912d96215755884522798092bc179de5b",
       "sender": "43TULx3kDPDeQy1C1iLwBbS5EEV96cYPw5ZRdA9Dm4D23hxGZt",
       "cost": 265,
+      "energyCost": 265,
       "result": {
         "events": [
           {
@@ -458,14 +329,14 @@ getBlockSummary_stub_allTransactions =
         ],
         "outcome": "success"
       },
-      "energycost": 265,
-      "type": "delegatestake",
-      "index": 0
+      "type": "delegateStake",
+      "index": 1
     },
     {
       "hash": "ae13d5677cdcbd90fad54e9768f4f1f4c44610c45af1c2ca0481119d47c8a2bb",
       "sender": "43TULx3kDPDeQy1C1iLwBbS5EEV96cYPw5ZRdA9Dm4D23hxGZt",
       "cost": 265,
+      "energyCost": 265,
       "result": {
         "events": [
           {
@@ -476,14 +347,14 @@ getBlockSummary_stub_allTransactions =
         ],
         "outcome": "success"
       },
-      "energycost": 265,
-      "type": "delegatestake",
-      "index": 1
+      "type": "delegateStake",
+      "index": 2
     },
     {
-      "hash": "24f8640636257c7dff13d510885da92116a5f68ba45e93bf900a007b16ecd39f",
+      "hash": "73513777db8519ef5b71a0bd06a1b06bd705bf06e62737fa563ed75e20fcec27",
       "sender": "43TULx3kDPDeQy1C1iLwBbS5EEV96cYPw5ZRdA9Dm4D23hxGZt",
       "cost": 3167,
+      "energyCost": 3167,
       "result": {
         "events": [
           {
@@ -493,67 +364,66 @@ getBlockSummary_stub_allTransactions =
         ],
         "outcome": "success"
       },
-      "energycost": 3167,
-      "type": "addbaker",
-      "index": 2
+      "type": "addBaker",
+      "index": 3
     },
     {
       "hash": "affc03c8211ea90cb72143e5c44eff7e55089668af8e64bd6b978ef7cfac39c7",
       "sender": "43TULx3kDPDeQy1C1iLwBbS5EEV96cYPw5ZRdA9Dm4D23hxGZt",
       "cost": 265,
+      "energyCost": 265,
       "result": {
         "outcome": "reject",
-        "rejectreason": {
+        "rejectReason": {
           "tag": "InvalidStakeDelegationTarget",
           "contents": 12312312312
         }
       },
-      "energycost": 265,
-      "type": "delegatestake",
-      "index": 3
+      "type": "delegateStake",
+      "index": 4
     },
     {
-      "hash": "9b1cf5312dab530fe8de8de7f120217687fe532744af73587ebe627d81e7e2cd",
+      "hash": "2b40fc10934a371e9d23dead69435d834aa725ebc418b6631abb49b5f808a07c",
       "sender": "43TULx3kDPDeQy1C1iLwBbS5EEV96cYPw5ZRdA9Dm4D23hxGZt",
       "cost": 166,
+      "energyCost": 166,
       "result": {
         "outcome": "reject",
-        "rejectreason": {
+        "rejectReason": {
           "tag": "SerializationFailure"
         }
       },
-      "energycost": 166,
       "type": null,
-      "index": 4
+      "index": 5
     },
     {
       "hash": "8841d4dd1da2875b63d829be55fc5441adba2efa2baaed3b1228601e25bc2bb2",
       "sender": "43TULx3kDPDeQy1C1iLwBbS5EEV96cYPw5ZRdA9Dm4D23hxGZt",
       "cost": 165,
+      "energyCost": 165,
       "result": {
         "outcome": "reject",
-        "rejectreason": {
+        "rejectReason": {
           "tag": "SerializationFailure"
         }
       },
-      "energycost": 165,
       "type": null,
-      "index": 5
+      "index": 6
     },
     {
       "hash": "5257c01e5f42a0afcead07149a474162c2a193702de59177bff0d7b8812a4d09",
       "sender": "43TULx3kDPDeQy1C1iLwBbS5EEV96cYPw5ZRdA9Dm4D23hxGZt",
       "cost": 165,
+      "energyCost": 165,
       "result": {
         "outcome": "reject",
-        "rejectreason": {
+        "rejectReason": {
           "tag": "InvalidBakerRemoveSource",
           "contents": "43TULx3kDPDeQy1C1iLwBbS5EEV96cYPw5ZRdA9Dm4D23hxGZt"
         }
       },
-      "energycost": 165,
-      "type": "removebaker",
-      "index": 6
+      "type": "removeBaker",
+      "index": 7
     }
   ]
 }
@@ -577,12 +447,12 @@ getBlockSummary_stub_failure =
         "cost": 165,
         "result": {
           "outcome": "reject",
-          "rejectreason": {
+          "rejectReason": {
             "tag": "InvalidAccountReference",
             "contents": "3Es2U5gMdKrqJdXSUVzgW4KUosJ91AxfsAuvKx5tKE9P2SvjVk"
           }
         },
-        "energycost": 165,
+        "energyCost": 165,
         "type": "transfer",
         "index": 0
       }
@@ -620,7 +490,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 35000,
+      "energyCost": 35000,
       "type": null,
       "index": 0
     },
@@ -645,7 +515,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -669,7 +539,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -693,7 +563,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -717,7 +587,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -741,7 +611,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -765,7 +635,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -789,7 +659,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -813,7 +683,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -837,7 +707,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -861,7 +731,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -885,7 +755,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -909,7 +779,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -933,7 +803,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -957,7 +827,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -981,7 +851,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -1005,7 +875,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -1029,7 +899,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -1053,7 +923,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -1077,7 +947,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     },
     {
@@ -1101,7 +971,7 @@ getBlockSummaryResponseStub =
         ],
         "outcome": "success"
       },
-      "energycost": 10,
+      "energyCost": 10,
       "type": "transfer"
     }
   ]
