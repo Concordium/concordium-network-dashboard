@@ -392,21 +392,21 @@ iconForEvent ctx event_ =
         Just (TransactionEventModuleDeployed event) ->
             row [ spacing 10 ]
                 [ el [ stringTooltipAbove ctx "Module deployed" ]
-                    (html <| Icons.smart_contract 20)
+                    (html <| Icons.smart_contract_deploy 20)
                 , text <| "Module"
                 ]
 
         Just (TransactionEventContractInitialized event) ->
             row [ spacing 10 ]
                 [ el [ stringTooltipAbove ctx "Contract initialised" ]
-                    (html <| Icons.smart_contract_add 20)
+                    (html <| Icons.smart_contract_add_new 20)
                 , text <| "Contract"
                 ]
 
         Just (TransactionEventContractMessage event) ->
             row [ spacing 10 ]
                 [ el [ stringTooltipAbove ctx "Contract messaged" ]
-                    (html <| Icons.smart_contract_update 20)
+                    (html <| Icons.smart_contract_message 20)
                 , text <| "Contract"
                 ]
 
@@ -573,12 +573,12 @@ tooltip placement content =
             , height fill
             , transparent True
             , mouseOver [ transparent False ]
-            , htmlAttribute <| style "transition" "opacity 200ms ease-out 300ms"
+            , htmlAttribute <| style "transition" "opacity 200ms ease-out"
             , (placement << Element.map never) <|
                 el
                     [ htmlAttribute (style "pointerEvents" "none")
-                    , moveDown 10
-                    , moveLeft 20
+                    , moveUp 12
+                    , moveLeft 2
                     , alignLeft
                     ]
                     content
