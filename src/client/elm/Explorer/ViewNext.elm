@@ -415,7 +415,7 @@ tooltip placement content =
             , height fill
             , transparent True
             , mouseOver [ transparent False ]
-            , htmlAttribute <| style "transition" "opacity 200ms ease-out"
+            , htmlAttribute <| style "transition" "opacity 200ms ease-out 300ms"
             , (placement << Element.map never) <|
                 el
                     [ htmlAttribute (style "pointerEvents" "none")
@@ -430,17 +430,25 @@ tooltip placement content =
 stringTooltipAbove : Context a -> String -> Attribute msg
 stringTooltipAbove ctx content =
     tooltip above
-        (el
+        (row
             [ paddingXY 12 8
             , Border.rounded 50
             , Border.shadow
                 { offset = ( 0, 0 )
-                , size = 0
-                , color = rgb 0 0 0 |> withAlphaEl 0.5
-                , blur = 20
+                , size = 2
+                , color = ctx.palette.fg1 |> withAlphaEl 0.3
+                , blur = 25
                 }
             , Background.color ctx.palette.bg3
             , Font.color ctx.palette.fg2
+            , (behindContent << Element.map never)
+                (el
+                    [ htmlAttribute (style "pointerEvents" "none")
+                    , moveDown 5
+                    , Font.color ctx.palette.bg3
+                    ]
+                    (html <| Icons.tooltip_arrow_round 24)
+                )
             ]
-            (text content)
+            [ text content ]
         )
