@@ -2,6 +2,7 @@ module Transaction.Event exposing (..)
 
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (hardcoded, optional, required)
+import Json.Encode as E
 
 
 type TransactionEvent
@@ -10,6 +11,9 @@ type TransactionEvent
     | TransactionEventCredentialDeployed EventCredentialDeployed
     | TransactionEventStakeDelegated EventStakeDelegated
     | TransactionEventBakerAdded EventBakerAdded
+    | TransactionEventModuleDeployed EventModuleDeployed
+    | TransactionEventContractInitialized EventContractInitialized
+    | TransactionEventContractMessage EventContractMessage
 
 
 transactionEventsDecoder : D.Decoder TransactionEvent
@@ -20,6 +24,9 @@ transactionEventsDecoder =
         , D.map TransactionEventCredentialDeployed eventCredentialDeployedDecoder
         , D.map TransactionEventStakeDelegated eventStakeDelegatedDecoder
         , D.map TransactionEventBakerAdded eventBakerAddedDecoder
+        , D.map TransactionEventModuleDeployed eventModuleDeployedDecoder
+        , D.map TransactionEventContractInitialized eventContractInitializedDecoder
+        , D.map TransactionEventContractMessage eventContractMessageDecoder
         ]
 
 
@@ -49,7 +56,7 @@ type alias EventAccountCreated =
 eventAccountCreatedDecoder : D.Decoder EventAccountCreated
 eventAccountCreatedDecoder =
     D.succeed EventAccountCreated
-        |> required "tag" D.string
+        |> required "tag" (expectedTag "AccountCreated")
         |> required "contents" D.string
 
 
@@ -118,3 +125,84 @@ accountInfoDecoder =
         )
         |> required "type" D.string
         |> required "address" D.string
+
+
+type alias EventModuleDeployed =
+    { tag : String
+    , contents : String
+    }
+
+
+eventModuleDeployedDecoder : D.Decoder EventModuleDeployed
+eventModuleDeployedDecoder =
+    D.succeed EventModuleDeployed
+        |> required "tag" (expectedTag "ModuleDeployed")
+        |> required "contents" D.string
+
+
+type alias EventContractInitialized =
+    { tag : String
+    , amount : Int
+    , address : ContractAddress
+    , name : Int
+    , ref : String
+    }
+
+
+eventContractInitializedDecoder : D.Decoder EventContractInitialized
+eventContractInitializedDecoder =
+    D.succeed EventContractInitialized
+        |> required "tag" D.string
+        |> required "amount" D.int
+        |> required "address" contractAddressDecoder
+        |> required "name" D.int
+        |> required "ref" D.string
+
+
+type alias EventContractMessage =
+    { tag : String
+    , amount : Int
+    , address : ContractAddress
+    , message : String
+    }
+
+
+eventContractMessageDecoder : D.Decoder EventContractMessage
+eventContractMessageDecoder =
+    D.succeed EventContractMessage
+        |> required "tag" D.string
+        |> required "amount" D.int
+        |> required "address" contractAddressDecoder
+        |> required "message" D.string
+
+
+type alias ContractAddress =
+    { index : Int, subindex : Int }
+
+
+contractAddressDecoder : D.Decoder ContractAddress
+contractAddressDecoder =
+    D.succeed ContractAddress
+        |> required "index" D.int
+        |> required "subindex" D.int
+
+
+contractAddressEncoder : ContractAddress -> E.Value
+contractAddressEncoder item =
+    E.object
+        [ ( "index", E.int item.index )
+        , ( "subindex", E.int item.subindex )
+        ]
+
+
+expectedTag : String -> D.Decoder String
+expectedTag expected =
+    D.string
+        |> D.andThen
+            (\s ->
+                if s == expected then
+                    D.succeed s
+
+                else
+                    D.fail <| "does not match expected tag " ++ s
+            )

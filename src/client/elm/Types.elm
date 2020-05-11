@@ -58,6 +58,8 @@ type Msg
     | BlockSelected String
     | ToggleDarkMode
     | ExplorerMsg Explorer.Msg
+      -- Debug
+    | BlockSummaryStubSelected String
     | Noop
 
 

@@ -12,6 +12,7 @@ import Element.Events exposing (onClick)
 import Element.Font as Font
 import Explorer
 import Explorer.Request exposing (..)
+import Explorer.Stubs exposing (blockSummaryStubs)
 import Html.Attributes exposing (style)
 import Icons exposing (..)
 import Iso8601
@@ -24,44 +25,65 @@ import Transaction.Summary exposing (..)
 import Types exposing (Msg(..))
 
 
+loadStubButton ctx ( name, stub ) =
+    row
+        [ Font.color ctx.palette.c1
+        , padding 10
+        , Background.color ctx.palette.bg2
+        , pointer
+        , onClick (BlockSummaryStubSelected stub)
+        , Border.rounded 5
+        ]
+        [ text name
+        ]
+
+
 view : Context a -> WebData BlockInfo -> WebData BlockSummary -> Element Msg
 view ctx remoteBlockInfo remoteBlockSummary =
-    viewContainer ctx
-        (remoteDataView ctx.palette
-            (\blockInfo ->
-                let
-                    summaries =
-                        remoteDataView ctx.palette
-                            (\blockSummary ->
-                                let
-                                    transactionSummaries =
-                                        blockSummary.transactionSummaries
-                                            |> List.map (viewTransaction ctx)
+    column [ spacing 40 ]
+        [ row []
+            [ text "Test stubs: "
+            , blockSummaryStubs
+                |> List.map (loadStubButton ctx)
+                |> row [ spacing 5 ]
+            ]
+        , viewContainer ctx
+            (remoteDataView ctx.palette
+                (\blockInfo ->
+                    let
+                        summaries =
+                            remoteDataView ctx.palette
+                                (\blockSummary ->
+                                    let
+                                        transactionSummaries =
+                                            blockSummary.transactionSummaries
+                                                |> List.map (viewTransaction ctx)
 
-                                    specialEvents =
-                                        blockSummary.specialEvents
-                                            |> List.map (viewSpecialEvent ctx)
+                                        specialEvents =
+                                            blockSummary.specialEvents
+                                                |> List.map (viewSpecialEvent ctx)
 
-                                    summaryItems =
-                                        transactionSummaries ++ specialEvents
-                                in
-                                if List.length summaryItems > 0 then
-                                    column [ width fill ] summaryItems
+                                        summaryItems =
+                                            transactionSummaries ++ specialEvents
+                                    in
+                                    if List.length summaryItems > 0 then
+                                        column [ width fill ] summaryItems
 
-                                else
-                                    column [ width fill ] [ text "This block has no transactions in it." ]
-                            )
-                            remoteBlockSummary
-                in
-                column
-                    [ width fill ]
-                    [ viewHeader ctx blockInfo
-                    , viewContentHeadline ctx
-                    , summaries
-                    ]
+                                    else
+                                        column [ width fill ] [ text "This block has no transactions in it." ]
+                                )
+                                remoteBlockSummary
+                    in
+                    column
+                        [ width fill ]
+                        [ viewHeader ctx blockInfo
+                        , viewContentHeadline ctx
+                        , summaries
+                        ]
+                )
+                remoteBlockInfo
             )
-            remoteBlockInfo
-        )
+        ]
 
 
 viewContainer : Context a -> Element Msg -> Element Msg
@@ -102,16 +124,18 @@ viewParentLink ctx blockInfo =
     row
         [ Font.color color
         , paddingXY 30 0
-        , stringTooltipAbove ctx "select parent"
         , pointer
 
         -- @TODO figure out right way to do this
         -- , onClick (ExplorerMsg (Explorer.RequestedBlockInfo blockInfo.blockParent))
         , onClick (ChainMsg (BlockClicked blockInfo.blockParent))
         ]
-        [ el [] (html <| Icons.block_not_finalized 20)
-        , el [] (html <| Icons.arrow_left 20)
-        , el [ width (px 2) ] none
+        [ row [ stringTooltipAbove ctx "View parent block" ]
+            [ el [] (html <| Icons.block_not_finalized 20)
+            , el [] (html <| Icons.arrow_left 20)
+            , el [ width (px 2) ] none
+            , text <| String.left 6 blockInfo.blockParent
+            ]
         ]
 
 
@@ -135,13 +159,17 @@ viewBlockHash ctx blockInfo =
             [ height (px 36)
             , Border.rounded 4
             , Background.color (withAlphaEl 0.1 color)
-            , Font.color (withAlphaEl 0.3 color)
+            , Font.color (withAlphaEl 0.6 color)
             , paddingXY 10 10
+            , stringTooltipAbove ctx "Block hash"
             ]
             [ el [] icon
             , el [ width (px 10) ] none
-            , el [ Font.color color ] (text short)
-            , text remaining
+            , text blockInfo.blockHash
+
+            -- @TODO this is nice but prevents easy copy/pasting
+            -- , el [ Font.color color ] (text short)
+            -- , text remaining
             ]
         )
 
@@ -170,14 +198,16 @@ viewSlotTime ctx blockInfo =
             blockColor ctx blockInfo
 
         slotTime =
-            Formatting.formatTimeBetween blockInfo.blockSlotTime ctx.time
+            Iso8601.fromTime blockInfo.blockSlotTime
+
+        -- Formatting.formatTimeBetween blockInfo.blockSlotTime ctx.time
     in
     row
         [ height fill
         , spacing 10
         , Font.color color
         , alignRight
-        , stringTooltipAbove ctx "slot time"
+        , stringTooltipAbove ctx "Slot time"
         ]
         [ el [ Font.color (withAlphaEl 0.5 <| color) ]
             (html <| Icons.time_stopwatch 20)
@@ -196,7 +226,7 @@ viewBlockHeight ctx blockInfo =
         , spacing 10
         , Font.color color
         , alignRight
-        , stringTooltipAbove ctx "block length"
+        , stringTooltipAbove ctx "Chain length"
         ]
         [ el [ moveUp 1, Font.color (withAlphaEl 0.5 <| color) ] (html <| Icons.blockheight 20)
         , text (blockInfo.blockHeight |> String.fromInt)
@@ -211,8 +241,29 @@ bottomBorder ctx =
 
 viewContentHeadline : Context a -> Element msg
 viewContentHeadline ctx =
-    row ([ width fill, height (px 46) ] ++ bottomBorder ctx)
-        [ el [ paddingXY 10 0, Font.color ctx.palette.fg3 ] <| text "CONTENT" ]
+    row
+        ([ width fill
+         , height (px 26)
+         , paddingXY 10 0
+         , spacing 30
+         ]
+            ++ bottomBorder ctx
+        )
+        [ el [ width (shrink |> minimum 90) ]
+            (el [ paddingXY 0 0, Font.color ctx.palette.fg3 ] <| text "TYPE")
+        , el [ paddingXY 0 0, width (shrink |> minimum 60) ]
+            (el [ paddingXY 0 0, Font.color ctx.palette.fg3, alignRight ] <| text "AMOUNT")
+        , row []
+            [ el [ paddingXY 0 0, Font.color ctx.palette.fg3 ] <| text "CONTENT"
+            ]
+        , el [ paddingXY 0 0, width (shrink |> minimum 100), alignRight ]
+            (el [ paddingXY 0 0, Font.color ctx.palette.fg3 ] <| text "TX HASH")
+        ]
+
+
+
+-- row ([ width fill, height (px 46) ] ++ bottomBorder ctx)
+--     [ el [ paddingXY 10 0, Font.color ctx.palette.fg3 ] <| text "CONTENT" ]
 
 
 viewTransaction : Context a -> TransactionSummary -> Element msg
@@ -231,13 +282,13 @@ viewTransaction ctx txSummary =
                  ]
                     ++ bottomBorder ctx
                 )
-                [ el [ paddingEach { top = 0, bottom = 0, left = 0, right = 20 } ]
+                [ el [ paddingEach { top = 0, bottom = 0, left = 0, right = 20 }, width (shrink |> minimum 110) ]
                     (iconForEvent ctx event)
-                , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
-                    (el [ alignRight ] <| text <| String.left 6 txSummary.hash)
                 , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
                     (el [ alignRight ] <| text <| String.fromInt txSummary.cost)
                 , viewTransactionEvent ctx event
+                , el [ paddingXY 30 0, width (shrink |> minimum 100), alignRight ]
+                    (el [ alignRight ] <| text <| String.left 6 txSummary.hash)
                 , el [ alignRight ] (html <| Icons.status_success 20)
                 ]
 
@@ -250,13 +301,22 @@ viewTransaction ctx txSummary =
                  ]
                     ++ bottomBorder ctx
                 )
-                [ el [ paddingEach { top = 0, bottom = 0, left = 0, right = 20 } ]
-                    (iconForTag ctx tag)
-                , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
-                    (el [ alignRight ] <| text <| String.left 6 txSummary.hash)
+                [ -- el [ paddingEach { top = 0, bottom = 0, left = 0, right = 20 } ]
+                  --     (iconForTag ctx tag)
+                  row [ spacing 10, width (shrink |> minimum 110) ]
+                    [ el []
+                        (iconForTag ctx tag)
+                    , el [ Font.color ctx.palette.failure ] <| text <| "Rejected"
+                    ]
                 , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
                     (el [ alignRight ] <| text <| String.fromInt txSummary.cost)
-                , el [ Font.color ctx.palette.failure ] (text <| "Rejected: " ++ tag ++ " " ++ contents)
+                , if contents /= "" then
+                    el [ Font.color ctx.palette.failure ] (text <| tag ++ ": " ++ contents)
+
+                  else
+                    el [ Font.color ctx.palette.failure ] (text <| tag)
+                , el [ paddingXY 30 0, width (shrink |> minimum 100), alignRight ]
+                    (el [ alignRight ] <| text <| String.left 6 txSummary.hash)
                 , el [ alignRight, Font.color ctx.palette.failure ] (html <| Icons.status_failure 20)
                 ]
 
@@ -271,16 +331,22 @@ viewSpecialEvent ctx specialEvent =
          ]
             ++ bottomBorder ctx
         )
-        [ el [ paddingEach { top = 0, bottom = 0, left = 0, right = 20 } ]
-            (html <| Icons.baking_oven 20)
-        , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
-            (el [ alignRight ] <| none)
+        [ -- el [ paddingEach { top = 0, bottom = 0, left = 0, right = 20 }, stringTooltipAbove ctx "Baker reward" ]
+          row [ spacing 10, width (shrink |> minimum 110) ]
+            [ el [ stringTooltipAbove ctx "Baker reward" ]
+                (html <| Icons.baking_bread 20)
+            , text <| "Baking"
+            ]
+
+        -- , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
+        --     (el [ alignRight ] <| none)
         , el [ paddingXY 30 0, width (shrink |> minimum 100) ]
             (el [ alignRight ] <| text <| String.fromInt specialEvent.rewardAmount)
         , row []
-            [ viewAddress ctx
+            [ text "Rewarded: "
+            , viewAddress ctx
                 (AddressAccount specialEvent.bakerAccount)
-            , el [] <| text <| "(Baker: " ++ String.fromInt specialEvent.bakerId ++ ")"
+            , el [] <| text <| " (Baker: " ++ String.fromInt specialEvent.bakerId ++ ")"
             ]
         , el [ alignRight ] (html <| Icons.status_success 20)
         ]
@@ -289,28 +355,64 @@ viewSpecialEvent ctx specialEvent =
 iconForEvent ctx event_ =
     case event_ of
         Just (TransactionEventAccountCreated event) ->
-            el [ stringTooltipAbove ctx "account key deployed" ]
-                (html <| Icons.account_key_deployed 18)
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Account key deployed" ]
+                    (html <| Icons.account_key_deployed 18)
+                , text <| "Account Key"
+                ]
 
         Just (TransactionEventCredentialDeployed event) ->
-            el [ stringTooltipAbove ctx "account credentials deployed" ]
-                (html <| Icons.account_credentials_deployed 18)
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Account credentials deployed" ]
+                    (html <| Icons.account_credentials_deployed 18)
+                , text <| "Account Credentials"
+                ]
 
         Just (TransactionEventTransfer event) ->
-            el [ stringTooltipAbove ctx "transfer" ]
-                (html <| Icons.transaction 18)
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Transfer" ]
+                    (html <| Icons.transaction 18)
+                , text <| "Transfer"
+                ]
 
         Just (TransactionEventStakeDelegated event) ->
-            el [ stringTooltipAbove ctx "stake delegated" ]
-                (html <| Icons.delegation_delegated 20)
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Stake delegated" ]
+                    (html <| Icons.delegation_delegated 20)
+                , text <| "Stake"
+                ]
 
         Just (TransactionEventBakerAdded event) ->
-            el [ stringTooltipAbove ctx "baker added" ]
-                (html <| Icons.baking_bread 20)
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Baker added" ]
+                    (html <| Icons.baking_bread 20)
+                , text <| "Baking"
+                ]
+
+        Just (TransactionEventModuleDeployed event) ->
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Module deployed" ]
+                    (html <| Icons.smart_contract 20)
+                , text <| "Module"
+                ]
+
+        Just (TransactionEventContractInitialized event) ->
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Contract initialised" ]
+                    (html <| Icons.smart_contract_add 20)
+                , text <| "Contract"
+                ]
+
+        Just (TransactionEventContractMessage event) ->
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Contract messaged" ]
+                    (html <| Icons.smart_contract_update 20)
+                , text <| "Contract"
+                ]
 
         Nothing ->
-            el [ stringTooltipAbove ctx "unknown event type" ]
-                (html <| Icons.transaction 18)
+            el [ stringTooltipAbove ctx "Unknown event type" ]
+                (el [ paddingXY 6 0 ] <| text "?")
 
 
 iconForTag ctx tag =
@@ -324,19 +426,20 @@ iconForTag ctx tag =
         -- "TransactionEventTransfer" ->
         --     html <| Icons.transaction 18
         "InvalidStakeDelegationTarget" ->
-            el [ stringTooltipAbove ctx "invalid delegation target" ]
+            el [ stringTooltipAbove ctx "Invalid delegation target" ]
                 (html <| Icons.delegation_delegated 20)
 
         "InvalidBakerRemoveSource" ->
-            el [ stringTooltipAbove ctx "invalid baker remove source" ]
+            el [ stringTooltipAbove ctx "Invalid baker remove source" ]
                 (html <| Icons.baking_bread 20)
 
         "SerializationFailure" ->
-            el [ stringTooltipAbove ctx "invalid baker remove source" ]
-                (html <| Icons.status_failure 20)
+            el [ stringTooltipAbove ctx "Unknown" ]
+                (el [ paddingXY 6 0 ] <| text "?")
 
         _ ->
-            text tag
+            el [ stringTooltipAbove ctx tag ]
+                (el [ paddingXY 6 0 ] <| text "?")
 
 
 viewTransactionEvent : Context a -> Maybe TransactionEvent -> Element msg
@@ -352,7 +455,8 @@ viewTransactionEvent ctx txEvent =
 
         Just (TransactionEventTransfer event) ->
             row []
-                [ viewAddress ctx event.from
+                [ text "Sent: "
+                , viewAddress ctx event.from
                 , el [ paddingXY 8 0 ] (html <| Icons.arrow_right 18)
                 , viewAddress ctx event.to
                 ]
@@ -364,7 +468,10 @@ viewTransactionEvent ctx txEvent =
             --     , baker : Int
             --     }
             row []
-                [ viewAddress ctx (AddressAccount event.account)
+                [ text "Delegated: "
+                , viewAddress ctx (AddressAccount event.account)
+                , el [ paddingXY 8 0 ] (html <| Icons.arrow_right 18)
+                , text <| "(Baker: " ++ String.fromInt event.baker ++ ")"
                 ]
 
         Just (TransactionEventBakerAdded event) ->
@@ -373,8 +480,59 @@ viewTransactionEvent ctx txEvent =
             --     , contents : Int
             --     }
             row []
-                [ text <| event.tag ++ ": " ++ String.fromInt event.contents
+                [ text <| "Added: Baker " ++ String.fromInt event.contents
                 ]
+
+        Just (TransactionEventModuleDeployed event) ->
+            -- type alias EventModuleDeployed =
+            --     { tag : String
+            --     , contents : String
+            --     }
+            row [] [ text <| "Deployed: " ++ event.contents ]
+
+        Just (TransactionEventContractInitialized event) ->
+            -- type alias EventContractInitialized =
+            --     { tag : String
+            --     , amount : Int
+            --     , address : ContractAddress
+            --     , name : Int
+            --     , ref : String
+            --     }
+            el [ stringTooltipAbove ctx "TransactionEventContractInitialized" ]
+                (row []
+                    [ text <|
+                        "Created: "
+                    , viewAddress ctx
+                        (AddressContract <|
+                            String.fromInt event.address.index
+                                ++ "-"
+                                ++ String.fromInt event.address.subindex
+                        )
+                    ]
+                )
+
+        Just (TransactionEventContractMessage event) ->
+            -- type alias EventContractMessage =
+            --     { tag : String
+            --     , amount : Int
+            --     , address : ContractAddress
+            --     , message : String
+            --     }
+            el [ stringTooltipAbove ctx "TransactionEventContractMessage" ]
+                (row []
+                    [ text <|
+                        "Messaged:"
+                    , el [ paddingXY 8 0 ] (html <| Icons.arrow_right 18)
+                    , viewAddress ctx
+                        (AddressContract <|
+                            String.fromInt event.address.index
+                                ++ "-"
+                                ++ String.fromInt event.address.subindex
+                        )
+
+                    -- , text event.message
+                    ]
+                )
 
         Nothing ->
             none
@@ -382,7 +540,7 @@ viewTransactionEvent ctx txEvent =
 
 viewBadge : Context a -> { icon : Element msg, label : Element msg } -> Element msg
 viewBadge ctx { icon, label } =
-    row [ padding 5, spacing 4 ] [ icon, label ]
+    row [ spacing 4 ] [ icon, label ]
 
 
 viewAddress : Context a -> AccountInfo -> Element msg
@@ -419,7 +577,8 @@ tooltip placement content =
             , (placement << Element.map never) <|
                 el
                     [ htmlAttribute (style "pointerEvents" "none")
-                    , moveUp 10
+                    , moveDown 10
+                    , moveLeft 20
                     , alignLeft
                     ]
                     content
