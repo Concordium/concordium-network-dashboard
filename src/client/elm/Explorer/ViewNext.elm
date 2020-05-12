@@ -167,11 +167,10 @@ viewBlockHash ctx blockInfo =
             ]
             [ el [] icon
             , el [ width (px 10) ] none
-            , text blockInfo.blockHash
-
-            -- @TODO this is nice but prevents easy copy/pasting
-            -- , el [ Font.color color ] (text short)
-            -- , text remaining
+            , paragraph []
+                [ el [ Font.color color ] (text short)
+                , text remaining
+                ]
             ]
         )
 
