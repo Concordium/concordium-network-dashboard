@@ -21,6 +21,28 @@ getBlockSummary_stub_allTransactions =
   ],
   "transactionSummaries": [
     {
+      "hash": "ae3154e1ee8a64d9e9718e57fbc979175be2ee8526b23fcddab2d626ebaeb72d",
+      "sender": null,
+      "cost": 0,
+      "result": {
+        "events": [
+          {
+            "tag": "AccountCreated",
+            "contents": "3P2Qsi8FeMB6AijMi3kpD9FrcFfAkoHDMu8kf7Fbd3cYYJpk2s"
+          },
+          {
+            "tag": "CredentialDeployed",
+            "regid": "ac64aac1da15afd90d185475705935fbe224d5f7ddc43988e7db511656c787b452820b5096a2b323cf7612f5609d4cfb",
+            "account": "3P2Qsi8FeMB6AijMi3kpD9FrcFfAkoHDMu8kf7Fbd3cYYJpk2s"
+          }
+        ],
+        "outcome": "success"
+      },
+      "energyCost": 35000,
+      "type": null,
+      "index": 0
+    },
+    {
       "hash": "4b7e1b22ff9365e29c57d7f85a0fd7a7dd3c50245cb9d04c560c520298013c3f",
       "sender": "43TULx3kDPDeQy1C1iLwBbS5EEV96cYPw5ZRdA9Dm4D23hxGZt",
       "cost": 165,
