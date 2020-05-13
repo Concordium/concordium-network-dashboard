@@ -28,10 +28,10 @@ consensusStatusDecoder =
 
 getConsensusStatus : (Result Http.Error ConsensusStatus -> msg) -> Cmd msg
 getConsensusStatus msg =
-    let
-        x =
-            Debug.log "calling" "get consensus status!"
-    in
+    -- let
+    --     x =
+    --         Debug.log "calling" "get consensus status!"
+    -- in
     Http.get
         { url = Config.middleware ++ "/v1/consensusStatus"
         , expect = expectJson_ msg consensusStatusDecoder
@@ -68,10 +68,10 @@ stubBlock =
 
 
 getBlockInfo blockhash msg =
-    let
-        x =
-            Debug.log "calling" "get Block info!"
-    in
+    -- let
+    --     x =
+    --         Debug.log "calling" "get Block info!"
+    -- in
     Http.get
         { url = Config.middleware ++ "/v1/blockInfo/" ++ blockhash
         , expect = expectJson_ msg blockInfoDecoder
@@ -84,10 +84,10 @@ getBlockInfoStub blockhash msg =
             trigger (msg blockInfo)
 
         Err err ->
-            let
-                x =
-                    Debug.log "getBlockInfoStub decoding" (D.errorToString err)
-            in
+            -- let
+            --     x =
+            --         Debug.log "getBlockInfoStub decoding" (D.errorToString err)
+            -- in
             Cmd.none
 
 
@@ -97,10 +97,10 @@ getBlockInfoStub_ blockhash =
             blockInfo
 
         Err err ->
-            let
-                x =
-                    Debug.log "getBlockInfoStub decoding" (D.errorToString err)
-            in
+            -- let
+            --     x =
+            --         Debug.log "getBlockInfoStub decoding" (D.errorToString err)
+            -- in
             blockInfoStub
 
 
@@ -109,10 +109,10 @@ getBlockInfoStub_ blockhash =
 
 
 getBlockSummary blockhash msg =
-    let
-        x =
-            Debug.log "calling" "get Block summary!"
-    in
+    -- let
+    --     x =
+    --         Debug.log "calling" "get Block summary!"
+    -- in
     Http.get
         { url = Config.middleware ++ "/v1/blockSummary/" ++ blockhash
         , expect = expectJson_ msg blockSummaryDecoder
@@ -125,10 +125,10 @@ getBlockSummaryStub_ =
             blockSummary
 
         Err err ->
-            let
-                x =
-                    Debug.log "getBlockSummaryStub decoding" (D.errorToString err)
-            in
+            -- let
+            --     x =
+            --         Debug.log "getBlockSummaryStub decoding" (D.errorToString err)
+            -- in
             { specialEvents = [], transactionSummaries = [] }
 
 

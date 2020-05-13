@@ -220,10 +220,10 @@ update msg model =
                                             ( model, Cmd.none )
 
                                 Err e ->
-                                    let
-                                        y =
-                                            Debug.log "error decoding colormode" (D.errorToString e)
-                                    in
+                                    -- let
+                                    --     y =
+                                    --         Debug.log "error decoding colormode" (D.errorToString e)
+                                    -- in
                                     ( model, Cmd.none )
 
                         _ ->
@@ -349,10 +349,10 @@ update msg model =
                     ( { model | explorerModel = newExplorerModel }, Cmd.none )
 
                 Err err ->
-                    let
-                        x =
-                            Debug.log "getBlockSummaryStub decoding" (D.errorToString err)
-                    in
+                    -- let
+                    --     x =
+                    --         Debug.log "getBlockSummaryStub decoding" (D.errorToString err)
+                    -- in
                     ( model, Cmd.none )
 
         Noop ->
