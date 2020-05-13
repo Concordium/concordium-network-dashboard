@@ -95,7 +95,7 @@ viewContainer ctx content =
 
 viewHeader : Context a -> BlockInfo -> Element Msg
 viewHeader ctx blockInfo =
-    row ([ width fill ] ++ bottomBorder ctx)
+    row ([ width fill, spacing 15, paddingXY 6 0 ] ++ bottomBorder ctx)
         [ viewBlockHash ctx blockInfo
         , viewParentLink ctx blockInfo
         , viewBlockStats ctx blockInfo
@@ -111,7 +111,6 @@ viewParentLink ctx blockInfo =
     in
     row
         [ Font.color color
-        , paddingXY 30 0
         , pointer
 
         -- @TODO figure out right way to do this
@@ -142,7 +141,7 @@ viewBlockHash ctx blockInfo =
             else
                 ( html <| Icons.block_not_finalized 20, ctx.palette.c1 )
     in
-    el [ paddingXY 6 6 ]
+    el [ paddingXY 0 6 ]
         (row
             [ height (px 36)
             , Border.rounded 4
@@ -173,7 +172,7 @@ blockColor ctx blockInfo =
 
 viewBlockStats : Context a -> BlockInfo -> Element Msg
 viewBlockStats ctx blockInfo =
-    row [ alignRight, paddingXY 20 6, spacing 30 ]
+    row [ alignRight, spacing 15 ]
         [ viewBlockHeight ctx blockInfo
         , viewSlotTime ctx blockInfo
         ]
@@ -373,6 +372,12 @@ viewSpecialEvent ctx specialEvent =
                 (AddressAccount specialEvent.bakerAccount)
             , el [] <| text <| " (Baker: " ++ String.fromInt specialEvent.bakerId ++ ")"
             ]
+        , el
+            [ alignRight
+            , width (shrink |> minimum 70)
+            , Font.color ctx.palette.fg3
+            ]
+            (el [] <| text <| "n/a")
         , el [ alignRight ] (html <| Icons.status_success 20)
         ]
 

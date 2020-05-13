@@ -135,11 +135,8 @@ getBlockSummaryStub_ =
 type alias BlockInfo =
     { transactionsSize : Int
     , blockParent : String
-    , mintedAmountPerSlot : Int
-    , totalEncryptedAmount : Int
     , blockHash : String
     , finalized : Bool
-    , totalAmount : Int
     , blockArriveTime : Posix
     , blockReceiveTime : Posix
     , transactionCount : Int
@@ -149,8 +146,6 @@ type alias BlockInfo =
     , blockSlotTime : Posix
     , blockHeight : Int
     , blockBaker : Int
-    , executionCost : Int
-    , centralBankAmount : Int
     }
 
 
@@ -158,11 +153,8 @@ blockInfoStub : BlockInfo
 blockInfoStub =
     { transactionsSize = 0
     , blockParent = "957c2ae05d82e9ba30142e02cda3b3c2ab779329d359c665abc7059dbb88cc61"
-    , mintedAmountPerSlot = 100
-    , totalEncryptedAmount = 0
     , blockHash = "d06708ea234df3189aa212008d8f0a97ba68384482d25fbeebdc2c822421f8ff"
     , finalized = False
-    , totalAmount = 15000628024800
     , blockArriveTime =
         Iso8601.toTime "2020-04-05T17:04:10.8763399Z"
             |> Result.withDefault (Time.millisToPosix 1586459410)
@@ -178,8 +170,6 @@ blockInfoStub =
             |> Result.withDefault (Time.millisToPosix 1586459410)
     , blockHeight = 79
     , blockBaker = 2
-    , executionCost = 0
-    , centralBankAmount = 474
     }
 
 
@@ -188,11 +178,8 @@ blockInfoDecoder =
     D.succeed BlockInfo
         |> required "transactionsSize" D.int
         |> required "blockParent" D.string
-        |> required "mintedAmountPerSlot" D.int
-        |> required "totalEncryptedAmount" D.int
         |> required "blockHash" D.string
         |> required "finalized" D.bool
-        |> required "totalAmount" D.int
         |> required "blockArriveTime" Iso8601.decoder
         |> required "blockReceiveTime" Iso8601.decoder
         |> required "transactionCount" D.int
@@ -202,31 +189,24 @@ blockInfoDecoder =
         |> required "blockSlotTime" Iso8601.decoder
         |> required "blockHeight" D.int
         |> required "blockBaker" D.int
-        |> required "executionCost" D.int
-        |> required "centralBankAmount" D.int
 
 
 getBlockInfoResponseStub =
     """
 {
   "transactionsSize": 0,
-  "blockParent": "d06708ea234df3189aa212008d8f0a97ba68384482d25fbeebdc2c822421f8ff",
-  "mintedAmountPerSlot": 100,
-  "totalEncryptedAmount": 0,
-  "blockHash": "957c2ae05d82e9ba30142e02cda3b3c2ab779329d359c665abc7059dbb88cc61",
+  "blockParent": "ec391232301e51b067619284952ab0d1bfd2c1cb077643e53114e8709dd2bd2e",
+  "blockHash": "f911f25086e40ccf32a22b9e5926675fef49f4b5e450d2625d1159c02ff2f48b",
   "finalized": true,
-  "totalAmount": 15000628024800,
-  "blockArriveTime": "2020-03-05T17:04:10.8763399Z",
-  "blockReceiveTime": "2020-03-05T17:04:10.8763399Z",
+  "blockArriveTime": "2020-05-13T13:55:25.049178983Z",
+  "blockReceiveTime": "2020-05-13T13:55:24.906362438Z",
   "transactionCount": 0,
   "transactionEnergyCost": 0,
-  "blockSlot": 6280248,
-  "blockLastFinalized": "a0cdd5b7e51d83bef2d0ed55cb35cdc8c42280add22e9e59c893ecb492ff609a",
-  "blockSlotTime": "2020-03-05T16:08:00Z",
-  "blockHeight": 79,
-  "blockBaker": 2,
-  "executionCost": 0,
-  "centralBankAmount": 474
+  "blockSlot": 15877895342,
+  "blockLastFinalized": "5b393e1e20eb446a2069bcd3bbe9c8b22f2e731e742b1b618f3184377fd1eaa2",
+  "blockSlotTime": "2070-08-27T15:49:30.2Z",
+  "blockHeight": 43756,
+  "blockBaker": 3
 }
 """
 

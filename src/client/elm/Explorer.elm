@@ -17,9 +17,9 @@ type alias Model =
 
 
 type Msg
-    = ReceivedBlockInfo (Result Http.Error BlockInfo)
+    = ReceivedConsensusStatus (Result Http.Error ConsensusStatus)
     | RequestedBlockInfo BlockHash
-    | ReceivedConsensusStatus (Result Http.Error ConsensusStatus)
+    | ReceivedBlockInfo (Result Http.Error BlockInfo)
     | ReceivedBlockSummary (Result Http.Error BlockSummary)
 
 
