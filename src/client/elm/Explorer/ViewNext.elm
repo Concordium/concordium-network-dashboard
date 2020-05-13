@@ -27,28 +27,12 @@ import Transaction.Summary exposing (..)
 import Types exposing (Msg(..))
 
 
-loadStubButton ctx ( name, stub ) =
-    row
-        [ Font.color ctx.palette.c1
-        , padding 10
-        , Background.color ctx.palette.bg2
-        , pointer
-        , onClick (BlockSummaryStubSelected stub)
-        , Border.rounded 5
-        ]
-        [ text name
-        ]
-
-
 view : Context a -> WebData BlockInfo -> WebData BlockSummary -> Element Msg
 view ctx remoteBlockInfo remoteBlockSummary =
-    column [ spacing 40 ]
-        [ row []
-            [ text "Test stubs: "
-            , blockSummaryStubs
-                |> List.map (loadStubButton ctx)
-                |> row [ spacing 5 ]
-            ]
+    column [ spacing 40, width fill ]
+        [ none
+
+        -- , testStubs ctx
         , viewContainer ctx
             (remoteDataView ctx.palette
                 (\blockInfo ->
@@ -92,7 +76,10 @@ viewContainer : Context a -> Element Msg -> Element Msg
 viewContainer ctx content =
     el
         [ height fill
-        , width fill
+
+        -- , width fill
+        , width (fill |> maximum 1100)
+        , centerX
         , Background.color ctx.palette.bg2
         , Border.rounded 6
         , Border.shadow
@@ -141,7 +128,7 @@ viewParentLink ctx blockInfo =
         ]
 
 
-viewBlockHash : Context a -> BlockInfo -> Element msg
+viewBlockHash : Context a -> BlockInfo -> Element Msg
 viewBlockHash ctx blockInfo =
     let
         ( short, remaining ) =
@@ -163,7 +150,8 @@ viewBlockHash ctx blockInfo =
             , Background.color (withAlphaEl 0.1 color)
             , Font.color (withAlphaEl 0.6 color)
             , paddingXY 10 10
-            , stringTooltipAbove ctx "Block hash"
+            , stringTooltipAboveWithCopy ctx "Block hash"
+            , onClick (CopyToClipboard blockInfo.blockHash)
             ]
             [ el [] icon
             , el [ width (px 10) ] none
@@ -184,7 +172,7 @@ blockColor ctx blockInfo =
         ctx.palette.c1
 
 
-viewBlockStats : Context a -> BlockInfo -> Element msg
+viewBlockStats : Context a -> BlockInfo -> Element Msg
 viewBlockStats ctx blockInfo =
     row [ alignRight, paddingXY 20 6, spacing 30 ]
         [ viewBlockHeight ctx blockInfo
@@ -192,7 +180,7 @@ viewBlockStats ctx blockInfo =
         ]
 
 
-viewSlotTime : Context a -> BlockInfo -> Element msg
+viewSlotTime : Context a -> BlockInfo -> Element Msg
 viewSlotTime ctx blockInfo =
     let
         color =
@@ -209,7 +197,8 @@ viewSlotTime ctx blockInfo =
         , spacing 10
         , Font.color color
         , alignRight
-        , stringTooltipAbove ctx "Slot time"
+        , stringTooltipAboveWithCopy ctx "Slot time"
+        , onClick (CopyToClipboard slotTime)
         ]
         [ el [ Font.color (withAlphaEl 0.5 <| color) ]
             (html <| Icons.time_stopwatch 20)
@@ -247,32 +236,41 @@ viewContentHeadline ctx =
         ([ width fill
          , height (px 26)
          , paddingXY 10 0
-         , spacing 30
+         , spacing 15
          ]
             ++ bottomBorder ctx
         )
-        [ el [ width (shrink |> minimum 20) ]
+        [ el [ width (shrink |> minimum 30) ]
             (el [ Font.color ctx.palette.fg3 ] <| text "TYPE")
-        , el [ width (shrink |> minimum 80) ]
+        , el [ width (shrink |> minimum 95) ]
             (el [ Font.color ctx.palette.fg3 ] <| text "SENDER")
         , row []
             [ el [ Font.color ctx.palette.fg3 ] <| text "CONTENT"
             ]
-        , el [ width (shrink |> minimum 100), alignRight ]
-            (el [ Font.color ctx.palette.fg3, alignRight ] <| text "COST")
         , el [ width (shrink |> minimum 120), alignRight ]
+            (el [ Font.color ctx.palette.fg3, alignRight ] <| text "COST")
+        , el [ width (shrink |> minimum 105), alignRight ]
             (el [ Font.color ctx.palette.fg3 ] <| text "TX HASH")
         ]
 
 
-viewTransaction : Context a -> TransactionSummary -> Element msg
+viewTransaction : Context a -> TransactionSummary -> Element Msg
 viewTransaction ctx txSummary =
     let
         sender =
             txSummary.sender
                 |> Maybe.map AddressAccount
-                |> Maybe.map (viewAddress ctx)
-                |> Maybe.withDefault none
+
+        softSenderFallback event_ =
+            case event_ of
+                TransactionEventAccountCreated event ->
+                    el [ Font.color ctx.palette.fg3 ] <| viewAddress ctx (AddressAccount event.account)
+
+                TransactionEventCredentialDeployed event ->
+                    el [ Font.color ctx.palette.fg3 ] <| viewAddress ctx (AddressAccount event.account)
+
+                _ ->
+                    none
     in
     case txSummary.result of
         TransactionAccepted events ->
@@ -282,19 +280,29 @@ viewTransaction ctx txSummary =
                         ([ width fill
                          , height (px 46)
                          , paddingXY 10 0
+                         , spacing 15
                          , mouseOver [ Background.color <| Palette.lightish ctx.palette.bg2 ]
                          ]
                             ++ bottomBorder ctx
                         )
-                        [ el [ width (shrink |> minimum 50) ]
+                        [ el [ width (shrink |> minimum 30) ]
                             (iconForEvent ctx event)
-                        , el [ width (shrink |> minimum 110) ]
-                            sender
+                        , el [ width (shrink |> minimum 95) ] <|
+                            case sender of
+                                Just address ->
+                                    viewAddress ctx address
+
+                                Nothing ->
+                                    softSenderFallback event
                         , viewTransactionEvent ctx event txSummary
-                        , el [ width (shrink |> minimum 100), alignRight ]
+                        , el [ width (shrink |> minimum 120), alignRight ]
                             (el [ alignRight ] <| text <| String.fromInt txSummary.cost)
-                        , el [ paddingXY 30 0, width (shrink |> minimum 120), alignRight ]
-                            (el [] <| text <| String.left 8 txSummary.hash)
+                        , el
+                            [ alignRight
+                            , stringTooltipAboveWithCopy ctx txSummary.hash
+                            , onClick (CopyToClipboard txSummary.hash)
+                            ]
+                            (el [ alignRight ] <| text <| String.left 8 txSummary.hash)
                         , el [ alignRight ] (html <| Icons.status_success 20)
                         ]
             in
@@ -308,46 +316,57 @@ viewTransaction ctx txSummary =
                 ([ width fill
                  , height (px 46)
                  , paddingXY 10 0
+                 , spacing 15
                  , mouseOver [ Background.color <| Palette.lightish ctx.palette.bg2 ]
                  ]
                     ++ bottomBorder ctx
                 )
-                [ row [ width (shrink |> minimum 50) ]
+                [ row [ width (shrink |> minimum 30) ]
                     [ el [ Font.color ctx.palette.failure ]
                         (iconForTag ctx tag)
                     ]
-                , el [ width (shrink |> minimum 110) ]
-                    sender
-                , el [ Font.color ctx.palette.failure ] <|
+                , el [ width (shrink |> minimum 95) ] <|
+                    case sender of
+                        Just address ->
+                            viewAddress ctx address
+
+                        Nothing ->
+                            none
+                , paragraph [ Font.color ctx.palette.failure ] <|
                     if contents /= "" then
-                        text <| tag ++ ": " ++ contents
+                        [ text <| tag ++ ": " ++ contents ]
 
                     else
-                        text <| tag
-                , el [ width (shrink |> minimum 100), alignRight ]
+                        [ text <| tag ]
+                , el [ width (shrink |> minimum 120), alignRight ]
                     (el [ alignRight ] <| text <| String.fromInt txSummary.cost)
-                , el [ paddingXY 30 0, width (shrink |> minimum 100), alignRight ]
+                , el
+                    [ alignRight
+                    , stringTooltipAboveWithCopy ctx txSummary.hash
+                    , onClick (CopyToClipboard txSummary.hash)
+                    ]
                     (el [ alignRight ] <| text <| String.left 8 txSummary.hash)
                 , el [ alignRight, Font.color ctx.palette.failure ] (html <| Icons.status_failure 20)
                 ]
 
 
-viewSpecialEvent : Context a -> SpecialEvent -> Element msg
+viewSpecialEvent : Context a -> SpecialEvent -> Element Msg
 viewSpecialEvent ctx specialEvent =
     row
         ([ width fill
          , height (px 46)
          , paddingXY 10 0
+         , spacing 15
          , mouseOver [ Background.color <| Palette.lightish ctx.palette.bg2 ]
          ]
             ++ bottomBorder ctx
         )
-        [ row [ spacing 10, width (shrink |> minimum 50) ]
-            [ el [ stringTooltipAbove ctx "Baker reward" ]
+        [ row [ spacing 10, width (shrink |> minimum 30) ]
+            [ el [ stringTooltipAbove ctx "Baking reward" ]
                 (html <| Icons.baking_bread 20)
             ]
-        , el [ width (shrink |> minimum 110) ]
-            (text "")
+        , el [ width (shrink |> minimum 95), Font.color ctx.palette.fg3 ]
+            (text "Chain")
         , row []
             [ text <| "Block Reward " ++ String.fromInt specialEvent.rewardAmount
             , arrowRight
@@ -429,7 +448,7 @@ iconForTag ctx tag =
                 (el [ paddingXY 6 0 ] <| text "?")
 
 
-viewTransactionEvent : Context a -> TransactionEvent -> TransactionSummary -> Element msg
+viewTransactionEvent : Context a -> TransactionEvent -> TransactionSummary -> Element Msg
 viewTransactionEvent ctx txEvent txSummary =
     case txEvent of
         TransactionEventAccountCreated event ->
@@ -503,7 +522,13 @@ viewTransactionEvent ctx txEvent txSummary =
             row []
                 [ text <| "Deployed module"
                 , arrowRight
-                , el [ stringTooltipAbove ctx event.contents ] <| text <| String.left 8 event.contents
+                , el
+                    [ stringTooltipAboveWithCopy ctx event.contents
+                    , onClick (CopyToClipboard event.contents)
+                    ]
+                  <|
+                    text <|
+                        String.left 8 event.contents
                 ]
 
         TransactionEventContractInitialized event ->
@@ -550,28 +575,33 @@ viewTransactionEvent ctx txEvent txSummary =
 
 
 viewAsAddressContract ctx contractAddress =
-    el
-        [ stringTooltipAbove ctx <|
+    let
+        content =
             "{\"index\":"
                 ++ String.fromInt contractAddress.index
                 ++ ",\"subindex\":"
                 ++ String.fromInt contractAddress.subindex
                 ++ "}"
-        ]
-    <|
-        viewAddress ctx
+    in
+    el [ stringTooltipAboveWithCopy ctx content, onClick (CopyToClipboard content) ]
+        (viewAddress ctx
             (AddressContract <|
                 String.fromInt contractAddress.index
                     ++ "-"
                     ++ String.fromInt contractAddress.subindex
             )
+        )
 
 
-viewAddress : Context a -> AccountInfo -> Element msg
+viewAddress : Context a -> AccountInfo -> Element Msg
 viewAddress ctx addr =
     case addr of
         AddressAccount address ->
-            row [ spacing 4, stringTooltipAbove ctx address ]
+            row
+                [ spacing 4
+                , stringTooltipAboveWithCopy ctx address
+                , onClick (CopyToClipboard address)
+                ]
                 [ el [] (html <| Icons.account_user 18)
                 , text (String.left 8 address)
                 ]
@@ -639,3 +669,61 @@ stringTooltipAbove ctx content =
             ]
             [ text content ]
         )
+
+
+stringTooltipAboveWithCopy : Context a -> String -> Attribute msg
+stringTooltipAboveWithCopy ctx content =
+    tooltip above
+        (row
+            [ paddingXY 12 8
+            , Border.rounded 50
+            , Border.shadow
+                { offset = ( 0, 0 )
+                , size = 2
+                , color = ctx.palette.fg1 |> withAlphaEl 0.3
+                , blur = 25
+                }
+            , Background.color ctx.palette.bg3
+            , Font.color ctx.palette.fg2
+            , (behindContent << Element.map never)
+                (el
+                    [ htmlAttribute (style "pointerEvents" "none")
+                    , moveDown 5
+                    , Font.color ctx.palette.bg3
+                    ]
+                    (html <| Icons.tooltip_arrow_round 24)
+                )
+            , (behindContent << Element.map never)
+                (el
+                    [ moveDown 32
+                    , moveRight 20
+                    , Font.color (ctx.palette.fg1 |> withAlphaEl 0.3)
+                    , Font.size 8
+                    ]
+                    (text "click to copy")
+                )
+            ]
+            [ text content ]
+        )
+
+
+testStubs ctx =
+    row []
+        [ text "Test stubs: "
+        , blockSummaryStubs
+            |> List.map (loadStubButton ctx)
+            |> row [ spacing 5 ]
+        ]
+
+
+loadStubButton ctx ( name, stub ) =
+    row
+        [ Font.color ctx.palette.c1
+        , padding 10
+        , Background.color ctx.palette.bg2
+        , pointer
+        , onClick (BlockSummaryStubSelected stub)
+        , Border.rounded 5
+        ]
+        [ text name
+        ]

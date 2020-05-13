@@ -7,6 +7,7 @@ import Browser.Dom
 import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
+import Clipboard
 import Config
 import Context exposing (Context)
 import Dashboard.Formatting exposing (..)
@@ -189,6 +190,9 @@ update msg model =
 
         WindowResized width height ->
             ( { model | window = { width = width, height = height } }, Cmd.none )
+
+        CopyToClipboard text ->
+            ( model, Clipboard.copy text )
 
         StorageDocReceived res ->
             let

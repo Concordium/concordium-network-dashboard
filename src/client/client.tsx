@@ -1,5 +1,6 @@
 import { Elm } from "./elm/Main"
 import { setup as storageSetup } from "./Storage"
+import { setup as clipboardSetup } from "./Clipboard"
 
 document.addEventListener("DOMContentLoaded", function () {
 
@@ -13,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
   })
 
   storageSetup(app)
-  // app.ports.hello.subscribe(message => socket.emit('toServer', message))
+  clipboardSetup(app)
 })
 
 // Reload every 15 minutes or so - dumb way to keep our office screens on latest UI version

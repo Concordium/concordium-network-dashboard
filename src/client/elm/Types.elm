@@ -47,6 +47,7 @@ type Msg
     | UrlClicked UrlRequest
     | UrlChanged Url
     | WindowResized Int Int
+    | CopyToClipboard String
     | StorageDocReceived D.Value
       --
     | NodeInfoReceived NetworkNode
