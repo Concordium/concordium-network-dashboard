@@ -269,7 +269,7 @@ updateChain ctx depth nodes model =
 
 
 
--- Subscriptione
+-- Subscriptions
 
 
 subscriptions : Model -> Sub Msg

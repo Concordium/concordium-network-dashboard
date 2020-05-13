@@ -151,7 +151,12 @@ decodeNode =
         |> Decode.required "bestBlockHeight" Decode.int
         |> Decode.required "finalizedBlock" Decode.string
         |> Decode.required "finalizedBlockHeight" Decode.int
-        |> Decode.required "ancestorsSinceBestBlock" (Decode.list Decode.string)
+        |> Decode.required "ancestorsSinceBestBlock"
+            (Decode.oneOf
+                [ Decode.list Decode.string
+                , Decode.succeed []
+                ]
+            )
 
 
 encodeNode : Node -> Encode.Value
