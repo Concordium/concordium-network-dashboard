@@ -2,12 +2,14 @@ module Config exposing (..)
 
 
 type Mode
-    = Staging
-    | Local
+    = Local
+    | Staging
+    | Production
 
 
 config =
-    Staging
+    -- Tweak me when developing locally to test
+    Production
 
 
 collector =
@@ -19,6 +21,11 @@ collector =
             -- Once deployed the routing for both collector and middleware is through the same URL
             "https://dashboard.eu.staging.concordium.com"
 
+        Production ->
+            -- Once deployed the routing for both collector and middleware is through the same URL
+            -- In production use path relative to current URL
+            ""
+
 
 middleware =
     -- "/"
@@ -29,3 +36,8 @@ middleware =
         Staging ->
             -- Once deployed the routing for both collector and middleware is through the same URL
             "https://dashboard.eu.staging.concordium.com"
+
+        Production ->
+            -- Once deployed the routing for both collector and middleware is through the same URL
+            -- In production use path relative to current URL
+            ""
