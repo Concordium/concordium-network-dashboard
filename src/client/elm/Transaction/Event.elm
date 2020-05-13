@@ -62,7 +62,7 @@ eventAccountCreatedDecoder =
 
 type alias EventCredentialDeployed =
     { tag : String
-    , regid : String
+    , regId : String
     , account : String
     }
 
@@ -71,7 +71,7 @@ eventCredentialDeployedDecoder : D.Decoder EventCredentialDeployed
 eventCredentialDeployedDecoder =
     D.succeed EventCredentialDeployed
         |> required "tag" D.string
-        |> required "regid" D.string
+        |> required "regId" D.string
         |> required "account" D.string
 
 

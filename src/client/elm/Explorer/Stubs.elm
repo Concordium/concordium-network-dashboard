@@ -21,24 +21,24 @@ getBlockSummary_stub_allTransactions =
   ],
   "transactionSummaries": [
     {
-      "hash": "ae3154e1ee8a64d9e9718e57fbc979175be2ee8526b23fcddab2d626ebaeb72d",
+      "hash": "d1aeaedec44266f044a230ad7bd9339a992418fbcd11a3217686f6854a1816cd",
       "sender": null,
       "cost": 0,
+      "energyCost": 35000,
       "result": {
         "events": [
           {
             "tag": "AccountCreated",
-            "contents": "3P2Qsi8FeMB6AijMi3kpD9FrcFfAkoHDMu8kf7Fbd3cYYJpk2s"
+            "contents": "3ADz9qYiEzeui5ccMC7CCHrdsWArV4T45ktGhyt2CnUK4BL4U6"
           },
           {
             "tag": "CredentialDeployed",
-            "regid": "ac64aac1da15afd90d185475705935fbe224d5f7ddc43988e7db511656c787b452820b5096a2b323cf7612f5609d4cfb",
-            "account": "3P2Qsi8FeMB6AijMi3kpD9FrcFfAkoHDMu8kf7Fbd3cYYJpk2s"
+            "regId": "a65da3c626172056bfb0f6612bf76bd79acf80dee092b0394b93cfabaa500b727592af22f66fae834965d33fda8940f1",
+            "account": "3ADz9qYiEzeui5ccMC7CCHrdsWArV4T45ktGhyt2CnUK4BL4U6"
           }
         ],
         "outcome": "success"
       },
-      "energyCost": 35000,
       "type": null,
       "index": 0
     },
@@ -506,7 +506,7 @@ getBlockSummaryResponseStub =
           },
           {
             "tag": "CredentialDeployed",
-            "regid": "ac64aac1da15afd90d185475705935fbe224d5f7ddc43988e7db511656c787b452820b5096a2b323cf7612f5609d4cfb",
+            "regId": "ac64aac1da15afd90d185475705935fbe224d5f7ddc43988e7db511656c787b452820b5096a2b323cf7612f5609d4cfb",
             "account": "3P2Qsi8FeMB6AijMi3kpD9FrcFfAkoHDMu8kf7Fbd3cYYJpk2s"
           }
         ],
