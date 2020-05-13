@@ -408,20 +408,17 @@ scrollPageToTop =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        ([ nodeInfo NodeInfoReceived
-         , Browser.Events.onResize WindowResized
-         , Storage.receiveDoc StorageDocReceived
-         , Time.every 1000 CurrentTime
-         , Time.every 2000 FetchNodeSummaries
-         ]
-            ++ (case model.currentPage of
-                    ChainViz ->
-                        [ Sub.map ChainMsg <| Chain.subscriptions model.chainModel ]
+        [ nodeInfo NodeInfoReceived
+        , Browser.Events.onResize WindowResized
+        , Storage.receiveDoc StorageDocReceived
+        , Time.every 1000 CurrentTime
+        , Time.every 2000 FetchNodeSummaries
+        , if model.currentPage == ChainViz then
+            Sub.map ChainMsg <| Chain.subscriptions model.chainModel
 
-                    _ ->
-                        []
-               )
-        )
+          else
+            Sub.none
+        ]
 
 
 main : Program Flags Model Msg

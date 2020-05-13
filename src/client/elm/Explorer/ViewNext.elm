@@ -30,10 +30,7 @@ import Types exposing (Msg(..))
 view : Context a -> WebData BlockInfo -> WebData BlockSummary -> Element Msg
 view ctx remoteBlockInfo remoteBlockSummary =
     column [ spacing 40, width fill ]
-        [ none
-
-        -- , testStubs ctx
-        , viewContainer ctx
+        [ viewContainer ctx
             (remoteDataView ctx.palette
                 (\blockInfo ->
                     let
@@ -69,6 +66,8 @@ view ctx remoteBlockInfo remoteBlockSummary =
                 )
                 remoteBlockInfo
             )
+
+        -- , testStubs ctx
         ]
 
 
