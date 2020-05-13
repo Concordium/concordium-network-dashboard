@@ -201,7 +201,7 @@ blueishLightGray =
 
 
 blueishDarkGray =
-    fromHex "#232933"
+    fromHex "#152030"
 
 
 blueishGray =
@@ -288,7 +288,7 @@ apply fn color =
 
 
 increment =
-    0.05
+    0.02
 
 
 veryLight : Element.Color -> Element.Color

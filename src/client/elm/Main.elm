@@ -7,6 +7,7 @@ import Browser.Dom
 import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
+import Clipboard
 import Config
 import Context exposing (Context)
 import Dashboard.Formatting exposing (..)
@@ -22,13 +23,11 @@ import Element.Font as Font
 import Element.Input as Input
 import Explorer
 import Explorer.Request
-import Explorer.View
 import Html exposing (Html)
 import Html.Attributes exposing (style)
 import Http
 import Iso8601
 import Json.Decode as D
-import Json.Decode.Pipeline exposing (hardcoded, optional, required)
 import Json.Encode as E
 import List.Extra as List
 import Markdown
@@ -36,11 +35,13 @@ import Material.Icons.Sharp as Icon
 import Material.Icons.Types exposing (Coloring(..))
 import Maybe.Extra as Maybe
 import NodeHelpers exposing (..)
+import NodeSummaries exposing (..)
 import Pages.ChainViz
 import Pages.Graph
 import Pages.Home
 import Palette exposing (ColorMode(..), Palette)
 import RemoteData exposing (RemoteData(..))
+import Storage
 import String
 import Task
 import Time
@@ -55,36 +56,6 @@ port hello : String -> Cmd msg
 port nodeInfo : (NetworkNode -> msg) -> Sub msg
 
 
-nodeSummariesDecoder =
-    D.list
-        (D.succeed NetworkNode
-            |> required "nodeName" D.string
-            |> required "nodeId" D.string
-            -- @TODO make this mandatory when collector has been deployed
-            |> optional "peerType" D.string "Unknown"
-            |> required "uptime" D.float
-            |> required "client" D.string
-            |> required "averagePing" (D.nullable D.float)
-            |> required "peersCount" D.float
-            |> required "peersList" (D.list D.string)
-            |> required "bestBlock" D.string
-            |> required "bestBlockHeight" D.float
-            |> required "bestArrivedTime" (D.nullable D.string)
-            |> required "blockArrivePeriodEMA" (D.nullable D.float)
-            |> required "blockArrivePeriodEMSD" (D.nullable D.float)
-            |> required "finalizedBlock" D.string
-            |> required "finalizedBlockHeight" D.float
-            |> required "finalizedTime" (D.nullable D.string)
-            |> required "finalizationPeriodEMA" (D.nullable D.float)
-            |> required "finalizationPeriodEMSD" (D.nullable D.float)
-            |> required "packetsSent" D.float
-            |> required "packetsReceived" D.float
-            |> optional "consensusRunning" D.bool False
-            |> optional "bakingCommitteeMember" D.bool False
-            |> optional "finalizationCommitteeMember" D.bool False
-        )
-
-
 type alias Flags =
     { width : Int, height : Int }
 
@@ -93,7 +64,7 @@ init : Flags -> Url -> Key -> ( Model, Cmd Msg )
 init flags url key =
     let
         ( chainInit, chainCmd ) =
-            Chain.init
+            Chain.init Config.collector
     in
     ( { key = key
       , window = flags
@@ -109,7 +80,7 @@ init flags url key =
       , explorerModel = Explorer.init
       }
     , Cmd.batch
-        [ hello "Hello from Elm!"
+        [ Storage.loadAll ()
         , Cmd.map ChainMsg chainCmd
         , Cmd.map ExplorerMsg <| Explorer.Request.getConsensusStatus Explorer.ReceivedConsensusStatus
         ]
@@ -220,11 +191,52 @@ update msg model =
         WindowResized width height ->
             ( { model | window = { width = width, height = height } }, Cmd.none )
 
+        CopyToClipboard text ->
+            ( model, Clipboard.copy text )
+
+        StorageDocReceived res ->
+            let
+                docRes =
+                    res |> D.decodeValue Storage.decodeStorageDoc
+            in
+            case docRes of
+                Ok doc ->
+                    case doc.tipe of
+                        "colormode" ->
+                            case D.decodeValue D.string doc.value of
+                                Ok mode ->
+                                    case mode of
+                                        "Light" ->
+                                            ( { model | palette = Palette.defaultLight, colorMode = Light }
+                                            , Cmd.none
+                                            )
+
+                                        "Dark" ->
+                                            ( { model | palette = Palette.defaultDark, colorMode = Dark }
+                                            , Cmd.none
+                                            )
+
+                                        _ ->
+                                            ( model, Cmd.none )
+
+                                Err e ->
+                                    -- let
+                                    --     y =
+                                    --         Debug.log "error decoding colormode" (D.errorToString e)
+                                    -- in
+                                    ( model, Cmd.none )
+
+                        _ ->
+                            ( model, Cmd.none )
+
+                Err a ->
+                    ( model, Cmd.none )
+
         NodeInfoReceived node ->
             ( { model | nodes = RemoteData.map (Dict.insert node.nodeId node) model.nodes }, Cmd.none )
 
         FetchNodeSummaries _ ->
-            ( model, Http.get { url = Config.summariesUrl, expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
+            ( model, Http.get { url = Config.collector ++ "/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
 
         FetchedNodeSummaries r ->
             case r of
@@ -305,10 +317,14 @@ update msg model =
         ToggleDarkMode ->
             case model.colorMode of
                 Dark ->
-                    ( { model | palette = Palette.defaultLight, colorMode = Light }, Cmd.none )
+                    ( { model | palette = Palette.defaultLight, colorMode = Light }
+                    , Storage.save { id = "dashboard", tipe = "colormode", value = E.string "Light" }
+                    )
 
                 Light ->
-                    ( { model | palette = Palette.defaultDark, colorMode = Dark }, Cmd.none )
+                    ( { model | palette = Palette.defaultDark, colorMode = Dark }
+                    , Storage.save { id = "dashboard", tipe = "colormode", value = E.string "Dark" }
+                    )
 
         NoopHttp r ->
             ( model, Cmd.none )
@@ -319,6 +335,25 @@ update msg model =
                     Explorer.update eMsg model.explorerModel
             in
             ( { model | explorerModel = newExplorerModel }, Cmd.map ExplorerMsg newExplorerCmd )
+
+        BlockSummaryStubSelected stub ->
+            case D.decodeString Explorer.Request.blockSummaryDecoder stub of
+                Ok blockSummary ->
+                    let
+                        explorerModel =
+                            model.explorerModel
+
+                        newExplorerModel =
+                            { explorerModel | blockSummary = Success blockSummary }
+                    in
+                    ( { model | explorerModel = newExplorerModel }, Cmd.none )
+
+                Err err ->
+                    -- let
+                    --     x =
+                    --         Debug.log "getBlockSummaryStub decoding" (D.errorToString err)
+                    -- in
+                    ( model, Cmd.none )
 
         Noop ->
             ( model, Cmd.none )
@@ -373,19 +408,17 @@ scrollPageToTop =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        ([ nodeInfo NodeInfoReceived
-         , Browser.Events.onResize WindowResized
-         , Time.every 1000 CurrentTime
-         , Time.every 2000 FetchNodeSummaries
-         ]
-            ++ (case model.currentPage of
-                    ChainViz ->
-                        [ Sub.map ChainMsg <| Chain.subscriptions model.chainModel ]
+        [ nodeInfo NodeInfoReceived
+        , Browser.Events.onResize WindowResized
+        , Storage.receiveDoc StorageDocReceived
+        , Time.every 1000 CurrentTime
+        , Time.every 2000 FetchNodeSummaries
+        , if model.currentPage == ChainViz then
+            Sub.map ChainMsg <| Chain.subscriptions model.chainModel
 
-                    _ ->
-                        []
-               )
-        )
+          else
+            Sub.none
+        ]
 
 
 main : Program Flags Model Msg

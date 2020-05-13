@@ -7,6 +7,7 @@ import Dict exposing (..)
 import Element
 import Explorer
 import Http
+import Json.Decode as D
 import Palette exposing (ColorMode, Palette)
 import RemoteData exposing (WebData)
 import Time
@@ -46,6 +47,9 @@ type Msg
     | UrlClicked UrlRequest
     | UrlChanged Url
     | WindowResized Int Int
+    | CopyToClipboard String
+    | StorageDocReceived D.Value
+      --
     | NodeInfoReceived NetworkNode
     | FetchNodeSummaries Time.Posix
     | FetchedNodeSummaries (Result Http.Error (List NetworkNode))
@@ -58,6 +62,8 @@ type Msg
     | BlockSelected String
     | ToggleDarkMode
     | ExplorerMsg Explorer.Msg
+      -- Debug
+    | BlockSummaryStubSelected String
     | Noop
 
 

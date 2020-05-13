@@ -11,7 +11,7 @@ import Iso8601
 import List.Extra as List
 import Palette exposing (Palette)
 import Round
-import Time
+import Time exposing (Posix)
 import Time.Distance exposing (inWordsWithConfig)
 import Time.Distance.I18n as I18n
 import Time.Distance.Types exposing (..)
@@ -19,8 +19,17 @@ import Time.Extra
 import Types exposing (..)
 
 
-formatTimeInterval : Int -> String
-formatTimeInterval milliseconds =
+formatTimeBetween : Posix -> Posix -> String
+formatTimeBetween start end =
+    let
+        interval =
+            Time.posixToMillis end - Time.posixToMillis start
+    in
+    formatTimeIntervalMs interval
+
+
+formatTimeIntervalMs : Int -> String
+formatTimeIntervalMs milliseconds =
     let
         wholeDivisionAndRemainder a b =
             ( a // b, remainderBy b a )

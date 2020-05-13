@@ -235,7 +235,15 @@ viewTile palette tileContent =
         , width (fillPortion 1)
         , paddingXY 28 20
         , Background.color palette.bg2
-        , Border.rounded 8
+        , Border.rounded 6
+        , Border.shadow
+            { offset = ( 0, 0 )
+            , size = 0
+            , blur = 15
+            , color = rgba 0 0 0 0.1
+            }
+        , Border.color (Palette.lightish palette.bg2)
+        , Border.width 1
         ]
         tileContent
 
@@ -329,7 +337,7 @@ remoteDataView : Palette Color -> (c -> Element msg) -> RemoteData e c -> Elemen
 remoteDataView palette successView remoteData =
     case remoteData of
         NotAsked ->
-            loader palette.fg3
+            none
 
         Loading ->
             loader palette.fg3
