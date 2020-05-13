@@ -1,4 +1,5 @@
 import { Elm } from "./elm/Main"
+import { setup as storageSetup } from "./Storage"
 
 document.addEventListener("DOMContentLoaded", function () {
 
@@ -11,6 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
     flags: layoutViewportSize()
   })
 
+  storageSetup(app)
   // app.ports.hello.subscribe(message => socket.emit('toServer', message))
 })
 

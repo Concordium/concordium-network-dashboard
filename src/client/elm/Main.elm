@@ -27,6 +27,7 @@ import Html.Attributes exposing (style)
 import Http
 import Iso8601
 import Json.Decode as D
+import Json.Encode as E
 import List.Extra as List
 import Markdown
 import Material.Icons.Sharp as Icon
@@ -78,7 +79,7 @@ init flags url key =
       , explorerModel = Explorer.init
       }
     , Cmd.batch
-        [ hello "Hello from Elm!"
+        [ Storage.loadAll ()
         , Cmd.map ChainMsg chainCmd
         , Cmd.map ExplorerMsg <| Explorer.Request.getConsensusStatus Explorer.ReceivedConsensusStatus
         ]
@@ -189,6 +190,44 @@ update msg model =
         WindowResized width height ->
             ( { model | window = { width = width, height = height } }, Cmd.none )
 
+        StorageDocReceived res ->
+            let
+                docRes =
+                    res |> D.decodeValue Storage.decodeStorageDoc
+            in
+            case docRes of
+                Ok doc ->
+                    case doc.tipe of
+                        "colormode" ->
+                            case D.decodeValue D.string doc.value of
+                                Ok mode ->
+                                    case mode of
+                                        "Light" ->
+                                            ( { model | palette = Palette.defaultLight, colorMode = Light }
+                                            , Cmd.none
+                                            )
+
+                                        "Dark" ->
+                                            ( { model | palette = Palette.defaultDark, colorMode = Dark }
+                                            , Cmd.none
+                                            )
+
+                                        _ ->
+                                            ( model, Cmd.none )
+
+                                Err e ->
+                                    let
+                                        y =
+                                            Debug.log "error decoding colormode" (D.errorToString e)
+                                    in
+                                    ( model, Cmd.none )
+
+                        _ ->
+                            ( model, Cmd.none )
+
+                Err a ->
+                    ( model, Cmd.none )
+
         NodeInfoReceived node ->
             ( { model | nodes = RemoteData.map (Dict.insert node.nodeId node) model.nodes }, Cmd.none )
 
@@ -274,10 +313,14 @@ update msg model =
         ToggleDarkMode ->
             case model.colorMode of
                 Dark ->
-                    ( { model | palette = Palette.defaultLight, colorMode = Light }, Cmd.none )
+                    ( { model | palette = Palette.defaultLight, colorMode = Light }
+                    , Storage.save { id = "dashboard", tipe = "colormode", value = E.string "Light" }
+                    )
 
                 Light ->
-                    ( { model | palette = Palette.defaultDark, colorMode = Dark }, Cmd.none )
+                    ( { model | palette = Palette.defaultDark, colorMode = Dark }
+                    , Storage.save { id = "dashboard", tipe = "colormode", value = E.string "Dark" }
+                    )
 
         NoopHttp r ->
             ( model, Cmd.none )
@@ -363,6 +406,7 @@ subscriptions model =
     Sub.batch
         ([ nodeInfo NodeInfoReceived
          , Browser.Events.onResize WindowResized
+         , Storage.receiveDoc StorageDocReceived
          , Time.every 1000 CurrentTime
          , Time.every 2000 FetchNodeSummaries
          ]

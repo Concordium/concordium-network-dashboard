@@ -503,7 +503,7 @@ viewTransactionEvent ctx txEvent txSummary =
             row []
                 [ text <| "Deployed module"
                 , arrowRight
-                , text <| String.left 8 event.contents
+                , el [ stringTooltipAbove ctx event.contents ] <| text <| String.left 8 event.contents
                 ]
 
         TransactionEventContractInitialized event ->
@@ -567,31 +567,26 @@ viewAsAddressContract ctx contractAddress =
             )
 
 
-viewBadge : Context a -> { icon : Element msg, label : Element msg } -> Element msg
-viewBadge ctx { icon, label } =
-    row [ spacing 4 ] [ icon, label ]
-
-
 viewAddress : Context a -> AccountInfo -> Element msg
 viewAddress ctx addr =
     case addr of
         AddressAccount address ->
-            viewBadge ctx
-                { icon = el [] (html <| Icons.account_user 18)
-                , label = text (String.left 8 address)
-                }
+            row [ spacing 4, stringTooltipAbove ctx address ]
+                [ el [] (html <| Icons.account_user 18)
+                , text (String.left 8 address)
+                ]
 
         AddressContract address ->
-            viewBadge ctx
-                { icon = el [] (html <| Icons.smart_contract 18)
-                , label = text (String.left 8 address)
-                }
+            row [ spacing 4 ]
+                [ el [] (html <| Icons.smart_contract 18)
+                , text address
+                ]
 
         AddressUnknown ->
-            viewBadge ctx
-                { icon = el [ Font.color ctx.palette.danger ] (html <| Icons.close 18)
-                , label = text "(Error: Address Failed)"
-                }
+            row [ spacing 4 ]
+                [ el [ Font.color ctx.palette.danger ] (html <| Icons.close 18)
+                , text "(Error: Address Failed)"
+                ]
 
 
 arrowRight =
@@ -606,7 +601,7 @@ tooltip placement content =
             , height fill
             , transparent True
             , mouseOver [ transparent False ]
-            , htmlAttribute <| style "transition" "opacity 200ms ease-out"
+            , htmlAttribute <| style "transition" "opacity 200ms ease-out 200ms"
             , (placement << Element.map never) <|
                 el
                     [ htmlAttribute (style "pointerEvents" "none")
