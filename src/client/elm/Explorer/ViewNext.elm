@@ -20,6 +20,7 @@ import Material.Icons.Sharp as MIcons
 import Material.Icons.Types exposing (Coloring(..))
 import Palette exposing (withAlphaEl)
 import RemoteData exposing (RemoteData(..), WebData)
+import Round
 import Time
 import TimeHelpers
 import Transaction.Event exposing (..)
@@ -46,8 +47,11 @@ view ctx remoteBlockInfo remoteBlockSummary =
                                             blockSummary.specialEvents
                                                 |> List.map (viewSpecialEvent ctx)
 
+                                        finalizations =
+                                            viewFinalizationData ctx blockSummary.finalizationData
+
                                         summaryItems =
-                                            transactionSummaries ++ specialEvents
+                                            transactionSummaries ++ specialEvents ++ finalizations
                                     in
                                     if List.length summaryItems > 0 then
                                         column [ width fill ] summaryItems
@@ -366,7 +370,7 @@ viewSpecialEvent ctx specialEvent =
         , el [ width (shrink |> minimum 95), Font.color ctx.palette.fg3 ]
             (text "Chain")
         , row []
-            [ text <| "Block Reward " ++ String.fromInt specialEvent.rewardAmount
+            [ text <| "Rewarded " ++ String.fromInt specialEvent.rewardAmount
             , arrowRight
             , viewAddress ctx
                 (AddressAccount specialEvent.bakerAccount)
@@ -380,6 +384,81 @@ viewSpecialEvent ctx specialEvent =
             (el [] <| text <| "n/a")
         , el [ alignRight ] (html <| Icons.status_success 20)
         ]
+
+
+viewFinalizationData ctx finalizationData =
+    case finalizationData of
+        Just data ->
+            [ row
+                ([ width fill
+                 , height (px 46)
+                 , paddingXY 10 0
+                 , spacing 15
+                 , mouseOver [ Background.color <| Palette.lightish ctx.palette.bg2 ]
+                 ]
+                    ++ bottomBorder ctx
+                )
+                [ row [ spacing 10, width (shrink |> minimum 30) ]
+                    [ el [ stringTooltipAbove ctx "Finalization event", Font.color ctx.palette.c2 ]
+                        (html <| Icons.block_finalized 20)
+                    ]
+                , el [ width (shrink |> minimum 95), Font.color ctx.palette.fg3 ]
+                    (text "Chain")
+                , let
+                    totalWeight =
+                        data.finalizers |> List.map .weight |> List.sum
+
+                    viewFinalizer f =
+                        "Baker "
+                            ++ String.fromInt f.bakerId
+                            ++ " ("
+                            ++ Round.round 2 (toFloat f.weight / toFloat totalWeight * 100)
+                            ++ "%)"
+                            ++ (if f.signed then
+                                    " signed"
+
+                                else
+                                    ""
+                               )
+                  in
+                  row []
+                    [ text <| "Finalized "
+                    , el
+                        [ onClick (ChainMsg (BlockClicked data.blockPointer))
+                        , pointer
+                        ]
+                      <|
+                        text <|
+                            String.left 8 data.blockPointer
+                    , text " "
+                    , el
+                        [ Font.color (ctx.palette.c2 |> withAlphaEl 0.6)
+                        , stringTooltipAbove ctx
+                            ("Index: "
+                                ++ String.fromInt data.index
+                                ++ ", "
+                                ++ "Delay: "
+                                ++ String.fromInt data.delay
+                                ++ "\n\n"
+                                ++ "Committee:\n\n"
+                                ++ (data.finalizers |> List.map viewFinalizer |> String.join "\n")
+                            )
+                        ]
+                      <|
+                        text "details"
+                    ]
+                , el
+                    [ alignRight
+                    , width (shrink |> minimum 70)
+                    , Font.color ctx.palette.fg3
+                    ]
+                    (el [] <| text <| "n/a")
+                , el [ alignRight ] (html <| Icons.status_success 20)
+                ]
+            ]
+
+        Nothing ->
+            []
 
 
 iconForEvent ctx event_ =
@@ -653,7 +732,7 @@ stringTooltipAbove ctx content =
     tooltip above
         (row
             [ paddingXY 12 8
-            , Border.rounded 50
+            , Border.rounded 15
             , Border.shadow
                 { offset = ( 0, 0 )
                 , size = 2
@@ -665,6 +744,7 @@ stringTooltipAbove ctx content =
             , (behindContent << Element.map never)
                 (el
                     [ htmlAttribute (style "pointerEvents" "none")
+                    , alignBottom
                     , moveDown 5
                     , Font.color ctx.palette.bg3
                     ]
