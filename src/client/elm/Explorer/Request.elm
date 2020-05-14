@@ -129,7 +129,10 @@ getBlockSummaryStub_ =
             --     x =
             --         Debug.log "getBlockSummaryStub decoding" (D.errorToString err)
             -- in
-            { specialEvents = [], transactionSummaries = [] }
+            { specialEvents = []
+            , transactionSummaries = []
+            , finalizationData = Nothing
+            }
 
 
 type alias BlockInfo =
@@ -234,6 +237,7 @@ trigger msg =
 type alias BlockSummary =
     { specialEvents : List SpecialEvent
     , transactionSummaries : List TransactionSummary
+    , finalizationData : Maybe FinalizationData
     }
 
 
@@ -242,6 +246,7 @@ blockSummaryDecoder =
     D.succeed BlockSummary
         |> required "specialEvents" (D.list specialEventDecoder)
         |> required "transactionSummaries" (D.list transactionSummaryDecoder)
+        |> required "finalizationData" (D.nullable finalizationDataDecoder)
 
 
 type alias SpecialEvent =
@@ -257,6 +262,38 @@ specialEventDecoder =
         |> required "bakerId" D.int
         |> required "rewardAmount" D.int
         |> required "bakerAccount" D.string
+
+
+type alias FinalizationData =
+    { blockPointer : String
+    , index : Int
+    , delay : Int
+    , finalizers : List FinalizerInfo
+    }
+
+
+finalizationDataDecoder : D.Decoder FinalizationData
+finalizationDataDecoder =
+    D.succeed FinalizationData
+        |> required "finalizationBlockPointer" D.string
+        |> required "finalizationIndex" D.int
+        |> required "finalizationDelay" D.int
+        |> required "finalizers" (D.list finalizerInfoDecoder)
+
+
+type alias FinalizerInfo =
+    { bakerId : Int
+    , weight : Int
+    , signed : Bool
+    }
+
+
+finalizerInfoDecoder : D.Decoder FinalizerInfo
+finalizerInfoDecoder =
+    D.succeed FinalizerInfo
+        |> required "bakerId" D.int
+        |> required "weight" D.int
+        |> required "signed" D.bool
 
 
 {-| The default Http.expectJson / Http.expectString don't allow you to see any body

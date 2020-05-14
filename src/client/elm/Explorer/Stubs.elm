@@ -19,6 +19,38 @@ getBlockSummary_stub_allTransactions =
       "bakerAccount": "3siDnxannkQYYjCTgwEUvE9WThEaHy1J3RjyMA4ZBQmrR9hw1K"
     }
   ],
+  "finalizationData":{
+      "finalizationIndex":3,
+      "finalizers":[
+         {
+            "bakerId":0,
+            "signed":true,
+            "weight":1200000000135
+         },
+         {
+            "bakerId":1,
+            "signed":false,
+            "weight":800000000005
+         },
+         {
+            "bakerId":2,
+            "signed":false,
+            "weight":1200000000000
+         },
+         {
+            "bakerId":3,
+            "signed":true,
+            "weight":800000000000
+         },
+         {
+            "bakerId":4,
+            "signed":true,
+            "weight":1200000000000
+         }
+      ],
+      "finalizationDelay":0,
+      "finalizationBlockPointer":"847e0c5037f8eedf3e5b5c932e4ebcb0b5ad9deaa986d83a165d8712594e0e1d"
+   },
   "transactionSummaries": [
     {
       "hash": "d1aeaedec44266f044a230ad7bd9339a992418fbcd11a3217686f6854a1816cd",
