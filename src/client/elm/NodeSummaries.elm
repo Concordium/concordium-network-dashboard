@@ -32,5 +32,6 @@ nodeSummariesDecoder =
             |> required "packetsReceived" D.float
             |> optional "consensusRunning" D.bool False
             |> optional "bakingCommitteeMember" D.bool False
+            |> required "consensusBakerId" (D.nullable D.float)
             |> optional "finalizationCommitteeMember" D.bool False
         )
