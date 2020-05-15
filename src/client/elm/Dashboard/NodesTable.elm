@@ -17,7 +17,7 @@ nodesTable ctx sortMode nodes =
         row [ Font.color ctx.palette.fg2 ] [ text "Waiting for node statistics..." ]
 
     else
-        Element.table [ spacing 12, Font.color ctx.palette.fg2, scrollbarX, Font.alignRight, paddingXY 0 2 ]
+        Element.table [ spacing 10, Font.color ctx.palette.fg2, scrollbarX, Font.alignRight, paddingXY 0 2 ]
             { data = nodes
             , columns =
                 [ { header = el [ Font.alignLeft ] <| sortableHeader ctx.palette sortMode SortName "Name"
@@ -38,6 +38,18 @@ nodesTable ctx sortMode nodes =
                 --      \node ->
                 --           text <| Maybe.withDefault "<No state loaded>" node.state
                 --}
+                , { header = sortableHeader ctx.palette sortMode SortBaker "Baker"
+                  , width = fill
+                  , view =
+                        \node ->
+                            case node.consensusBakerId of
+                                Just id ->
+                                    -- el [ Font.color ctx.palette.fg3 ] <| text "n/a"
+                                    text <| String.fromFloat id
+
+                                Nothing ->
+                                    el [ Font.color ctx.palette.fg3 ] <| text "n/a"
+                  }
                 , { header = sortableHeader ctx.palette sortMode SortUptime "Uptime"
                   , width = fill
                   , view =
@@ -175,6 +187,9 @@ sortNodesBy sortBy listNodes =
     case sortBy of
         SortName ->
             List.sortBy .nodeName listNodes
+
+        SortBaker ->
+            List.sortBy (.consensusBakerId >> Maybe.withDefault 0) listNodes
 
         SortUptime ->
             List.sortBy .uptime listNodes

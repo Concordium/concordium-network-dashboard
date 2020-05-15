@@ -92,6 +92,7 @@ type alias NetworkNode =
     , packetsReceived : Float -- @TODO as above figure out Int
     , consensusRunning : Bool
     , bakingCommitteeMember : Bool
+    , consensusBakerId : Maybe Float
     , finalizationCommitteeMember : Bool
     }
 
@@ -104,6 +105,7 @@ type SortMode
 
 type SortBy
     = SortName
+    | SortBaker
     | SortUptime
     | SortClient
     | SortAvgPing
