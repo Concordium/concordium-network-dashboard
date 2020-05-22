@@ -15,15 +15,19 @@ Will become proper Dashboard monitor in future, likely with Scala backend.
 
 ### Getting some data
 
-#### Use livenet data
 
-Running local bakers requires a hefty build process, so if you just want quick data;
+Running local bakers requires a hefty build process, so if you just want quick data, you can force the config locally:
+
+See `src/client/elm/Config.elm` for the different Environments supported. Change the config as such to force an Env:
 
 ```
-// Change in src/client/elm/Dashboard.elm
-FetchNodeSummaries _ ->
-    ( model, Http.get { url = "https://dashboard.eu.test.concordium.com/data/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
+// Change in 
+config = 
+  Staging
 ```
+
+Note: the Production URLs are relative, so if you want to get live prod data locally for example, you'd update the `Production -> ""` definition to be `Production -> "https://dashboard.testnet.concordium.com/"` for example.
+
 
 #### Local bakers
 
@@ -31,8 +35,7 @@ You'll need the [p2p-client](https://gitlab.com/Concordium/p2p-client) repo and 
 
 ```
 # Say we want to boot 5 bakers. Run this from the p2p-client/scripts/local folder;
-NUM_BAKERS=5 docker-compose up --scale baker=5
-
+EXTRA_ARGS="--debug --trace" NUM_BAKERS=5 DESIRED_PEERS=4 docker-compose -f docker-compose.develop.middleware.yml up --scale baker=5 --force-recreate
 ```
 
 The dashboard collectors + backend has moved here:
@@ -40,22 +43,23 @@ The dashboard collectors + backend has moved here:
 https://gitlab.com/Concordium/p2p-client/blob/develop/src/bin/collector.rs
 https://gitlab.com/Concordium/p2p-client/blob/develop/src/bin/collector_backend.rs
 
-You'll need to build + boot those manually (docs TBC in that repo, ask Ian/Martin).
+They are now part of the main build so running the docker network will have them report as per Config.elm/Local.
 
-See https://trello.com/c/oacYIeo0/82-add-collector-and-collector-backed-to-docker-compose-setup-to-allow-for-local-dashboard-development-this-way
 
 If that's hard to follow, here's an [architecture diagram](https://docs.google.com/drawings/d/1FWV8Ah9RAiqMaghT3Ql1JyGnBq0_TxOS6BgM6mFjepQ/edit) of what you're booting.
 
 
 ### Docker build
 
-See `./docker.sh`, or run it. Builds `dist` locally first before copying into image. This is what gets used for the Kubernetes deploy.
+FYI this is what gets used for the Kubernetes deploy, you shouldn't need to run this but might be helpful if you're debugging CI or deploy issues.
+
+See `./docker.sh`. Builds `dist` locally first before copying into image. 
 
 ---
 
 #### Requirements
 
-- Node 11+
+- Node 12+
 
 ---
 
