@@ -440,7 +440,7 @@ viewFinalizationData ctx finalizationData =
                                 ++ "Delay: "
                                 ++ String.fromInt data.delay
                                 ++ "\n\n"
-                                ++ "Committee:\n\n"
+                                ++ "Finalization committee:\n\n"
                                 ++ (data.finalizers |> List.map viewFinalizer |> String.join "\n")
                             )
                         ]
