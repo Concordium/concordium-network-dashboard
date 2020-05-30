@@ -58,6 +58,7 @@ nodeView node model =
         pairs =
             [ ( "nodeName", el [ width (px 400) ] <| forceWrapTextElement node.nodeName )
             , ( "nodeId", text node.nodeId )
+            , ( "bakerId", text <| Maybe.withDefault "n/a" <| Maybe.map String.fromFloat node.consensusBakerId )
             , ( "uptime", text <| asTimeAgoDuration node.uptime )
             , ( "client", text node.client )
             , ( "averagePing", formatPing model.palette node.averagePing )
