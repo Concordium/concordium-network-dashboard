@@ -236,7 +236,7 @@ blockSummaryDecoder =
     D.succeed BlockSummary
         |> required "specialEvents" (D.list specialEventDecoder)
         |> required "transactionSummaries" (D.list transactionSummaryDecoder)
-        |> required "finalizationData" (D.nullable finalizationDataDecoder)
+        |> optional "finalizationData" (D.nullable finalizationDataDecoder) Nothing
 
 
 type alias SpecialEvent =
