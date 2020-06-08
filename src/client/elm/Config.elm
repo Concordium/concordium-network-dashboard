@@ -28,7 +28,6 @@ collector =
 
 
 middleware =
-    -- "/"
     case config of
         Local ->
             "http://localhost:8081"

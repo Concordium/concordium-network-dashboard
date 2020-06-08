@@ -336,25 +336,6 @@ update msg model =
             in
             ( { model | explorerModel = newExplorerModel }, Cmd.map ExplorerMsg newExplorerCmd )
 
-        BlockSummaryStubSelected stub ->
-            case D.decodeString Explorer.Request.blockSummaryDecoder stub of
-                Ok blockSummary ->
-                    let
-                        explorerModel =
-                            model.explorerModel
-
-                        newExplorerModel =
-                            { explorerModel | blockSummary = Success blockSummary }
-                    in
-                    ( { model | explorerModel = newExplorerModel }, Cmd.none )
-
-                Err err ->
-                    -- let
-                    --     x =
-                    --         Debug.log "getBlockSummaryStub decoding" (D.errorToString err)
-                    -- in
-                    ( model, Cmd.none )
-
         Noop ->
             ( model, Cmd.none )
 

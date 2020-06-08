@@ -63,7 +63,6 @@ type Msg
     | ToggleDarkMode
     | ExplorerMsg Explorer.Msg
       -- Debug
-    | BlockSummaryStubSelected String
     | Noop
 
 

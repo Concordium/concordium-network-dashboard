@@ -18,20 +18,21 @@ import Transaction.Summary exposing (..)
 
 
 type alias ConsensusStatus =
-    { bestBlock : String }
+    { bestBlock : String
+    , genesisTime : Posix
+    , epochDuration : Int
+    }
 
 
 consensusStatusDecoder =
     D.succeed ConsensusStatus
         |> required "bestBlock" D.string
+        |> required "genesisTime" Iso8601.decoder
+        |> required "epochDuration" D.int
 
 
 getConsensusStatus : (Result Http.Error ConsensusStatus -> msg) -> Cmd msg
 getConsensusStatus msg =
-    -- let
-    --     x =
-    --         Debug.log "calling" "get consensus status!"
-    -- in
     Http.get
         { url = Config.middleware ++ "/v1/consensusStatus"
         , expect = expectJson_ msg consensusStatusDecoder
@@ -56,22 +57,11 @@ initBlock =
     }
 
 
-stubBlock =
-    { hash = "957c2ae05d82e9ba30142e02cda3b3c2ab779329d359c665abc7059dbb88cc61"
-    , blockInfo = Success getBlockInfoStub_
-    , blockSummary = Success getBlockSummaryStub_
-    }
-
-
 
 -- BlockInfo
 
 
 getBlockInfo blockhash msg =
-    -- let
-    --     x =
-    --         Debug.log "calling" "get Block info!"
-    -- in
     Http.get
         { url = Config.middleware ++ "/v1/blockInfo/" ++ blockhash
         , expect = expectJson_ msg blockInfoDecoder

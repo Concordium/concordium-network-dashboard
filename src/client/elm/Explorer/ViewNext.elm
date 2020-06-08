@@ -16,6 +16,7 @@ import Explorer.Stubs exposing (blockSummaryStubs)
 import Html.Attributes exposing (style)
 import Icons exposing (..)
 import Iso8601
+import Json.Decode as D
 import Material.Icons.Sharp as MIcons
 import Material.Icons.Types exposing (Coloring(..))
 import Palette exposing (withAlphaEl)
@@ -70,8 +71,6 @@ view ctx remoteBlockInfo remoteBlockSummary =
                 )
                 remoteBlockInfo
             )
-
-        -- , testStubs ctx
         ]
 
 
@@ -791,23 +790,35 @@ stringTooltipAboveWithCopy ctx content =
         )
 
 
-testStubs ctx =
-    row []
+testStubs ctx model =
+    column []
         [ text "Test stubs: "
         , blockSummaryStubs
-            |> List.map (loadStubButton ctx)
-            |> row [ spacing 5 ]
+            |> List.map (viewStub ctx model)
+            |> column [ spacing 10 ]
         ]
 
 
-loadStubButton ctx ( name, stub ) =
-    row
-        [ Font.color ctx.palette.c1
-        , padding 10
-        , Background.color ctx.palette.bg2
-        , pointer
-        , onClick (BlockSummaryStubSelected stub)
-        , Border.rounded 5
-        ]
-        [ text name
-        ]
+viewStub ctx model ( description, stub ) =
+    case D.decodeString Explorer.Request.blockSummaryDecoder stub of
+        Ok blockSummary ->
+            let
+                explorerModel =
+                    model.explorerModel
+
+                newExplorerModel =
+                    { explorerModel | blockSummary = Success blockSummary }
+            in
+            column [ width fill, spacing 10 ]
+                [ el [ width fill, height (px 2), Background.color ctx.palette.warning ] none
+                , paragraph [ Font.color ctx.palette.warning ] [ text description ]
+                , view ctx newExplorerModel.blockInfo newExplorerModel.blockSummary
+                ]
+
+        -- ( { model | explorerModel = newExplorerModel }, Cmd.none )
+        Err err ->
+            -- let
+            --     x =
+            --         Debug.log "getBlockSummaryStub decoding" (D.errorToString err)
+            -- in
+            text <| D.errorToString err
