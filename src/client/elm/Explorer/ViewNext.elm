@@ -462,6 +462,12 @@ viewFinalizationData ctx finalizationData =
 
 iconForEvent ctx event_ =
     case event_ of
+        TransactionEventTransfer event ->
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Transfer" ]
+                    (html <| Icons.transaction 18)
+                ]
+
         TransactionEventAccountCreated event ->
             row [ spacing 10 ]
                 [ el [ stringTooltipAbove ctx "Account creation" ]
@@ -472,12 +478,6 @@ iconForEvent ctx event_ =
             row [ spacing 10 ]
                 [ el [ stringTooltipAbove ctx "Account credentials deployment" ]
                     (html <| Icons.account_credentials_deployed 18)
-                ]
-
-        TransactionEventTransfer event ->
-            row [ spacing 10 ]
-                [ el [ stringTooltipAbove ctx "Transfer" ]
-                    (html <| Icons.transaction 18)
                 ]
 
         TransactionEventStakeDelegated event ->
@@ -510,6 +510,9 @@ iconForEvent ctx event_ =
                     (html <| Icons.smart_contract_message 20)
                 ]
 
+        _ ->
+            text "UNIMPLEMENTED"
+
 
 iconForTag ctx tag =
     case tag of
@@ -533,6 +536,20 @@ iconForTag ctx tag =
 viewTransactionEvent : Context a -> TransactionEvent -> TransactionSummary -> Element Msg
 viewTransactionEvent ctx txEvent txSummary =
     case txEvent of
+        TransactionEventTransfer event ->
+            -- type alias EventTransfer =
+            --     { amount : Int
+            --     , tag : String
+            --     , to : AccountInfo
+            --     , from : AccountInfo
+            --     }
+            row []
+                [ text <| "Sent " ++ String.fromInt event.amount
+                , arrowRight
+                , viewAddress ctx event.to
+                ]
+
+        -- Accounts
         TransactionEventAccountCreated event ->
             -- type alias EventAccountCreated =
             --     { tag : String
@@ -558,33 +575,19 @@ viewTransactionEvent ctx txEvent txSummary =
                 , viewAddress ctx (AddressAccount event.account)
                 ]
 
-        TransactionEventTransfer event ->
-            -- type alias EventTransfer =
-            --     { amount : Int
-            --     , tag : String
-            --     , to : AccountInfo
-            --     , from : AccountInfo
-            --     }
-            row []
-                [ text <| "Sent " ++ String.fromInt event.amount
+        TransactionEventAccountEncryptionKeyDeployed event ->
+            -- type alias EventAccountEncryptionKeyDeployed =
+            --   { key : String
+            --   , account : String
+            --   }
+            row
+                []
+                [ text <| "Deployed account encryption key"
                 , arrowRight
-                , viewAddress ctx event.to
+                , viewAddress ctx (AddressAccount event.account)
                 ]
 
-        TransactionEventStakeDelegated event ->
-            -- type alias EventStakeDelegated =
-            --     { tag : String
-            --     , account : String
-            --     , baker : Int
-            --     }
-            row []
-                [ text "Delegated"
-                , arrowRight
-                , viewAddress ctx
-                    (AddressAccount event.account)
-                , text <| " (Baker: " ++ String.fromInt event.baker ++ ")"
-                ]
-
+        -- Baking
         TransactionEventBakerAdded event ->
             -- type alias EventBakerAdded =
             --     { tag : String
@@ -593,9 +596,75 @@ viewTransactionEvent ctx txEvent txSummary =
             row []
                 [ text <| "Added"
                 , arrowRight
-                , text <| "Baker " ++ String.fromInt event.contents
+                , text <| "Baker " ++ String.fromInt event.bakerId
                 ]
 
+        TransactionEventBakerRemoved event ->
+            -- type alias EventBakerRemoved =
+            --   { tag : String
+            --   , bakerId : Int
+            --   }
+            row []
+                [ text <| "Removed"
+                , arrowRight
+                , text <| "Baker " ++ String.fromInt event.bakerId
+                ]
+
+        TransactionEventBakerAccountUpdated event ->
+            -- type alias EventBakerAccountUpdated =
+            --   { tag : String
+            --   , bakerId : Int
+            --   , newAccount : String
+            --   }
+            row []
+                [ text <| "Updated baker account"
+                , arrowRight
+                , text <| "Baker " ++ String.fromInt event.bakerId
+                , arrowRight
+                , viewAddress ctx (AddressAccount event.newAccount)
+                ]
+
+        TransactionEventBakerKeyUpdated event ->
+            -- type alias EventBakerKeyUpdated =
+            --   { tag : String
+            --   , bakerId : Int
+            --   , newKey : String
+            --   }
+            row []
+                [ text <| "Updated baker key"
+                , arrowRight
+                , text <| "Baker " ++ String.fromInt event.bakerId
+                , arrowRight
+                , el
+                    [ stringTooltipAboveWithCopy ctx event.newKey
+                    , onClick (CopyToClipboard event.newKey)
+                    ]
+                  <|
+                    text <|
+                        String.left 8 event.newKey
+                ]
+
+        TransactionEventBakerElectionKeyUpdated event ->
+            -- type alias EventBakerElectionKeyUpdated =
+            --     { tag : String
+            --     , bakerId : Int
+            --     , newKey : String
+            --     }
+            row []
+                [ text <| "Updated baker election key"
+                , arrowRight
+                , text <| "Baker " ++ String.fromInt event.bakerId
+                , arrowRight
+                , el
+                    [ stringTooltipAboveWithCopy ctx event.newKey
+                    , onClick (CopyToClipboard event.newKey)
+                    ]
+                  <|
+                    text <|
+                        String.left 8 event.newKey
+                ]
+
+        -- Contracts
         TransactionEventModuleDeployed event ->
             -- type alias EventModuleDeployed =
             --     { tag : String
@@ -654,6 +723,58 @@ viewTransactionEvent ctx txEvent txSummary =
                     , viewAsAddressContract ctx event.address
                     ]
                 )
+
+        -- Delegation
+        TransactionEventStakeDelegated event ->
+            -- type alias EventStakeDelegated =
+            --     { tag : String
+            --     , account : String
+            --     , baker : Int
+            --     }
+            row []
+                [ text "Delegated"
+                , arrowRight
+                , viewAddress ctx
+                    (AddressAccount event.account)
+                , text <| " (Baker: " ++ String.fromInt event.baker ++ ")"
+                ]
+
+        TransactionEventStakeUndelegated event ->
+            -- type alias EventStakeUndelegated =
+            --   { tag : String
+            --   , account : String
+            --   , baker : Int
+            --   }
+            row []
+                [ text "Undelegated"
+                , arrowRight
+                , viewAddress ctx
+                    (AddressAccount event.account)
+                , text <| " (Baker: " ++ String.fromInt event.baker ++ ")"
+                ]
+
+        -- Core
+        TransactionEventElectionDifficultyUpdated event ->
+            -- type alias EventElectionDifficultyUpdated =
+            --   { tag : String
+            --   , difficulty : Int
+            --   }
+            row []
+                [ text "Updated election difficulty"
+                , arrowRight
+                , text <| " Difficulty " ++ String.fromInt event.difficulty
+                ]
+
+        -- Errors
+        TransactionEventRejected event ->
+            -- type alias EventRejected =
+            --   { transactionType : String
+            --   , reason : String
+            --   , hash : String
+            --   }
+            row []
+                [ text event.reason
+                ]
 
 
 viewAsAddressContract ctx contractAddress =
@@ -821,4 +942,8 @@ viewStub ctx model ( description, stub ) =
             --     x =
             --         Debug.log "getBlockSummaryStub decoding" (D.errorToString err)
             -- in
-            text <| D.errorToString err
+            column [ width fill, spacing 10 ]
+                [ el [ width fill, height (px 2), Background.color ctx.palette.warning ] none
+                , paragraph [ Font.color ctx.palette.warning ] [ text description ]
+                , text <| D.errorToString err
+                ]
