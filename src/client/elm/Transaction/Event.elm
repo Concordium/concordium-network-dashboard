@@ -148,7 +148,7 @@ eventTransferDecoder : D.Decoder EventTransfer
 eventTransferDecoder =
     D.succeed EventTransfer
         |> required "amount" D.int
-        |> required "tag" D.string
+        |> required "tag" (expectedTag "Transferred")
         |> required "to" accountInfoDecoder
         |> required "from" accountInfoDecoder
 
@@ -219,7 +219,7 @@ eventAccountEncryptionKeyDeployedEncoder item =
 eventAccountEncryptionKeyDeployedDecoder : D.Decoder EventAccountEncryptionKeyDeployed
 eventAccountEncryptionKeyDeployedDecoder =
     D.succeed EventAccountEncryptionKeyDeployed
-        |> required "key" D.string
+        |> required "key" (expectedTag "AccountEncryptionKeyDeployed")
         |> required "account" D.string
 
 
@@ -473,7 +473,7 @@ eventContractMessageEncoder item =
 eventContractMessageDecoder : D.Decoder EventContractMessage
 eventContractMessageDecoder =
     D.succeed EventContractMessage
-        |> required "tag" (expectedTag "ContractMessage")
+        |> required "tag" (expectedTag "Updated")
         |> required "amount" D.int
         |> required "address" contractAddressDecoder
         |> required "message" D.string
