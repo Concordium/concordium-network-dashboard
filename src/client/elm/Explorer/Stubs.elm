@@ -102,6 +102,27 @@ getBlockSummary_stub_allTransactions =
       "index": 0
     },
     {
+      "hash": "5292c68df8787b3b22a61397edc3fc04858d4112e770ee7674e80751254d6f27",
+      "sender": "39KavYmY7LRw1mV5wbmTKY8A38ktzrQ3eWCn7KPzDW3S4sJps9",
+      "cost": 59,
+      "energyCost": 59,
+      "result": {
+        "outcome": "reject",
+        "rejectReason": {
+          "tag": "AmountTooLarge",
+          "contents": [
+            {
+              "address": "39KavYmY7LRw1mV5wbmTKY8A38ktzrQ3eWCn7KPzDW3S4sJps9",
+              "type": "AddressAccount"
+            },
+            200000000
+          ]
+        }
+      },
+      "type": "transfer",
+      "index": 0
+    },
+    {
       "hash": "15c2c8a0a9d496630dff603d4d404a6912d96215755884522798092bc179de5b",
       "sender": "43TULx3kDPDeQy1C1iLwBbS5EEV96cYPw5ZRdA9Dm4D23hxGZt",
       "cost": 265,

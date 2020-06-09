@@ -28,10 +28,25 @@ decodeTransactionResult =
         , D.field "rejectReason"
             (D.succeed TransactionRejected
                 |> required "tag" D.string
-                -- This is unfortunate but seems depending on the type of transaction,
-                -- the value of "contents" can be either a string or an int
-                |> optional "contents" (D.oneOf [ D.string, D.int |> D.map String.fromInt ]) ""
+                -- https://gitlab.com/Concordium/consensus/globalstate-types/-/blob/master/src/Concordium/Types/Execution.hs#L499
+                -- There are a number of possible RejectReasons. Rather than mapping them all, for now
+                -- we loosely convert them all to strings for quick display
+                |> optional "contents"
+                    (D.oneOf
+                        [ decodeNumerousToString
+                        , D.list decodeNumerousToString |> D.map (String.join ", ")
+                        ]
+                    )
+                    ""
             )
+        ]
+
+
+decodeNumerousToString =
+    D.oneOf
+        [ D.string
+        , D.int |> D.map String.fromInt
+        , accountInfoDecoder |> D.map accountInfoAddress
         ]
 
 
