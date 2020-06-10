@@ -9,6 +9,7 @@ import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Element.Input as Input
+import Helpers exposing (..)
 import Loading
 import Palette exposing (Palette, toHex, veryDark, withAlphaEl)
 import RemoteData exposing (RemoteData(..), WebData)
@@ -20,6 +21,7 @@ import Types exposing (..)
 type alias Widget =
     { color : Color
     , title : String
+    , description : String
     , icon : String
     , value : WebData String
     , subvalue : Maybe String
@@ -35,9 +37,10 @@ viewSummaryWidgets : Context a -> WebData (Dict Host NetworkNode) -> Element msg
 viewSummaryWidgets ctx remoteNodes =
     column [ spacing 12, width fill ]
         [ wrappedRow [ spacing 12, width fill ]
-            (List.map (viewWidget ctx.palette)
+            (List.map (viewWidget ctx)
                 [ { color = ctx.palette.c3
                   , title = "Active nodes"
+                  , description = ""
                   , icon = "/assets/images/icon-nodes-purple.png"
                   , value =
                         RemoteData.map
@@ -49,6 +52,7 @@ viewSummaryWidgets ctx remoteNodes =
                   }
                 , { color = ctx.palette.c1
                   , title = "Last Block"
+                  , description = ""
                   , icon = "/assets/images/icon-lastblock-lightblue.png"
                   , value =
                         RemoteData.map
@@ -67,6 +71,7 @@ viewSummaryWidgets ctx remoteNodes =
                   }
                 , { color = ctx.palette.c2
                   , title = "Last Finality"
+                  , description = ""
                   , icon = "/assets/images/icon-blocklastfinal-green.png"
                   , value =
                         RemoteData.map
@@ -86,6 +91,7 @@ viewSummaryWidgets ctx remoteNodes =
                   }
                 , { color = ctx.palette.c1
                   , title = "Chain Len"
+                  , description = ""
                   , icon = "/assets/images/icon-blocks-blue.png"
                   , value =
                         RemoteData.map
@@ -95,6 +101,7 @@ viewSummaryWidgets ctx remoteNodes =
                   }
                 , { color = ctx.palette.c2
                   , title = "Fin Len"
+                  , description = ""
                   , icon = "/assets/images/icon-blocksfinal-green.png"
                   , value =
                         RemoteData.map
@@ -105,9 +112,10 @@ viewSummaryWidgets ctx remoteNodes =
                 ]
             )
         , wrappedRow [ spacing 12, width fill ]
-            (List.map (viewWidget ctx.palette)
+            (List.map (viewWidget ctx)
                 [ { color = ctx.palette.c4
                   , title = "Last Block EMA"
+                  , description = "The median of nodes' exponential moving average of the interval between verified blocks"
                   , icon = "/assets/images/icon-rocket-pink.png"
                   , value =
                         RemoteData.map
@@ -131,6 +139,7 @@ viewSummaryWidgets ctx remoteNodes =
                   }
                 , { color = ctx.palette.c4
                   , title = "Last Fin EMA"
+                  , description = "The median of nodes' exponential moving average of the interval between finalizations"
                   , icon = "/assets/images/icon-rocket-pink.png"
                   , value =
                         RemoteData.map
@@ -163,9 +172,10 @@ viewSummaryWidgets ctx remoteNodes =
 widgetsForWebsite : Context a -> WebData (Dict Host NetworkNode) -> List (Element msg)
 widgetsForWebsite ctx remoteNodes =
     -- active nodes, last block, block height, last block ema
-    List.map (viewWidget ctx.palette)
+    List.map (viewWidget ctx)
         [ { color = ctx.palette.c3
           , title = "Active nodes"
+          , description = ""
           , icon = "/assets/images/icon-nodes-purple.png"
           , value =
                 RemoteData.map
@@ -177,6 +187,7 @@ widgetsForWebsite ctx remoteNodes =
           }
         , { color = ctx.palette.c1
           , title = "Last Block"
+          , description = ""
           , icon = "/assets/images/icon-lastblock-lightblue.png"
           , value =
                 RemoteData.map
@@ -195,6 +206,7 @@ widgetsForWebsite ctx remoteNodes =
           }
         , { color = ctx.palette.c1
           , title = "Chain Len"
+          , description = ""
           , icon = "/assets/images/icon-blocks-blue.png"
           , value =
                 RemoteData.map
@@ -204,6 +216,7 @@ widgetsForWebsite ctx remoteNodes =
           }
         , { color = ctx.palette.c4
           , title = "Last Block EMA"
+          , description = ""
           , icon = "/assets/images/icon-rocket-pink.png"
           , value =
                 RemoteData.map
@@ -248,12 +261,12 @@ viewTile palette tileContent =
         tileContent
 
 
-viewWidget : Palette Color -> Widget -> Element msg
-viewWidget palette widget =
-    viewTile palette
+viewWidget : Context a -> Widget -> Element msg
+viewWidget ctx widget =
+    viewTile ctx.palette
         (row [ spacing 20, centerY ]
             [ el
-                [ Background.color palette.bg1
+                [ Background.color ctx.palette.bg1
                 , Border.rounded 100
                 , height (px 70)
                 , width (px 70)
@@ -262,10 +275,25 @@ viewWidget palette widget =
                     { src = widget.icon, description = "Decorative Icon" }
                 )
             , column [ spacing 10 ]
-                [ el [ Font.color (withAlphaEl 0.5 widget.color) ]
-                    (text <| String.toUpper widget.title)
+                [ row []
+                    [ el [ Font.color (withAlphaEl 0.5 widget.color) ]
+                        (text <| String.toUpper widget.title ++ " ")
+                    , if widget.description == "" then
+                        none
+
+                      else
+                        el
+                            [ Background.color ctx.palette.bg3
+                            , Font.color ctx.palette.fg3
+                            , Font.size 10
+                            , Border.rounded 10
+                            , paddingXY 10 5
+                            , stringTooltipAbove ctx widget.description
+                            ]
+                            (text "i")
+                    ]
                 , column [ Font.color widget.color, Font.size 30 ]
-                    [ remoteDataView palette text widget.value ]
+                    [ remoteDataView ctx.palette text widget.value ]
                 , widget.subvalue
                     |> Maybe.map
                         (\subvalue ->

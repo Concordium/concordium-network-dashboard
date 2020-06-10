@@ -13,6 +13,7 @@ import Element.Font as Font
 import Explorer
 import Explorer.Request exposing (..)
 import Explorer.Stubs exposing (blockSummaryStubs)
+import Helpers exposing (..)
 import Html.Attributes exposing (style)
 import Icons exposing (..)
 import Iso8601
@@ -824,91 +825,6 @@ viewAddress ctx addr =
 
 arrowRight =
     el [ paddingXY 8 0 ] (html <| Icons.arrow_right 18)
-
-
-tooltip : (Element msg -> Attribute msg) -> Element Never -> Attribute msg
-tooltip placement content =
-    inFront <|
-        el
-            [ width fill
-            , height fill
-            , transparent True
-            , mouseOver [ transparent False ]
-            , htmlAttribute <| style "transition" "opacity 200ms ease-out 200ms"
-            , (placement << Element.map never) <|
-                el
-                    [ htmlAttribute (style "pointerEvents" "none")
-                    , moveUp 12
-                    , moveLeft 2
-                    , alignLeft
-                    ]
-                    content
-            ]
-            none
-
-
-stringTooltipAbove : Context a -> String -> Attribute msg
-stringTooltipAbove ctx content =
-    tooltip above
-        (row
-            [ paddingXY 12 8
-            , Border.rounded 15
-            , Border.shadow
-                { offset = ( 0, 0 )
-                , size = 2
-                , color = ctx.palette.fg1 |> withAlphaEl 0.3
-                , blur = 25
-                }
-            , Background.color ctx.palette.bg3
-            , Font.color ctx.palette.fg2
-            , (behindContent << Element.map never)
-                (el
-                    [ htmlAttribute (style "pointerEvents" "none")
-                    , alignBottom
-                    , moveDown 5
-                    , Font.color ctx.palette.bg3
-                    ]
-                    (html <| Icons.tooltip_arrow_round 24)
-                )
-            ]
-            [ text content ]
-        )
-
-
-stringTooltipAboveWithCopy : Context a -> String -> Attribute msg
-stringTooltipAboveWithCopy ctx content =
-    tooltip above
-        (row
-            [ paddingXY 12 8
-            , Border.rounded 50
-            , Border.shadow
-                { offset = ( 0, 0 )
-                , size = 2
-                , color = ctx.palette.fg1 |> withAlphaEl 0.3
-                , blur = 25
-                }
-            , Background.color ctx.palette.bg3
-            , Font.color ctx.palette.fg2
-            , (behindContent << Element.map never)
-                (el
-                    [ htmlAttribute (style "pointerEvents" "none")
-                    , moveDown 5
-                    , Font.color ctx.palette.bg3
-                    ]
-                    (html <| Icons.tooltip_arrow_round 24)
-                )
-            , (behindContent << Element.map never)
-                (el
-                    [ moveDown 32
-                    , moveRight 20
-                    , Font.color (ctx.palette.fg1 |> withAlphaEl 0.3)
-                    , Font.size 8
-                    ]
-                    (text "click to copy")
-                )
-            ]
-            [ text content ]
-        )
 
 
 testStubs ctx model =
