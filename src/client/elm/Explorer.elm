@@ -28,9 +28,6 @@ init =
     { blockHash = Nothing
     , blockInfo = NotAsked
     , blockSummary = NotAsked
-
-    -- , blockInfo = Success blockInfoStub
-    -- , blockSummary = Success getBlockSummaryStub_
     }
 
 
