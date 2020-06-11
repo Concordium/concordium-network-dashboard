@@ -6,6 +6,7 @@ import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Events exposing (onClick)
 import Element.Font as Font
+import Helpers exposing (..)
 import Palette exposing (Palette)
 import Round
 import Types exposing (..)
@@ -17,10 +18,15 @@ nodesTable ctx sortMode nodes =
         row [ Font.color ctx.palette.fg2 ] [ text "Waiting for node statistics..." ]
 
     else
-        Element.table [ spacing 10, Font.color ctx.palette.fg2, scrollbarX, Font.alignRight, paddingXY 0 2 ]
+        Element.table
+            [ spacing 10
+            , Font.color ctx.palette.fg2
+            , Font.alignRight
+            , padding_ 0 20 0 2
+            ]
             { data = nodes
             , columns =
-                [ { header = el [ Font.alignLeft ] <| sortableHeader ctx.palette sortMode SortName "Name"
+                [ { header = el [ Font.alignLeft ] <| sortableHeader ctx sortMode SortName "Name"
                   , width = fill
                   , view =
                         \node ->
@@ -31,43 +37,35 @@ nodesTable ctx sortMode nodes =
                                 ]
                                 (text <| ellipsis 30 node.nodeName)
                   }
-
-                --, { header = text "State"
-                --  , width = fill
-                --, view =
-                --      \node ->
-                --           text <| Maybe.withDefault "<No state loaded>" node.state
-                --}
-                , { header = sortableHeader ctx.palette sortMode SortBaker "Baker"
+                , { header = sortableHeaderWithTooltip ctx sortMode SortBaker "Baker" "Baker ID when baking"
                   , width = fill
                   , view =
                         \node ->
                             case node.consensusBakerId of
                                 Just id ->
-                                    -- el [ Font.color ctx.palette.fg3 ] <| text "n/a"
                                     text <| String.fromFloat id
 
                                 Nothing ->
                                     el [ Font.color ctx.palette.fg3 ] <| text "n/a"
                   }
-                , { header = sortableHeader ctx.palette sortMode SortUptime "Uptime"
+                , { header = sortableHeader ctx sortMode SortUptime "Uptime"
                   , width = fill
                   , view =
                         \node ->
                             text <| asTimeAgoDuration node.uptime
                   }
-                , { header = sortableHeader ctx.palette sortMode SortClient "Client"
+                , { header = sortableHeader ctx sortMode SortClient "Client"
                   , width = fill
                   , view =
                         \node ->
                             text node.client
                   }
-                , { header = sortableHeader ctx.palette sortMode SortAvgPing "Avg Ping"
+                , { header = sortableHeader ctx sortMode SortAvgPing "Avg Ping"
                   , width = fill
                   , view =
                         \node -> formatPing ctx.palette node.averagePing
                   }
-                , { header = sortableHeader ctx.palette sortMode SortPeers "Peers"
+                , { header = sortableHeader ctx sortMode SortPeers "Peers"
                   , width = fill
                   , view =
                         \node ->
@@ -77,37 +75,37 @@ nodesTable ctx sortMode nodes =
                             else
                                 text <| String.fromFloat node.peersCount
                   }
-                , { header = sortableHeader ctx.palette sortMode SortSent "Sent"
+                , { header = sortableHeaderWithTooltip ctx sortMode SortSent "Sent" "Number of messages sent by the node"
                   , width = fill
                   , view =
                         \node ->
                             text <| String.fromFloat node.packetsSent
                   }
-                , { header = sortableHeader ctx.palette sortMode SortReceived "Received"
+                , { header = sortableHeaderWithTooltip ctx sortMode SortReceived "Received" "Number of messages received by the node"
                   , width = fill
                   , view =
                         \node ->
                             text <| String.fromFloat node.packetsReceived
                   }
-                , { header = sortableHeader ctx.palette sortMode SortBlock "Block"
+                , { header = sortableHeaderWithTooltip ctx sortMode SortBlock "Block" "Best block known to the node"
                   , width = fill
                   , view =
                         \node ->
                             text <| String.left 6 node.bestBlock
                   }
-                , { header = sortableHeader ctx.palette sortMode SortHeight "Length"
+                , { header = sortableHeader ctx sortMode SortHeight "Length"
                   , width = fill
                   , view =
                         \node ->
                             text <| String.fromFloat node.bestBlockHeight
                   }
-                , { header = sortableHeader ctx.palette sortMode SortFinalizedBlock "Fin Block"
+                , { header = sortableHeader ctx sortMode SortFinalizedBlock "Fin Block"
                   , width = fill
                   , view =
                         \node ->
                             text <| String.left 6 node.finalizedBlock
                   }
-                , { header = sortableHeader ctx.palette sortMode SortFinalizedHeight "Fin Length"
+                , { header = sortableHeader ctx sortMode SortFinalizedHeight "Fin Length"
                   , width = fill
                   , view =
                         \node ->
@@ -139,17 +137,59 @@ hashSnippet hash =
     String.left 6 hash ++ "..."
 
 
-sortableHeader : Palette Color -> SortMode -> SortBy -> String -> Element Msg
-sortableHeader palette sortMode sortBy name =
+sortableHeader : Context a -> SortMode -> SortBy -> String -> Element Msg
+sortableHeader ctx sortMode sortBy name =
     let
         withIcon url =
-            row [ spacing 5, Font.color palette.fg1, pointer ]
+            row [ spacing 5, Font.color ctx.palette.fg1, pointer ]
                 [ el [ onClick <| SortSet sortBy ] (text name)
                 , image [ width (px 10) ] { src = url, description = "Sort Ascending Icon" }
                 ]
 
         withoutIcon =
-            el [ onClick <| SortSet sortBy, Font.color palette.fg1, pointer ] (text name)
+            el [ onClick <| SortSet sortBy, Font.color ctx.palette.fg1, pointer ] (text name)
+    in
+    case sortMode of
+        SortAsc sortBy_ ->
+            if sortBy_ == sortBy then
+                withIcon "/assets/images/icon-arrow-up.png"
+
+            else
+                withoutIcon
+
+        SortDesc sortBy_ ->
+            if sortBy_ == sortBy then
+                withIcon "/assets/images/icon-arrow-down.png"
+
+            else
+                withoutIcon
+
+        SortNone ->
+            withoutIcon
+
+
+sortableHeaderWithTooltip : Context a -> SortMode -> SortBy -> String -> String -> Element Msg
+sortableHeaderWithTooltip ctx sortMode sortBy name tooltip =
+    let
+        withIcon url =
+            row
+                [ spacing 5
+                , Font.color ctx.palette.fg1
+                , pointer
+                , stringTooltipAbove ctx tooltip
+                ]
+                [ el [ onClick <| SortSet sortBy ] (text name)
+                , image [ width (px 10) ] { src = url, description = "Sort Ascending Icon" }
+                ]
+
+        withoutIcon =
+            el
+                [ onClick <| SortSet sortBy
+                , Font.color ctx.palette.fg1
+                , pointer
+                , stringTooltipAbove ctx tooltip
+                ]
+                (text name)
     in
     case sortMode of
         SortAsc sortBy_ ->
@@ -189,7 +229,7 @@ sortNodesBy sortBy listNodes =
             List.sortBy .nodeName listNodes
 
         SortBaker ->
-            List.sortBy (.consensusBakerId >> Maybe.withDefault 0) listNodes
+            List.sortBy (.consensusBakerId >> Maybe.withDefault -1) listNodes
 
         SortUptime ->
             List.sortBy .uptime listNodes

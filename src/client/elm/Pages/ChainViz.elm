@@ -28,4 +28,6 @@ view model =
             , Explorer.ViewNext.view model
                 model.explorerModel.blockInfo
                 model.explorerModel.blockSummary
+
+            -- , Explorer.ViewNext.testStubs model model
             ]
