@@ -54,6 +54,29 @@ stringTooltipAbove ctx content =
         )
 
 
+stringTooltipAboveWidget : Context a -> Element Never -> Attribute msg
+stringTooltipAboveWidget ctx content =
+    tooltip above
+        (row
+            [ paddingXY 12 8
+            , moveLeft 130
+            , Border.rounded 15
+            , Background.color ctx.palette.bg3
+            , Font.color ctx.palette.fg2
+            , (behindContent << Element.map never)
+                (el
+                    [ htmlAttribute (style "pointerEvents" "none")
+                    , alignBottom
+                    , moveDown 5
+                    , Font.color ctx.palette.bg3
+                    ]
+                    (html <| Icons.tooltip_arrow_round 24)
+                )
+            ]
+            [ content ]
+        )
+
+
 stringTooltipAboveWithCopy : Context a -> String -> Attribute msg
 stringTooltipAboveWithCopy ctx content =
     tooltip above
@@ -82,3 +105,7 @@ stringTooltipAboveWithCopy ctx content =
             ]
             [ text content ]
         )
+
+
+padding_ l t r b =
+    paddingEach { bottom = b, left = l, right = r, top = t }

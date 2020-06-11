@@ -70,7 +70,7 @@ viewSummaryWidgets ctx remoteNodes =
                   , subvalue = Nothing
                   }
                 , { color = ctx.palette.c2
-                  , title = "Last Finality"
+                  , title = "Last Finalization"
                   , description = ""
                   , icon = "/assets/images/icon-blocklastfinal-green.png"
                   , value =
@@ -90,7 +90,7 @@ viewSummaryWidgets ctx remoteNodes =
                   , subvalue = Nothing
                   }
                 , { color = ctx.palette.c1
-                  , title = "Chain Len"
+                  , title = "Chain Length"
                   , description = ""
                   , icon = "/assets/images/icon-blocks-blue.png"
                   , value =
@@ -100,7 +100,7 @@ viewSummaryWidgets ctx remoteNodes =
                   , subvalue = Nothing
                   }
                 , { color = ctx.palette.c2
-                  , title = "Fin Len"
+                  , title = "Fin Length"
                   , description = ""
                   , icon = "/assets/images/icon-blocksfinal-green.png"
                   , value =
@@ -114,7 +114,7 @@ viewSummaryWidgets ctx remoteNodes =
         , wrappedRow [ spacing 12, width fill ]
             (List.map (viewWidget ctx)
                 [ { color = ctx.palette.c4
-                  , title = "Last Block EMA"
+                  , title = "Block Time"
                   , description = "The median of nodes' exponential moving average of the interval between verified blocks"
                   , icon = "/assets/images/icon-rocket-pink.png"
                   , value =
@@ -122,23 +122,25 @@ viewSummaryWidgets ctx remoteNodes =
                             (\nodes -> averageStatSecondsFor .blockArrivePeriodEMA nodes)
                             remoteNodes
                   , subvalue =
-                        RemoteData.map
-                            (\nodes ->
-                                nodes
-                                    |> Dict.toList
-                                    |> List.map Tuple.second
-                                    |> List.map .blockArrivePeriodEMA
-                                    |> justs
-                                    |> Trend.Math.stddev
-                                    |> Result.map (Round.round 2)
-                                    |> Result.withDefault "-"
-                                    |> (++) "stddev: "
-                            )
-                            remoteNodes
-                            |> RemoteData.toMaybe
+                        Nothing
+
+                  -- RemoteData.map
+                  --     (\nodes ->
+                  --         nodes
+                  --             |> Dict.toList
+                  --             |> List.map Tuple.second
+                  --             |> List.map .blockArrivePeriodEMA
+                  --             |> justs
+                  --             |> Trend.Math.stddev
+                  --             |> Result.map (Round.round 2)
+                  --             |> Result.withDefault "-"
+                  --             |> (++) "stddev: "
+                  --     )
+                  --     remoteNodes
+                  --     |> RemoteData.toMaybe
                   }
                 , { color = ctx.palette.c4
-                  , title = "Last Fin EMA"
+                  , title = "Finalization Time"
                   , description = "The median of nodes' exponential moving average of the interval between finalizations"
                   , icon = "/assets/images/icon-rocket-pink.png"
                   , value =
@@ -146,20 +148,22 @@ viewSummaryWidgets ctx remoteNodes =
                             (\nodes -> averageStatSecondsFor .finalizationPeriodEMA nodes)
                             remoteNodes
                   , subvalue =
-                        RemoteData.map
-                            (\nodes ->
-                                nodes
-                                    |> Dict.toList
-                                    |> List.map Tuple.second
-                                    |> List.map .blockArrivePeriodEMA
-                                    |> justs
-                                    |> Trend.Math.stddev
-                                    |> Result.map (Round.round 2)
-                                    |> Result.withDefault "-"
-                                    |> (++) "stddev: "
-                            )
-                            remoteNodes
-                            |> RemoteData.toMaybe
+                        Nothing
+
+                  -- RemoteData.map
+                  --     (\nodes ->
+                  --         nodes
+                  --             |> Dict.toList
+                  --             |> List.map Tuple.second
+                  --             |> List.map .blockArrivePeriodEMA
+                  --             |> justs
+                  --             |> Trend.Math.stddev
+                  --             |> Result.map (Round.round 2)
+                  --             |> Result.withDefault "-"
+                  --             |> (++) "stddev: "
+                  --     )
+                  --     remoteNodes
+                  --     |> RemoteData.toMaybe
                   }
 
                 -- , worldMap
@@ -205,7 +209,7 @@ widgetsForWebsite ctx remoteNodes =
           , subvalue = Nothing
           }
         , { color = ctx.palette.c1
-          , title = "Chain Len"
+          , title = "Chain Length"
           , description = ""
           , icon = "/assets/images/icon-blocks-blue.png"
           , value =
@@ -244,9 +248,9 @@ widgetsForWebsite ctx remoteNodes =
 viewTile : Palette Color -> Element msg -> Element msg
 viewTile palette tileContent =
     el
-        [ height (px 120)
+        [ height (px 90)
         , width (fillPortion 1)
-        , paddingXY 28 20
+        , padding 10
         , Background.color palette.bg2
         , Border.rounded 6
         , Border.shadow
@@ -264,19 +268,19 @@ viewTile palette tileContent =
 viewWidget : Context a -> Widget -> Element msg
 viewWidget ctx widget =
     viewTile ctx.palette
-        (row [ spacing 20, centerY ]
+        (row [ spacing 10, centerY ]
             [ el
                 [ Background.color ctx.palette.bg1
                 , Border.rounded 100
-                , height (px 70)
-                , width (px 70)
+                , height (px 50)
+                , width (px 50)
                 ]
-                (image [ height (px 35), centerY, centerX ]
+                (image [ height (px 25), centerY, centerX ]
                     { src = widget.icon, description = "Decorative Icon" }
                 )
             , column [ spacing 10 ]
                 [ row []
-                    [ el [ Font.color (withAlphaEl 0.5 widget.color) ]
+                    [ el [ Font.color (withAlphaEl 0.7 widget.color) ]
                         (text <| String.toUpper widget.title ++ " ")
                     , if widget.description == "" then
                         none
@@ -288,11 +292,11 @@ viewWidget ctx widget =
                             , Font.size 10
                             , Border.rounded 10
                             , paddingXY 10 5
-                            , stringTooltipAbove ctx widget.description
+                            , stringTooltipAboveWidget ctx (paragraph [ Font.size 14, width (fill |> minimum 300) ] [ text widget.description ])
                             ]
                             (text "i")
                     ]
-                , column [ Font.color widget.color, Font.size 30 ]
+                , column [ Font.color widget.color, Font.size 25 ]
                     [ remoteDataView ctx.palette text widget.value ]
                 , widget.subvalue
                     |> Maybe.map
