@@ -75,19 +75,19 @@ nodesTable ctx sortMode nodes =
                             else
                                 text <| String.fromFloat node.peersCount
                   }
-                , { header = sortableHeaderWithTooltip ctx sortMode SortSent "Sent" "Sent packets"
+                , { header = sortableHeaderWithTooltip ctx sortMode SortSent "Sent" "Number of messages sent by the node"
                   , width = fill
                   , view =
                         \node ->
                             text <| String.fromFloat node.packetsSent
                   }
-                , { header = sortableHeaderWithTooltip ctx sortMode SortReceived "Received" "Received packets"
+                , { header = sortableHeaderWithTooltip ctx sortMode SortReceived "Received" "Number of messages received by the node"
                   , width = fill
                   , view =
                         \node ->
                             text <| String.fromFloat node.packetsReceived
                   }
-                , { header = sortableHeaderWithTooltip ctx sortMode SortBlock "Block" "Node's current best block hash"
+                , { header = sortableHeaderWithTooltip ctx sortMode SortBlock "Block" "Best block known to the node"
                   , width = fill
                   , view =
                         \node ->
