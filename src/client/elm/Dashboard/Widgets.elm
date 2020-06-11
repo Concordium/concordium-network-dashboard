@@ -100,7 +100,7 @@ viewSummaryWidgets ctx remoteNodes =
                   , subvalue = Nothing
                   }
                 , { color = ctx.palette.c2
-                  , title = "Fin Length"
+                  , title = "Finalized Length"
                   , description = ""
                   , icon = "/assets/images/icon-blocksfinal-green.png"
                   , value =
@@ -115,7 +115,7 @@ viewSummaryWidgets ctx remoteNodes =
             (List.map (viewWidget ctx)
                 [ { color = ctx.palette.c4
                   , title = "Block Time"
-                  , description = "The median of nodes' exponential moving average of the interval between verified blocks"
+                  , description = "Average time between verified blocks"
                   , icon = "/assets/images/icon-rocket-pink.png"
                   , value =
                         RemoteData.map
@@ -141,7 +141,7 @@ viewSummaryWidgets ctx remoteNodes =
                   }
                 , { color = ctx.palette.c4
                   , title = "Finalization Time"
-                  , description = "The median of nodes' exponential moving average of the interval between finalizations"
+                  , description = "Average time between completed finalizations"
                   , icon = "/assets/images/icon-rocket-pink.png"
                   , value =
                         RemoteData.map
