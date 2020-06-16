@@ -9,7 +9,7 @@ import GeometryUtils exposing (TopLeftCoordinates)
 import Grid exposing (GridSpec)
 import List.Extra as List
 import Palette exposing (Palette)
-import Pixels exposing (Pixels)
+import Pixels exposing (Pixels(..))
 import Point2d exposing (Point2d)
 import Rectangle2d exposing (Rectangle2d)
 import Tree exposing (Tree(..), singleton, tree)
@@ -231,7 +231,11 @@ flattenTree ctx gridSpec lastFinalizedBlockHeight maxNumVertical chain =
                 , width = width
                 , height = height
                 , viewBoxOffsetX =
-                    toFloat firstBlockHeight * (gridSpec.cellWidth + gridSpec.gutterWidth)
+                    Grid.intersection gridSpec firstBlockHeight 0
+                        |> Point2d.toPixels
+                        |> .x
+
+                --toFloat firstBlockHeight * (gridSpec.cellWidth + gridSpec.gutterWidth)
                 , numCollapsedBlocksX = collapsedH
                 , numCollapsedBlocksY = collapsedV
                 }

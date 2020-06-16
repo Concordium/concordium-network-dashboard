@@ -13,6 +13,7 @@ type alias GridSpec =
     , gutterWidth : Float
     , gutterHeight : Float
     , outerPadding : Float
+    , initialOffsetX : Int
     }
 
 
@@ -28,9 +29,9 @@ cellRegion spec x y =
 
 
 intersection : GridSpec -> Int -> Int -> Point2d Pixels coords
-intersection { cellWidth, cellHeight, gutterWidth, gutterHeight } x y =
+intersection { cellWidth, cellHeight, gutterWidth, gutterHeight, initialOffsetX } x y =
     Point2d.pixels
-        (toFloat x * (cellWidth + gutterWidth))
+        (toFloat (x - initialOffsetX) * (cellWidth + gutterWidth))
         (toFloat y * (cellHeight + gutterHeight))
 
 

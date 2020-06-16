@@ -153,6 +153,7 @@ viewBlock clickMsg selectedBlock { hash, rect, color } =
             Vector2d.from
                 Point2d.origin
                 (Rectangle2d.centerPoint rect)
+                |> Vector2d.plus (Vector2d.pixels 0 1)
 
         click =
             clickMsg
@@ -166,7 +167,10 @@ viewBlock clickMsg selectedBlock { hash, rect, color } =
                 |> Maybe.withDefault (stroke PaintNone)
     in
     ( hash
-    , g (click ++ [ TypedSvg.Attributes.cursor CursorPointer ])
+    , g
+        (click
+            ++ [ TypedSvg.Attributes.cursor CursorPointer ]
+        )
         [ Svg.rectangle2d
             [ rx (px 4)
             , ry (px 4)
@@ -183,7 +187,7 @@ viewText : String -> Float -> Color -> Svg msg
 viewText line size color =
     text_
         [ textAnchor AnchorMiddle
-        , alignmentBaseline AlignmentCentral
+        , dominantBaseline DominantBaselineMiddle
         , fill <| Paint color
         , fontSize (px size)
         , fontFamily [ "IBM Plex Mono, monospaces" ]

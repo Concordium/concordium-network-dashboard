@@ -24,8 +24,9 @@ import Task
 import Time exposing (Posix)
 import Url exposing (Url)
 
-nodeInfoEndpoint = 
-    "https://dashboard.eu.staging.concordium.com/nodesBlocksInfo"
+
+nodeInfoEndpoint =
+    "https://dashboard.eu.staging.concordium.com"
 
 
 type alias Flags =

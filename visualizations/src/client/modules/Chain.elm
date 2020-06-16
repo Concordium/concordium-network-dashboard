@@ -44,7 +44,7 @@ type alias Model =
     , transition : Transition DrawableChain
     , errors : List Http.Error
     , replay : Maybe Replay
-    , gridSpec : GridSpec
+    , gridSpec : Maybe GridSpec
     , blockClicked : Maybe String
     }
 
@@ -61,20 +61,21 @@ init collectorEndpoint =
       , transition = Transition.constant emptyDrawableChain
       , errors = []
       , replay = Nothing
-      , gridSpec = spec
+      , gridSpec = Nothing
       , blockClicked = Nothing
       }
     , Build.getNodeInfo collectorEndpoint GotNodeInfo
     )
 
 
-spec : GridSpec
-spec =
+spec : Int -> GridSpec
+spec offset =
     { gutterWidth = 30.0
     , gutterHeight = 24.0
     , cellHeight = 36.0
     , cellWidth = 64.0
     , outerPadding = 64
+    , initialOffsetX = offset
     }
 
 
@@ -188,8 +189,9 @@ dispatchMsgs internalMsg outputMsgs =
 updateNodes : List Node -> List (List Node) -> List (List Node)
 updateNodes new current =
     if Just new /= List.head current then
-        new :: current
-        --|> List.take 3 -- @TODO reenable this for production
+        new
+            :: current
+            |> List.take 3
 
     else
         current
@@ -240,8 +242,11 @@ updateChain ctx depth nodes model =
                 firstBlockHeight =
                     Tree.label annotatedTree |> .blockHeight
 
+                gridSpec =
+                    Maybe.withDefault (spec firstBlockHeight) model.gridSpec
+
                 newDrawableChain =
-                    Flatten.flattenTree ctx model.gridSpec (Tuple.first lastFinalized) 2 annotatedTree
+                    Flatten.flattenTree ctx gridSpec (Tuple.first lastFinalized) 2 annotatedTree
             in
             { model
                 | annotatedTree = Just annotatedTree
@@ -262,6 +267,7 @@ updateChain ctx depth nodes model =
                             (Tree.label annotatedTree |> .blockHeight)
                             model.initialBlockHeight
                         )
+                , gridSpec = Just gridSpec
             }
 
         _ ->
@@ -302,8 +308,11 @@ view ctx model showDebugButtons =
                 currentDrawableChain =
                     Transition.value model.transition
 
+                gridSpec =
+                    Maybe.withDefault (spec 0) model.gridSpec
+
                 vcontext =
-                    { gridSpec = model.gridSpec
+                    { gridSpec = gridSpec
                     , lastFinalized = lastFinalized
                     , nodes = nodes
                     , onBlockClick = Just BlockClicked
@@ -314,7 +323,7 @@ view ctx model showDebugButtons =
                 [ el
                     [ centerX
                     , centerY
-                    , spacing (round spec.gutterHeight)
+                    , spacing (round gridSpec.gutterHeight)
                     , inFront
                         (el [ alignLeft ]
                             (html <| View.viewCollapsedBlocksSummary ctx vcontext currentDrawableChain)
