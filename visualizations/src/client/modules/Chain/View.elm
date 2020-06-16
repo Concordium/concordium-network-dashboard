@@ -14,7 +14,7 @@ import Grid exposing (GridSpec)
 import LineSegment2d exposing (LineSegment2d)
 import Maybe.Extra as Maybe
 import Palette exposing (Palette)
-import Pixels exposing (Pixels)
+import Pixels exposing (Pixels, pixels)
 import Point2d exposing (Point2d)
 import Quantity
 import Rectangle2d exposing (Rectangle2d)
@@ -75,17 +75,21 @@ viewCollapsedBlocksSummary ctx { gridSpec, lastFinalized, nodes, onBlockClick, s
     case chain.numCollapsedBlocksX > 0 of
         True ->
             let
+                gridSpecZero =
+                    { gridSpec | initialOffsetX = 0 }
+
                 ( viewWidth, viewHeight ) =
-                    viewDimensions gridSpec 1 chain.height
+                    viewDimensions gridSpecZero 1 chain.height
 
                 lastFinalizedBlock =
                     { hash = Tuple.second lastFinalized
                     , color = blockColor ctx.palette Finalized
-                    , rect = Grid.cell gridSpec 0 0
+                    , rect = Grid.cell gridSpecZero 0 0
                     }
 
                 background =
-                    Grid.region gridSpec -1 0 1 chain.height
+                    Grid.region gridSpecZero -1 0 1 chain.height
+                        |> Rectangle2d.inset (pixels 0) (pixels 22)
 
                 rightEdge =
                     LineSegment2d.from
