@@ -172,9 +172,7 @@ viewBlock clickMsg selectedBlock { hash, rect, color } =
     in
     ( hash
     , g
-        (click
-            ++ [ TypedSvg.Attributes.cursor CursorPointer ]
-        )
+        (click ++ [ TypedSvg.Attributes.cursor CursorPointer ])
         [ Svg.rectangle2d
             [ rx (px 4)
             , ry (px 4)

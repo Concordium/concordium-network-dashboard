@@ -1,6 +1,7 @@
-module Chain exposing (Model, Msg(..), dispatchMsgs, init, subscriptions, update, view)
+module Chain exposing (Model, Msg(..), dispatchMsgs, init, selectBlock, subscriptions, update, view)
 
 import Browser.Events exposing (onAnimationFrameDelta)
+import Browser.Navigation as Nav
 import Chain.Build as Build exposing (..)
 import Chain.DictTree as DictTree exposing (DictTree)
 import Chain.Flatten as Flatten exposing (DrawableChain, emptyDrawableChain)
@@ -168,7 +169,12 @@ update ctx msg model =
             )
 
         BlockClicked hash ->
-            ( { model | blockClicked = Just hash }, Cmd.none )
+            ( model, Nav.pushUrl ctx.key ("/chain/" ++ hash) )
+
+
+selectBlock : Model -> String -> Model
+selectBlock model hash =
+    { model | blockClicked = Just hash }
 
 
 type alias OutputMsgs msg =
