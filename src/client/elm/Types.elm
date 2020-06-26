@@ -10,9 +10,9 @@ import Http
 import Json.Decode as D
 import Palette exposing (ColorMode, Palette)
 import RemoteData exposing (WebData)
+import Route exposing (Route)
 import Time
 import Url exposing (Url)
-import Url.Parser exposing (..)
 
 
 type alias Model =
@@ -21,7 +21,7 @@ type alias Model =
     , window : { width : Int, height : Int }
     , palette : Palette Element.Color
     , colorMode : ColorMode
-    , currentPage : Page
+    , currentRoute : Route
     , nodes : WebData (Dict Host NetworkNode)
     , sortMode : SortMode
     , selectedNode : Maybe NetworkNode
@@ -29,13 +29,6 @@ type alias Model =
     , chainModel : Chain.Model
     , explorerModel : Explorer.Model
     }
-
-
-type Page
-    = Dashboard
-    | NodeGraph
-    | NodeView String -- Node by nodeId
-    | ChainViz
 
 
 type alias Host =
@@ -115,38 +108,3 @@ type SortBy
     | SortHeight
     | SortFinalizedBlock
     | SortFinalizedHeight
-
-
-parserRoutes =
-    oneOf
-        [ Url.Parser.map Dashboard (s "")
-        , Url.Parser.map NodeGraph (s "nodegraph")
-        , Url.Parser.map NodeView (s "node" </> Url.Parser.string)
-        , Url.Parser.map ChainViz (s "chain")
-        ]
-
-
-pathToPage : Url -> Page
-pathToPage url =
-    case parse parserRoutes url of
-        Just page ->
-            page
-
-        Nothing ->
-            Dashboard
-
-
-pageToPath : Page -> String
-pageToPath page =
-    case page of
-        Dashboard ->
-            "/"
-
-        NodeGraph ->
-            "/nodegraph"
-
-        NodeView nodeId ->
-            "/node/" ++ nodeId
-
-        ChainViz ->
-            "/chain"

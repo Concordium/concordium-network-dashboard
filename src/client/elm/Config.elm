@@ -9,7 +9,7 @@ type Mode
 
 config =
     -- Tweak me when developing locally to test
-    Production
+    Staging
 
 
 collector =

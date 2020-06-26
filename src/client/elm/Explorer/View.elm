@@ -1,4 +1,4 @@
-module Explorer.ViewNext exposing (..)
+module Explorer.View exposing (..)
 
 import Chain exposing (Msg(..))
 import Chain.Flatten exposing (DrawableBlock)
