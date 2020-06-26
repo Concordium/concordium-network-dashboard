@@ -14,6 +14,7 @@ import Element.Input as Input
 import Html
 import Html.Attributes exposing (style)
 import NodeHelpers exposing (..)
+import Route exposing (Route(..))
 import Types exposing (..)
 
 
@@ -27,7 +28,7 @@ view model =
                     nodeView node model
 
                 Nothing ->
-                    case model.currentPage of
+                    case model.currentRoute of
                         NodeView _ ->
                             el [ alignTop ] (text "Loading...")
 

@@ -5,7 +5,7 @@ import Dashboard.Widgets exposing (content, remoteDataView, viewSummaryWidgets)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Explorer.ViewNext
+import Explorer.View
 import Palette
 import Types exposing (Model, Msg(..))
 
@@ -25,9 +25,7 @@ view model =
                 ]
                 (Chain.view model model.chainModel False)
                 |> Element.map ChainMsg
-            , Explorer.ViewNext.view model
+            , Explorer.View.view model
                 model.explorerModel.blockInfo
                 model.explorerModel.blockSummary
-
-            -- , Explorer.ViewNext.testStubs model model
             ]
