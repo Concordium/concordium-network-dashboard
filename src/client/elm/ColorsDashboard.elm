@@ -1,18 +1,7 @@
-module ColorsDashboard exposing (asC, blue, darkGrey, green, grey, lightBlue, lightGrey, moduleGrey, orange, pink, purple, red, rgbac255, white)
+module ColorsDashboard exposing (asC, blue,, green, grey, orange, pink, purple, red, white)
 
 import Color
-import Color.Convert exposing (hexToColor)
 import Element
-
-
-rgbac255 : Int -> Int -> Int -> Float -> Color.Color
-rgbac255 r g b a =
-    Color.fromRgba
-        { red = toFloat r / 255
-        , green = toFloat g / 255
-        , blue = toFloat b / 255
-        , alpha = a
-        }
 
 
 asC : Element.Color -> Color.Color
@@ -24,38 +13,8 @@ asC ec =
     Color.fromRgba ecc
 
 
-fromHex : String -> Element.Color
-fromHex str =
-    case hexToColor str of
-        Ok col ->
-            let
-                x =
-                    Color.toRgba col
-            in
-            Element.rgba x.red x.green x.blue x.alpha
-
-        Err _ ->
-            Element.rgb 255 0 0
-
-
-lightGrey =
-    Element.rgb255 140 145 149
-
-
-darkGrey =
-    fromHex "#0A1117"
-
-
-moduleGrey =
-    fromHex "#121922"
-
-
 purple =
     Element.rgb255 191 60 255
-
-
-lightBlue =
-    Element.rgb255 0 192 255
 
 
 pink =
@@ -71,7 +30,7 @@ grey =
 
 
 white =
-    fromHex "#fff"
+    Element.rgb255 255 255 255
 
 
 red =

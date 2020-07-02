@@ -6,7 +6,6 @@ import Url.Parser exposing (..)
 
 type Route
     = Dashboard
-    | NodeGraph
     | NodeView String -- Node by nodeId
     | ChainInit
     | ChainSelected String
@@ -16,7 +15,6 @@ parser : Parser (Route -> a) a
 parser =
     oneOf
         [ map Dashboard (s "")
-        , map NodeGraph (s "nodegraph")
         , map NodeView (s "node" </> string)
         , map ChainInit (s "chain")
         , map ChainSelected (s "chain" </> string)
@@ -38,9 +36,6 @@ toString route =
     case route of
         Dashboard ->
             "/"
-
-        NodeGraph ->
-            "/nodegraph"
 
         NodeView nodeId ->
             "/node/" ++ nodeId

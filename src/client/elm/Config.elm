@@ -7,11 +7,13 @@ type Mode
     | Production
 
 
+config : Mode
 config =
     -- Tweak me when developing locally to test
     Staging
 
 
+collector : String
 collector =
     case config of
         Local ->
@@ -27,6 +29,7 @@ collector =
             ""
 
 
+middleware : String
 middleware =
     case config of
         Local ->

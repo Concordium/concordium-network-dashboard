@@ -1,12 +1,10 @@
 module Transaction.Event exposing (..)
 
 import Json.Decode as D
-import Json.Decode.Pipeline exposing (hardcoded, optional, required)
-import Json.Encode as E
+import Json.Decode.Pipeline exposing (required)
 
 
-
--- https://gitlab.com/Concordium/consensus/globalstate-types/-/blob/master/src/Concordium/Types/Execution.hs#L353
+-- Based on https://gitlab.com/Concordium/consensus/globalstate-types/-/blob/master/src/Concordium/Types/Execution.hs#L353
 
 
 type TransactionEvent
@@ -68,80 +66,12 @@ transactionEventsDecoder =
         ]
 
 
-transactionEventsEncoder : TransactionEvent -> E.Value
-transactionEventsEncoder item =
-    case item of
-        TransactionEventTransfer details ->
-            eventTransferEncoder details
-
-        -- Accounts
-        TransactionEventAccountCreated details ->
-            eventAccountCreatedEncoder details
-
-        TransactionEventCredentialDeployed details ->
-            eventCredentialDeployedEncoder details
-
-        TransactionEventAccountEncryptionKeyDeployed details ->
-            eventAccountEncryptionKeyDeployedEncoder details
-
-        -- Baking
-        TransactionEventBakerAdded details ->
-            eventBakerAddedEncoder details
-
-        TransactionEventBakerRemoved details ->
-            eventBakerRemovedEncoder details
-
-        TransactionEventBakerAccountUpdated details ->
-            eventBakerAccountUpdatedEncoder details
-
-        TransactionEventBakerKeyUpdated details ->
-            eventBakerKeyUpdatedEncoder details
-
-        TransactionEventBakerElectionKeyUpdated details ->
-            eventBakerElectionKeyUpdatedEncoder details
-
-        -- Contracts
-        TransactionEventModuleDeployed details ->
-            eventModuleDeployedEncoder details
-
-        TransactionEventContractInitialized details ->
-            eventContractInitializedEncoder details
-
-        TransactionEventContractMessage details ->
-            eventContractMessageEncoder details
-
-        -- Delegation
-        TransactionEventStakeDelegated details ->
-            eventStakeDelegatedEncoder details
-
-        TransactionEventStakeUndelegated details ->
-            eventStakeUndelegatedEncoder details
-
-        -- Core
-        TransactionEventElectionDifficultyUpdated details ->
-            eventElectionDifficultyUpdatedEncoder details
-
-        -- Errors
-        TransactionEventRejected details ->
-            eventRejectedEncoder details
-
-
 type alias EventTransfer =
     { amount : Int
     , tag : String
     , to : AccountInfo
     , from : AccountInfo
     }
-
-
-eventTransferEncoder : EventTransfer -> E.Value
-eventTransferEncoder item =
-    E.object
-        [ ( "amount", E.int item.amount )
-        , ( "tag", E.string item.tag )
-        , ( "to", accountInfoEncoder item.to )
-        , ( "from", accountInfoEncoder item.from )
-        ]
 
 
 eventTransferDecoder : D.Decoder EventTransfer
@@ -163,14 +93,6 @@ type alias EventAccountCreated =
     }
 
 
-eventAccountCreatedEncoder : EventAccountCreated -> E.Value
-eventAccountCreatedEncoder item =
-    E.object
-        [ ( "tag", E.string item.tag )
-        , ( "account", E.string item.account )
-        ]
-
-
 eventAccountCreatedDecoder : D.Decoder EventAccountCreated
 eventAccountCreatedDecoder =
     D.succeed EventAccountCreated
@@ -185,15 +107,6 @@ type alias EventCredentialDeployed =
     }
 
 
-eventCredentialDeployedEncoder : EventCredentialDeployed -> E.Value
-eventCredentialDeployedEncoder item =
-    E.object
-        [ ( "tag", E.string item.tag )
-        , ( "regid", E.string item.regid )
-        , ( "account", E.string item.account )
-        ]
-
-
 eventCredentialDeployedDecoder : D.Decoder EventCredentialDeployed
 eventCredentialDeployedDecoder =
     D.succeed EventCredentialDeployed
@@ -206,14 +119,6 @@ type alias EventAccountEncryptionKeyDeployed =
     { key : String
     , account : String
     }
-
-
-eventAccountEncryptionKeyDeployedEncoder : EventAccountEncryptionKeyDeployed -> E.Value
-eventAccountEncryptionKeyDeployedEncoder item =
-    E.object
-        [ ( "key", E.string item.key )
-        , ( "account", E.string item.account )
-        ]
 
 
 eventAccountEncryptionKeyDeployedDecoder : D.Decoder EventAccountEncryptionKeyDeployed
@@ -231,14 +136,6 @@ type alias EventBakerAdded =
     { tag : String
     , bakerId : Int
     }
-
-
-eventBakerAddedEncoder : EventBakerAdded -> E.Value
-eventBakerAddedEncoder item =
-    E.object
-        [ ( "tag", E.string item.tag )
-        , ( "contents", E.int item.bakerId )
-        ]
 
 
 eventBakerAddedDecoder : D.Decoder EventBakerAdded
@@ -267,25 +164,6 @@ accountInfoAddress accountInfo =
             ""
 
 
-accountInfoEncoder : AccountInfo -> E.Value
-accountInfoEncoder item =
-    case item of
-        AddressAccount address ->
-            E.object
-                [ ( "type", E.string "AddressAccount" )
-                , ( "address", E.string address )
-                ]
-
-        AddressContract address ->
-            E.object
-                [ ( "type", E.string "AddressContract" )
-                , ( "address", E.string address )
-                ]
-
-        AddressUnknown ->
-            E.null
-
-
 accountInfoDecoder : D.Decoder AccountInfo
 accountInfoDecoder =
     D.succeed
@@ -310,14 +188,6 @@ type alias EventBakerRemoved =
     }
 
 
-eventBakerRemovedEncoder : EventBakerRemoved -> E.Value
-eventBakerRemovedEncoder item =
-    E.object
-        [ ( "tag", E.string item.tag )
-        , ( "contents", E.int item.bakerId )
-        ]
-
-
 eventBakerRemovedDecoder : D.Decoder EventBakerRemoved
 eventBakerRemovedDecoder =
     D.succeed EventBakerRemoved
@@ -330,15 +200,6 @@ type alias EventBakerAccountUpdated =
     , bakerId : Int
     , newAccount : String
     }
-
-
-eventBakerAccountUpdatedEncoder : EventBakerAccountUpdated -> E.Value
-eventBakerAccountUpdatedEncoder item =
-    E.object
-        [ ( "tag", E.string item.tag )
-        , ( "bakerId", E.int item.bakerId )
-        , ( "newAccount", E.string item.newAccount )
-        ]
 
 
 eventBakerAccountUpdatedDecoder : D.Decoder EventBakerAccountUpdated
@@ -356,15 +217,6 @@ type alias EventBakerKeyUpdated =
     }
 
 
-eventBakerKeyUpdatedEncoder : EventBakerKeyUpdated -> E.Value
-eventBakerKeyUpdatedEncoder item =
-    E.object
-        [ ( "tag", E.string item.tag )
-        , ( "bakerId", E.int item.bakerId )
-        , ( "newKey", E.string item.newKey )
-        ]
-
-
 eventBakerKeyUpdatedDecoder : D.Decoder EventBakerKeyUpdated
 eventBakerKeyUpdatedDecoder =
     D.succeed EventBakerKeyUpdated
@@ -378,15 +230,6 @@ type alias EventBakerElectionKeyUpdated =
     , bakerId : Int
     , newKey : String
     }
-
-
-eventBakerElectionKeyUpdatedEncoder : EventBakerElectionKeyUpdated -> E.Value
-eventBakerElectionKeyUpdatedEncoder item =
-    E.object
-        [ ( "tag", E.string item.tag )
-        , ( "bakerId", E.int item.bakerId )
-        , ( "newKey", E.string item.newKey )
-        ]
 
 
 eventBakerElectionKeyUpdatedDecoder : D.Decoder EventBakerElectionKeyUpdated
@@ -407,14 +250,6 @@ type alias EventModuleDeployed =
     }
 
 
-eventModuleDeployedEncoder : EventModuleDeployed -> E.Value
-eventModuleDeployedEncoder item =
-    E.object
-        [ ( "tag", E.string item.tag )
-        , ( "contents", E.string item.contents )
-        ]
-
-
 eventModuleDeployedDecoder : D.Decoder EventModuleDeployed
 eventModuleDeployedDecoder =
     D.succeed EventModuleDeployed
@@ -429,17 +264,6 @@ type alias EventContractInitialized =
     , name : Int
     , ref : String
     }
-
-
-eventContractInitializedEncoder : EventContractInitialized -> E.Value
-eventContractInitializedEncoder item =
-    E.object
-        [ ( "tag", E.string item.tag )
-        , ( "amount", E.int item.amount )
-        , ( "address", contractAddressEncoder item.address )
-        , ( "name", E.int item.name )
-        , ( "ref", E.string item.ref )
-        ]
 
 
 eventContractInitializedDecoder : D.Decoder EventContractInitialized
@@ -460,16 +284,6 @@ type alias EventContractMessage =
     }
 
 
-eventContractMessageEncoder : EventContractMessage -> E.Value
-eventContractMessageEncoder item =
-    E.object
-        [ ( "tag", E.string item.tag )
-        , ( "amount", E.int item.amount )
-        , ( "address", contractAddressEncoder item.address )
-        , ( "message", E.string item.message )
-        ]
-
-
 eventContractMessageDecoder : D.Decoder EventContractMessage
 eventContractMessageDecoder =
     D.succeed EventContractMessage
@@ -483,14 +297,6 @@ type alias ContractAddress =
     { index : Int
     , subindex : Int
     }
-
-
-contractAddressEncoder : ContractAddress -> E.Value
-contractAddressEncoder item =
-    E.object
-        [ ( "index", E.int item.index )
-        , ( "subindex", E.int item.subindex )
-        ]
 
 
 contractAddressDecoder : D.Decoder ContractAddress
@@ -511,15 +317,6 @@ type alias EventStakeDelegated =
     }
 
 
-eventStakeDelegatedEncoder : EventStakeDelegated -> E.Value
-eventStakeDelegatedEncoder item =
-    E.object
-        [ ( "tag", E.string item.tag )
-        , ( "account", E.string item.account )
-        , ( "baker", E.int item.baker )
-        ]
-
-
 eventStakeDelegatedDecoder : D.Decoder EventStakeDelegated
 eventStakeDelegatedDecoder =
     D.succeed EventStakeDelegated
@@ -533,15 +330,6 @@ type alias EventStakeUndelegated =
     , account : String
     , baker : Int
     }
-
-
-eventStakeUndelegatedEncoder : EventStakeUndelegated -> E.Value
-eventStakeUndelegatedEncoder item =
-    E.object
-        [ ( "tag", E.string item.tag )
-        , ( "account", E.string item.account )
-        , ( "baker", E.int item.baker )
-        ]
 
 
 eventStakeUndelegatedDecoder : D.Decoder EventStakeUndelegated
@@ -562,14 +350,6 @@ type alias EventElectionDifficultyUpdated =
     }
 
 
-eventElectionDifficultyUpdatedEncoder : EventElectionDifficultyUpdated -> E.Value
-eventElectionDifficultyUpdatedEncoder item =
-    E.object
-        [ ( "tag", E.string item.tag )
-        , ( "difficulty", E.int item.difficulty )
-        ]
-
-
 eventElectionDifficultyUpdatedDecoder : D.Decoder EventElectionDifficultyUpdated
 eventElectionDifficultyUpdatedDecoder =
     D.succeed EventElectionDifficultyUpdated
@@ -587,15 +367,6 @@ type alias EventRejected =
     , reason : String
     , hash : String
     }
-
-
-eventRejectedEncoder : EventRejected -> E.Value
-eventRejectedEncoder item =
-    E.object
-        [ ( "transactionType", E.string item.transactionType )
-        , ( "reason", E.string item.reason )
-        , ( "hash", E.string item.hash )
-        ]
 
 
 eventRejectedDecoder : D.Decoder EventRejected

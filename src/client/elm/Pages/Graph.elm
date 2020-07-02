@@ -1,16 +1,11 @@
 module Pages.Graph exposing (nodeView, view)
 
--- import NetworkGraph
-
 import Dashboard.Formatting exposing (..)
 import Dashboard.Widgets exposing (..)
 import Dict exposing (Dict)
 import Element exposing (..)
-import Element.Background as Background
-import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
-import Element.Input as Input
 import Html
 import Html.Attributes exposing (style)
 import NodeHelpers exposing (..)
@@ -22,35 +17,13 @@ view : Model -> Element Msg
 view model =
     content <|
         row [ paddingXY 0 20, spacing 20 ]
-            [ -- networkGraph model
-              case model.selectedNode of
+            [ case model.selectedNode of
                 Just node ->
                     nodeView node model
 
                 Nothing ->
-                    case model.currentRoute of
-                        NodeView _ ->
-                            el [ alignTop ] (text "Loading...")
-
-                        _ ->
-                            el [ alignTop ] (text "Click on a node to see an overview")
+                    el [ alignTop ] (text "Loading...")
             ]
-
-
-networkGraph model =
-    column
-        [ height (px 800)
-        , width (px 800)
-        , Background.color model.palette.bg2
-        , Border.rounded 5
-        , alignTop
-        ]
-        [ --html <| NetworkGraph.agedRelations model model.nodes,
-          row [ spacing 5 ]
-            [ el [ padding 10, onClick (GraphZoom 100) ] (text "Zoom Out")
-            , el [ padding 10, onClick (GraphZoom -100) ] (text "Zoom In")
-            ]
-        ]
 
 
 nodeView : NetworkNode -> Model -> Element Msg
@@ -93,6 +66,7 @@ nodeView node model =
         statRows
 
 
+forceWrapTextElement : String -> Element msg
 forceWrapTextElement t =
     html <|
         Html.div

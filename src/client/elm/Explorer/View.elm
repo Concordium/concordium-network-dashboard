@@ -1,25 +1,18 @@
 module Explorer.View exposing (..)
 
 import Chain exposing (Msg(..))
-import Chain.Flatten exposing (DrawableBlock)
 import Context exposing (Context)
-import Dashboard.Formatting as Formatting
 import Dashboard.Widgets exposing (remoteDataView)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
-import Explorer
 import Explorer.Request exposing (..)
 import Explorer.Stubs exposing (blockSummaryStubs)
 import Helpers exposing (..)
-import Html.Attributes exposing (style)
 import Icons exposing (..)
-import Iso8601
 import Json.Decode as D
-import Material.Icons.Sharp as MIcons
-import Material.Icons.Types exposing (Coloring(..))
 import Palette exposing (withAlphaEl)
 import RemoteData exposing (RemoteData(..), WebData)
 import Round

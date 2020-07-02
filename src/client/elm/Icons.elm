@@ -1,6 +1,5 @@
 module Icons exposing (..)
 
-import Material.Icons.Types exposing (Coloring(..))
 import Svg exposing (..)
 import Svg.Attributes
     exposing

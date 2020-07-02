@@ -2,7 +2,6 @@ port module Storage exposing (..)
 
 -- Ported from Web Wallet
 
-import Dict
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (..)
 import Json.Encode as E
