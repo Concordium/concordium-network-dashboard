@@ -41,6 +41,7 @@ import Pages.Graph
 import Pages.Home
 import Palette exposing (ColorMode(..), Palette)
 import RemoteData exposing (RemoteData(..))
+import Route exposing (Route(..))
 import Storage
 import String
 import Task
@@ -71,7 +72,7 @@ init flags url key =
       , time = Time.millisToPosix 0
       , palette = Palette.defaultDark
       , colorMode = Dark
-      , currentPage = pathToPage url
+      , currentRoute = Route.fromUrl url
       , nodes = Loading
       , sortMode = SortNone
       , selectedNode = Nothing
@@ -98,7 +99,7 @@ view model =
                 , paddingEach { bottom = 60, left = 0, right = 0, top = 0 }
                 ]
                 [ viewHeader model
-                , case model.currentPage of
+                , case model.currentRoute of
                     Dashboard ->
                         Pages.Home.view model
 
@@ -108,7 +109,10 @@ view model =
                     NodeView nodeName ->
                         Pages.Graph.view model
 
-                    ChainViz ->
+                    ChainInit ->
+                        Pages.ChainViz.view model
+
+                    ChainSelected hash ->
                         Pages.ChainViz.view model
                 ]
         ]
@@ -133,8 +137,6 @@ viewHeader ctx =
         , row [ alignRight, spacing 20, Font.color ctx.palette.fg2 ]
             [ link linkstyle { url = "/", label = text "Dashboard" }
             , link linkstyle { url = "/chain", label = text "Chain" }
-
-            -- , link linkstyle { url = "/nodegraph", label = text "Graph" }
             , viewColorModeToggle ctx
             ]
         ]
@@ -167,16 +169,11 @@ update msg model =
         UrlClicked urlRequest ->
             case urlRequest of
                 Internal url ->
-                    let
-                        ( initModel, initCmds ) =
-                            onPageInit (pathToPage url) model
-                    in
-                    ( initModel
+                    ( model
                     , Cmd.batch
                         [ Nav.pushUrl model.key (Url.toString url)
 
-                        -- , onPageExit model.currentPage model
-                        , initCmds
+                        -- , onPageExit model.currentRoute model
                         ]
                     )
 
@@ -186,7 +183,11 @@ update msg model =
                     )
 
         UrlChanged url ->
-            ( { model | currentPage = pathToPage url }, scrollPageToTop )
+            let
+                ( initModel, initCmds ) =
+                    onPageInit (Route.fromUrl url) model
+            in
+            ( { initModel | currentRoute = Route.fromUrl url }, initCmds )
 
         WindowResized width height ->
             ( { model | window = { width = width, height = height } }, Cmd.none )
@@ -252,10 +253,10 @@ update msg model =
                                 |> List.map (\node -> ( node.nodeId, node ))
                                 |> Dict.fromList
                     in
-                    case model.currentPage of
+                    case model.currentRoute of
                         NodeView nodeId ->
                             -- nodeSummaries may have loaded after a nodeview URL was already open, so re-init it
-                            onPageInit newModel.currentPage newModel
+                            onPageInit newModel.currentRoute newModel
 
                         _ ->
                             ( newModel, Cmd.none )
@@ -294,7 +295,7 @@ update msg model =
                         |> RemoteData.toMaybe
                         |> Maybe.join
               }
-            , Cmd.batch [ Nav.pushUrl model.key (pageToPath (NodeView nodeId)), scrollPageToTop ]
+            , Cmd.batch [ Nav.pushUrl model.key (Route.toString (NodeView nodeId)), scrollPageToTop ]
             )
 
         GraphZoom zoom ->
@@ -309,7 +310,6 @@ update msg model =
                     Chain.update model chainMsg model.chainModel
             in
             ( { model | chainModel = chainModel }, Cmd.map ChainMsg chainCmd )
-                |> triggerOnDispatch (Chain.dispatchMsgs chainMsg { onBlockClicked = BlockSelected })
 
         BlockSelected hash ->
             ( model, Explorer.Request.getBlockInfo hash (ExplorerMsg << Explorer.ReceivedBlockInfo) )
@@ -355,7 +355,7 @@ triggerOnDispatch maybeMsg ( currentModel, currentCmd ) =
             ( currentModel, currentCmd )
 
 
-onPageInit : Page -> Model -> ( Model, Cmd Msg )
+onPageInit : Route -> Model -> ( Model, Cmd Msg )
 onPageInit page model =
     case page of
         NodeView nodeId ->
@@ -371,6 +371,14 @@ onPageInit page model =
 
         NodeGraph ->
             ( { model | selectedNode = Nothing }, Cmd.none )
+
+        ChainInit ->
+            ( model, Cmd.none )
+
+        ChainSelected hash ->
+            ( { model | chainModel = Chain.selectBlock model.chainModel hash }
+            , Explorer.Request.getBlockInfo hash (ExplorerMsg << Explorer.ReceivedBlockInfo)
+            )
 
         _ ->
             ( model, Cmd.none )
@@ -394,11 +402,15 @@ subscriptions model =
         , Storage.receiveDoc StorageDocReceived
         , Time.every 1000 CurrentTime
         , Time.every 2000 FetchNodeSummaries
-        , if model.currentPage == ChainViz then
-            Sub.map ChainMsg <| Chain.subscriptions model.chainModel
+        , case model.currentRoute of
+            ChainInit ->
+                Sub.map ChainMsg <| Chain.subscriptions model.chainModel
 
-          else
-            Sub.none
+            ChainSelected hash ->
+                Sub.map ChainMsg <| Chain.subscriptions model.chainModel
+
+            _ ->
+                Sub.none
         ]
 
 
