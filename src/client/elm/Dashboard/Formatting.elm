@@ -2,18 +2,13 @@ module Dashboard.Formatting exposing (..)
 
 import Dict exposing (Dict)
 import Element exposing (..)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Events exposing (onClick)
 import Element.Font as Font
-import Element.Input as Input
 import Iso8601
 import List.Extra as List
 import Palette exposing (Palette)
 import Round
 import Time exposing (Posix)
 import Time.Distance exposing (inWordsWithConfig)
-import Time.Distance.I18n as I18n
 import Time.Distance.Types exposing (..)
 import Time.Extra
 import Types exposing (..)
@@ -270,11 +265,10 @@ nodes and returns that, or the default if unknown
 -}
 withinHighestStatFor :
     (NetworkNode -> Float)
-    -> b
     -> Dict.Dict String NetworkNode
     -> (NetworkNode -> Maybe String)
     -> Maybe String
-withinHighestStatFor getter default nodes withinGetter =
+withinHighestStatFor getter nodes withinGetter =
     nodes
         |> Dict.toList
         |> List.map Tuple.second
@@ -283,14 +277,14 @@ withinHighestStatFor getter default nodes withinGetter =
         |> Maybe.withDefault (Just "")
 
 
+averageStatSecondsFor : (b -> Maybe Float) -> Dict a b -> String
 averageStatSecondsFor getter nodes =
     let
         dataPoints =
             nodes
                 |> Dict.toList
                 |> List.map Tuple.second
-                |> List.map getter
-                |> List.filterMap (\a -> a)
+                |> List.filterMap getter
 
         isNaNInt x =
             x /= x
@@ -322,6 +316,7 @@ formatPing palette averagePing =
             el [ Font.color palette.failure ] (text "n/a")
 
 
+justs : List (Maybe a) -> List a
 justs =
     List.foldl
         (\v acc ->
@@ -335,6 +330,7 @@ justs =
         []
 
 
+ellipsis : Int -> String -> String
 ellipsis maxLength string =
     if String.length string > maxLength then
         String.left 30 string ++ "..."

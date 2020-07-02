@@ -1,7 +1,7 @@
 module Types exposing (..)
 
 import Browser exposing (..)
-import Browser.Navigation as Nav exposing (Key)
+import Browser.Navigation exposing (Key)
 import Chain
 import Dict exposing (..)
 import Element
@@ -25,7 +25,6 @@ type alias Model =
     , nodes : WebData (Dict Host NetworkNode)
     , sortMode : SortMode
     , selectedNode : Maybe NetworkNode
-    , graph : { width : Float, height : Float }
     , chainModel : Chain.Model
     , explorerModel : Explorer.Model
     }
@@ -42,21 +41,17 @@ type Msg
     | WindowResized Int Int
     | CopyToClipboard String
     | StorageDocReceived D.Value
+    | TaskPerformed
       --
     | NodeInfoReceived NetworkNode
     | FetchNodeSummaries Time.Posix
     | FetchedNodeSummaries (Result Http.Error (List NetworkNode))
     | SortSet SortBy
     | NodeClicked String
-    | GraphZoom Float
-    | DevResetCache
-    | NoopHttp (Result Http.Error ())
     | ChainMsg Chain.Msg
     | BlockSelected String
     | ToggleDarkMode
     | ExplorerMsg Explorer.Msg
-      -- Debug
-    | Noop
 
 
 type alias NetworkNode =
@@ -64,7 +59,6 @@ type alias NetworkNode =
     , nodeId : String
     , peerType : String
 
-    --   , state : Maybe String
     , uptime : Float -- Milliseconds @TODO figure out how to convert to Int, issue is in JS everything is Double even Ints
     , client : String
     , averagePing : Maybe Float -- Milliseconds @TODO as above figure out Int. Maybe for when 0 nodes

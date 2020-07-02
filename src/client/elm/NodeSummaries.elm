@@ -1,8 +1,7 @@
 module NodeSummaries exposing (..)
 
 import Json.Decode as D
-import Json.Decode.Pipeline exposing (hardcoded, optional, required)
-import Json.Encode as E
+import Json.Decode.Pipeline exposing (optional, required)
 import Types exposing (..)
 
 

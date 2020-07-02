@@ -22,7 +22,6 @@ module Palette exposing
 
 import Color exposing (Color, rgb255)
 import Color.Convert exposing (colorToHex, hexToColor)
-import Color.Interpolate exposing (interpolate)
 import Element
 import HSLuv exposing (..)
 import HSLuv.Manipulate exposing (..)

@@ -51,7 +51,7 @@ update msg model =
 
         ReceivedBlockInfo blockInfoRes ->
             -- let
-            --     y =
+            --     x =
             --         Debug.log "ReceivedBlockInfo" blockInfoRes
             -- in
             case blockInfoRes of
@@ -72,7 +72,7 @@ update msg model =
 
         ReceivedBlockSummary blockSummaryResult ->
             -- let
-            --     y =
+            --     x =
             --         Debug.log "ReceivedBlockSummary" blockSummaryResult
             -- in
             ( { model

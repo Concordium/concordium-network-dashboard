@@ -1,7 +1,7 @@
 module Transaction.Summary exposing (..)
 
 import Json.Decode as D
-import Json.Decode.Pipeline exposing (hardcoded, optional, required)
+import Json.Decode.Pipeline exposing (optional, required)
 import Transaction.Event exposing (..)
 
 
@@ -42,6 +42,7 @@ decodeTransactionResult =
         ]
 
 
+decodeNumerousToString : D.Decoder String
 decodeNumerousToString =
     D.oneOf
         [ D.string
