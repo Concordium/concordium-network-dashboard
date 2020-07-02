@@ -1,4 +1,4 @@
-module Pages.Graph exposing (nodeView, view)
+module Pages.Node exposing (nodeView, view)
 
 import Dashboard.Formatting exposing (..)
 import Dashboard.Widgets exposing (..)
@@ -9,7 +9,6 @@ import Element.Font as Font
 import Html
 import Html.Attributes exposing (style)
 import NodeHelpers exposing (..)
-import Route exposing (Route(..))
 import Types exposing (..)
 
 

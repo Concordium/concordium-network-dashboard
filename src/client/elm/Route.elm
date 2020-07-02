@@ -5,7 +5,7 @@ import Url.Parser exposing (..)
 
 
 type Route
-    = Dashboard
+    = Network
     | NodeView String -- Node by nodeId
     | ChainInit
     | ChainSelected String
@@ -14,7 +14,7 @@ type Route
 parser : Parser (Route -> a) a
 parser =
     oneOf
-        [ map Dashboard (s "")
+        [ map Network (s "")
         , map NodeView (s "node" </> string)
         , map ChainInit (s "chain")
         , map ChainSelected (s "chain" </> string)
@@ -28,13 +28,13 @@ fromUrl url =
             page
 
         Nothing ->
-            Dashboard
+            Network
 
 
 toString : Route -> String
 toString route =
     case route of
-        Dashboard ->
+        Network ->
             "/"
 
         NodeView nodeId ->
