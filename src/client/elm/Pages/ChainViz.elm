@@ -1,7 +1,7 @@
 module Pages.ChainViz exposing (..)
 
 import Chain
-import Dashboard.Widgets exposing (content, remoteDataView, viewSummaryWidgets)
+import Dashboard.Widgets exposing (content, viewSummaryWidgets)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
