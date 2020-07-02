@@ -1,4 +1,4 @@
-module Pages.ChainViz exposing (..)
+module Pages.Chain exposing (..)
 
 import Chain
 import Dashboard.Widgets exposing (content, viewSummaryWidgets)

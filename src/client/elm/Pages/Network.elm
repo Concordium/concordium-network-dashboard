@@ -1,4 +1,4 @@
-module Pages.Home exposing (..)
+module Pages.Network exposing (..)
 
 import Dashboard.NodesTable exposing (..)
 import Dashboard.Widgets exposing (..)
