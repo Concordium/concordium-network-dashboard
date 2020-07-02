@@ -25,9 +25,9 @@ import Material.Icons.Types exposing (Coloring(..))
 import Maybe.Extra as Maybe
 import NodeHelpers exposing (..)
 import NodeSummaries exposing (..)
-import Pages.ChainViz
-import Pages.Graph
-import Pages.Home
+import Pages.Chain
+import Pages.Network
+import Pages.Node
 import Palette exposing (ColorMode(..), Palette)
 import RemoteData exposing (RemoteData(..))
 import Route exposing (Route(..))
@@ -87,17 +87,17 @@ view model =
                 ]
                 [ viewHeader model
                 , case model.currentRoute of
-                    Dashboard ->
-                        Pages.Home.view model
+                    Network ->
+                        Pages.Network.view model
 
                     NodeView nodeName ->
-                        Pages.Graph.view model
+                        Pages.Node.view model
 
                     ChainInit ->
-                        Pages.ChainViz.view model
+                        Pages.Chain.view model
 
                     ChainSelected hash ->
-                        Pages.ChainViz.view model
+                        Pages.Chain.view model
                 ]
         ]
     }
@@ -119,7 +119,7 @@ viewHeader ctx =
                     ]
             }
         , row [ alignRight, spacing 20, Font.color ctx.palette.fg2 ]
-            [ link linkstyle { url = "/", label = text "Dashboard" }
+            [ link linkstyle { url = "/", label = text "Network" }
             , link linkstyle { url = "/chain", label = text "Chain" }
             , viewColorModeToggle ctx
             ]
