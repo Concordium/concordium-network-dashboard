@@ -1,7 +1,5 @@
 port module Main exposing (..)
 
--- import Chart
-
 import Browser exposing (..)
 import Browser.Dom
 import Browser.Events
@@ -10,27 +8,18 @@ import Chain
 import Clipboard
 import Config
 import Context exposing (Context)
-import Dashboard.Formatting exposing (..)
 import Dashboard.Logo as Logo
-import Dashboard.Widgets exposing (..)
 import Dict exposing (Dict)
-import Dict.Extra as Dict
 import Element exposing (..)
 import Element.Background as Background
-import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
-import Element.Input as Input
 import Explorer
 import Explorer.Request
 import Html exposing (Html)
-import Html.Attributes exposing (style)
 import Http
-import Iso8601
 import Json.Decode as D
 import Json.Encode as E
-import List.Extra as List
-import Markdown
 import Material.Icons.Sharp as Icon
 import Material.Icons.Types exposing (Coloring(..))
 import Maybe.Extra as Maybe
@@ -46,7 +35,6 @@ import Storage
 import String
 import Task
 import Time
-import Time.Extra
 import Types exposing (..)
 import Url exposing (Url)
 
@@ -76,7 +64,6 @@ init flags url key =
       , nodes = Loading
       , sortMode = SortNone
       , selectedNode = Nothing
-      , graph = { width = 800, height = 800 }
       , chainModel = chainInit
       , explorerModel = Explorer.init
       }
@@ -102,9 +89,6 @@ view model =
                 , case model.currentRoute of
                     Dashboard ->
                         Pages.Home.view model
-
-                    NodeGraph ->
-                        Pages.Graph.view model
 
                     NodeView nodeName ->
                         Pages.Graph.view model
@@ -170,11 +154,7 @@ update msg model =
             case urlRequest of
                 Internal url ->
                     ( model
-                    , Cmd.batch
-                        [ Nav.pushUrl model.key (Url.toString url)
-
-                        -- , onPageExit model.currentRoute model
-                        ]
+                    , Nav.pushUrl model.key (Url.toString url)
                     )
 
                 External url ->
@@ -185,7 +165,7 @@ update msg model =
         UrlChanged url ->
             let
                 ( initModel, initCmds ) =
-                    onPageInit (Route.fromUrl url) model
+                    onRouteInit (Route.fromUrl url) model
             in
             ( { initModel | currentRoute = Route.fromUrl url }, initCmds )
 
@@ -222,7 +202,7 @@ update msg model =
 
                                 Err e ->
                                     -- let
-                                    --     y =
+                                    --     x =
                                     --         Debug.log "error decoding colormode" (D.errorToString e)
                                     -- in
                                     ( model, Cmd.none )
@@ -232,6 +212,9 @@ update msg model =
 
                 Err a ->
                     ( model, Cmd.none )
+
+        TaskPerformed ->
+            ( model, Cmd.none )
 
         NodeInfoReceived node ->
             ( { model | nodes = RemoteData.map (Dict.insert node.nodeId node) model.nodes }, Cmd.none )
@@ -256,7 +239,7 @@ update msg model =
                     case model.currentRoute of
                         NodeView nodeId ->
                             -- nodeSummaries may have loaded after a nodeview URL was already open, so re-init it
-                            onPageInit newModel.currentRoute newModel
+                            onRouteInit newModel.currentRoute newModel
 
                         _ ->
                             ( newModel, Cmd.none )
@@ -298,12 +281,6 @@ update msg model =
             , Cmd.batch [ Nav.pushUrl model.key (Route.toString (NodeView nodeId)), scrollPageToTop ]
             )
 
-        GraphZoom zoom ->
-            ( { model | graph = { width = model.graph.width + zoom, height = model.graph.height + zoom } }, Cmd.none )
-
-        DevResetCache ->
-            ( model, Http.get { url = "/dev/reset", expect = Http.expectWhatever NoopHttp } )
-
         ChainMsg chainMsg ->
             let
                 ( chainModel, chainCmd ) =
@@ -326,9 +303,6 @@ update msg model =
                     , Storage.save { id = "dashboard", tipe = "colormode", value = E.string "Dark" }
                     )
 
-        NoopHttp r ->
-            ( model, Cmd.none )
-
         ExplorerMsg eMsg ->
             let
                 ( newExplorerModel, newExplorerCmd ) =
@@ -336,27 +310,9 @@ update msg model =
             in
             ( { model | explorerModel = newExplorerModel }, Cmd.map ExplorerMsg newExplorerCmd )
 
-        Noop ->
-            ( model, Cmd.none )
 
-
-triggerOnDispatch : Maybe Msg -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
-triggerOnDispatch maybeMsg ( currentModel, currentCmd ) =
-    case maybeMsg of
-        Just message ->
-            ( currentModel
-            , Cmd.batch
-                [ currentCmd
-                , Task.perform identity (Task.succeed message)
-                ]
-            )
-
-        Nothing ->
-            ( currentModel, currentCmd )
-
-
-onPageInit : Route -> Model -> ( Model, Cmd Msg )
-onPageInit page model =
+onRouteInit : Route -> Model -> ( Model, Cmd Msg )
+onRouteInit page model =
     case page of
         NodeView nodeId ->
             ( { model
@@ -368,9 +324,6 @@ onPageInit page model =
               }
             , Cmd.none
             )
-
-        NodeGraph ->
-            ( { model | selectedNode = Nothing }, Cmd.none )
 
         ChainInit ->
             ( model, Cmd.none )
@@ -384,14 +337,9 @@ onPageInit page model =
             ( model, Cmd.none )
 
 
-onPageExit page model =
-    case page of
-        _ ->
-            Cmd.none
-
-
+scrollPageToTop : Cmd Msg
 scrollPageToTop =
-    Task.perform (\_ -> Noop) (Browser.Dom.setViewport 0 0)
+    Task.perform (\_ -> TaskPerformed) (Browser.Dom.setViewport 0 0)
 
 
 subscriptions : Model -> Sub Msg
@@ -437,8 +385,3 @@ theme palette elements =
         , Font.size 14
         ]
         elements
-
-
-markdown : String -> Element msg
-markdown string =
-    Element.html <| Markdown.toHtml [] string

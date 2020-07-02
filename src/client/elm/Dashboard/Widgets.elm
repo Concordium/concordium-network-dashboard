@@ -6,9 +6,7 @@ import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Element.Events exposing (onClick)
 import Element.Font as Font
-import Element.Input as Input
 import Helpers exposing (..)
 import Loading
 import Palette exposing (Palette, toHex, veryDark, withAlphaEl)
@@ -80,7 +78,6 @@ viewSummaryWidgets ctx remoteNodes =
                                     (Maybe.withDefault ""
                                         (withinHighestStatFor
                                             .finalizedBlockHeight
-                                            ""
                                             nodes
                                             .finalizedTime
                                         )

@@ -2,7 +2,6 @@ module Dashboard.NodesTable exposing (..)
 
 import Context exposing (Context)
 import Dashboard.Formatting exposing (..)
-import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Events exposing (onClick)
 import Element.Font as Font
