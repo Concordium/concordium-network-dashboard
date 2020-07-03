@@ -211,37 +211,41 @@ emptyDrawableChain =
     }
 
 
+{-| Convert tree into a DrawableChain which contains all geometric components (including coordinates, collapsed blocks, and offsets) to be rendered.
+-}
 flattenTree : Context a -> GridSpec -> Int -> Int -> Tree Block -> DrawableChain
 flattenTree ctx gridSpec lastFinalizedBlockHeight maxNumVertical chain =
-    flattenDepthFirst ctx (Zipper.fromTree chain) gridSpec Nothing Nothing ( 0, 0 )
-        |> (\{ blocks, connectors, nodes, width, height } ->
-                let
-                    firstBlockHeight =
-                        Tree.label chain |> .blockHeight
+    let
+        { blocks, connectors, nodes, width, height } =
+            flattenDepthFirst ctx (Zipper.fromTree chain) gridSpec Nothing Nothing ( 0, 0 )
 
-                    collapsedH =
-                        firstBlockHeight - lastFinalizedBlockHeight
+        firstBlockHeight =
+            Tree.label chain |> .blockHeight
 
-                    collapsedV =
-                        max 0 (maxNumVertical - height)
-                in
-                { blocks = blocks
-                , connectors = connectors
-                , nodes = nodes
-                , width = width
-                , height = height
-                , viewBoxOffsetX =
-                    Grid.intersection gridSpec firstBlockHeight 0
-                        |> Point2d.toPixels
-                        |> .x
+        collapsedX =
+            firstBlockHeight - lastFinalizedBlockHeight
 
-                --toFloat firstBlockHeight * (gridSpec.cellWidth + gridSpec.gutterWidth)
-                , numCollapsedBlocksX = collapsedH
-                , numCollapsedBlocksY = collapsedV
-                }
-           )
+        collapsedY =
+            max 0 (maxNumVertical - height)
+
+        offsetX =
+            Grid.intersection gridSpec firstBlockHeight 0
+                |> Point2d.toPixels
+                |> .x
+    in
+    { blocks = blocks
+    , connectors = connectors
+    , nodes = nodes
+    , width = width
+    , height = height
+    , viewBoxOffsetX = offsetX
+    , numCollapsedBlocksX = collapsedX
+    , numCollapsedBlocksY = collapsedY
+    }
 
 
+{-| Convert zipper (representing a subtree) into a DrawableChain which contains all geometric components (including coordinates) to be rendered.
+-}
 flattenDepthFirst :
     Context a
     -> Zipper Block
@@ -273,4 +277,4 @@ flattenDepthFirst ctx zipper gridSpec parentCoords parentBlock ( x, y ) =
         ( Nothing, Nothing ) ->
             emptyDrawableChain
     )
-        |> addDrawables ctx gridSpec parentCoords parentBlock ( x, y ) (Zipper.label zipper)
+        |> addDrawables ctx gridSpec parentCoords parentBlock ( x, y ) block

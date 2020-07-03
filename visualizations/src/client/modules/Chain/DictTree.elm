@@ -64,7 +64,7 @@ addConnection a b dtree =
 
 
 {-| Builds an actual tree structure from the Dict. The functions
-for building up the tree are given as parameters so different data strucutres
+for building up the tree are given as parameters so different data structures
 can be used as output.
 -}
 buildForward :
