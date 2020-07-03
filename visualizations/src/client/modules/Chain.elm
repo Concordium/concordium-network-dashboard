@@ -206,6 +206,8 @@ updateNodes new current =
 updateChain : Context a -> Int -> List Node -> Model -> Model
 updateChain ctx depth nodes model =
     let
+        -- The best block according to the majority of the nodes.
+        -- TODO List needs to be sorted before grouping?
         maybeBestBlock =
             List.map (\node -> ( node.bestBlockHeight, node.bestBlock )) nodes
                 |> List.group
@@ -213,12 +215,14 @@ updateChain ctx depth nodes model =
                 |> List.maximumBy Tuple.second
                 |> Maybe.map Tuple.first
 
+        -- Block sequences for all nodes.
         sequences =
             List.map Build.prepareBlockSequence nodes
 
         shortestSeq =
             List.minimumBy List.length sequences
 
+        -- Merge sequences into existing dict-based model.
         newTree =
             DictTree.addAll sequences model.tree
 
@@ -230,16 +234,21 @@ updateChain ctx depth nodes model =
     case ( maybeBestBlock, maybeLastFinalized ) of
         ( Just bestBlock, Just lastFinalized ) ->
             let
-                ( walkedForward, last ) =
+                -- Find deepmost blocks of all branches up to a depth of `depth` from the best block
+                -- according to the majority of the nodes.
+                -- The reason for not going beyond that is to ensure that this block remains included in the view.
+                ( stepsWalkedForwards, last ) =
                     newTree
                         |> DictTree.walkForwardFrom bestBlock depth
                         |> List.maximumBy Tuple.first
                         |> Maybe.withDefault ( 0, bestBlock )
-
-                ( walkedBackward, start ) =
+                        
+                -- Walk back from the last block to find the start block.
+                ( stepsWalkedBackwards, start ) =
                     newTree
                         |> DictTree.walkBackwardFrom last (depth - 1)
 
+                -- Convert dict into tree of "proto blocks" which is then "annotated" into the final model (a tree of "blocks").
                 annotatedTree =
                     --Build.mockTree
                     DictTree.buildForward depth start newTree [] Tree.tree

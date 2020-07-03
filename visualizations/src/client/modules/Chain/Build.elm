@@ -27,7 +27,7 @@ type alias Node =
     }
 
 
-{-| The first description of a block, consisting of Block Height and hash.
+{-| The first description of a block, consisting of block height and hash.
 -}
 type alias ProtoBlock =
     ( Int, String )
@@ -178,6 +178,8 @@ encodeNode record =
 -- Build the chain
 
 
+{-| Construct sequence of proto blocks from node.
+-}
 prepareBlockSequence : Node -> List ProtoBlock
 prepareBlockSequence node =
     ( node.finalizedBlockHeight, node.finalizedBlock )
@@ -194,6 +196,9 @@ prepareBlockSequence node =
 -- Annotating the chain to prepare for viewing
 
 
+{-| Convert a tree of "proto blocks" into a tree of blocks which know about their finalization state
+and nodes that report them as their best block.
+-}
 annotate : List Node -> ProtoBlock -> Tree ProtoBlock -> Tree Block
 annotate nodes lastFinalized sourceTree =
     annotateChain nodes sourceTree
@@ -209,8 +214,23 @@ annotateChain nodes sourceTree =
 
 
 annotateBlock : List Node -> ProtoBlock -> Block
-annotateBlock nodes =
-    block nodes 1 []
+annotateBlock nodes ( height, hash ) =
+    let
+        nodesAt =
+            nodes
+                |> List.filter (\node -> node.bestBlock == hash)
+                |> List.map .nodeId
+
+        numNodesAt =
+            List.length nodesAt
+    in
+    { hash = hash
+    , nodesAt = nodesAt
+    , numNodesAt = numNodesAt
+    , status = Candidate
+    , forkWidth = 1
+    , blockHeight = height
+    }
 
 
 annotateChildren : Block -> List (Tree Block) -> Tree Block
@@ -233,21 +253,8 @@ annotateChildren label children =
                 )
 
 
-
-{--
-annotateTree : List Node -> Tree ProtoBlock -> Tree Block
-annotateTree nodes tree =
-    case tree of
-        Tree { label, []} ->
-            block nodes 1 [] label
-
-        Tree { label, children } ->
-            children
-                |> List.map (annotateTree nodes)
-                |>
---}
-
-
+{-| Starting from the last finalized block, mark all ancestor blocks as finalized.
+-}
 colorize : ProtoBlock -> Tree Block -> Tree Block
 colorize lastFinalized tree =
     let
@@ -272,23 +279,3 @@ colorize lastFinalized tree =
     Maybe.map colorizeUp startZipper
         |> Maybe.map Zipper.toTree
         |> Maybe.withDefault tree
-
-
-block : List Node -> Int -> List Int -> ProtoBlock -> Block
-block nodes forkWidth connectorList ( height, hash ) =
-    let
-        nodesAt =
-            nodes
-                |> List.filter (\node -> node.bestBlock == hash)
-                |> List.map .nodeId
-
-        numNodesAt =
-            List.length nodesAt
-    in
-    { hash = hash
-    , nodesAt = nodesAt
-    , numNodesAt = numNodesAt
-    , status = Candidate
-    , forkWidth = forkWidth
-    , blockHeight = height
-    }
