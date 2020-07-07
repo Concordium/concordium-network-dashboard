@@ -63,7 +63,7 @@ init flags url key =
       , currentRoute = Route.fromUrl url
       , nodes = Loading
       , sortMode = SortNone
-      , selectedNode = Nothing
+      , selectedNode = NotAsked
       , chainModel = chainInit
       , explorerModel = Explorer.init
       }
@@ -273,10 +273,7 @@ update msg model =
         NodeClicked nodeId ->
             ( { model
                 | selectedNode =
-                    model.nodes
-                        |> RemoteData.map (findNodeById nodeId)
-                        |> RemoteData.toMaybe
-                        |> Maybe.join
+                    RemoteData.map (findNodeById nodeId >> Result.fromMaybe nodeId) model.nodes
               }
             , Cmd.batch [ Nav.pushUrl model.key (Route.toString (NodeView nodeId)), scrollPageToTop ]
             )
@@ -317,10 +314,7 @@ onRouteInit page model =
         NodeView nodeId ->
             ( { model
                 | selectedNode =
-                    model.nodes
-                        |> RemoteData.map (findNodeById nodeId)
-                        |> RemoteData.toMaybe
-                        |> Maybe.join
+                    RemoteData.map (findNodeById nodeId >> Result.fromMaybe nodeId) model.nodes
               }
             , Cmd.none
             )

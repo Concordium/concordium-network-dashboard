@@ -354,8 +354,7 @@ worldMap palette =
 
 nodePeersOnly : Dict Host NetworkNode -> Dict Host NetworkNode
 nodePeersOnly nodes =
-    -- @TODO remove "" case when new collector is deployed
-    nodes |> Dict.filter (\k n -> n.peerType == "Node" || n.peerType == "")
+    nodes |> Dict.filter (\_ n -> n.peerType == "Node")
 
 
 
