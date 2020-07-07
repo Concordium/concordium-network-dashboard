@@ -14,7 +14,6 @@ import Route exposing (Route)
 import Time
 import Url exposing (Url)
 
-
 type alias Model =
     { key : Key
     , time : Time.Posix
@@ -24,7 +23,7 @@ type alias Model =
     , currentRoute : Route
     , nodes : WebData (Dict Host NetworkNode)
     , sortMode : SortMode
-    , selectedNode : Maybe NetworkNode
+    , selectedNode : WebData (Result String NetworkNode)
     , chainModel : Chain.Model
     , explorerModel : Explorer.Model
     }
@@ -58,7 +57,6 @@ type alias NetworkNode =
     { nodeName : String
     , nodeId : String
     , peerType : String
-
     , uptime : Float -- Milliseconds @TODO figure out how to convert to Int, issue is in JS everything is Double even Ints
     , client : String
     , averagePing : Maybe Float -- Milliseconds @TODO as above figure out Int. Maybe for when 0 nodes
