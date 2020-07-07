@@ -29,6 +29,7 @@ type alias StorageDoc =
     }
 
 
+encodeStorageDoc : StorageDoc -> E.Value
 encodeStorageDoc item =
     E.object
         [ ( "id", E.string item.id )
@@ -37,6 +38,7 @@ encodeStorageDoc item =
         ]
 
 
+decodeStorageDoc : D.Decoder StorageDoc
 decodeStorageDoc =
     D.succeed StorageDoc
         |> required "id" D.string

@@ -251,10 +251,12 @@ uiToColor color =
     Color.fromRgba (Element.toRgb color)
 
 
+hsluvToUi : HSLuv -> Element.Color
 hsluvToUi =
     Element.fromRgb << HSLuv.toRgba
 
 
+uiToHsluv : Element.Color -> HSLuv
 uiToHsluv =
     HSLuv.rgba << Element.toRgb
 
@@ -325,6 +327,7 @@ invert color =
     color |> apply (mapRed inv >> mapGreen inv >> mapBlue inv)
 
 
+inv : number -> number
 inv f =
     1 - f
 

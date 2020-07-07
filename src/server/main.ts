@@ -1,11 +1,9 @@
-import * as _ from 'lodash'
 import * as express from 'express'
 import * as http from 'http'
 import { staticsRouter } from './routes/statics-router'
 import { staticsDevRouter } from './routes/statics-dev-router'
 import * as config from './config'
 import { getVersion } from '../shared/utils'
-import * as auth from 'http-auth'
 
 console.log(`The App version is ${getVersion()}`)
 
