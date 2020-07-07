@@ -1,25 +1,17 @@
 module Main exposing (main)
 
-import Animation exposing (..)
 import Browser exposing (..)
 import Browser.Dom
 import Browser.Events as Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
-import Colors
 import Context exposing (Context)
-import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
-import Element.Border as Border
 import Element.Font as Font
-import Element.Input as Input
-import Element.Region as Region
-import Graph exposing (Graph)
 import Html exposing (Html)
 import Page exposing (..)
 import Palette exposing (..)
-import RewardGraph exposing (..)
 import Task
 import Time exposing (Posix)
 import Url exposing (Url)
