@@ -2,7 +2,7 @@ module Explorer.View exposing (..)
 
 import Chain exposing (Msg(..))
 import Context exposing (Context)
-import Dashboard.Widgets exposing (remoteDataView)
+import Network.Widgets exposing (remoteDataView)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border

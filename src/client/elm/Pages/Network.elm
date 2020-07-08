@@ -1,7 +1,7 @@
 module Pages.Network exposing (..)
 
-import Dashboard.NodesTable exposing (..)
-import Dashboard.Widgets exposing (..)
+import Network.NodesTable exposing (..)
+import Network.Widgets exposing (..)
 import Dict
 import Element exposing (..)
 import Types exposing (..)

@@ -1,4 +1,4 @@
-module Dashboard.Formatting exposing (..)
+module Network.Formatting exposing (..)
 
 import Dict exposing (Dict)
 import Element exposing (..)
