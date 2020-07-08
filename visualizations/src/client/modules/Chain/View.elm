@@ -1,22 +1,26 @@
 module Chain.View exposing (..)
 
-import Chain.Build exposing (..)
-import Chain.Flatten exposing (..)
-import Color exposing (Color)
+import Chain.Build as Build exposing (..)
+import Chain.Flatten as Flatten exposing (..)
+import Color exposing (Color, rgb)
+import Color.Interpolate exposing (..)
 import Color.Manipulate exposing (fadeOut)
 import Context exposing (..)
-import CubicSpline2d
+import CubicSpline2d exposing (fromControlPoints)
 import Element
 import Geometry.Svg as Svg
+import GeometryUtils exposing (TopLeftCoordinates)
 import Grid exposing (GridSpec)
 import LineSegment2d exposing (LineSegment2d)
 import Maybe.Extra as Maybe
 import Palette exposing (Palette)
 import Pixels exposing (Pixels, pixels)
 import Point2d exposing (Point2d)
+import Quantity
 import Rectangle2d exposing (Rectangle2d)
 import Rectangle2d.Extra as Rectangle2d
 import Svg.Keyed as Keyed
+import Svg.Lazy as Lazy
 import TypedSvg exposing (..)
 import TypedSvg.Attributes exposing (..)
 import TypedSvg.Core exposing (..)

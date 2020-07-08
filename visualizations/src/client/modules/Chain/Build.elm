@@ -1,6 +1,8 @@
 module Chain.Build exposing (..)
 
 import Chain.DictTree as DictTree
+import Dict as Dict exposing (Dict)
+import Dict.Extra as Dict
 import File exposing (File)
 import File.Download as Download
 import File.Select as Select
@@ -8,6 +10,7 @@ import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode
+import List.Extra as List
 import RemoteData exposing (WebData)
 import Tree exposing (Tree(..), singleton, tree)
 import Tree.Zipper as Zipper exposing (Zipper)

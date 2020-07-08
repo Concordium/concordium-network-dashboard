@@ -15,6 +15,7 @@ the root.
 
 import Dict exposing (Dict)
 import Dict.Extra as Dict
+import List.Extra as List
 import Set exposing (Set)
 
 
