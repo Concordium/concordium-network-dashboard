@@ -1,7 +1,7 @@
-module Dashboard.NodesTable exposing (..)
+module Network.NodesTable exposing (..)
 
 import Context exposing (Context)
-import Dashboard.Formatting exposing (..)
+import Network.Formatting exposing (..)
 import Element exposing (..)
 import Element.Events exposing (onClick)
 import Element.Font as Font

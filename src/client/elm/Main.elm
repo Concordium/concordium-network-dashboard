@@ -8,7 +8,7 @@ import Chain
 import Clipboard
 import Config
 import Context exposing (Context)
-import Dashboard.Logo as Logo
+import Network.Logo as Logo
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
@@ -22,7 +22,6 @@ import Json.Decode as D
 import Json.Encode as E
 import Material.Icons.Sharp as Icon
 import Material.Icons.Types exposing (Coloring(..))
-import Maybe.Extra as Maybe
 import NodeHelpers exposing (..)
 import NodeSummaries exposing (..)
 import Pages.Chain

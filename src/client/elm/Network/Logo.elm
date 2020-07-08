@@ -1,4 +1,4 @@
-module Dashboard.Logo exposing (..)
+module Network.Logo exposing (..)
 
 import Color exposing (Color)
 import TypedSvg exposing (..)

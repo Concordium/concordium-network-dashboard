@@ -1,7 +1,7 @@
 module Pages.Node exposing (nodeView, view)
 
-import Dashboard.Formatting exposing (..)
-import Dashboard.Widgets exposing (..)
+import Network.Formatting exposing (..)
+import Network.Widgets exposing (..)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Events exposing (onClick)
