@@ -9,7 +9,6 @@ import Pixels exposing (Pixels, pixels)
 import Point2d exposing (Point2d)
 import Quantity exposing (Quantity)
 import Rectangle2d exposing (Rectangle2d)
-import Vector2d exposing (Vector2d)
 
 
 interpolateFloatQuantity :
