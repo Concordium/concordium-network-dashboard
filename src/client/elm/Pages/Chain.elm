@@ -1,11 +1,11 @@
 module Pages.Chain exposing (..)
 
 import Chain
-import Network.Widgets exposing (content, viewSummaryWidgets)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Explorer.View
+import Network.Widgets exposing (content, viewSummaryWidgets)
 import Palette
 import Types exposing (Model, Msg(..))
 
@@ -14,7 +14,7 @@ view : Model -> Element Msg
 view model =
     content <|
         column [ width fill, height fill, spacing 20 ]
-            [ viewSummaryWidgets model model.nodes
+            [ viewSummaryWidgets model model.networkModel.nodes
             , el
                 [ width fill
                 , height (fill |> minimum 200)

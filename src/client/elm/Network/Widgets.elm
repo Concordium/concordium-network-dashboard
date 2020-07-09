@@ -1,7 +1,6 @@
 module Network.Widgets exposing (..)
 
 import Context exposing (Context)
-import Network.Formatting exposing (..)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
@@ -9,9 +8,10 @@ import Element.Border as Border
 import Element.Font as Font
 import Helpers exposing (..)
 import Loading
+import Network exposing (Host, NetworkNode)
+import Network.Formatting exposing (..)
 import Palette exposing (Palette, toHex, veryDark, withAlphaEl)
 import RemoteData exposing (RemoteData(..), WebData)
-import Types exposing (..)
 
 
 type alias Widget =

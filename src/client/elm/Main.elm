@@ -1,15 +1,12 @@
-port module Main exposing (..)
+module Main exposing (..)
 
 import Browser exposing (..)
-import Browser.Dom
 import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
 import Clipboard
 import Config
 import Context exposing (Context)
-import Network.Logo as Logo
-import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Events exposing (onClick)
@@ -17,31 +14,21 @@ import Element.Font as Font
 import Explorer
 import Explorer.Request
 import Html exposing (Html)
-import Http
 import Json.Decode as D
 import Json.Encode as E
 import Material.Icons.Sharp as Icon
 import Material.Icons.Types exposing (Coloring(..))
-import NodeHelpers exposing (..)
-import NodeSummaries exposing (..)
+import Network
+import Network.Logo as Logo
 import Pages.Chain
 import Pages.Network
 import Pages.Node
 import Palette exposing (ColorMode(..), Palette)
-import RemoteData exposing (RemoteData(..))
 import Route exposing (Route(..))
 import Storage
-import String
-import Task
 import Time
 import Types exposing (..)
 import Url exposing (Url)
-
-
-port hello : String -> Cmd msg
-
-
-port nodeInfo : (NetworkNode -> msg) -> Sub msg
 
 
 type alias Flags =
@@ -60,9 +47,7 @@ init flags url key =
       , palette = Palette.defaultDark
       , colorMode = Dark
       , currentRoute = Route.fromUrl url
-      , nodes = Loading
-      , sortMode = SortNone
-      , selectedNode = NotAsked
+      , networkModel = Network.init
       , chainModel = chainInit
       , explorerModel = Explorer.init
       }
@@ -87,10 +72,10 @@ view model =
                 [ viewHeader model
                 , case model.currentRoute of
                     Network ->
-                        Pages.Network.view model
+                        Element.map NetworkMsg <| Pages.Network.view model model.networkModel
 
                     NodeView nodeName ->
-                        Pages.Node.view model
+                        Element.map NetworkMsg <| Pages.Node.view model model.networkModel
 
                     ChainInit ->
                         Pages.Chain.view model
@@ -163,10 +148,13 @@ update msg model =
 
         UrlChanged url ->
             let
+                route =
+                    Route.fromUrl url
+
                 ( initModel, initCmds ) =
-                    onRouteInit (Route.fromUrl url) model
+                    onRouteInit route model
             in
-            ( { initModel | currentRoute = Route.fromUrl url }, initCmds )
+            ( { initModel | currentRoute = route }, initCmds )
 
         WindowResized width height ->
             ( { model | window = { width = width, height = height } }, Cmd.none )
@@ -212,70 +200,12 @@ update msg model =
                 Err a ->
                     ( model, Cmd.none )
 
-        TaskPerformed ->
-            ( model, Cmd.none )
-
-        NodeInfoReceived node ->
-            ( { model | nodes = RemoteData.map (Dict.insert node.nodeId node) model.nodes }, Cmd.none )
-
-        FetchNodeSummaries _ ->
-            ( model, Http.get { url = Config.collector ++ "/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
-
-        FetchedNodeSummaries r ->
-            case r of
-                Ok nodeSummaries ->
-                    let
-                        newModel =
-                            { model
-                                | nodes = Success nodes
-                            }
-
-                        nodes =
-                            nodeSummaries
-                                |> List.map (\node -> ( node.nodeId, node ))
-                                |> Dict.fromList
-                    in
-                    case model.currentRoute of
-                        NodeView nodeId ->
-                            -- nodeSummaries may have loaded after a nodeview URL was already open, so re-init it
-                            onRouteInit newModel.currentRoute newModel
-
-                        _ ->
-                            ( newModel, Cmd.none )
-
-                Err err ->
-                    ( model, Cmd.none )
-
-        SortSet sortBy ->
+        NetworkMsg networkMsg ->
             let
-                newSortMode =
-                    case model.sortMode of
-                        SortNone ->
-                            SortAsc sortBy
-
-                        SortAsc sortBy_ ->
-                            if sortBy_ == sortBy then
-                                SortDesc sortBy
-
-                            else
-                                SortAsc sortBy
-
-                        SortDesc sortBy_ ->
-                            if sortBy_ == sortBy then
-                                SortNone
-
-                            else
-                                SortAsc sortBy
+                ( newNetworkModel, newNetworkCmd ) =
+                    Network.update networkMsg model.networkModel model.currentRoute model.key
             in
-            ( { model | sortMode = newSortMode }, Cmd.none )
-
-        NodeClicked nodeId ->
-            ( { model
-                | selectedNode =
-                    RemoteData.map (findNodeById nodeId >> Result.fromMaybe nodeId) model.nodes
-              }
-            , Cmd.batch [ Nav.pushUrl model.key (Route.toString (NodeView nodeId)), scrollPageToTop ]
-            )
+            ( { model | networkModel = newNetworkModel }, Cmd.map NetworkMsg newNetworkCmd )
 
         ChainMsg chainMsg ->
             let
@@ -311,12 +241,7 @@ onRouteInit : Route -> Model -> ( Model, Cmd Msg )
 onRouteInit page model =
     case page of
         NodeView nodeId ->
-            ( { model
-                | selectedNode =
-                    RemoteData.map (findNodeById nodeId >> Result.fromMaybe nodeId) model.nodes
-              }
-            , Cmd.none
-            )
+            ( { model | networkModel = Network.selectNode model.networkModel nodeId }, Cmd.none )
 
         ChainInit ->
             ( model, Cmd.none )
@@ -330,19 +255,13 @@ onRouteInit page model =
             ( model, Cmd.none )
 
 
-scrollPageToTop : Cmd Msg
-scrollPageToTop =
-    Task.perform (\_ -> TaskPerformed) (Browser.Dom.setViewport 0 0)
-
-
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ nodeInfo NodeInfoReceived
-        , Browser.Events.onResize WindowResized
+        [ Browser.Events.onResize WindowResized
         , Storage.receiveDoc StorageDocReceived
         , Time.every 1000 CurrentTime
-        , Time.every 2000 FetchNodeSummaries
+        , Sub.map NetworkMsg <| Network.subscriptions
         , case model.currentRoute of
             ChainInit ->
                 Sub.map ChainMsg <| Chain.subscriptions model.chainModel

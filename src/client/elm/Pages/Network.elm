@@ -1,18 +1,19 @@
 module Pages.Network exposing (..)
 
-import Network.NodesTable exposing (..)
-import Network.Widgets exposing (..)
+import Context exposing (Context)
 import Dict
 import Element exposing (..)
-import Types exposing (..)
+import Network exposing (Model, Msg)
+import Network.NodesTable exposing (..)
+import Network.Widgets exposing (..)
 
 
-view : Model -> Element Msg
-view model =
+view : Context a -> Model -> Element Msg
+view ctx model =
     content <|
         column [ spacing 30, width fill ]
-            [ viewSummaryWidgets model model.nodes
-            , remoteDataView model.palette
+            [ viewSummaryWidgets ctx model.nodes
+            , remoteDataView ctx.palette
                 (\nodes ->
                     let
                         listNodes =
@@ -23,7 +24,7 @@ view model =
                         sortedNodes =
                             sortNodesMode model.sortMode listNodes
                     in
-                    nodesTable model model.sortMode sortedNodes
+                    nodesTable ctx model.sortMode sortedNodes
                 )
                 model.nodes
             ]
