@@ -1,18 +1,16 @@
 module Explorer.View exposing (..)
 
-import Chain exposing (Msg(..))
+import Chain
 import Context exposing (Context)
-import Network.Widgets exposing (remoteDataView)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Explorer.Request exposing (..)
-import Explorer.Stubs exposing (blockSummaryStubs)
 import Helpers exposing (..)
 import Icons exposing (..)
-import Json.Decode as D
+import Network.Widgets exposing (remoteDataView)
 import Palette exposing (withAlphaEl)
 import RemoteData exposing (RemoteData(..), WebData)
 import Round
@@ -72,8 +70,6 @@ viewContainer : Context a -> Element Msg -> Element Msg
 viewContainer ctx content =
     el
         [ height fill
-
-        -- , width fill
         , width (fill |> maximum 1100)
         , centerX
         , Background.color ctx.palette.bg2
@@ -110,9 +106,7 @@ viewParentLink ctx blockInfo =
         [ Font.color color
         , pointer
 
-        -- @TODO figure out right way to do this
-        -- , onClick (ExplorerMsg (Explorer.RequestedBlockInfo blockInfo.blockParent))
-        , onClick (ChainMsg (BlockClicked blockInfo.blockParent))
+        , onClick (ChainMsg (Chain.BlockClicked blockInfo.blockParent))
         ]
         [ row [ stringTooltipAbove ctx "View parent block" ]
             [ el [] (html <| Icons.block_not_finalized 20)
@@ -219,6 +213,7 @@ viewBlockHeight ctx blockInfo =
         ]
 
 
+bottomBorder : Context a -> List (Attribute msg)
 bottomBorder ctx =
     [ Border.widthEach { top = 0, left = 0, right = 0, bottom = 1 }
     , Border.color ctx.palette.bg1
@@ -379,6 +374,7 @@ viewSpecialEvent ctx specialEvent =
         ]
 
 
+viewFinalizationData : Context a -> Maybe FinalizationData -> List (Element Msg)
 viewFinalizationData ctx finalizationData =
     case finalizationData of
         Just data ->
@@ -417,7 +413,7 @@ viewFinalizationData ctx finalizationData =
                   row []
                     [ text <| "Finalized "
                     , el
-                        [ onClick (ChainMsg (BlockClicked data.blockPointer))
+                        [ onClick (ChainMsg (Chain.BlockClicked data.blockPointer))
                         , pointer
                         ]
                       <|
@@ -454,6 +450,7 @@ viewFinalizationData ctx finalizationData =
             []
 
 
+iconForEvent : Context a -> TransactionEvent -> Element msg
 iconForEvent ctx event_ =
     case event_ of
         TransactionEventTransfer event ->
@@ -508,6 +505,7 @@ iconForEvent ctx event_ =
             text "UNIMPLEMENTED"
 
 
+iconForTag : Context a -> String -> Element msg
 iconForTag ctx tag =
     case tag of
         "InvalidStakeDelegationTarget" ->
@@ -771,6 +769,7 @@ viewTransactionEvent ctx txEvent txSummary =
                 ]
 
 
+viewAsAddressContract : Context a -> ContractAddress -> Element Msg
 viewAsAddressContract ctx contractAddress =
     let
         content =
@@ -816,43 +815,6 @@ viewAddress ctx addr =
                 ]
 
 
+arrowRight : Element msg
 arrowRight =
     el [ paddingXY 8 0 ] (html <| Icons.arrow_right 18)
-
-
-testStubs ctx model =
-    column []
-        [ text "Test stubs: "
-        , blockSummaryStubs
-            |> List.map (viewStub ctx model)
-            |> column [ spacing 10 ]
-        ]
-
-
-viewStub ctx model ( description, stub ) =
-    case D.decodeString Explorer.Request.blockSummaryDecoder stub of
-        Ok blockSummary ->
-            let
-                explorerModel =
-                    model.explorerModel
-
-                newExplorerModel =
-                    { explorerModel | blockSummary = Success blockSummary }
-            in
-            column [ width fill, spacing 10 ]
-                [ el [ width fill, height (px 2), Background.color ctx.palette.warning ] none
-                , paragraph [ Font.color ctx.palette.warning ] [ text description ]
-                , view ctx newExplorerModel.blockInfo newExplorerModel.blockSummary
-                ]
-
-        -- ( { model | explorerModel = newExplorerModel }, Cmd.none )
-        Err err ->
-            -- let
-            --     x =
-            --         Debug.log "getBlockSummaryStub decoding" (D.errorToString err)
-            -- in
-            column [ width fill, spacing 10 ]
-                [ el [ width fill, height (px 2), Background.color ctx.palette.warning ] none
-                , paragraph [ Font.color ctx.palette.warning ] [ text description ]
-                , text <| D.errorToString err
-                ]
