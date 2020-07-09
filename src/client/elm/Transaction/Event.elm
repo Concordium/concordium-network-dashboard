@@ -4,6 +4,7 @@ import Json.Decode as D
 import Json.Decode.Pipeline exposing (required)
 
 
+
 -- Based on https://gitlab.com/Concordium/consensus/globalstate-types/-/blob/master/src/Concordium/Types/Execution.hs#L353
 
 

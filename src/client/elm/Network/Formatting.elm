@@ -5,13 +5,13 @@ import Element exposing (..)
 import Element.Font as Font
 import Iso8601
 import List.Extra as List
+import Network exposing (Host, NetworkNode)
 import Palette exposing (Palette)
 import Round
 import Time exposing (Posix)
 import Time.Distance exposing (inWordsWithConfig)
 import Time.Distance.Types exposing (..)
 import Time.Extra
-import Types exposing (..)
 
 
 formatTimeBetween : Posix -> Posix -> String
@@ -52,10 +52,6 @@ formatTimeIntervalMs milliseconds =
         ++ formatIfNotZero h "h"
         ++ formatIfNotZero m "m"
         ++ formatIfNotZero s "s"
-
-
-
---++ formatIfNotZero ms "ms"
 
 
 asTimeAgoDuration : Float -> String
@@ -314,20 +310,6 @@ formatPing palette averagePing =
 
         Nothing ->
             el [ Font.color palette.failure ] (text "n/a")
-
-
-justs : List (Maybe a) -> List a
-justs =
-    List.foldl
-        (\v acc ->
-            case v of
-                Just x ->
-                    [ x ] ++ acc
-
-                Nothing ->
-                    acc
-        )
-        []
 
 
 ellipsis : Int -> String -> String

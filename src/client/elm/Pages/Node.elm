@@ -1,20 +1,20 @@
 module Pages.Node exposing (nodeView, view)
 
-import Network.Formatting exposing (..)
-import Network.Widgets exposing (..)
+import Context exposing (Context)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Html
 import Html.Attributes exposing (style)
-import NodeHelpers exposing (..)
+import Network exposing (Host, Model, Msg(..), NetworkNode, findNodeById)
+import Network.Formatting exposing (..)
+import Network.Widgets exposing (..)
 import RemoteData exposing (RemoteData(..))
-import Types exposing (..)
 
 
-view : Model -> Element Msg
-view model =
+view : Context a -> Model -> Element Msg
+view ctx model =
     content <|
         row [ paddingXY 0 20, spacing 20 ]
             [ case model.selectedNode of
@@ -31,12 +31,12 @@ view model =
                     el [ alignTop ] (text <| "Unknown node ID: " ++ nodeId ++ ".")
 
                 Success (Ok node) ->
-                    nodeView node model
+                    nodeView ctx node model
             ]
 
 
-nodeView : NetworkNode -> Model -> Element Msg
-nodeView node model =
+nodeView : Context a -> NetworkNode -> Model -> Element Msg
+nodeView ctx node model =
     let
         pairs =
             [ ( "Node name", el [ width (px 400) ] <| forceWrapTextElement node.nodeName )
@@ -44,7 +44,7 @@ nodeView node model =
             , ( "Baker ID", text <| Maybe.withDefault "n/a" <| Maybe.map String.fromFloat node.consensusBakerId )
             , ( "Uptime", text <| asTimeAgoDuration node.uptime )
             , ( "Software version", text node.client )
-            , ( "Average ping time", formatPing model.palette node.averagePing )
+            , ( "Average ping time", formatPing ctx.palette node.averagePing )
             , ( "Number of peers", text <| String.fromFloat node.peersCount )
             , ( "Best block", text node.bestBlock )
             , ( "Height of best block", text <| String.fromFloat node.bestBlockHeight )
@@ -58,7 +58,7 @@ nodeView node model =
             , ( "Finalization period (EMSD)", text <| String.fromFloat <| Maybe.withDefault 0 node.finalizationPeriodEMSD )
             , ( "Number of packets sent", text <| String.fromFloat node.packetsSent )
             , ( "Number of packets received", text <| String.fromFloat node.packetsReceived )
-            , ( "Peers", remoteDataView model.palette (\nodes -> peersListView nodes node.peersList) model.nodes )
+            , ( "Peers", remoteDataView ctx.palette (\nodes -> peersListView nodes node.peersList) model.nodes )
             ]
 
         statRows =
@@ -66,12 +66,12 @@ nodeView node model =
                 |> List.map
                     (\( label, elem ) ->
                         row [ height (shrink |> minimum 30) ]
-                            [ column [ width (px 300), Font.color model.palette.fg1, alignTop ] [ text label ]
+                            [ column [ width (px 300), Font.color ctx.palette.fg1, alignTop ] [ text label ]
                             , column [ width fill, alignTop ] [ elem ]
                             ]
                     )
     in
-    column [ Font.color model.palette.success ]
+    column [ Font.color ctx.palette.success ]
         statRows
 
 
