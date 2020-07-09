@@ -1,14 +1,14 @@
 module Network.NodesTable exposing (..)
 
 import Context exposing (Context)
-import Network.Formatting exposing (..)
 import Element exposing (..)
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Helpers exposing (..)
+import Network exposing (Msg(..), NetworkNode, SortBy(..), SortMode(..))
+import Network.Formatting exposing (..)
 import Palette exposing (Palette)
 import Round
-import Types exposing (..)
 
 
 nodesTable : Context a -> SortMode -> List NetworkNode -> Element Msg
@@ -132,10 +132,6 @@ nodesTable ctx sortMode nodes =
             }
 
 
-hashSnippet hash =
-    String.left 6 hash ++ "..."
-
-
 sortableHeader : Context a -> SortMode -> SortBy -> String -> Element Msg
 sortableHeader ctx sortMode sortBy name =
     let
@@ -222,6 +218,7 @@ sortNodesMode sortMode listNodes =
             listNodes
 
 
+sortNodesBy : SortBy -> List NetworkNode -> List NetworkNode
 sortNodesBy sortBy listNodes =
     case sortBy of
         SortName ->
