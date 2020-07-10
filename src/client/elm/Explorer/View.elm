@@ -13,6 +13,7 @@ import Icons exposing (..)
 import Palette exposing (withAlphaEl)
 import RemoteData exposing (RemoteData(..), WebData)
 import Round
+import Svg exposing (Svg)
 import Time
 import TimeHelpers
 import Transaction.Event exposing (..)
@@ -89,8 +90,8 @@ viewContainer ctx content =
 viewHeader : Context a -> BlockInfo -> Element Msg
 viewHeader ctx blockInfo =
     row ([ width fill, spacing 15, paddingXY 6 0 ] ++ bottomBorder ctx)
-        [ viewBlockHash ctx blockInfo
-        , viewParentLink ctx blockInfo
+        [ viewParentLink ctx blockInfo
+        , viewBlockHash ctx blockInfo
         , viewBlockStats ctx blockInfo
         ]
 
@@ -101,17 +102,20 @@ viewParentLink ctx blockInfo =
         color =
             blockColor ctx blockInfo
                 |> withAlphaEl 0.5
+
+        icon =
+            blockIcon blockInfo 20
     in
     row
         [ Font.color color
         , pointer
         , onClick (ChainMsg (Chain.BlockClicked blockInfo.blockParent))
         ]
-        [ row [ stringTooltipAbove ctx "View parent block" ]
-            [ el [] (html <| Icons.block_not_finalized 20)
-            , el [] (html <| Icons.arrow_left 20)
+        [ row [ stringTooltipAbove ctx "Go to parent block" ]
+            [ el [] (html icon)
             , el [ width (px 2) ] none
-            , text <| String.left 8 blockInfo.blockParent
+            , el [ Font.color color ] (text <| String.left 4 blockInfo.blockParent)
+            , el [] (html <| Icons.arrow_left 20)
             ]
         ]
 
@@ -124,12 +128,11 @@ viewBlockHash ctx blockInfo =
             , String.dropLeft 4 blockInfo.blockHash
             )
 
-        ( icon, color ) =
-            if blockInfo.finalized == True then
-                ( html <| Icons.block_finalized 20, ctx.palette.c2 )
+        icon =
+            blockIcon blockInfo 20
 
-            else
-                ( html <| Icons.block_not_finalized 20, ctx.palette.c1 )
+        color =
+            blockColor ctx blockInfo
     in
     el [ paddingXY 0 6 ]
         (row
@@ -141,7 +144,7 @@ viewBlockHash ctx blockInfo =
             , stringTooltipAboveWithCopy ctx "Block hash"
             , onClick (CopyToClipboard blockInfo.blockHash)
             ]
-            [ el [] icon
+            [ el [] (html icon)
             , el [ width (px 10) ] none
             , paragraph []
                 [ el [ Font.color color ] (text short)
@@ -158,6 +161,15 @@ blockColor ctx blockInfo =
 
     else
         ctx.palette.c1
+
+
+blockIcon : BlockInfo -> Float -> Svg msg
+blockIcon blockInfo =
+    if blockInfo.finalized == True then
+        Icons.block_finalized
+
+    else
+        Icons.block_not_finalized
 
 
 viewBlockStats : Context a -> BlockInfo -> Element Msg

@@ -22,8 +22,8 @@ import Material.Icons.Sharp as Icon
 import Material.Icons.Types exposing (Coloring(..))
 import Network exposing (viewSummaryWidgets)
 import Network.Logo as Logo
-import Network.NodesTable
 import Network.Node
+import Network.NodesTable
 import Palette exposing (ColorMode(..), Palette)
 import Route exposing (Route(..))
 import Storage
