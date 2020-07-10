@@ -2,15 +2,20 @@ port module Network exposing (..)
 
 import Browser.Navigation as Nav exposing (Key)
 import Config
+import Context exposing (Context)
 import Dict exposing (Dict)
 import Dict.Extra as Dict
+import Element exposing (..)
+import Formatting exposing (asSecondsAgo, averageStatSecondsFor)
 import Http
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
+import List.Extra as List
 import RemoteData exposing (RemoteData(..), WebData)
 import Route exposing (Route(..))
 import ScrollHelpers exposing (scrollPageToTop)
 import Time
+import Widgets exposing (viewWidget)
 
 
 port nodeInfo : (NetworkNode -> msg) -> Sub msg
@@ -207,3 +212,174 @@ nodeSummariesDecoder =
 findNodeById : String -> Dict Host NetworkNode -> Maybe NetworkNode
 findNodeById nodeId =
     Dict.find (\_ n -> n.nodeId == nodeId) >> Maybe.map Tuple.second
+
+
+viewSummaryWidgets : Context a -> WebData (Dict Host NetworkNode) -> Element msg
+viewSummaryWidgets ctx remoteNodes =
+    column [ spacing 12, width fill ]
+        [ wrappedRow [ spacing 12, width fill ]
+            (List.map (viewWidget ctx)
+                [ { color = ctx.palette.c3
+                  , title = "Active nodes"
+                  , description = ""
+                  , icon = "/assets/images/icon-nodes-purple.png"
+                  , value =
+                        RemoteData.map
+                            (\nodes ->
+                                String.fromInt <| Dict.size <| nodePeersOnly nodes
+                            )
+                            remoteNodes
+                  , subvalue = Nothing
+                  }
+                , { color = ctx.palette.c1
+                  , title = "Last Block"
+                  , description = ""
+                  , icon = "/assets/images/icon-lastblock-lightblue.png"
+                  , value =
+                        RemoteData.map
+                            (\nodes ->
+                                majorityStatFor
+                                    (\n ->
+                                        asSecondsAgo
+                                            ctx.time
+                                            (Maybe.withDefault "" n.bestArrivedTime)
+                                    )
+                                    ""
+                                    nodes
+                            )
+                            remoteNodes
+                  , subvalue = Nothing
+                  }
+                , { color = ctx.palette.c2
+                  , title = "Last Finalization"
+                  , description = ""
+                  , icon = "/assets/images/icon-blocklastfinal-green.png"
+                  , value =
+                        RemoteData.map
+                            (\nodes ->
+                                asSecondsAgo ctx.time
+                                    (Maybe.withDefault ""
+                                        (withinHighestStatFor
+                                            .finalizedBlockHeight
+                                            nodes
+                                            .finalizedTime
+                                        )
+                                    )
+                            )
+                            remoteNodes
+                  , subvalue = Nothing
+                  }
+                , { color = ctx.palette.c1
+                  , title = "Chain Length"
+                  , description = ""
+                  , icon = "/assets/images/icon-blocks-blue.png"
+                  , value =
+                        RemoteData.map
+                            (\nodes -> String.fromInt <| round (majorityStatFor .bestBlockHeight -1 nodes))
+                            remoteNodes
+                  , subvalue = Nothing
+                  }
+                , { color = ctx.palette.c2
+                  , title = "Finalized Length"
+                  , description = ""
+                  , icon = "/assets/images/icon-blocksfinal-green.png"
+                  , value =
+                        RemoteData.map
+                            (\nodes -> String.fromInt <| round (majorityStatFor .finalizedBlockHeight -1 nodes))
+                            remoteNodes
+                  , subvalue = Nothing
+                  }
+                ]
+            )
+        , wrappedRow [ spacing 12, width fill ]
+            (List.map (viewWidget ctx)
+                [ { color = ctx.palette.c4
+                  , title = "Block Time"
+                  , description = "Average time between verified blocks"
+                  , icon = "/assets/images/icon-rocket-pink.png"
+                  , value =
+                        RemoteData.map
+                            (\nodes -> averageStatSecondsFor .blockArrivePeriodEMA nodes)
+                            remoteNodes
+                  , subvalue =
+                        Nothing
+                  }
+                , { color = ctx.palette.c4
+                  , title = "Finalization Time"
+                  , description = "Average time between completed finalizations"
+                  , icon = "/assets/images/icon-rocket-pink.png"
+                  , value =
+                        RemoteData.map
+                            (\nodes -> averageStatSecondsFor .finalizationPeriodEMA nodes)
+                            remoteNodes
+                  , subvalue =
+                        Nothing
+                  }
+                ]
+            )
+        ]
+
+
+nodePeersOnly : Dict Host NetworkNode -> Dict Host NetworkNode
+nodePeersOnly nodes =
+    nodes |> Dict.filter (\_ n -> n.peerType == "Node")
+
+
+{-| For the given node attribute, finds majority value across all nodes
+and returns that, or the default if unknown.
+-}
+majorityStatFor :
+    (NetworkNode -> comparable)
+    -> comparable
+    -> Dict Host NetworkNode
+    -> comparable
+majorityStatFor getter default nodes =
+    let
+        stats =
+            nodes
+                |> Dict.toList
+                |> List.map Tuple.second
+                |> List.map getter
+
+        highestResult =
+            stats
+                |> List.foldl
+                    (\v dict ->
+                        Dict.update v
+                            (\mCount ->
+                                case mCount of
+                                    Just count ->
+                                        Just <| count + 1
+
+                                    Nothing ->
+                                        Just 1
+                            )
+                            dict
+                    )
+                    Dict.empty
+                |> Dict.toList
+                |> List.maximumBy (\( attr, count ) -> count)
+    in
+    case highestResult of
+        Just ( highestSeenKey, groupedDictCount ) ->
+            highestSeenKey
+
+        Nothing ->
+            default
+
+
+{-| For the given node attribute, finds highest value across all
+nodes and returns that, or the default if unknown
+-}
+withinHighestStatFor :
+    (NetworkNode -> Float)
+    -> Dict.Dict String NetworkNode
+    -> (NetworkNode -> Maybe String)
+    -> Maybe String
+withinHighestStatFor getter nodes withinGetter =
+    nodes
+        |> Dict.toList
+        |> List.map Tuple.second
+        |> List.maximumBy (\node -> getter node)
+        |> Maybe.map withinGetter
+        |> Maybe.withDefault (Just "")
