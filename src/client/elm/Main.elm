@@ -9,30 +9,44 @@ import Config
 import Context exposing (Context)
 import Element exposing (..)
 import Element.Background as Background
+import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Explorer
 import Explorer.Request
+import Explorer.View
 import Html exposing (Html)
 import Json.Decode as D
 import Json.Encode as E
 import Material.Icons.Sharp as Icon
 import Material.Icons.Types exposing (Coloring(..))
-import Network
+import Network exposing (viewSummaryWidgets)
 import Network.Logo as Logo
-import Pages.Chain
-import Pages.Network
-import Pages.Node
+import Network.NodesTable
+import Network.Node
 import Palette exposing (ColorMode(..), Palette)
 import Route exposing (Route(..))
 import Storage
 import Time
 import Types exposing (..)
 import Url exposing (Url)
+import Widgets exposing (content)
 
 
 type alias Flags =
     { width : Int, height : Int }
+
+
+main : Program Flags Model Msg
+main =
+    Browser.application
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        , onUrlRequest = UrlClicked
+        , onUrlChange = UrlChanged
+        }
 
 
 init : Flags -> Url -> Key -> ( Model, Cmd Msg )
@@ -57,75 +71,6 @@ init flags url key =
         , Cmd.map ExplorerMsg <| Explorer.Request.getConsensusStatus Explorer.ReceivedConsensusStatus
         ]
     )
-
-
-view : Model -> Browser.Document Msg
-view model =
-    { title = "Concordium Dashboard"
-    , body =
-        [ theme model.palette <|
-            column
-                [ width fill
-                , Background.color model.palette.bg1
-                , paddingEach { bottom = 60, left = 0, right = 0, top = 0 }
-                ]
-                [ viewHeader model
-                , case model.currentRoute of
-                    Network ->
-                        Element.map NetworkMsg <| Pages.Network.view model model.networkModel
-
-                    NodeView nodeName ->
-                        Element.map NetworkMsg <| Pages.Node.view model model.networkModel
-
-                    ChainInit ->
-                        Pages.Chain.view model
-
-                    ChainSelected hash ->
-                        Pages.Chain.view model
-                ]
-        ]
-    }
-
-
-viewHeader : Context a -> Element Msg
-viewHeader ctx =
-    let
-        linkstyle =
-            [ mouseOver [ Font.color ctx.palette.fg1 ] ]
-    in
-    row [ width fill, height (px 70), paddingXY 30 0 ]
-        [ link []
-            { url = "/"
-            , label =
-                row [ spacing 12 ]
-                    [ el [] (html <| Logo.concordiumLogo 24 (Palette.uiToColor ctx.palette.fg1))
-                    , el [] (html <| Logo.concordiumText 110 (Palette.uiToColor ctx.palette.fg1))
-                    ]
-            }
-        , row [ alignRight, spacing 20, Font.color ctx.palette.fg2 ]
-            [ link linkstyle { url = "/", label = text "Network" }
-            , link linkstyle { url = "/chain", label = text "Chain" }
-            , viewColorModeToggle ctx
-            ]
-        ]
-
-
-viewColorModeToggle : Context a -> Element Msg
-viewColorModeToggle ctx =
-    case ctx.colorMode of
-        Palette.Dark ->
-            el
-                [ onClick ToggleDarkMode
-                , mouseOver [ Font.color ctx.palette.fg1 ]
-                ]
-                (html <| Icon.brightness_5 14 Inherit)
-
-        Palette.Light ->
-            el
-                [ onClick ToggleDarkMode
-                , mouseOver [ Font.color ctx.palette.fg1 ]
-                ]
-                (html <| Icon.brightness_2 14 Inherit)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -274,16 +219,94 @@ subscriptions model =
         ]
 
 
-main : Program Flags Model Msg
-main =
-    Browser.application
-        { init = init
-        , view = view
-        , update = update
-        , subscriptions = subscriptions
-        , onUrlRequest = UrlClicked
-        , onUrlChange = UrlChanged
-        }
+view : Model -> Browser.Document Msg
+view model =
+    { title = "Concordium Dashboard"
+    , body =
+        [ theme model.palette <|
+            column
+                [ width fill
+                , Background.color model.palette.bg1
+                , paddingEach { bottom = 60, left = 0, right = 0, top = 0 }
+                ]
+                [ viewHeader model
+                , case model.currentRoute of
+                    Network ->
+                        Element.map NetworkMsg <| Network.NodesTable.view model model.networkModel
+
+                    NodeView nodeName ->
+                        Element.map NetworkMsg <| Network.Node.view model model.networkModel
+
+                    ChainInit ->
+                        viewChain model
+
+                    ChainSelected hash ->
+                        viewChain model
+                ]
+        ]
+    }
+
+
+viewHeader : Context a -> Element Msg
+viewHeader ctx =
+    let
+        linkstyle =
+            [ mouseOver [ Font.color ctx.palette.fg1 ] ]
+    in
+    row [ width fill, height (px 70), paddingXY 30 0 ]
+        [ link []
+            { url = "/"
+            , label =
+                row [ spacing 12 ]
+                    [ el [] (html <| Logo.concordiumLogo 24 (Palette.uiToColor ctx.palette.fg1))
+                    , el [] (html <| Logo.concordiumText 110 (Palette.uiToColor ctx.palette.fg1))
+                    ]
+            }
+        , row [ alignRight, spacing 20, Font.color ctx.palette.fg2 ]
+            [ link linkstyle { url = "/", label = text "Network" }
+            , link linkstyle { url = "/chain", label = text "Chain" }
+            , viewColorModeToggle ctx
+            ]
+        ]
+
+
+viewColorModeToggle : Context a -> Element Msg
+viewColorModeToggle ctx =
+    case ctx.colorMode of
+        Palette.Dark ->
+            el
+                [ onClick ToggleDarkMode
+                , mouseOver [ Font.color ctx.palette.fg1 ]
+                ]
+                (html <| Icon.brightness_5 14 Inherit)
+
+        Palette.Light ->
+            el
+                [ onClick ToggleDarkMode
+                , mouseOver [ Font.color ctx.palette.fg1 ]
+                ]
+                (html <| Icon.brightness_2 14 Inherit)
+
+
+viewChain : Model -> Element Msg
+viewChain model =
+    content <|
+        column [ width fill, height fill, spacing 20 ]
+            [ viewSummaryWidgets model model.networkModel.nodes
+            , el
+                [ width fill
+                , height (fill |> minimum 200)
+                , Background.color <| Palette.darkish model.palette.bg2
+                , Border.color <| model.palette.bg2
+                , Border.rounded 6
+                , Border.width 1
+                ]
+                (Chain.view model model.chainModel False)
+                |> Element.map ChainMsg
+            , Explorer.View.view model
+                model.explorerModel.blockInfo
+                model.explorerModel.blockSummary
+            ]
 
 
 theme : Palette Color -> Element msg -> Html.Html msg
