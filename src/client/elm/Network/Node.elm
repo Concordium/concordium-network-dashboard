@@ -1,16 +1,16 @@
-module Pages.Node exposing (nodeView, view)
+module Network.Node exposing (..)
 
 import Context exposing (Context)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Events exposing (onClick)
 import Element.Font as Font
+import Formatting exposing (asTimeAgoDuration, formatPing)
 import Html
 import Html.Attributes exposing (style)
 import Network exposing (Host, Model, Msg(..), NetworkNode, findNodeById)
-import Network.Formatting exposing (..)
-import Network.Widgets exposing (..)
 import RemoteData exposing (RemoteData(..))
+import Widgets exposing (content, remoteDataView)
 
 
 view : Context a -> Model -> Element Msg
@@ -31,12 +31,12 @@ view ctx model =
                     el [ alignTop ] (text <| "Unknown node ID: " ++ nodeId ++ ".")
 
                 Success (Ok node) ->
-                    nodeView ctx node model
+                    viewSelectedNode ctx node model
             ]
 
 
-nodeView : Context a -> NetworkNode -> Model -> Element Msg
-nodeView ctx node model =
+viewSelectedNode : Context a -> NetworkNode -> Model -> Element Msg
+viewSelectedNode ctx node model =
     let
         pairs =
             [ ( "Node name", el [ width (px 400) ] <| forceWrapTextElement node.nodeName )
@@ -58,7 +58,7 @@ nodeView ctx node model =
             , ( "Finalization period (EMSD)", text <| String.fromFloat <| Maybe.withDefault 0 node.finalizationPeriodEMSD )
             , ( "Number of packets sent", text <| String.fromFloat node.packetsSent )
             , ( "Number of packets received", text <| String.fromFloat node.packetsReceived )
-            , ( "Peers", remoteDataView ctx.palette (\nodes -> peersListView nodes node.peersList) model.nodes )
+            , ( "Peers", remoteDataView ctx.palette (\nodes -> viewPeerList nodes node.peersList) model.nodes )
             ]
 
         statRows =
@@ -87,8 +87,8 @@ forceWrapTextElement t =
             ]
 
 
-peersListView : Dict Host NetworkNode -> List String -> Element Msg
-peersListView nodes peersList =
+viewPeerList : Dict Host NetworkNode -> List String -> Element Msg
+viewPeerList nodes peersList =
     column [ width fill ]
         (List.map
             (\peerNodeId ->
