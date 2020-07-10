@@ -1,11 +1,9 @@
-module Network.Formatting exposing (..)
+module Formatting exposing (..)
 
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Font as Font
 import Iso8601
-import List.Extra as List
-import Network exposing (Host, NetworkNode)
 import Palette exposing (Palette)
 import Round
 import Time exposing (Posix)
@@ -213,66 +211,6 @@ secondsAsText secondsAgo =
     String.concat partsString
 
 
-{-| For the given node attribute, finds majority value across all nodes
-and returns that, or the default if unknown.
--}
-majorityStatFor :
-    (NetworkNode -> comparable)
-    -> comparable
-    -> Dict Host NetworkNode
-    -> comparable
-majorityStatFor getter default nodes =
-    let
-        stats =
-            nodes
-                |> Dict.toList
-                |> List.map Tuple.second
-                |> List.map getter
-
-        highestResult =
-            stats
-                |> List.foldl
-                    (\v dict ->
-                        Dict.update v
-                            (\mCount ->
-                                case mCount of
-                                    Just count ->
-                                        Just <| count + 1
-
-                                    Nothing ->
-                                        Just 1
-                            )
-                            dict
-                    )
-                    Dict.empty
-                |> Dict.toList
-                |> List.maximumBy (\( attr, count ) -> count)
-    in
-    case highestResult of
-        Just ( highestSeenKey, groupedDictCount ) ->
-            highestSeenKey
-
-        Nothing ->
-            default
-
-
-{-| For the given node attribute, finds highest value across all
-nodes and returns that, or the default if unknown
--}
-withinHighestStatFor :
-    (NetworkNode -> Float)
-    -> Dict.Dict String NetworkNode
-    -> (NetworkNode -> Maybe String)
-    -> Maybe String
-withinHighestStatFor getter nodes withinGetter =
-    nodes
-        |> Dict.toList
-        |> List.map Tuple.second
-        |> List.maximumBy (\node -> getter node)
-        |> Maybe.map withinGetter
-        |> Maybe.withDefault (Just "")
-
-
 averageStatSecondsFor : (b -> Maybe Float) -> Dict a b -> String
 averageStatSecondsFor getter nodes =
     let
@@ -315,7 +253,7 @@ formatPing palette averagePing =
 ellipsis : Int -> String -> String
 ellipsis maxLength string =
     if String.length string > maxLength then
-        String.left 30 string ++ "..."
+        String.left maxLength string ++ "..."
 
     else
         string

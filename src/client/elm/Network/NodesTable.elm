@@ -1,14 +1,38 @@
 module Network.NodesTable exposing (..)
 
 import Context exposing (Context)
+import Dict
 import Element exposing (..)
 import Element.Events exposing (onClick)
 import Element.Font as Font
+import Formatting exposing (..)
 import Helpers exposing (..)
-import Network exposing (Msg(..), NetworkNode, SortBy(..), SortMode(..))
-import Network.Formatting exposing (..)
+import Network exposing (Host, Model, Msg(..), NetworkNode, SortBy(..), SortMode(..), viewSummaryWidgets)
 import Palette exposing (Palette)
 import Round
+import Widgets exposing (content, remoteDataView)
+
+
+view : Context a -> Model -> Element Msg
+view ctx model =
+    content <|
+        column [ spacing 30, width fill ]
+            [ viewSummaryWidgets ctx model.nodes
+            , remoteDataView ctx.palette
+                (\nodes ->
+                    let
+                        listNodes =
+                            nodes
+                                |> Dict.toList
+                                |> List.map Tuple.second
+
+                        sortedNodes =
+                            sortNodesMode model.sortMode listNodes
+                    in
+                    nodesTable ctx model.sortMode sortedNodes
+                )
+                model.nodes
+            ]
 
 
 nodesTable : Context a -> SortMode -> List NetworkNode -> Element Msg

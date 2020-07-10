@@ -10,7 +10,6 @@ import Element.Font as Font
 import Explorer.Request exposing (..)
 import Helpers exposing (..)
 import Icons exposing (..)
-import Network.Widgets exposing (remoteDataView)
 import Palette exposing (withAlphaEl)
 import RemoteData exposing (RemoteData(..), WebData)
 import Round
@@ -19,6 +18,7 @@ import TimeHelpers
 import Transaction.Event exposing (..)
 import Transaction.Summary exposing (..)
 import Types exposing (Msg(..))
+import Widgets exposing (arrowRight, remoteDataView)
 
 
 view : Context a -> WebData BlockInfo -> WebData BlockSummary -> Element Msg
@@ -105,7 +105,6 @@ viewParentLink ctx blockInfo =
     row
         [ Font.color color
         , pointer
-
         , onClick (ChainMsg (Chain.BlockClicked blockInfo.blockParent))
         ]
         [ row [ stringTooltipAbove ctx "View parent block" ]
@@ -813,8 +812,3 @@ viewAddress ctx addr =
                 [ el [ Font.color ctx.palette.danger ] (html <| Icons.close 18)
                 , text "(Error: Address Failed)"
                 ]
-
-
-arrowRight : Element msg
-arrowRight =
-    el [ paddingXY 8 0 ] (html <| Icons.arrow_right 18)
