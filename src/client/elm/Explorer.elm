@@ -18,7 +18,6 @@ type alias Model =
 
 type Msg
     = ReceivedConsensusStatus (Result Http.Error ConsensusStatus)
-    | RequestedBlockInfo BlockHash
     | ReceivedBlockInfo (Result Http.Error BlockInfo)
     | ReceivedBlockSummary (Result Http.Error BlockSummary)
 
@@ -45,9 +44,6 @@ update msg model =
                     --         Debug.log <| "ReceivedConsensusStatus:err" ++ httpErrorToString err
                     -- in
                     ( model, Cmd.none )
-
-        RequestedBlockInfo blockHash ->
-            ( model, getBlockInfo blockHash ReceivedBlockInfo )
 
         ReceivedBlockInfo blockInfoRes ->
             -- let
