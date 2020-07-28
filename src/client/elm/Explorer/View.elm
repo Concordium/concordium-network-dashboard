@@ -1,6 +1,5 @@
 module Explorer.View exposing (..)
 
-import Chain
 import Context exposing (Context)
 import Element exposing (..)
 import Element.Background as Background
@@ -18,8 +17,12 @@ import Time
 import TimeHelpers
 import Transaction.Event exposing (..)
 import Transaction.Summary exposing (..)
-import Types exposing (Msg(..))
 import Widgets exposing (arrowRight, remoteDataView)
+
+
+type Msg
+    = CopyToClipboard String
+    | BlockClicked String
 
 
 view : Context a -> WebData BlockInfo -> WebData BlockSummary -> Element Msg
@@ -67,7 +70,7 @@ view ctx remoteBlockInfo remoteBlockSummary =
         ]
 
 
-viewContainer : Context a -> Element Msg -> Element Msg
+viewContainer : Context a -> Element msg -> Element msg
 viewContainer ctx content =
     el
         [ height fill
@@ -109,7 +112,7 @@ viewParentLink ctx blockInfo =
     row
         [ Font.color color
         , pointer
-        , onClick (ChainMsg (Chain.BlockClicked blockInfo.blockParent))
+        , onClick (BlockClicked blockInfo.blockParent)
         ]
         [ row [ stringTooltipAbove ctx "Go to parent block" ]
             [ el [] (html icon)
@@ -311,7 +314,6 @@ viewTransaction ctx txSummary =
                 |> List.map v
                 |> column [ width fill ]
 
-        -- v (List.head events)
         TransactionRejected tag contents ->
             row
                 ([ width fill
@@ -424,7 +426,7 @@ viewFinalizationData ctx finalizationData =
                   row []
                     [ text <| "Finalized "
                     , el
-                        [ onClick (ChainMsg (Chain.BlockClicked data.blockPointer))
+                        [ onClick (BlockClicked data.blockPointer)
                         , pointer
                         ]
                       <|
