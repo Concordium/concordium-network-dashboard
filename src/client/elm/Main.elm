@@ -28,7 +28,6 @@ import Palette exposing (ColorMode(..), Palette)
 import Route exposing (Route(..))
 import Storage
 import Time
-import Types exposing (..)
 import Url exposing (Url)
 import Widgets exposing (content)
 
@@ -36,6 +35,32 @@ import Widgets exposing (content)
 type alias Flags =
     { width : Int, height : Int }
 
+
+type alias Model =
+    { key : Key
+    , time : Time.Posix
+    , window : { width : Int, height : Int }
+    , palette : Palette Element.Color
+    , colorMode : ColorMode
+    , currentRoute : Route
+    , networkModel : Network.Model
+    , chainModel : Chain.Model
+    , explorerModel : Explorer.Model
+    }
+
+
+type Msg
+    = CurrentTime Time.Posix
+    | UrlClicked UrlRequest
+    | UrlChanged Url
+    | WindowResized Int Int
+    | CopyToClipboard String
+    | StorageDocReceived D.Value
+      --
+    | NetworkMsg Network.Msg
+    | ChainMsg Chain.Msg
+    | ToggleDarkMode
+    | ExplorerMsg Explorer.Msg
 
 main : Program Flags Model Msg
 main =
@@ -158,9 +183,6 @@ update msg model =
                     Chain.update model chainMsg model.chainModel
             in
             ( { model | chainModel = chainModel }, Cmd.map ChainMsg chainCmd )
-
-        BlockSelected hash ->
-            ( model, Explorer.Request.getBlockInfo hash (ExplorerMsg << Explorer.ReceivedBlockInfo) )
 
         ToggleDarkMode ->
             case model.colorMode of
@@ -303,10 +325,21 @@ viewChain model =
                 ]
                 (Chain.view model model.chainModel False)
                 |> Element.map ChainMsg
-            , Explorer.View.view model
-                model.explorerModel.blockInfo
-                model.explorerModel.blockSummary
+            , Element.map translateMsg <|
+                Explorer.View.view model
+                    model.explorerModel.blockInfo
+                    model.explorerModel.blockSummary
             ]
+
+
+translateMsg : Explorer.View.Msg -> Msg
+translateMsg msg =
+    case msg of
+        Explorer.View.CopyToClipboard str ->
+            CopyToClipboard str
+
+        Explorer.View.BlockClicked block ->
+            ChainMsg (Chain.BlockClicked block)
 
 
 theme : Palette Color -> Element msg -> Html.Html msg
