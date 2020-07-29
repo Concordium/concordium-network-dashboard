@@ -62,6 +62,7 @@ type Msg
     | ToggleDarkMode
     | ExplorerMsg Explorer.Msg
 
+
 main : Program Flags Model Msg
 main =
     Browser.application
@@ -79,21 +80,29 @@ init flags url key =
     let
         ( chainInit, chainCmd ) =
             Chain.init Config.collector
+
+        route =
+            Route.fromUrl url
+
+        ( initModel, initCmd ) =
+            onRouteInit
+                route
+                { key = key
+                , window = flags
+                , time = Time.millisToPosix 0
+                , palette = Palette.defaultDark
+                , colorMode = Dark
+                , currentRoute = route
+                , networkModel = Network.init
+                , chainModel = chainInit
+                , explorerModel = Explorer.init
+                }
     in
-    ( { key = key
-      , window = flags
-      , time = Time.millisToPosix 0
-      , palette = Palette.defaultDark
-      , colorMode = Dark
-      , currentRoute = Route.fromUrl url
-      , networkModel = Network.init
-      , chainModel = chainInit
-      , explorerModel = Explorer.init
-      }
+    ( initModel
     , Cmd.batch
-        [ Storage.loadAll ()
+        [ initCmd
+        , Storage.loadAll ()
         , Cmd.map ChainMsg chainCmd
-        , Cmd.map ExplorerMsg <| Explorer.Request.getConsensusStatus Explorer.ReceivedConsensusStatus
         ]
     )
 
@@ -211,7 +220,9 @@ onRouteInit page model =
             ( { model | networkModel = Network.selectNode model.networkModel nodeId }, Cmd.none )
 
         ChainInit ->
-            ( model, Cmd.none )
+            ( model
+            , Explorer.Request.getConsensusStatus (ExplorerMsg << Explorer.ReceivedConsensusStatus)
+            )
 
         ChainSelected hash ->
             ( { model | chainModel = Chain.selectBlock model.chainModel hash }
