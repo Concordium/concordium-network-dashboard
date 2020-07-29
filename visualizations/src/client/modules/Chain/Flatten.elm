@@ -2,7 +2,7 @@ module Chain.Flatten exposing (..)
 
 import Chain.Build exposing (Block, BlockStatus(..))
 import Circle2d exposing (Circle2d)
-import Color exposing (Color, rgb)
+import Color exposing (Color)
 import Context exposing (Context)
 import Element
 import GeometryUtils exposing (TopLeftCoordinates)
@@ -12,7 +12,7 @@ import Palette exposing (Palette)
 import Pixels exposing (Pixels(..))
 import Point2d exposing (Point2d)
 import Rectangle2d exposing (Rectangle2d)
-import Tree exposing (Tree(..), singleton, tree)
+import Tree exposing (Tree(..))
 import Tree.Zipper as Zipper exposing (Zipper)
 import Vector2d exposing (Vector2d)
 
