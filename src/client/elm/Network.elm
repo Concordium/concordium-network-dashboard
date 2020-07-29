@@ -123,7 +123,7 @@ update msg model currentRoute key =
                     in
                     case currentRoute of
                         NodeView nodeId ->
-                            -- Reinitialize selected node becuase nodeSummaries may have loaded after a nodeview URL was already open.
+                            -- Update selected node to point to the new node model.
                             ( selectNode newModel nodeId, Cmd.none )
 
                         _ ->
