@@ -1,7 +1,6 @@
 module Chain.DictTree exposing
     ( DictTree
     , addAll
-    , buildBackward
     , buildForward
     , init
     , walkBackwardFrom
@@ -15,7 +14,6 @@ the root.
 
 import Dict exposing (Dict)
 import Dict.Extra as Dict
-import List.Extra as List
 import Set exposing (Set)
 
 
@@ -43,15 +41,11 @@ addAll branches dtree =
 addBranch : List comparable -> DictTree comparable -> DictTree comparable
 addBranch branch dtree =
     case branch of
-        [] ->
-            dtree
-
-        [ a ] ->
-            dtree
-
         a :: b :: rest ->
-            addConnection a b dtree
-                |> addBranch (b :: rest)
+            addBranch (b :: rest) (addConnection a b dtree)
+
+        _ ->
+            dtree
 
 
 addConnection : comparable -> comparable -> DictTree comparable -> DictTree comparable
@@ -155,36 +149,3 @@ forward depth maxDepth current tree =
 walkForwardFrom : comparable -> Int -> DictTree comparable -> List ( Int, comparable )
 walkForwardFrom current maxDepth tree =
     forward 0 (max 0 maxDepth) current tree
-
-
-{-| Builds up a tree that contains a single sequence from
-the given node towards the root.
--}
-buildBackward :
-    Int
-    -> comparable
-    -> DictTree comparable
-    -> (comparable -> List tree -> tree)
-    -> tree
-buildBackward maxDepth root tree construct =
-    let
-        buildList : Int -> comparable -> List comparable -> List comparable
-        buildList depth current visited =
-            case Dict.get current tree.backward of
-                Nothing ->
-                    visited
-
-                Just previous ->
-                    if List.any ((==) previous) visited || depth >= maxDepth then
-                        visited
-
-                    else
-                        buildList
-                            (depth + 1)
-                            previous
-                            (previous :: visited)
-    in
-    List.foldr
-        (\c acc -> construct c [ acc ])
-        (construct root [])
-        (buildList 0 root [])

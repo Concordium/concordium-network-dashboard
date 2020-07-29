@@ -1,8 +1,5 @@
 module Chain.Build exposing (..)
 
-import Chain.DictTree as DictTree
-import Dict as Dict exposing (Dict)
-import Dict.Extra as Dict
 import File exposing (File)
 import File.Download as Download
 import File.Select as Select
@@ -10,7 +7,6 @@ import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode
-import List.Extra as List
 import RemoteData exposing (WebData)
 import Tree exposing (Tree(..), singleton, tree)
 import Tree.Zipper as Zipper exposing (Zipper)
@@ -91,42 +87,6 @@ decodeHistory =
     Decode.list <| Decode.list <| decodeNode
 
 
-
--- Mock Tree for testing
-
-
-mockTree =
-    DictTree.init
-        |> DictTree.addAll
-            [ [ ( 0, "a1" ), ( 1, "b1" ), ( 2, "c1" ), ( 3, "d1" ), ( 4, "e1" ) ]
-            , [ ( 1, "b1" ), ( 2, "c2" ), ( 3, "d2" ) ]
-            , [ ( 1, "c1" ), ( 2, "x" ), ( 3, "y" ) ]
-            , [ ( 3, "d1" ), ( 4, "y2" ) ]
-            ]
-        |> (\dtree ->
-                DictTree.buildForward
-                    10
-                    ( 0, "a1" )
-                    dtree
-                    []
-                    Tree.tree
-           )
-        |> annotate mockNodes ( 0, "a1" )
-
-
-mockNodes =
-    [ { nodeName = "MockNode"
-      , nodeId = "MockNode"
-      , bestBlock = "e1"
-      , bestBlockHeight = 0
-      , finalizedBlock = "a1"
-      , finalizedBlockHeight = 0
-      , ancestorsSinceBestBlock = [ "d2" ]
-      }
-    ]
-
-
-
 -- Requests
 
 
@@ -199,10 +159,10 @@ prepareBlockSequence node =
 {-| Convert a tree of "proto blocks" into a tree of blocks which know about their finalization state
 and nodes that report them as their best block.
 -}
-annotate : List Node -> ProtoBlock -> Tree ProtoBlock -> Tree Block
-annotate nodes lastFinalized sourceTree =
+annotate : List Node -> String -> Tree ProtoBlock -> Tree Block
+annotate nodes lastFinalizedBlock sourceTree =
     annotateChain nodes sourceTree
-        |> colorize lastFinalized
+        |> colorize lastFinalizedBlock
 
 
 annotateChain : List Node -> Tree ProtoBlock -> Tree Block
@@ -255,14 +215,14 @@ annotateChildren label children =
 
 {-| Starting from the last finalized block, mark all ancestor blocks as finalized.
 -}
-colorize : ProtoBlock -> Tree Block -> Tree Block
-colorize lastFinalized tree =
+colorize : String -> Tree Block -> Tree Block
+colorize lastFinalizedBlock tree =
     let
         startZipper =
             tree
                 |> Zipper.fromTree
                 |> Zipper.findFromRoot
-                    (.hash >> (==) (Tuple.second lastFinalized))
+                    (.hash >> (==) lastFinalizedBlock)
 
         colorizeUp zipper =
             let

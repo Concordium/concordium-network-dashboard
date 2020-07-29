@@ -1,28 +1,23 @@
-module Chain exposing (Model, Msg(..), dispatchMsgs, init, selectBlock, subscriptions, update, view)
+module Chain exposing (Model, Msg(..), init, selectBlock, subscriptions, update, view)
 
-import Browser.Events exposing (onAnimationFrameDelta)
+import Browser.Events
 import Browser.Navigation as Nav
 import Chain.Build as Build exposing (..)
 import Chain.DictTree as DictTree exposing (DictTree)
 import Chain.Flatten as Flatten exposing (DrawableChain, emptyDrawableChain)
 import Chain.Interpolate as Interpolate
 import Chain.View as View
-import Color exposing (..)
-import Color.Interpolate exposing (..)
 import Context exposing (..)
-import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input exposing (button)
-import Element.Keyed as Keyed
 import File exposing (File)
 import Grid exposing (GridSpec)
 import Http
 import Json.Decode as Decode
 import List.Extra as List
-import Process exposing (sleep)
 import RemoteData exposing (..)
 import Task
 import Time exposing (..)
@@ -182,16 +177,6 @@ type alias OutputMsgs msg =
     }
 
 
-dispatchMsgs : Msg -> OutputMsgs msg -> Maybe msg
-dispatchMsgs internalMsg outputMsgs =
-    case internalMsg of
-        BlockClicked hash ->
-            Just (outputMsgs.onBlockClicked hash)
-
-        _ ->
-            Nothing
-
-
 updateNodes : List Node -> List (List Node) -> List (List Node)
 updateNodes new current =
     if Just new /= List.head current then
@@ -232,7 +217,7 @@ updateChain ctx depth nodes model =
                 |> Maybe.map Tuple.first
     in
     case ( maybeBestBlock, maybeLastFinalized ) of
-        ( Just bestBlock, Just lastFinalized ) ->
+        ( Just bestBlock, Just (lastFinalizedHeight, lastFinalizedBlock) ) ->
             let
                 -- Find deepmost blocks of all branches up to a depth of `depth` from the best block
                 -- according to the majority of the nodes.
@@ -242,7 +227,7 @@ updateChain ctx depth nodes model =
                         |> DictTree.walkForwardFrom bestBlock depth
                         |> List.maximumBy Tuple.first
                         |> Maybe.withDefault ( 0, bestBlock )
-                        
+
                 -- Walk back from the last block to find the start block.
                 ( stepsWalkedBackwards, start ) =
                     newTree
@@ -250,9 +235,8 @@ updateChain ctx depth nodes model =
 
                 -- Convert dict into tree of "proto blocks" which is then "annotated" into the final model (a tree of "blocks").
                 annotatedTree =
-                    --Build.mockTree
                     DictTree.buildForward depth start newTree [] Tree.tree
-                        |> annotate nodes lastFinalized
+                        |> annotate nodes lastFinalizedBlock
 
                 firstBlockHeight =
                     Tree.label annotatedTree |> .blockHeight
@@ -261,7 +245,7 @@ updateChain ctx depth nodes model =
                     Maybe.withDefault (spec firstBlockHeight) model.gridSpec
 
                 newDrawableChain =
-                    Flatten.flattenTree ctx gridSpec (Tuple.first lastFinalized) 2 annotatedTree
+                    Flatten.flattenTree ctx gridSpec lastFinalizedHeight 2 annotatedTree
             in
             { model
                 | annotatedTree = Just annotatedTree
