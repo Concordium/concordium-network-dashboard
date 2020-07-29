@@ -39,17 +39,9 @@ update msg model =
                     ( model, getBlockInfo consensusStatus.bestBlock ReceivedBlockInfo )
 
                 Err err ->
-                    -- let
-                    --     x =
-                    --         Debug.log <| "ReceivedConsensusStatus:err" ++ httpErrorToString err
-                    -- in
                     ( model, Cmd.none )
 
         ReceivedBlockInfo blockInfoRes ->
-            -- let
-            --     x =
-            --         Debug.log "ReceivedBlockInfo" blockInfoRes
-            -- in
             case blockInfoRes of
                 Ok blockInfo ->
                     ( { model
@@ -60,17 +52,9 @@ update msg model =
                     )
 
                 Err err ->
-                    -- let
-                    --     x =
-                    --         Debug.log <| "ReceivedBlockInfo:err" ++ httpErrorToString err
-                    -- in
                     ( model, Cmd.none )
 
         ReceivedBlockSummary blockSummaryResult ->
-            -- let
-            --     x =
-            --         Debug.log "ReceivedBlockSummary" blockSummaryResult
-            -- in
             ( { model
                 | blockSummary =
                     RemoteData.fromResult blockSummaryResult

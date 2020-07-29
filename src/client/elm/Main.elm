@@ -216,9 +216,6 @@ update msg model =
 onRouteInit : Route -> Model -> ( Model, Cmd Msg )
 onRouteInit page model =
     case page of
-        NodeView nodeId ->
-            ( { model | networkModel = Network.selectNode model.networkModel nodeId }, Cmd.none )
-
         ChainInit ->
             ( model
             , Explorer.Request.getConsensusStatus (ExplorerMsg << Explorer.ReceivedConsensusStatus)
