@@ -32,7 +32,7 @@ type alias ProtoBlock =
 type alias Block =
     { hash : String
     , nodesAt : List String
-    , numNodesAt : Int
+    , fractionNodesAt : Float
     , status : BlockStatus
     , forkWidth : Int
     , blockHeight : Int
@@ -85,6 +85,7 @@ loadNodeHistory loadedMsg =
 decodeHistory : Decode.Decoder (List (List Node))
 decodeHistory =
     Decode.list <| Decode.list <| decodeNode
+
 
 
 -- Requests
@@ -181,12 +182,12 @@ annotateBlock nodes ( height, hash ) =
                 |> List.filter (\node -> node.bestBlock == hash)
                 |> List.map .nodeId
 
-        numNodesAt =
-            List.length nodesAt
+        fractionNodesAt =
+            toFloat (List.length nodesAt) / toFloat (List.length nodes)
     in
     { hash = hash
     , nodesAt = nodesAt
-    , numNodesAt = numNodesAt
+    , fractionNodesAt = fractionNodesAt
     , status = Candidate
     , forkWidth = 1
     , blockHeight = height
@@ -208,7 +209,7 @@ annotateChildren label children =
                             |> List.sum
                 }
                 (List.sortBy
-                    (Tree.map .numNodesAt >> Tree.flatten >> List.sum >> (*) -1)
+                    (Tree.map .fractionNodesAt >> Tree.flatten >> List.sum >> (*) -1)
                     children
                 )
 

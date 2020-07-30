@@ -2,20 +2,19 @@ module Chain.View exposing (..)
 
 import Chain.Build exposing (..)
 import Chain.Flatten exposing (..)
+import Circle2d exposing (Circle2d)
 import Color exposing (Color)
 import Color.Manipulate exposing (fadeOut)
 import Context exposing (..)
 import CubicSpline2d
-import Element
 import Geometry.Svg as Svg
 import Grid exposing (GridSpec)
-import LineSegment2d exposing (LineSegment2d)
 import Maybe.Extra as Maybe
 import Palette exposing (Palette)
-import Pixels exposing (Pixels, pixels)
+import Pixels exposing (Pixels)
 import Point2d exposing (Point2d)
 import Rectangle2d exposing (Rectangle2d)
-import Rectangle2d.Extra as Rectangle2d
+import Svg.Attributes
 import Svg.Keyed as Keyed
 import TypedSvg exposing (..)
 import TypedSvg.Attributes exposing (..)
@@ -59,78 +58,8 @@ viewChain ctx { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } ch
             viewHeight
         ]
         (List.map viewConnector chain.connectors
-            ++ List.map (viewBlock onBlockClick selectedBlock) chain.blocks
-            ++ List.map (viewNode ctx.palette) chain.nodes
+            ++ List.map (viewBlock ctx onBlockClick selectedBlock) chain.blocks
         )
-
-
-{-| An overlay displaying the last finalized Block, when it would be out of view
--}
-viewCollapsedBlocksSummary : Context a -> ViewSettings msg -> DrawableChain -> Svg msg
-viewCollapsedBlocksSummary ctx { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } chain =
-    case chain.numCollapsedBlocksX > 0 of
-        True ->
-            let
-                gridSpecZero =
-                    { gridSpec | initialOffsetX = 0 }
-
-                ( viewWidth, viewHeight ) =
-                    viewDimensions gridSpecZero 1 chain.height
-
-                lastFinalizedBlock =
-                    { hash = Tuple.second lastFinalized
-                    , color = blockColor ctx.palette Finalized
-                    , rect = Grid.cell gridSpecZero 0 0
-                    }
-
-                background =
-                    Grid.region gridSpecZero -1 0 1 chain.height
-                        |> Rectangle2d.inset (pixels 0) (pixels 22)
-
-                rightEdge =
-                    LineSegment2d.from
-                        (Rectangle2d.interpolate background 1 0.2)
-                        (Rectangle2d.interpolate background 1 1)
-
-                translation =
-                    Vector2d.from
-                        Point2d.origin
-                        (Rectangle2d.interpolate background 1 0)
-
-                color =
-                    Palette.withAlphaCo 0.3 (blockColor ctx.palette Candidate)
-            in
-            svg
-                [ width (px (viewWidth - gridSpec.outerPadding + (gridSpec.gutterWidth / 2)))
-                , height (px viewHeight)
-                , viewBox
-                    -gridSpec.outerPadding
-                    -gridSpec.outerPadding
-                    (viewWidth - gridSpec.outerPadding + (gridSpec.gutterWidth / 2))
-                    viewHeight
-                ]
-                [ Svg.rectangle2d [ fill <| Paint (Palette.uiToColor ctx.palette.bg1) ]
-                    background
-                , Svg.lineSegment2d
-                    [ stroke
-                        (Paint <|
-                            Palette.withAlphaCo 0.3 color
-                        )
-                    , strokeDasharray "4"
-                    ]
-                    rightEdge
-                , Svg.translateBy translation <|
-                    viewText (fromSignedInt chain.numCollapsedBlocksX) 15 color
-                , Tuple.second
-                    (viewBlock
-                        onBlockClick
-                        selectedBlock
-                        lastFinalizedBlock
-                    )
-                ]
-
-        False ->
-            g [] []
 
 
 fromSignedInt : Int -> String
@@ -143,11 +72,12 @@ fromSignedInt number =
 
 
 viewBlock :
-    Maybe (String -> msg)
+    Context a
+    -> Maybe (String -> msg)
     -> Maybe String
     -> DrawableBlock
     -> ( String, Svg msg )
-viewBlock clickMsg selectedBlock { hash, rect, color } =
+viewBlock ctx clickMsg selectedBlock ({ hash, rect, color, fractionNodesAt } as block) =
     let
         translation =
             Vector2d.from
@@ -165,20 +95,63 @@ viewBlock clickMsg selectedBlock { hash, rect, color } =
                 |> Maybe.filter ((==) hash)
                 |> Maybe.map (\h -> stroke (Paint <| color))
                 |> Maybe.withDefault (stroke PaintNone)
+
+        alpha =
+            color |> Color.toRgba |> .alpha
     in
     ( hash
     , g
-        (click ++ [ TypedSvg.Attributes.cursor CursorPointer ])
-        [ Svg.rectangle2d
+        (click ++ [ TypedSvg.Attributes.cursor CursorPointer, opacity (Opacity alpha) ])
+        ([ Svg.rectangle2d
             [ rx (px 4)
             , ry (px 4)
             , fill (Paint <| fadeOut 0.7 color)
             , highlight
             ]
             rect
-        , Svg.translateBy translation <| viewText (String.left 4 hash) 16 color
-        ]
+         , Svg.translateBy translation <| viewText (String.left 4 hash) 16 color
+         ]
+            ++ viewNodes ctx block
+        )
     )
+
+
+viewNodes : Context a -> DrawableBlock -> List (Svg msg)
+viewNodes ctx block =
+    let
+        attrs =
+            { size = 4, circlesPerRow = 8, maxCircles = 16 }
+
+        circleFromIndex : Int -> Int -> Float -> Int -> Svg msg
+        circleFromIndex size circlesPerRow totalCircles index =
+            let
+                xp =
+                    index |> remainderBy circlesPerRow
+
+                yp =
+                    (toFloat index / toFloat circlesPerRow) |> floor
+
+                alpha =
+                    (totalCircles - toFloat index) |> round |> toFloat |> clamp 0 0.8
+            in
+            Rectangle2d.interpolate block.rect (toFloat (xp + 1) / toFloat (circlesPerRow + 1)) -0.15
+                |> Point2d.translateBy (Vector2d.pixels 0 (toFloat size * toFloat yp * -1.5))
+                |> Circle2d.withRadius (Pixels.pixels (toFloat size / 2.0))
+                |> Svg.circle2d
+                    [ fill (Paint <| Palette.withAlphaCo alpha <| Palette.uiToColor ctx.palette.c3)
+                    , Svg.Attributes.style "transition: fill 400ms ease-out"
+                    ]
+
+        numCircles =
+            block.fractionNodesAt * attrs.maxCircles
+    in
+    List.range 0 (floor (attrs.maxCircles - 1))
+        |> List.map (circleFromIndex attrs.size attrs.circlesPerRow numCircles)
+
+
+fraction : Float -> Float
+fraction f =
+    f - toFloat (truncate f)
 
 
 viewText : String -> Float -> Color -> Svg msg
@@ -210,13 +183,4 @@ viewConnector { id, start, end, color } =
         , strokeWidth (px 2)
         ]
         spline
-    )
-
-
-viewNode : Palette Element.Color -> DrawableNode -> ( String, Svg msg )
-viewNode palette node =
-    ( node.nodeId
-    , Svg.circle2d
-        [ fill (Paint <| Palette.uiToColor palette.c3) ]
-        node.circle
     )
