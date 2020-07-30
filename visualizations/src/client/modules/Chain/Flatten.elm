@@ -1,26 +1,24 @@
 module Chain.Flatten exposing (..)
 
 import Chain.Build exposing (Block, BlockStatus(..))
-import Circle2d exposing (Circle2d)
 import Color exposing (Color)
 import Context exposing (Context)
 import Element
 import GeometryUtils exposing (TopLeftCoordinates)
 import Grid exposing (GridSpec)
-import List.Extra as List
 import Palette exposing (Palette)
 import Pixels exposing (Pixels(..))
 import Point2d exposing (Point2d)
 import Rectangle2d exposing (Rectangle2d)
 import Tree exposing (Tree(..))
 import Tree.Zipper as Zipper exposing (Zipper)
-import Vector2d exposing (Vector2d)
 
 
 type alias DrawableBlock =
     { hash : String
     , color : Color
     , rect : Rectangle2d Pixels TopLeftCoordinates
+    , fractionNodesAt : Float -- The fraction of nodes for which this is the best block
     }
 
 
@@ -32,16 +30,9 @@ type alias DrawableConnector =
     }
 
 
-type alias DrawableNode =
-    { nodeId : String
-    , circle : Circle2d Pixels TopLeftCoordinates
-    }
-
-
 type alias DrawableChain =
     { blocks : List DrawableBlock
     , connectors : List DrawableConnector
-    , nodes : List DrawableNode
     , width : Int
     , height : Int
     , viewBoxOffsetX : Float
@@ -62,6 +53,7 @@ drawableBlock ctx gridSpec y block =
     { hash = block.hash
     , color = blockColor ctx.palette block.status
     , rect = Grid.cell gridSpec block.blockHeight y
+    , fractionNodesAt = block.fractionNodesAt
     }
 
 
@@ -88,61 +80,10 @@ drawableConnector gridSpec blockA blockB yA yB color =
     }
 
 
-drawableNodes : GridSpec -> Int -> Block -> List DrawableNode
-drawableNodes gridSpec y block =
-    let
-        ( size, nx ) =
-            ( 4, 8 )
-
-        blockRect =
-            Grid.cell gridSpec block.blockHeight y
-
-        nodeFromIndices : String -> Int -> Int -> DrawableNode
-        nodeFromIndices nodeId xp yp =
-            Rectangle2d.interpolate blockRect (toFloat (xp + 1) / toFloat (nx + 1)) -0.15
-                |> Point2d.translateBy (Vector2d.pixels 0 (toFloat size * toFloat yp * -1.5))
-                |> Circle2d.withRadius (Pixels.pixels (toFloat size / 2.0))
-                |> (\circle -> { nodeId = nodeId, circle = circle })
-
-        row iy elements =
-            elements
-                |> List.indexedMap
-                    (\ix nodeId ->
-                        nodeFromIndices nodeId ix iy
-                    )
-
-        onTop =
-            Rectangle2d.interpolate blockRect 0.5 -0.2
-    in
-    block.nodesAt
-        |> List.greedyGroupsOf nx
-        |> List.indexedMap row
-        |> List.concat
-
-
-simplerDrawableNodes : GridSpec -> Int -> Block -> List DrawableNode
-simplerDrawableNodes gridSpec y block =
-    let
-        ( size, nx ) =
-            ( 2 + 4 * (toFloat block.numNodesAt / 5), 8 )
-
-        blockRect =
-            Grid.cell gridSpec block.blockHeight y
-    in
-    block.nodesAt
-        |> List.map
-            (\nodeId ->
-                Rectangle2d.interpolate blockRect 0.5 (-0.2 * (1 + (toFloat block.numNodesAt / 20)))
-                    |> Circle2d.withRadius (Pixels.pixels (size / 2.0))
-                    |> (\circle -> { nodeId = nodeId, circle = circle })
-            )
-
-
 mergeDrawables : DrawableChain -> DrawableChain -> DrawableChain
 mergeDrawables chainA chainB =
     { blocks = chainA.blocks ++ chainB.blocks
     , connectors = chainA.connectors ++ chainB.connectors
-    , nodes = chainA.nodes ++ chainB.nodes
     , width = max chainA.width chainB.width
     , height = max chainA.height chainB.height
     , viewBoxOffsetX = chainB.viewBoxOffsetX
@@ -176,7 +117,6 @@ addDrawables ctx gridSpec maybeParent maybeParentBlock ( x, y ) block chain =
 
             _ ->
                 chain.connectors
-    , nodes = drawableNodes gridSpec y block ++ chain.nodes
     , width = max (x + 1) chain.width
     , height = max (y + 1) chain.height
     , viewBoxOffsetX = chain.viewBoxOffsetX
@@ -202,7 +142,6 @@ emptyDrawableChain : DrawableChain
 emptyDrawableChain =
     { blocks = []
     , connectors = []
-    , nodes = []
     , width = 0
     , height = 0
     , viewBoxOffsetX = 0
@@ -216,7 +155,7 @@ emptyDrawableChain =
 flattenTree : Context a -> GridSpec -> Int -> Int -> Tree Block -> DrawableChain
 flattenTree ctx gridSpec lastFinalizedBlockHeight maxNumVertical chain =
     let
-        { blocks, connectors, nodes, width, height } =
+        { blocks, connectors, width, height } =
             flattenDepthFirst ctx (Zipper.fromTree chain) gridSpec Nothing Nothing ( 0, 0 )
 
         firstBlockHeight =
@@ -235,7 +174,6 @@ flattenTree ctx gridSpec lastFinalizedBlockHeight maxNumVertical chain =
     in
     { blocks = blocks
     , connectors = connectors
-    , nodes = nodes
     , width = width
     , height = height
     , viewBoxOffsetX = offsetX

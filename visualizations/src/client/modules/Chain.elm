@@ -205,7 +205,7 @@ updateChain ctx depth nodes model =
         -- The finalized block with the highest height.
         maybeLastFinalized =
             nodes
-                |> List.map (\node -> ( node.finalizedBlockHeight, node.finalizedBlock))
+                |> List.map (\node -> ( node.finalizedBlockHeight, node.finalizedBlock ))
                 |> List.maximumBy Tuple.first
 
         -- Block sequences for all nodes.
@@ -217,7 +217,7 @@ updateChain ctx depth nodes model =
             DictTree.addAll sequences model.tree
     in
     case ( maybeBestBlock, maybeLastFinalized ) of
-        ( Just bestBlock, Just (lastFinalizedHeight, lastFinalizedBlock) ) ->
+        ( Just bestBlock, Just ( lastFinalizedHeight, lastFinalizedBlock ) ) ->
             let
                 -- Find deepmost blocks of all branches up to a depth of `depth` from the best block
                 -- according to the majority of the nodes.
@@ -323,10 +323,6 @@ view ctx model showDebugButtons =
                     [ centerX
                     , centerY
                     , spacing (round gridSpec.gutterHeight)
-                    , inFront
-                        (el [ alignLeft ]
-                            (html <| View.viewCollapsedBlocksSummary ctx vcontext currentDrawableChain)
-                        )
                     ]
                     (html <| View.viewChain ctx vcontext currentDrawableChain)
                 ]

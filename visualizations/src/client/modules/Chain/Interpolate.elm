@@ -86,6 +86,7 @@ interpolateBlock blockA blockB =
         { blockB
             | rect = interpolateRectangle2d blockA.rect blockB.rect t
             , color = Interpolation.hsl blockA.color blockB.color t
+            , fractionNodesAt = Interpolation.float blockA.fractionNodesAt blockB.fractionNodesAt t
         }
 
 
@@ -143,51 +144,6 @@ interpolateConnectors =
         }
 
 
-interpolateNode : DrawableNode -> DrawableNode -> Interpolator DrawableNode
-interpolateNode nodeA nodeB =
-    let
-        distance =
-            Point2d.distanceFrom
-                (Circle2d.centerPoint nodeA.circle)
-                (Circle2d.centerPoint nodeB.circle)
-                |> Quantity.divideBy 3
-    in
-    \t ->
-        { nodeB | circle = interpolateCircle2dParabolic -(Pixels.inPixels distance) nodeA.circle nodeB.circle t }
-
-
-interpolateNodes :
-    List DrawableNode
-    -> List DrawableNode
-    -> Interpolator (List DrawableNode)
-interpolateNodes =
-    Interpolation.list
-        { add =
-            \newNode ->
-                interpolateNode
-                    { nodeId = newNode.nodeId
-                    , circle =
-                        Circle2d.atPoint
-                            (Circle2d.centerPoint newNode.circle)
-                            (pixels 0)
-                    }
-                    newNode
-        , remove =
-            \oldNode ->
-                interpolateNode
-                    oldNode
-                    { nodeId = oldNode.nodeId
-                    , circle =
-                        Circle2d.atPoint
-                            (Circle2d.centerPoint oldNode.circle)
-                            (pixels 0)
-                    }
-        , change = interpolateNode
-        , id = .nodeId
-        , combine = Interpolation.combineParallel
-        }
-
-
 interpolateDrawableChain :
     DrawableChain
     -> DrawableChain
@@ -196,7 +152,6 @@ interpolateDrawableChain chainA chainB =
     \t ->
         { blocks = interpolateBlocks chainA.blocks chainB.blocks t
         , connectors = interpolateConnectors chainA.connectors chainB.connectors t
-        , nodes = interpolateNodes chainA.nodes chainB.nodes t
         , width = chainB.width
         , height = chainB.height
         , viewBoxOffsetX = Interpolation.float chainA.viewBoxOffsetX chainB.viewBoxOffsetX t
