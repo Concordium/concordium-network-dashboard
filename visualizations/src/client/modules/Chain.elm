@@ -8,6 +8,8 @@ import Chain.Flatten as Flatten exposing (DrawableChain, emptyDrawableChain)
 import Chain.Interpolate as Interpolate
 import Chain.View as View
 import Context exposing (..)
+import Dict
+import Dict.Extra
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -192,29 +194,27 @@ updateChain : Context a -> Int -> List Node -> Model -> Model
 updateChain ctx depth nodes model =
     let
         -- The best block according to the majority of the nodes.
-        -- TODO List needs to be sorted before grouping?
         maybeBestBlock =
-            List.map (\node -> ( node.bestBlockHeight, node.bestBlock )) nodes
-                |> List.group
-                |> List.map (Tuple.mapSecond List.length)
+            nodes
+                |> List.map (\node -> ( node.bestBlockHeight, node.bestBlock ))
+                |> Dict.Extra.frequencies
+                |> Dict.toList
                 |> List.maximumBy Tuple.second
                 |> Maybe.map Tuple.first
+
+        -- The finalized block with the highest height.
+        maybeLastFinalized =
+            nodes
+                |> List.map (\node -> ( node.finalizedBlockHeight, node.finalizedBlock))
+                |> List.maximumBy Tuple.first
 
         -- Block sequences for all nodes.
         sequences =
             List.map Build.prepareBlockSequence nodes
 
-        shortestSeq =
-            List.minimumBy List.length sequences
-
         -- Merge sequences into existing dict-based model.
         newTree =
             DictTree.addAll sequences model.tree
-
-        maybeLastFinalized =
-            shortestSeq
-                |> Maybe.andThen List.uncons
-                |> Maybe.map Tuple.first
     in
     case ( maybeBestBlock, maybeLastFinalized ) of
         ( Just bestBlock, Just (lastFinalizedHeight, lastFinalizedBlock) ) ->
