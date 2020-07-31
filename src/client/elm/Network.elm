@@ -1,7 +1,6 @@
 port module Network exposing (..)
 
 import Browser.Navigation as Nav exposing (Key)
-import Config
 import Context exposing (Context)
 import Dict exposing (Dict)
 import Dict.Extra as Dict
@@ -74,8 +73,14 @@ type alias NetworkNode =
     }
 
 
+type alias Config =
+    { collectorUrl : String
+    }
+
+
 type alias Model =
-    { nodes : WebData (Dict Host NetworkNode)
+    { config : Config
+    , nodes : WebData (Dict Host NetworkNode)
     , sortMode : SortMode
     , selectedNode : WebData (Result String NetworkNode)
     }
@@ -90,9 +95,10 @@ type Msg
     | TaskPerformed
 
 
-init : Model
-init =
-    { nodes = Loading
+init : Config -> Model
+init cfg =
+    { config = cfg
+    , nodes = Loading
     , sortMode = SortNone
     , selectedNode = NotAsked
     }
@@ -105,7 +111,7 @@ update msg model currentRoute key =
             ( { model | nodes = RemoteData.map (Dict.insert node.nodeId node) model.nodes }, Cmd.none )
 
         FetchNodeSummaries _ ->
-            ( model, Http.get { url = Config.collector ++ "/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
+            ( model, Http.get { url = model.config.collectorUrl ++ "/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
 
         FetchedNodeSummaries r ->
             case r of
