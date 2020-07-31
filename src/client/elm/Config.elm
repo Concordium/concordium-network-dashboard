@@ -1,45 +1,71 @@
-module Config exposing (..)
+module Config exposing (Config, defaultConfig, parseEnv)
 
 
-type Mode
-    = Local
-    | Staging
+type alias Config =
+    { collectorUrl : String
+    , middlewareUrl : String
+    }
+
+
+type Environment
+    = Development DevelopmentTarget
     | Production
 
 
-config : Mode
-config =
+type DevelopmentTarget
+    = Local
+    | Staging
+    | Testnet
+
+
+devTarget : DevelopmentTarget
+devTarget =
     -- Tweak me when developing locally to test
     Staging
 
 
-collector : String
-collector =
-    case config of
-        Local ->
-            "http://127.0.0.1:12000"
+parseEnv : Bool -> Environment
+parseEnv isProduction =
+    if isProduction then Production else Development devTarget
 
-        Staging ->
-            -- Once deployed the routing for both collector and middleware is through the same URL
-            "https://dashboard.eu.staging.concordium.com"
 
+defaultConfig : Environment -> Config
+defaultConfig env =
+    { collectorUrl = defaultCollectorUrl env
+    , middlewareUrl = defaultMiddlewareUrl env
+    }
+
+
+defaultCollectorUrl : Environment -> String
+defaultCollectorUrl env =
+    case env of
+        Development target ->
+            developmentUrl target "http://127.0.0.1:12000"
+
+        -- Once deployed the routing for both collector and middleware is through the same URL
         Production ->
-            -- Once deployed the routing for both collector and middleware is through the same URL
-            -- In production use path relative to current URL
             ""
 
 
-middleware : String
-middleware =
-    case config of
+defaultMiddlewareUrl : Environment -> String
+defaultMiddlewareUrl env =
+    case env of
+        Development target ->
+            developmentUrl target "http://localhost:8081"
+
+        -- Once deployed the routing for both collector and middleware is through the same URL
+        Production ->
+            ""
+
+
+developmentUrl : DevelopmentTarget -> String -> String
+developmentUrl mode localUrl =
+    case mode of
         Local ->
-            "http://localhost:8081"
+            localUrl
 
         Staging ->
-            -- Once deployed the routing for both collector and middleware is through the same URL
             "https://dashboard.eu.staging.concordium.com"
 
-        Production ->
-            -- Once deployed the routing for both collector and middleware is through the same URL
-            -- In production use path relative to current URL
-            ""
+        Testnet ->
+            "https://dashboard.testnet.concordium.com"

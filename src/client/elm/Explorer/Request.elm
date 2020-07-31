@@ -1,6 +1,5 @@
 module Explorer.Request exposing (..)
 
-import Config
 import Http exposing (..)
 import Iso8601
 import Json.Decode as D
@@ -8,6 +7,11 @@ import Json.Decode.Pipeline exposing (optional, required)
 import Task
 import Time exposing (Posix)
 import Transaction.Summary exposing (..)
+
+
+type alias Config =
+    { middlewareUrl : String
+    }
 
 
 
@@ -29,10 +33,10 @@ consensusStatusDecoder =
         |> required "epochDuration" D.int
 
 
-getConsensusStatus : (Result Http.Error ConsensusStatus -> msg) -> Cmd msg
-getConsensusStatus msg =
+getConsensusStatus : Config -> (Result Http.Error ConsensusStatus -> msg) -> Cmd msg
+getConsensusStatus cfg msg =
     Http.get
-        { url = Config.middleware ++ "/v1/consensusStatus"
+        { url = cfg.middlewareUrl ++ "/v1/consensusStatus"
         , expect = expectJson_ msg consensusStatusDecoder
         }
 
@@ -41,10 +45,10 @@ getConsensusStatus msg =
 -- BlockInfo
 
 
-getBlockInfo : String -> (Result Error BlockInfo -> msg) -> Cmd msg
-getBlockInfo blockhash msg =
+getBlockInfo : Config -> String -> (Result Error BlockInfo -> msg) -> Cmd msg
+getBlockInfo cfg blockhash msg =
     Http.get
-        { url = Config.middleware ++ "/v1/blockInfo/" ++ blockhash
+        { url = cfg.middlewareUrl ++ "/v1/blockInfo/" ++ blockhash
         , expect = expectJson_ msg blockInfoDecoder
         }
 
@@ -53,14 +57,14 @@ getBlockInfo blockhash msg =
 -- BlockSummary
 
 
-getBlockSummary : String -> (Result Error BlockSummary -> msg) -> Cmd msg
-getBlockSummary blockhash msg =
+getBlockSummary : Config -> String -> (Result Error BlockSummary -> msg) -> Cmd msg
+getBlockSummary cfg blockhash msg =
     -- let
     --     x =
     --         Debug.log "calling" "get Block summary!"
     -- in
     Http.get
-        { url = Config.middleware ++ "/v1/blockSummary/" ++ blockhash
+        { url = cfg.middlewareUrl ++ "/v1/blockSummary/" ++ blockhash
         , expect = expectJson_ msg blockSummaryDecoder
         }
 
