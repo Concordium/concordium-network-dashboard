@@ -5,34 +5,31 @@ const OpenBrowserPlugin = require('open-browser-webpack-plugin');
 const config = require('./src/server/config');
 const nodeModulesPath = path.resolve(__dirname, 'node_modules');
 
-const MODE =
-  config.IS_PRODUCTION ? 'production' : 'development'
-
 const plugins = [
   new HtmlWebpackPlugin({
-    title: 'Concordium Dashboard',
     filename: 'index.html',
     template: './src/client/index.ejs',
+    templateParameters: {
+        title: 'Concordium Dashboard',
+        isProduction: config.isProduction,
+    },
   }),
 ];
 
-//const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
-//plugins.push(new BundleAnalyzerPlugin());
-
-if (!config.IS_PRODUCTION) {
+if (!config.isProduction) {
   plugins.push(
-    new OpenBrowserPlugin({ url: `http://localhost:${config.SERVER_PORT}` }),
+    new OpenBrowserPlugin({ url: `http://localhost:${config.serverPort}` }),
   );
 }
 
 module.exports = {
-  mode: config.IS_PRODUCTION ? 'production' : 'development',
-  devtool: config.IS_PRODUCTION ? '' : 'inline-source-map',
+  mode: config.isProduction ? 'production' : 'development',
+  devtool: config.isProduction ? '' : 'inline-source-map',
   entry: ['@babel/polyfill', './src/client/client'],
   output: {
     path: path.join(__dirname, 'dist', 'public'),
     filename: `[name]-[hash:8]-bundle.js`,
-    publicPath: config.IS_PRODUCTION ? '/' : '/public/'
+    publicPath: config.isProduction ? '/' : '/public/',
   },
   resolve: {
     extensions: ['.js', '.ts', '.tsx', '.elm'],
@@ -69,7 +66,7 @@ module.exports = {
           {
             loader: "elm-webpack-loader",
             options:
-              MODE === "production" ? {} : { debug: true, forceWatch: true }
+              config.isProduction ? {} : { debug: true, forceWatch: true }
           }
         ]
       }

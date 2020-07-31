@@ -10,7 +10,8 @@ type alias BlockHash =
 
 
 type alias Model =
-    { blockHash : Maybe String
+    { config : Config
+    , blockHash : Maybe String
     , blockInfo : WebData BlockInfo
     , blockSummary : WebData BlockSummary
     }
@@ -22,9 +23,10 @@ type Msg
     | ReceivedBlockSummary (Result Http.Error BlockSummary)
 
 
-init : Model
-init =
-    { blockHash = Nothing
+init : Config -> Model
+init cfg =
+    { config = cfg
+    , blockHash = Nothing
     , blockInfo = NotAsked
     , blockSummary = NotAsked
     }
@@ -36,7 +38,7 @@ update msg model =
         ReceivedConsensusStatus res ->
             case res of
                 Ok consensusStatus ->
-                    ( model, getBlockInfo consensusStatus.bestBlock ReceivedBlockInfo )
+                    ( model, getBlockInfo model.config consensusStatus.bestBlock ReceivedBlockInfo )
 
                 Err err ->
                     ( model, Cmd.none )
@@ -48,7 +50,7 @@ update msg model =
                         | blockInfo =
                             Success blockInfo
                       }
-                    , getBlockSummary blockInfo.blockHash ReceivedBlockSummary
+                    , getBlockSummary model.config blockInfo.blockHash ReceivedBlockSummary
                     )
 
                 Err err ->

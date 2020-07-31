@@ -5,7 +5,7 @@ import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
 import Clipboard
-import Config
+import Config exposing (Config)
 import Context exposing (Context)
 import Element exposing (..)
 import Element.Background as Background
@@ -33,12 +33,15 @@ import Widgets exposing (content)
 
 
 type alias Flags =
-    { width : Int, height : Int }
+    { window : { width : Int, height : Int }
+    , isProduction : Bool
+    }
 
 
 type alias Model =
     { key : Key
     , time : Time.Posix
+    , config : Config
     , window : { width : Int, height : Int }
     , palette : Palette Element.Color
     , colorMode : ColorMode
@@ -78,8 +81,11 @@ main =
 init : Flags -> Url -> Key -> ( Model, Cmd Msg )
 init flags url key =
     let
+        cfg =
+            Config.defaultConfig (Config.parseEnv flags.isProduction)
+
         ( chainInit, chainCmd ) =
-            Chain.init Config.collector
+            Chain.init cfg.collectorUrl
 
         route =
             Route.fromUrl url
@@ -88,14 +94,15 @@ init flags url key =
             onRouteInit
                 route
                 { key = key
-                , window = flags
                 , time = Time.millisToPosix 0
+                , config = cfg
+                , window = flags.window
                 , palette = Palette.defaultDark
                 , colorMode = Dark
                 , currentRoute = route
-                , networkModel = Network.init
+                , networkModel = Network.init { collectorUrl = cfg.collectorUrl }
                 , chainModel = chainInit
-                , explorerModel = Explorer.init
+                , explorerModel = Explorer.init { middlewareUrl = cfg.middlewareUrl }
                 }
     in
     ( initModel
@@ -218,12 +225,12 @@ onRouteInit page model =
     case page of
         ChainInit ->
             ( model
-            , Explorer.Request.getConsensusStatus (ExplorerMsg << Explorer.ReceivedConsensusStatus)
+            , Explorer.Request.getConsensusStatus model.explorerModel.config (ExplorerMsg << Explorer.ReceivedConsensusStatus)
             )
 
         ChainSelected hash ->
             ( { model | chainModel = Chain.selectBlock model.chainModel hash }
-            , Explorer.Request.getBlockInfo hash (ExplorerMsg << Explorer.ReceivedBlockInfo)
+            , Explorer.Request.getBlockInfo model.explorerModel.config hash (ExplorerMsg << Explorer.ReceivedBlockInfo)
             )
 
         _ ->
