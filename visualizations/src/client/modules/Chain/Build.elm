@@ -19,6 +19,7 @@ type alias Node =
     , bestBlockHeight : Int
     , finalizedBlock : String
     , finalizedBlockHeight : Int
+    , finalizedBlockParent : String
     , ancestorsSinceBestBlock : List String
     }
 
@@ -112,6 +113,7 @@ decodeNode =
         |> Decode.required "bestBlockHeight" Decode.int
         |> Decode.required "finalizedBlock" Decode.string
         |> Decode.required "finalizedBlockHeight" Decode.int
+        |> Decode.required "finalizedBlockParent" Decode.string
         |> Decode.required "ancestorsSinceBestBlock"
             (Decode.oneOf
                 [ Decode.list Decode.string
@@ -129,6 +131,7 @@ encodeNode record =
         , ( "bestBlockHeight", Encode.int <| record.bestBlockHeight )
         , ( "finalizedBlock", Encode.string <| record.finalizedBlock )
         , ( "finalizedBlockHeight", Encode.int <| record.finalizedBlockHeight )
+        , ( "finalizedBlockParent", Encode.string <| record.finalizedBlockParent )
         , ( "ancestorsSinceBestBlock"
           , Encode.list Encode.string record.ancestorsSinceBestBlock
           )
@@ -143,14 +146,22 @@ encodeNode record =
 -}
 prepareBlockSequence : Node -> List ProtoBlock
 prepareBlockSequence node =
-    ( node.finalizedBlockHeight, node.finalizedBlock )
-        :: (node.ancestorsSinceBestBlock
-                |> List.reverse
-                |> List.indexedMap
-                    (\index hash ->
-                        ( node.finalizedBlockHeight + (index + 1), hash )
-                    )
-           )
+    let
+        seq =
+            ( node.finalizedBlockHeight, node.finalizedBlock )
+                :: (node.ancestorsSinceBestBlock
+                        |> List.reverse
+                        |> List.indexedMap
+                            (\index hash ->
+                                ( node.finalizedBlockHeight + (index + 1), hash )
+                            )
+                   )
+    in
+    if node.finalizedBlockHeight == 0 then
+        seq
+
+    else
+        ( node.finalizedBlockHeight - 1, node.finalizedBlockParent ) :: seq
 
 
 
