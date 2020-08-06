@@ -10,7 +10,7 @@ Network and Chain Dashboard for displaying stats, summaries, and visualizations 
 
 The app consists of a server written in [TypeScript](https://github.com/Microsoft/TypeScript)
 and a client written in [Elm](https://elm-lang.org/) (and packaged using [webpack](https://webpack.github.io/)). The client is compiled into a few HTML and JavaScript files.
-The server is extremely simple and just registers a router for serving these static files.
+The server is very basic and just registers a router for serving these static files.
 
 
 ### Install and run
@@ -34,6 +34,7 @@ Other common build/run targets include:
 - `npm start` - Start the app (shorthand for `node ./dist/server/server.js`).
 
 See the `script` section of `package.json` for all targets as well as their definitions.
+
 
 ### Data collection
 
@@ -60,7 +61,7 @@ Follow the instructions at [p2p-client](https://gitlab.com/Concordium/p2p-client
 
 You need the following components to run:
 
-- Any number of nodes.
+- One or more nodes.
 - One collector for each node that we want to participate data. This collector polls the node and pushes the state to the collector backend.
 - One collector backend for keeping the state from the collectors. This is the components that the dashboard client polls.
 - One middleware instance connected to one of the nodes.
@@ -68,26 +69,29 @@ You need the following components to run:
 The easiest solution is to start a local cluster using the docker-compose scripts.
 This will contain all components except for the middleware. There are different scripts for different cluster sizes.
 
-The middleware resides in [simple-client](https://gitlab.com/Concordium/consensus/simple-client/) and may be started using the command
+The middleware resides in the [simple-client](https://gitlab.com/Concordium/consensus/simple-client/) repo
+and may be started (from the root of that project) using the command
 ```
 NODE_URL=127.0.0.1:$PORT stack run middleware
 ```
+where `$PORT` is the GRPC port of the node (default: 10000).
 
-If the docker-compose scripts are used, the script `scripts/bootMiddleware.sh` will run the above command with a working port.
+If the docker-compose scripts are used, then `scripts/bootMiddleware.sh` will run the above command with a working port.
 
 The node and [collector](https://gitlab.com/Concordium/p2p-client/blob/develop/src/bin/collector.rs)
 ([backend](https://gitlab.com/Concordium/p2p-client/blob/develop/src/bin/collector_backend.rs)) is defined in the
-[p2p-client](https://gitlab.com/Concordium/p2p-client) repository.
+[p2p-client](https://gitlab.com/Concordium/p2p-client) repo.
 
 Note that you need to set a feature flag to build the collector (backend).
 
-If that's hard to follow, here's an [architecture diagram](https://docs.google.com/drawings/d/1FWV8Ah9RAiqMaghT3Ql1JyGnBq0_TxOS6BgM6mFjepQ/edit) of what you're booting.
+The architecture is illustrated in [this diagram](https://docs.google.com/drawings/d/1FWV8Ah9RAiqMaghT3Ql1JyGnBq0_TxOS6BgM6mFjepQ/edit).
 
 
 ### Docker build
 
 The Dashboard is deployed on Kubernetes using a dockerized build which is build by `./docker.sh`.
 Builds `dist` locally first before copying into image. 
+
 
 #### Requirements and credits
 
