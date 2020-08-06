@@ -27,13 +27,13 @@ To build and run the app in watch mode with source maps, run
 npm run dev
 ```
 
-This also opens [http://localhost:3000](http://localhost:3000) in a browser and is the preferred method of
-running the app during development.
+This opens [http://localhost:3000](http://localhost:3000) in a browser
+and is the preferred method of running the app during development.
 
 Other common build/run targets include:
   
-- `npm test` - Runs jest tests (currently fails because there are no tests!).
-- `npm run build` - Builds the app in production mode and puts it into `./dist`.
+- `npm test` - Run jest tests (currently fails because there are no tests!).
+- `npm run build` - Build the app in production mode and put it into `./dist`.
 - `npm start` - Start the app (shorthand for `node ./dist/server/server.js`).
 
 See the `script` section of `package.json` for all targets as well as their definitions.
@@ -42,37 +42,43 @@ See the `script` section of `package.json` for all targets as well as their defi
 ### Configuration
 
 The client app may be built in production or development mode (based on the `NODE_ENV` environment variable).
-In production mode (which includes staging), the collector/middleware backends are assumed to reside on the same 
+In production mode (which staging also uses), the collector/middleware backends are assumed to reside on the same 
 domain as the dashboard itself. In development mode, the target backend (local, staging, or production) may be set
 by changing the value of `devTarget` in `src/client/elm/Config.elm`.
 
 
 ### Architecture
 
-The dashboard collects data from two different backend services (see [dependencies](#dependencies)):
+The dashboard collects data from two different backend services:
 
 - Collector Backend: All current state (participating nodes and their stats, including their best block etc.).
-  This is polled periodically.
+  This data is polled (every second).
 - Middleware: Block contents for the Block Explorer.
 
-Note that the dashboard server doesn't serve any dynamic data - only the frontend application itself.
+Note that the dashboard server only serves the frontend application itself - all dynamic data come from the services above.
 
 A complete setup consists of ([diagram](https://docs.google.com/drawings/d/1FWV8Ah9RAiqMaghT3Ql1JyGnBq0_TxOS6BgM6mFjepQ/edit)):
 
 - One or more nodes.
 - One collector for each node that we want to participate data. This collector polls the node and pushes the state to the collector backend.
-- One collector backend for keeping the state from the collectors. This is the components that the dashboard client polls.
+- One collector backend for keeping the state from the collectors.
 - One middleware instance connected to one of the nodes.
 
 
 #### Local setup
 
-Follow the instructions at [p2p-client](https://gitlab.com/Concordium/p2p-client) to set up a local node/baker.
+Detailed instructions on setting up a local node/baker are given in the readme of
+the [p2p-client](https://gitlab.com/Concordium/p2p-client).
 
-The easiest solution is to start a local cluster using the docker-compose scripts.
-This will contain all components except for the middleware. There are different scripts for different cluster sizes.
+The easiest solution is to start a local cluster using the docker-compose scripts in the root of that repo.
+This will start all components except for the middleware. The scripts support multiple different cluster sizes;
+to spin up 5 nodes, use:
 
-The middleware resides in the [simple-client](https://gitlab.com/Concordium/consensus/simple-client/) repo
+```
+EXTRA_ARGS=--debug NUM_BAKERS=5 DESIRED_PEERS=4 docker-compose -f docker-compose.develop.yml up --scale baker=5 --force-recreate
+```
+
+The middleware lives in the [simple-client](https://gitlab.com/Concordium/consensus/simple-client/) repo
 and may be started (from the root of that project) using the command
 ```
 NODE_URL=127.0.0.1:$PORT stack run middleware
