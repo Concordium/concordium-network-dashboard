@@ -4,10 +4,9 @@ import Context exposing (Context)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Events exposing (onClick)
-import Element.Font as Font
 import Formatting exposing (asTimeAgoDuration, formatPing)
-import Html
-import Html.Attributes exposing (style)
+import Html exposing (Html)
+import Html.Attributes exposing (attribute, style)
 import Network exposing (Host, Model, Msg(..), NetworkNode, findNodeById)
 import RemoteData exposing (RemoteData(..))
 import Widgets exposing (content, remoteDataView)
@@ -65,26 +64,43 @@ viewSelectedNode ctx node model =
             pairs
                 |> List.map
                     (\( label, elem ) ->
-                        row [ height (shrink |> minimum 30) ]
-                            [ column [ width (px 300), Font.color ctx.palette.fg1, alignTop ] [ text label ]
-                            , column [ width fill, alignTop ] [ elem ]
+                        Html.tr []
+                            [ Html.td [] [ Html.text label ]
+                            , Html.td [] [ elem ]
                             ]
+                     --row [ height (shrink |> minimum 30) ]
+                     --    [ column [ width (px 300), Font.color model.palette.fg1 ] [ text label ]
+                     --    , column [ width fill ] [ elem ]
+                     --    ]
                     )
     in
-    column [ Font.color ctx.palette.success ]
-        statRows
-
-
-forceWrapTextElement : String -> Element msg
-forceWrapTextElement t =
     html <|
-        Html.div
-            [ style "overflow-wrap" "break-word"
-            , style "white-space" "normal"
-            , Html.Attributes.width 200
-            ]
-            [ Html.text t
-            ]
+        Html.table [ attribute "style" "color:white" ]
+            statRows
+        --table [ Font.color model.palette.success, alignTop ]
+        --    { data = pairs
+        --    , columns =
+        --        [ { header = Element.none
+        --          , width = fill
+        --          , view = \( k, _ ) -> text k
+        --          }
+        --        , { header = Element.none
+        --          , width = fill
+        --          , view = \( _, v ) -> v
+        --          }
+        --        ]
+        --    }
+
+
+forceWrapTextElement : String -> Html msg
+forceWrapTextElement t =
+    Html.div
+        [ style "overflow-wrap" "break-word"
+        , style "white-space" "normal"
+        , Html.Attributes.width 200
+        ]
+        [ Html.text t
+        ]
 
 
 viewPeerList : Dict Host NetworkNode -> List String -> Element Msg
