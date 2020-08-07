@@ -104,7 +104,3 @@ stringTooltipAboveWithCopy ctx content =
             ]
             [ text content ]
         )
-
-
-padding_ l t r b =
-    paddingEach { bottom = b, left = l, right = r, top = t }

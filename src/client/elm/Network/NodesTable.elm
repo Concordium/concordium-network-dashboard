@@ -45,7 +45,7 @@ nodesTable ctx sortMode nodes =
             [ spacing 10
             , Font.color ctx.palette.fg2
             , Font.alignRight
-            , padding_ 0 20 0 2
+            , paddingEach { bottom = 0, left = 20, right = 0, top = 2 }
             ]
             { data = nodes
             , columns =
@@ -160,13 +160,15 @@ sortableHeader : Context a -> SortMode -> SortBy -> String -> Element Msg
 sortableHeader ctx sortMode sortBy name =
     let
         withIcon url =
-            row [ spacing 5, Font.color ctx.palette.fg1, pointer ]
+            row [ spacing 5, Font.color ctx.palette.fg1, pointer, alignRight ]
                 [ el [ onClick <| SortSet sortBy ] (text name)
-                , image [ width (px 10) ] { src = url, description = "Sort Ascending Icon" }
+                , image [ width (px 10) ] { src = url, description = "Sort icon" }
                 ]
 
         withoutIcon =
-            el [ onClick <| SortSet sortBy, Font.color ctx.palette.fg1, pointer ] (text name)
+            row [ spacing 5, Font.color ctx.palette.fg1, pointer, alignRight ]
+                [ el [ onClick <| SortSet sortBy ] (text name)
+                ]
     in
     case sortMode of
         SortAsc sortBy_ ->
@@ -198,17 +200,18 @@ sortableHeaderWithTooltip ctx sortMode sortBy name tooltip =
                 , stringTooltipAbove ctx tooltip
                 ]
                 [ el [ onClick <| SortSet sortBy ] (text name)
-                , image [ width (px 10) ] { src = url, description = "Sort Ascending Icon" }
+                , image [ width (px 10) ] { src = url, description = "Sort icon" }
                 ]
 
         withoutIcon =
-            el
-                [ onClick <| SortSet sortBy
+            row
+                [ spacing 5
                 , Font.color ctx.palette.fg1
                 , pointer
                 , stringTooltipAbove ctx tooltip
                 ]
-                (text name)
+                [ el [ onClick <| SortSet sortBy ] (text name)
+                ]
     in
     case sortMode of
         SortAsc sortBy_ ->
