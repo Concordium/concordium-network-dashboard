@@ -20,4 +20,4 @@ RUN npm install
 
 ENV PORT=80
 EXPOSE 80
-ENTRYPOINT npm run start:prod
+ENTRYPOINT npm run start

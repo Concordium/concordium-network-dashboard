@@ -11,15 +11,14 @@
     "clean": "rm -rf dist",
     "lint": "tslint -c tslint.json 'src/**/*.ts' 'src/**/*.tsx'",
     "start": "node dashboard-backend.js",
-    "start:prod": "NODE_ENV=production node dashboard-backend.js",
-    "build-client": "NODE_ENV=production webpack -p && cp -rp assets dist/public",
-    "dev-client": "webpack-dev-server -w",
-    "dev-client:hot": "webpack-dev-server -w --hot",
+    "build": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run build-server\" \"npm run build-client\"",
+    "build-client": "webpack -p && cp -rp assets dist/public",
     "build-server": "tsc -p ./src/server",
-    "dev-server": "tsc-watch -p ./src/server --onSuccess \"node dashboard-backend.js\"",
     "dev": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run dev-server\" \"npm run dev-client\"",
     "dev:hot": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run dev-server\" \"npm run dev-client:hot\"",
-    "build": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run build-server\" \"npm run build-client\""
+    "dev-client": "webpack-dev-server -w",
+    "dev-client:hot": "webpack-dev-server -w --hot",
+    "dev-server": "tsc-watch -p ./src/server --onSuccess \"node dashboard-backend.js\""
   },
   "prettier": {
     "trailingComma": "all",

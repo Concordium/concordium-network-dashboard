@@ -1,6 +1,8 @@
 
 # Install deps and build
 npm i
+
+# TODO Set NODE_ENVIRONMENT if needed...
 npm run build
 
 # Create the image
