@@ -1,3 +1,0 @@
-[submodule "visualizations"]
-	path = visualizations
-	url = git@gitlab.com:Concordium/visualizations.git
