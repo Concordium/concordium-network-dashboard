@@ -1,0 +1,133 @@
+{
+  "name": "visualizations",
+  "version": "1.0.0",
+  "description": "Concordium Visualizations",
+  "main": "website-backend.js",
+  "engines": {
+    "node": "11.8.0",
+    "npm": "6.5.0"
+  },
+  "scripts": {
+    "test": "jest",
+    "clean": "rm -rf dist",
+    "lint": "tslint -c tslint.json 'src/**/*.ts' 'src/**/*.tsx'",
+    "start": "node website-backend.js",
+    "start:prod": "NODE_ENV=production node website-backend.js",
+    "build-client": "NODE_ENV=production npm run clean && webpack -p && cp -rp assets dist/public",
+    "dev-client": "webpack-dev-server -w",
+    "dev-client:hot": "webpack-dev-server -w --hot",
+    "build-server": "tsc -p ./src/server",
+    "dev-server": "tsc-watch -p ./src/server --onSuccess \"node website-backend.js\"",
+    "dev-collector": "tsc-watch -p ./src/server --onSuccess \"node dashboard-collector.js\"",
+    "dev": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run dev-server\" \"npm run dev-client\"",
+    "dev:hot": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run dev-server\" \"npm run dev-client:hot\"",
+    "build": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run build-server\" \"npm run build-client\""
+  },
+  "prettier": {
+    "trailingComma": "all",
+    "tabWidth": 2,
+    "semi": true,
+    "singleQuote": true,
+    "jsxSingleQuote": true,
+    "printWidth": 120
+  },
+  "keywords": [
+    "typescript",
+    "react",
+    "starter-kit",
+    "webpack",
+    "fullstack",
+    "express",
+    "express4",
+    "node"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@gitlab.com:Concordium/visualizations.git"
+  },
+  "license": "MIT",
+  "author": "Gil Amran",
+  "jest": {
+    "roots": [
+      "<rootDir>/src"
+    ],
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.tsx?$",
+    "snapshotSerializers": [
+      "enzyme-to-json/serializer"
+    ],
+    "setupTestFrameworkScriptFile": "<rootDir>/src/client/setupEnzyme.ts",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ],
+    "globals": {
+      "ts-jest": {
+        "tsConfig": "<rootDir>/src/tsconfig-for-tests.json"
+      }
+    }
+  },
+  "dependencies": {
+    "@babel/polyfill": "^7.8.3",
+    "@grpc/proto-loader": "^0.5.3",
+    "body-parser": "^1.19.0",
+    "elm-test": "^0.19.1",
+    "express": "^4.17.1",
+    "grpc": "^1.24.2",
+    "http-auth": "^4.1.2",
+    "http-proxy-middleware": "^1.0.1",
+    "interval-promise": "^1.4.0",
+    "prismic-dom": "^2.2.3",
+    "prismic-javascript": "^2.7.1",
+    "socket.io": "^2.3.0",
+    "socket.io-client": "^2.3.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.8.6",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/plugin-proposal-numeric-separator": "^7.8.3",
+    "@babel/plugin-proposal-object-rest-spread": "^7.8.3",
+    "@babel/plugin-transform-runtime": "^7.8.3",
+    "@babel/preset-env": "^7.8.6",
+    "@babel/preset-typescript": "^7.8.3",
+    "@types/enzyme": "^3.10.5",
+    "@types/express": "^4.17.2",
+    "@types/jest": "^25.1.3",
+    "@types/node": "^13.7.7",
+    "@types/ws": "^7.2.2",
+    "axios": "^0.19.2",
+    "babel-loader": "^8.0.6",
+    "concurrently": "^5.1.0",
+    "cross-env": "^7.0.0",
+    "css-loader": "^3.4.2",
+    "cssnano": "^4.1.10",
+    "elm": "^0.19.1-3",
+    "elm-format": "^0.8.3",
+    "elm-hot-webpack-loader": "^1.1.6",
+    "elm-typescript-interop": "0.0.17",
+    "elm-webpack-loader": "^6.0.1",
+    "enzyme": "^3.11.0",
+    "enzyme-to-json": "^3.4.4",
+    "file-loader": "^5.1.0",
+    "html-webpack-plugin": "^3.2.0",
+    "jest": "^25.1.0",
+    "open-browser-webpack-plugin": "github:rodrigopandini/open-browser-webpack-plugin",
+    "style-loader": "^1.1.3",
+    "ts-jest": "^25.2.1",
+    "tsc-watch": "^4.2.3",
+    "tslib": "^1.11.1",
+    "tslint": "^6.0.0",
+    "typescript": "^3.8.3",
+    "url-loader": "^3.0.0",
+    "webpack": "^4.42.0",
+    "webpack-bundle-analyzer": "^3.8.0",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3"
+  }
+}
