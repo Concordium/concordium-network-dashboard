@@ -7,9 +7,11 @@ import Dict.Extra as Dict
 import Element exposing (..)
 import Formatting exposing (asSecondsAgo, averageStatSecondsFor)
 import Http
+import Icons
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
 import List.Extra as List
+import Palette
 import RemoteData exposing (RemoteData(..), WebData)
 import Route exposing (Route(..))
 import ScrollHelpers exposing (scrollPageToTop)
@@ -222,13 +224,17 @@ findNodeById nodeId =
 
 viewSummaryWidgets : Context a -> WebData (Dict Host NetworkNode) -> Element msg
 viewSummaryWidgets ctx remoteNodes =
+    let
+        iconSize =
+            36
+    in
     column [ spacing 12, width fill ]
         [ wrappedRow [ spacing 12, width fill ]
             (List.map (viewWidget ctx)
                 [ { color = ctx.palette.c3
-                  , title = "Active nodes"
+                  , title = "Active Nodes"
                   , description = ""
-                  , icon = "/assets/images/icon-nodes-purple.png"
+                  , icon = Icons.nodes iconSize
                   , value =
                         RemoteData.map
                             (\nodes ->
@@ -240,7 +246,7 @@ viewSummaryWidgets ctx remoteNodes =
                 , { color = ctx.palette.c1
                   , title = "Last Block"
                   , description = ""
-                  , icon = "/assets/images/icon-lastblock-lightblue.png"
+                  , icon = Icons.lastBlock iconSize
                   , value =
                         RemoteData.map
                             (\nodes ->
@@ -259,7 +265,7 @@ viewSummaryWidgets ctx remoteNodes =
                 , { color = ctx.palette.c2
                   , title = "Last Finalization"
                   , description = ""
-                  , icon = "/assets/images/icon-blocklastfinal-green.png"
+                  , icon = Icons.lastFinalizedBlock iconSize
                   , value =
                         RemoteData.map
                             (\nodes ->
@@ -276,9 +282,12 @@ viewSummaryWidgets ctx remoteNodes =
                   , subvalue = Nothing
                   }
                 , { color = ctx.palette.c1
-                  , title = "Chain Length"
+                  , title = "Total Length"
                   , description = ""
-                  , icon = "/assets/images/icon-blocks-blue.png"
+                  , icon =
+                        Icons.chainLength iconSize
+                            (Palette.uiToColor ctx.palette.c1)
+                            (Palette.uiToColor ctx.palette.c2)
                   , value =
                         RemoteData.map
                             (\nodes -> String.fromInt <| round (majorityStatFor .bestBlockHeight -1 nodes))
@@ -288,7 +297,10 @@ viewSummaryWidgets ctx remoteNodes =
                 , { color = ctx.palette.c2
                   , title = "Finalized Length"
                   , description = ""
-                  , icon = "/assets/images/icon-blocksfinal-green.png"
+                  , icon =
+                        Icons.finalizedLength iconSize
+                            (Palette.uiToColor ctx.palette.c1)
+                            (Palette.uiToColor ctx.palette.c2)
                   , value =
                         RemoteData.map
                             (\nodes -> String.fromInt <| round (majorityStatFor .finalizedBlockHeight -1 nodes))
@@ -299,10 +311,10 @@ viewSummaryWidgets ctx remoteNodes =
             )
         , wrappedRow [ spacing 12, width fill ]
             (List.map (viewWidget ctx)
-                [ { color = ctx.palette.c4
+                [ { color = ctx.palette.c1
                   , title = "Block Time"
                   , description = "Average time between verified blocks"
-                  , icon = "/assets/images/icon-rocket-pink.png"
+                  , icon = Icons.lastBlockEMA iconSize
                   , value =
                         RemoteData.map
                             (\nodes -> averageStatSecondsFor .blockArrivePeriodEMA nodes)
@@ -310,10 +322,10 @@ viewSummaryWidgets ctx remoteNodes =
                   , subvalue =
                         Nothing
                   }
-                , { color = ctx.palette.c4
+                , { color = ctx.palette.c2
                   , title = "Finalization Time"
                   , description = "Average time between completed finalizations"
-                  , icon = "/assets/images/icon-rocket-pink.png"
+                  , icon = Icons.lastFinalizedBlockEMA iconSize
                   , value =
                         RemoteData.map
                             (\nodes -> averageStatSecondsFor .finalizationPeriodEMA nodes)
