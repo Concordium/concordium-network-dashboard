@@ -160,9 +160,14 @@ sortableHeader : Context a -> SortMode -> SortBy -> String -> Element Msg
 sortableHeader ctx sortMode sortBy name =
     let
         withIcon url =
-            row [ spacing 5, Font.color ctx.palette.fg1, pointer ]
-                [ el [ onClick <| SortSet sortBy ] (text name)
-                , image [ width (px 10) ] { src = url, description = "Sort Ascending Icon" }
+            row
+                [ spacing 5
+                , Font.color ctx.palette.fg1
+                , pointer
+                , onClick <| SortSet sortBy
+                ]
+                [ el [ alignRight ] (text name)
+                , image [ alignRight, width (px 10) ] { src = url, description = "Sort Ascending Icon" }
                 ]
 
         withoutIcon =
@@ -196,9 +201,10 @@ sortableHeaderWithTooltip ctx sortMode sortBy name tooltip =
                 , Font.color ctx.palette.fg1
                 , pointer
                 , stringTooltipAbove ctx tooltip
+                , onClick <| SortSet sortBy
                 ]
-                [ el [ onClick <| SortSet sortBy ] (text name)
-                , image [ width (px 10) ] { src = url, description = "Sort Ascending Icon" }
+                [ el [ alignRight ] (text name)
+                , image [ alignRight, width (px 10) ] { src = url, description = "Sort Ascending Icon" }
                 ]
 
         withoutIcon =
