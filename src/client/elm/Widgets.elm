@@ -10,13 +10,14 @@ import Icons
 import Loading
 import Palette exposing (Palette, toHex, veryDark, withAlphaEl)
 import RemoteData exposing (RemoteData(..), WebData)
+import Svg exposing (Svg)
 
 
 type alias Widget =
     { color : Color
     , title : String
     , description : String
-    , icon : String
+    , icon : Svg Never
     , value : WebData String
     , subvalue : Maybe String
     }
@@ -57,9 +58,7 @@ viewWidget ctx widget =
                 , height (px 50)
                 , width (px 50)
                 ]
-                (image [ height (px 25), centerY, centerX ]
-                    { src = widget.icon, description = "Decorative Icon" }
-                )
+                (el [ Font.color widget.color, centerY, centerX ] (Element.map never <| html <| widget.icon))
             , column [ spacing 10 ]
                 [ row []
                     [ el [ Font.color (withAlphaEl 0.7 widget.color) ]
@@ -74,7 +73,10 @@ viewWidget ctx widget =
                             , Font.size 10
                             , Border.rounded 10
                             , paddingXY 10 5
-                            , stringTooltipAboveWidget ctx (paragraph [ Font.size 14, width (fill |> minimum 300) ] [ text widget.description ])
+                            , stringTooltipAboveWidget ctx
+                                (paragraph [ Font.size 14, width (fill |> minimum 300) ]
+                                    [ text widget.description ]
+                                )
                             ]
                             (text "i")
                     ]
