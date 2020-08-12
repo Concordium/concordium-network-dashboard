@@ -26,7 +26,11 @@ devTarget =
 
 parseEnv : Bool -> Environment
 parseEnv isProduction =
-    if isProduction then Production else Development devTarget
+    if isProduction then
+        Production
+
+    else
+        Development devTarget
 
 
 defaultConfig : Environment -> Config
