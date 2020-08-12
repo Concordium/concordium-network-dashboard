@@ -1,30 +1,41 @@
 module Icons exposing (..)
 
+import Color exposing (Color)
+import Color.Convert exposing (colorToHex)
+import Explorer exposing (Msg)
 import Svg exposing (..)
 import Svg.Attributes
     exposing
-        ( d
+        ( cx
+        , cy
+        , d
         , fill
+        , fillOpacity
         , fillRule
+        , height
         , id
         , points
+        , r
+        , rx
         , stroke
         , strokeWidth
         , transform
         , version
+        , viewBox
+        , width
         , x
         , y
         )
-import TypedSvg.Attributes exposing (height, rx, viewBox, width)
+import TypedSvg.Attributes as Typed
 import TypedSvg.Types exposing (Paint(..), px)
 
 
 iconBase : Float -> List (Svg msg) -> Svg msg
 iconBase size group =
     svg
-        [ width (px size)
-        , height (px size)
-        , viewBox 0 0 42 42
+        [ Typed.width (px size)
+        , Typed.height (px size)
+        , Typed.viewBox 0 0 42 42
         , version "1.1"
         ]
         group
@@ -57,9 +68,9 @@ tooltip_arrow size =
 tooltip_arrow_round : Float -> Svg msg
 tooltip_arrow_round size =
     svg
-        [ width (px size)
-        , height (px (size * 1.5))
-        , viewBox 0 0 42 (42 + 21)
+        [ Typed.width (px size)
+        , Typed.height (px (size * 1.5))
+        , Typed.viewBox 0 0 42 (42 + 21)
         , version "1.1"
         ]
         [ g
@@ -319,9 +330,9 @@ block_not_finalized size =
                 , fillRule "nonzero"
                 , x "4.73"
                 , y "4.73"
-                , width (px 32.54)
-                , height (px 32.54)
-                , rx (px 4)
+                , width "32.54"
+                , height "32.54"
+                , rx "4"
                 ]
                 []
             ]
@@ -578,22 +589,18 @@ close size =
                 , fill "currentColor"
                 ]
                 [ rect
-                    [ id "Rectangle-2-Copy"
-                    , x
-                        "0"
+                    [ x "0"
                     , y "13"
-                    , width (px 29)
-                    , height (px 3)
+                    , width "29"
+                    , height "3"
                     ]
                     []
                 , rect
-                    [ id "Rectangle-2-Copy-2"
-                    , transform "translate(14.500000, 14.500000) rotate(-90.000000) translate(-14.500000, -14.500000) "
-                    , x
-                        "0"
+                    [ transform "translate(14.500000, 14.500000) rotate(-90.000000) translate(-14.500000, -14.500000) "
+                    , x "0"
                     , y "13"
-                    , width (px 29)
-                    , height (px 3)
+                    , width "29"
+                    , height "3"
                     ]
                     []
                 ]
@@ -609,14 +616,13 @@ transaction : Float -> Svg msg
 transaction size =
     iconBase size
         [ g
-            [ id "/Icons/Transaction"
+            [ id "Icons/Transaction"
             , stroke "none"
             , strokeWidth "1"
             , fillRule "evenodd"
             ]
             [ Svg.path
                 [ d "M16.4230769,20.1923077 L18.5894872,22.3434615 L13.1124359,27.8205128 L34.7307692,27.8205128 L34.7307692,30.8717949 L13.1124359,30.8717949 L18.5742308,36.3488462 L16.4230769,38.5 L7.26923077,29.3461538 L16.4230769,20.1923077 Z M25.5769231,3.5 L34.7307692,12.6538462 L25.5769231,21.8076923 L23.4105128,19.6565385 L28.8875641,14.1794872 L7.26923077,14.1794872 L7.26923077,11.1282051 L28.8875641,11.1282051 L23.4257692,5.65115385 L25.5769231,3.5 Z"
-                , id "Path-2"
                 , fill "currentColor"
                 , fillRule "nonzero"
                 ]
@@ -633,14 +639,13 @@ speed : Float -> Svg msg
 speed size =
     iconBase size
         [ g
-            [ id "/Icons/Speed"
+            [ id "Icons/Speed"
             , stroke "none"
             , strokeWidth "1"
             , fillRule "evenodd"
             ]
             [ Svg.path
                 [ d "M9.12893467,13.1590981 C14.5050837,7.4029386 23.2349825,6.33048384 29.8445174,10.6142204 L29.8445174,10.6142204 L26.8217551,12.6293953 C21.6894048,10.0620068 15.4808267,11.1632601 11.5445816,15.3392004 C7.60833654,19.5151407 6.87558109,25.7779092 9.7415227,30.7497179 L9.7415227,30.7497179 L32.2659776,30.7497179 C34.4473244,26.9644147 34.581641,22.3365952 32.6235086,18.4311488 L32.6235086,18.4311488 L34.6302701,15.42 L34.8209779,15.7217254 C38.25929,21.2865393 38.023796,28.3761474 34.2237799,33.7005274 L34.0048785,34 L8.00262178,34 C3.27813825,27.6979681 3.75278566,18.9152577 9.12893467,13.1590981 Z M32.5097487,12.7431552 L23.3114504,26.5406026 C22.7018007,27.150931 21.8745308,27.493867 21.0118758,27.493867 C20.1492209,27.493867 19.321951,27.150931 18.7123013,26.5406026 C18.1019729,25.9309529 17.7590369,25.103683 17.7590369,24.241028 C17.7590369,23.3783731 18.1019729,22.5511032 18.7123013,21.9414535 L18.7123013,21.9414535 L32.5097487,12.7431552 Z"
-                , id "Path-2"
                 , fill "currentColor"
                 , fillRule "nonzero"
                 ]
@@ -713,14 +718,12 @@ smart_contract_add_new size =
             ]
             [ Svg.path
                 [ d "M35.3237503,2.7105702 L35.3231062,8.1285702 L40.7421368,8.12895669 L40.7421368,11.7412144 L35.3231062,11.7405702 L35.3237503,17.1596008 L31.7114927,17.1596008 L31.7111062,11.7405702 L26.2931062,11.7412144 L26.2931062,8.12895669 L31.7111062,8.1285702 L31.7114927,2.7105702 L35.3237503,2.7105702 Z"
-                , id "Smart-Contracts-Copy"
                 , fill "currentColor"
                 , fillRule "nonzero"
                 ]
                 []
             , Svg.path
                 [ d "M22.6839275,8.13026873 L22.6839275,11.7425264 L10.0410256,11.7425264 L10.0410256,33.8134207 L31.7145716,33.8134207 L31.7145716,20.7731705 L35.3268293,20.7731705 L35.3268293,37.02833 L6.42876798,37.02833 L6.42876798,8.13026873 L22.6839275,8.13026873 Z M28.1023139,26.191557 L28.1023139,29.8038147 L13.6532833,29.8038147 L13.6532833,26.191557 L28.1023139,26.191557 Z M28.1023139,20.7731705 L28.1023139,24.3854282 L13.6532833,24.3854282 L13.6532833,20.7731705 L28.1023139,20.7731705 Z M28.1023139,15.3547841 L28.1023139,18.9670417 L13.6532833,18.9670417 L13.6532833,15.3547841 L28.1023139,15.3547841 Z"
-                , id "Smart-Contracts-Add-New"
                 , fill "currentColor"
                 , fillRule "nonzero"
                 ]
@@ -733,7 +736,7 @@ smart_contract : Float -> Svg msg
 smart_contract size =
     iconBase size
         [ g
-            [ id "/Icons/SmartContract"
+            [ id "Icons/SmartContract"
             , stroke "none"
             , strokeWidth "1"
             , fillRule "evenodd"
@@ -752,7 +755,7 @@ smart_contract_add : Float -> Svg msg
 smart_contract_add size =
     iconBase size
         [ g
-            [ id "/Icons/SmartContractAdd"
+            [ id "Icons/SmartContractAdd"
             , stroke "none"
             , strokeWidth "1"
             , fillRule "evenodd"
@@ -771,7 +774,7 @@ smart_contract_update : Float -> Svg msg
 smart_contract_update size =
     iconBase size
         [ g
-            [ id "/Icons/SmartContractUpdate"
+            [ id "Icons/SmartContractUpdate"
             , stroke "none"
             , strokeWidth "1"
             , fillRule "evenodd"
@@ -780,6 +783,200 @@ smart_contract_update size =
                 [ d "M22.6839275,8.61610372 L22.6839275,12.2283614 L10.0410256,12.2283614 L10.0410256,34.2992557 L31.7145716,34.2992557 L31.7145716,21.2590055 L35.3268293,21.2590055 L35.3268293,37.514165 L6.42876798,37.514165 L6.42876798,8.61610372 L22.6839275,8.61610372 Z M22.6839275,15.840619 L22.683768,21.258835 L28.1023139,21.2590055 L28.1023139,24.8712632 L22.683768,24.870835 L22.6839275,30.2896497 L19.0716698,30.2896497 L19.070768,24.870835 L13.6532833,24.8712632 L13.6532833,21.2590055 L19.070768,21.258835 L19.0716698,15.840619 L22.6839275,15.840619 Z M33.7193746,0.509274266 C35.9961916,0.736955961 37.6616115,2.76486215 37.7604553,5.04494388 L37.7651032,5.25939309 L37.7651032,5.90959947 L39.571232,5.90959947 L39.571232,16.7463725 L26.9283302,16.7463725 L26.9283302,5.90959947 L28.734459,5.90959947 L28.734459,5.00653505 C28.734459,2.35152567 31.0101814,0.238354941 33.7193746,0.509274266 Z M33.2497811,2.29734181 C31.8062159,2.29734181 30.6306218,3.41947057 30.5455209,4.84120586 L30.5405879,5.00653505 L30.5405879,5.90959947 L35.9589744,5.90959947 L35.9589744,5.00653505 C35.9589744,3.50744812 34.748868,2.29734181 33.2497811,2.29734181 Z"
                 , fill "currentColor"
                 , fillRule "nonzero"
+                ]
+                []
+            ]
+        ]
+
+
+
+-- Top icons (two colored)
+
+
+nodes : Float -> Svg msg
+nodes size =
+    iconBase size
+        [ g
+            [ id "Icons/ActiveNodes"
+            , stroke "none"
+            , strokeWidth "1"
+            , fill "none"
+            , fillRule "evenodd"
+            , fillOpacity "0.3"
+            , transform "translate(0, -1)"
+            ]
+            [ circle [ stroke "currentColor", fill "currentColor", cx "29", cy "28", r "5.5" ] []
+            , circle [ stroke "currentColor", fill "currentColor", cx "21", cy "14", r "5.5" ] []
+            , circle [ stroke "currentColor", fill "currentColor", cx "13", cy "28", r "5.5" ] []
+            ]
+        ]
+
+
+chainLength : Float -> Color -> Color -> Svg msg
+chainLength size candidateColor finalizedColor =
+    iconBase size
+        [ g
+            [ id "Icons/ChainLength"
+            , stroke "none"
+            , strokeWidth "1"
+            , fill "none"
+            , fillRule "evenodd"
+            ]
+            [ g [ transform "translate(7.000000, 12.000000)" ]
+                [ rect [ fill (colorToHex finalizedColor), x "0", y "14", width "8", height "4", rx "0.945" ] []
+                , rect [ fill (colorToHex candidateColor), x "10", y "14", width "8", height "4", rx "0.945" ] []
+                , rect [ fill (colorToHex candidateColor), x "20", y "14", width "8", height "4", rx "0.945" ] []
+                , rect [ fill (colorToHex finalizedColor), x "0", y "0", width "1", height "9" ] []
+                , rect [ fill (colorToHex finalizedColor), x "1", y "4", width "8", height "1" ] []
+                , rect [ fill (colorToHex candidateColor), x "9", y "4", width "17", height "1" ] []
+                , rect [ fill (colorToHex candidateColor), x "26", y "0", width "1", height "9" ] []
+                ]
+            ]
+        ]
+
+
+finalizedLength : Float -> Color -> Color -> Svg msg
+finalizedLength size candidateColor finalizedColor =
+    iconBase size
+        [ g
+            [ id "Icons/FinalizedLength"
+            , stroke "none"
+            , strokeWidth "1"
+            , fill "none"
+            , fillRule "evenodd"
+            ]
+            [ g [ transform "translate(7.000000, 12.000000)" ]
+                [ rect [ fill (colorToHex finalizedColor), x "0", y "14", width "8", height "4", rx "0.945" ] []
+                , rect [ fill (colorToHex finalizedColor), x "10", y "14", width "8", height "4", rx "0.945" ] []
+                , rect [ fill (colorToHex candidateColor), x "20", y "14", width "8", height "4", rx "0.945" ] []
+                , rect [ fill (colorToHex finalizedColor), x "0", y "0", width "1", height "9" ] []
+                , rect [ fill (colorToHex finalizedColor), x "1", y "4", width "16", height "1" ] []
+                , rect [ fill (colorToHex finalizedColor), x "16", y "0", width "1", height "9" ] []
+                ]
+            ]
+        ]
+
+
+lastBlock : Float -> Svg msg
+lastBlock size =
+    iconBase size
+        [ g
+            [ id "Icons/LastBlock"
+            , stroke "none"
+            , strokeWidth "1"
+            , fill "none"
+            , fillRule "evenodd"
+            , transform "translate(-2.0, 0.0)"
+            ]
+            [ rect
+                [ stroke "currentColor"
+                , fillOpacity "0.3"
+                , fill "currentColor"
+                , x "15.5"
+                , y "14.5"
+                , width "23"
+                , height "13"
+                , rx "3.24"
+                ]
+                []
+            , rect [ fill "currentColor", x "3", y "20", width "11", height "1" ] []
+            ]
+        ]
+
+
+lastBlockEMA : Float -> Svg msg
+lastBlockEMA size =
+    iconBase size
+        [ g
+            [ id "Icons/LastBlockEMA"
+            , stroke "none"
+            , strokeWidth "1"
+            , fill "none"
+            , fillRule "evenodd"
+            ]
+            [ g
+                [ id "Group"
+                , transform "translate(6.000000, 6.000000)"
+                , fill "currentColor"
+                ]
+                [ Svg.path
+                    [ d "M15,0.5 C19.0040644,0.5 22.6290644,2.12296778 25.2530483,4.74695167 C27.8770322,7.37093556 29.5,10.9959356 29.5,15 C29.5,19.0040644 27.8770322,22.6290644 25.2530483,25.2530483 C22.6290644,27.8770322 19.0040644,29.5 15,29.5 C10.9959356,29.5 7.37093556,27.8770322 4.74695167,25.2530483 C2.12296778,22.6290644 0.5,19.0040644 0.5,15 C0.5,10.9959356 2.12296778,7.37093556 4.74695167,4.74695167 C7.37093556,2.12296778 10.9959356,0.5 15,0.5 Z M15,6.31818182 C12.6025821,6.31818182 10.4321276,7.28992742 8.86102749,8.86102749 C7.28992742,10.4321276 6.31818182,12.6025821 6.31818182,15 C6.31818182,17.3974179 7.28992742,19.5678724 8.86102749,21.1389725 C10.4321276,22.7100726 12.6025821,23.6818182 15,23.6818182 C17.3974179,23.6818182 19.5678724,22.7100726 21.1389725,21.1389725 C22.7100726,19.5678724 23.6818182,17.3974179 23.6818182,15 C23.6818182,12.6025821 22.7100726,10.4321276 21.1389725,8.86102749 C19.5678724,7.28992742 17.3974179,6.31818182 15,6.31818182 Z"
+                    , stroke "currentColor"
+                    , fillOpacity "0.3"
+                    ]
+                    []
+                , Svg.path
+                    [ d "M15,0.488620877 L20.6908664,1.539636 L25.3240847,4.71115719 L20.7952619,9.2244403 C19.313873,7.73802953 17.2643575,6.81818182 15,6.81818182 L15,0.488620877 Z"
+                    ]
+                    []
+                ]
+            ]
+        ]
+
+
+lastFinalizedBlock : Float -> Svg msg
+lastFinalizedBlock size =
+    iconBase size
+        [ g
+            [ id "Icons/LastFinalizedBlock"
+            , stroke "none"
+            , strokeWidth "1"
+            , fill "none"
+            , fillRule "evenodd"
+            , transform "translate(-2.0, 0.0)"
+            ]
+            [ rect
+                [ stroke "currentColor"
+                , fillOpacity "0.3"
+                , fill "currentColor"
+                , x "15.5"
+                , y "14.5"
+                , width "23"
+                , height "13"
+                , rx "3.24"
+                ]
+                []
+            , polygon
+                [ fill "currentColor"
+                , points "25.776 24 23 21.375 24.12 20.3175 25.776 21.8775 29.88 18 31 19.0575 25.776 24"
+                ]
+                []
+            , rect [ fill "currentColor", x "3", y "20", width "11", height "1" ] []
+            ]
+        ]
+
+
+lastFinalizedBlockEMA : Float -> Svg msg
+lastFinalizedBlockEMA size =
+    iconBase size
+        [ g
+            [ id "Icons/LastFinalizedBlockEMA"
+            , stroke "none"
+            , strokeWidth "1"
+            , fill "none"
+            , fillRule "evenodd"
+            ]
+            [ g
+                [ id "Group"
+                , transform "translate(6.000000, 6.000000)"
+                , fill "currentColor"
+                , fillOpacity "0.3"
+                , stroke "currentColor"
+                ]
+                [ Svg.path
+                    [ d "M15,0.5 C19.0040644,0.5 22.6290644,2.12296778 25.2530483,4.74695167 C27.8770322,7.37093556 29.5,10.9959356 29.5,15 C29.5,19.0040644 27.8770322,22.6290644 25.2530483,25.2530483 C22.6290644,27.8770322 19.0040644,29.5 15,29.5 C10.9959356,29.5 7.37093556,27.8770322 4.74695167,25.2530483 C2.12296778,22.6290644 0.5,19.0040644 0.5,15 C0.5,10.9959356 2.12296778,7.37093556 4.74695167,4.74695167 C7.37093556,2.12296778 10.9959356,0.5 15,0.5 Z M15,6.31818182 C12.6025821,6.31818182 10.4321276,7.28992742 8.86102749,8.86102749 C7.28992742,10.4321276 6.31818182,12.6025821 6.31818182,15 C6.31818182,17.3974179 7.28992742,19.5678724 8.86102749,21.1389725 C10.4321276,22.7100726 12.6025821,23.6818182 15,23.6818182 C17.3974179,23.6818182 19.5678724,22.7100726 21.1389725,21.1389725 C22.7100726,19.5678724 23.6818182,17.3974179 23.6818182,15 C23.6818182,12.6025821 22.7100726,10.4321276 21.1389725,8.86102749 C19.5678724,7.28992742 17.3974179,6.31818182 15,6.31818182 Z"
+                    ]
+                    []
+                ]
+            , Svg.path
+                [ d "M21,6.48862088 L26.6908664,7.539636 L31.3240847,10.7111572 L26.7952619,15.2244403 C25.313873,13.7380295 23.2643575,12.8181818 21,12.8181818 L21,6.48862088 Z"
+                , fill "currentColor"
+                ]
+                []
+            , polygon
+                [ id "Path-Copy"
+                , fill "currentColor"
+                , points "19.776 24 17 21.375 18.12 20.3175 19.776 21.8775 23.88 18 25 19.0575 19.776 24"
                 ]
                 []
             ]
