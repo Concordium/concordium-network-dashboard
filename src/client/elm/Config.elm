@@ -1,8 +1,9 @@
-module Config exposing (Config, defaultConfig, parseEnv)
+module Config exposing (Config, Environment, defaultConfig, isProduction, parseEnv)
 
 
 type alias Config =
-    { collectorUrl : String
+    { environment : Environment
+    , collectorUrl : String
     , middlewareUrl : String
     }
 
@@ -24,9 +25,14 @@ devTarget =
     Staging
 
 
+isProduction : Config -> Bool
+isProduction cfg =
+    cfg.environment == Production
+
+
 parseEnv : Bool -> Environment
-parseEnv isProduction =
-    if isProduction then
+parseEnv isProd =
+    if isProd then
         Production
 
     else
@@ -35,7 +41,8 @@ parseEnv isProduction =
 
 defaultConfig : Environment -> Config
 defaultConfig env =
-    { collectorUrl = defaultCollectorUrl env
+    { environment = env
+    , collectorUrl = defaultCollectorUrl env
     , middlewareUrl = defaultMiddlewareUrl env
     }
 

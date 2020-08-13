@@ -1,11 +1,11 @@
 module Chain.Interpolate exposing (..)
 
 import Chain.Flatten exposing (..)
+import Chain.Interpolation as Interpolation exposing (Interpolator)
 import Circle2d exposing (Circle2d)
 import Color.Manipulate
 import Direction2d exposing (Direction2d)
-import Interpolation exposing (Interpolator)
-import Pixels exposing (Pixels, pixels)
+import Pixels exposing (Pixels)
 import Point2d exposing (Point2d)
 import Quantity exposing (Quantity)
 import Rectangle2d exposing (Rectangle2d)

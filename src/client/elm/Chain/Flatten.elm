@@ -1,11 +1,10 @@
 module Chain.Flatten exposing (..)
 
 import Chain.Build exposing (Block, BlockStatus(..))
+import Chain.Grid as Grid exposing (GridSpec)
 import Color exposing (Color)
 import Context exposing (Context)
 import Element
-import GeometryUtils exposing (TopLeftCoordinates)
-import Grid exposing (GridSpec)
 import Palette exposing (Palette)
 import Pixels exposing (Pixels(..))
 import Point2d exposing (Point2d)
@@ -14,18 +13,22 @@ import Tree exposing (Tree(..))
 import Tree.Zipper as Zipper exposing (Zipper)
 
 
+type Coordinates
+    = Coordinates
+
+
 type alias DrawableBlock =
     { hash : String
     , color : Color
-    , rect : Rectangle2d Pixels TopLeftCoordinates
+    , rect : Rectangle2d Pixels Coordinates
     , fractionNodesAt : Float -- The fraction of nodes for which this is the best block
     }
 
 
 type alias DrawableConnector =
     { id : String
-    , start : Point2d Pixels TopLeftCoordinates
-    , end : Point2d Pixels TopLeftCoordinates
+    , start : Point2d Pixels Coordinates
+    , end : Point2d Pixels Coordinates
     , color : Color
     }
 
@@ -127,15 +130,16 @@ addDrawables ctx gridSpec maybeParent maybeParentBlock ( x, y ) block chain =
 
 blockColor : Palette Element.Color -> BlockStatus -> Color
 blockColor palette status =
-    case status of
-        Finalized ->
-            palette.c2 |> Palette.uiToColor
+    Palette.uiToColor <|
+        case status of
+            Finalized ->
+                palette.c2
 
-        LastFinalized ->
-            palette.c2 |> Palette.uiToColor
+            LastFinalized ->
+                palette.c2
 
-        Candidate ->
-            palette.c1 |> Palette.uiToColor
+            Candidate ->
+                palette.c1
 
 
 emptyDrawableChain : DrawableChain
