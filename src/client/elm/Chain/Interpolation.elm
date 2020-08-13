@@ -1,4 +1,4 @@
-module Interpolation exposing
+module Chain.Interpolation exposing
     ( Interpolator
     , float, int, step, rgb, rgbWithGamma, hsl, hslLong
     , map, map2, map3, map4, map5, piecewise, tuple

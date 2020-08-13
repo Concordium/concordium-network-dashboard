@@ -1,4 +1,4 @@
-module Transition exposing
+module Chain.Transition exposing
     ( Transition, for, easeFor, constant, step, value, isComplete
     , Easing, easeLinear, easeCubic
     )
@@ -94,7 +94,7 @@ Then make your view like normal:
 
 -}
 
-import Interpolation exposing (Interpolator)
+import Chain.Interpolation exposing (Interpolator)
 
 
 {-| A transition is a smooth interpolation between a beginning state and an end state, with a duration and easing.
@@ -163,19 +163,6 @@ value (Transition soFar total (Easing easeing) interp) =
 isComplete : Transition a -> Bool
 isComplete (Transition soFar total _ _) =
     soFar >= total
-
-
-
---
--- stagger :
---     { duration : Int
---     , delay : Int
---     , easing : Easing
---     }
---     -> List (Interpolator a)
---     -> Transition (List a)
--- stagger { duration, delay, easing } interpolations =
---     Debug.todo "not implemeneted yet"
 
 
 {-| Easing is a method of distorting time to control apparent motion in animation. It is most commonly used for [slow-in, slow-out](https://en.wikipedia.org/wiki/Twelve_basic_principles_of_animation#Slow_In_and_Slow_Out). By easing time, animated transitions are smoother and exhibit more plausible motion.
