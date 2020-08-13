@@ -2,13 +2,13 @@ module Chain.View exposing (..)
 
 import Chain.Build exposing (..)
 import Chain.Flatten exposing (..)
+import Chain.Grid as Grid exposing (GridSpec)
 import Circle2d exposing (Circle2d)
 import Color exposing (Color)
 import Color.Manipulate exposing (fadeOut)
 import Context exposing (..)
 import CubicSpline2d
 import Geometry.Svg as Svg
-import Grid exposing (GridSpec)
 import Maybe.Extra as Maybe
 import Palette exposing (Palette)
 import Pixels exposing (Pixels)
@@ -62,15 +62,6 @@ viewChain ctx { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } ch
         )
 
 
-fromSignedInt : Int -> String
-fromSignedInt number =
-    if number > 0 then
-        "+" ++ String.fromInt number
-
-    else
-        String.fromInt number
-
-
 viewBlock :
     Context a
     -> Maybe (String -> msg)
@@ -93,7 +84,7 @@ viewBlock ctx clickMsg selectedBlock ({ hash, rect, color, fractionNodesAt } as 
         highlight =
             selectedBlock
                 |> Maybe.filter ((==) hash)
-                |> Maybe.map (\h -> stroke (Paint <| color))
+                |> Maybe.map (\h -> stroke (Paint color))
                 |> Maybe.withDefault (stroke PaintNone)
 
         alpha =

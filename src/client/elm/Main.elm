@@ -244,15 +244,11 @@ subscriptions model =
         , Storage.receiveDoc StorageDocReceived
         , Time.every 1000 CurrentTime
         , Sub.map NetworkMsg <| Network.subscriptions
-        , case model.currentRoute of
-            ChainInit ->
-                Sub.map ChainMsg <| Chain.subscriptions model.chainModel
+        , if Route.isChain model.currentRoute then
+            Sub.map ChainMsg <| Chain.subscriptions model.chainModel
 
-            ChainSelected hash ->
-                Sub.map ChainMsg <| Chain.subscriptions model.chainModel
-
-            _ ->
-                Sub.none
+          else
+            Sub.none
         ]
 
 
@@ -300,8 +296,8 @@ viewHeader ctx =
                     ]
             }
         , row [ alignRight, spacing 20, Font.color ctx.palette.fg2 ]
-            [ link linkstyle { url = "/", label = text "Network" }
-            , link linkstyle { url = "/chain", label = text "Chain" }
+            [ link linkstyle { url = Route.toString Network, label = text "Network" }
+            , link linkstyle { url = Route.toString ChainInit, label = text "Chain" }
             , viewColorModeToggle ctx
             ]
         ]
@@ -338,7 +334,7 @@ viewChain model =
                 , Border.rounded 6
                 , Border.width 1
                 ]
-                (Chain.view model model.chainModel False)
+                (Chain.view model model.chainModel (not <| Config.isProduction model.config))
                 |> Element.map ChainMsg
             , Element.map translateMsg <|
                 Explorer.View.view model

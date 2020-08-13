@@ -2,7 +2,6 @@ module Icons exposing (..)
 
 import Color exposing (Color)
 import Color.Convert exposing (colorToHex)
-import Explorer exposing (Msg)
 import Svg exposing (..)
 import Svg.Attributes
     exposing
@@ -21,7 +20,6 @@ import Svg.Attributes
         , strokeWidth
         , transform
         , version
-        , viewBox
         , width
         , x
         , y

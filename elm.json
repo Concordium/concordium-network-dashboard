@@ -1,9 +1,6 @@
 {
     "type": "application",
-    "source-directories": [
-        "src/client/elm",
-        "visualizations/src/client/modules"
-    ],
+    "source-directories": [ "src/client/elm" ],
     "elm-version": "0.19.1",
     "dependencies": {
         "direct": {
@@ -11,10 +8,6 @@
             "NoRedInk/elm-json-decode-pipeline": "1.0.0",
             "Skinney/murmur3": "2.0.8",
             "avh4/elm-color": "1.0.0",
-            "elm-community/dict-extra": "2.4.0",
-            "elm-community/list-extra": "8.2.4",
-            "elm-community/maybe-extra": "5.2.0",
-            "elm-community/typed-svg": "6.0.0",
             "elm/browser": "1.0.2",
             "elm/core": "1.0.5",
             "elm/file": "1.0.5",
@@ -24,6 +17,10 @@
             "elm/svg": "1.0.1",
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
+            "elm-community/dict-extra": "2.4.0",
+            "elm-community/list-extra": "8.2.4",
+            "elm-community/maybe-extra": "5.2.0",
+            "elm-community/typed-svg": "6.0.0",
             "gingko/time-distance": "2.3.0",
             "ianmackenzie/elm-float-extra": "1.1.0",
             "ianmackenzie/elm-geometry": "3.6.0",
@@ -56,7 +53,11 @@
         }
     },
     "test-dependencies": {
-        "direct": {},
-        "indirect": {}
+        "direct": {
+            "elm-explorations/test": "1.2.2"
+        },
+        "indirect": {
+            "elm/random": "1.0.0"
+        }
     }
 }

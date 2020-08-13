@@ -1,10 +1,10 @@
-module Grid exposing (..)
+module Chain.Grid exposing (..)
 
+import Angle
 import Pixels exposing (Pixels, pixels)
 import Point2d exposing (Point2d)
 import Quantity exposing (Quantity)
 import Rectangle2d exposing (Rectangle2d)
-import Rectangle2d.Extra as Rectangle2d
 
 
 type alias GridSpec =
@@ -20,7 +20,7 @@ type alias GridSpec =
 cell : GridSpec -> Int -> Int -> Rectangle2d Pixels coords
 cell spec x y =
     cellRegion spec x y
-        |> Rectangle2d.inset (pixels spec.gutterWidth) (pixels spec.gutterHeight)
+        |> inset (pixels spec.gutterWidth) (pixels spec.gutterHeight)
 
 
 cellRegion : GridSpec -> Int -> Int -> Rectangle2d Pixels coords
@@ -46,3 +46,22 @@ dimensions : GridSpec -> Int -> Int -> ( Quantity Float Pixels, Quantity Float P
 dimensions spec cellsX cellsY =
     region spec 0 0 cellsX cellsY
         |> Rectangle2d.dimensions
+
+
+inset :
+    Quantity Float units
+    -> Quantity Float units
+    -> Rectangle2d units coordinates
+    -> Rectangle2d units coordinates
+inset x y rect =
+    let
+        ( width, height ) =
+            Rectangle2d.dimensions rect
+                |> Tuple.mapBoth
+                    (\w -> w |> Quantity.minus x)
+                    (\h -> h |> Quantity.minus y)
+    in
+    Rectangle2d.withDimensions
+        ( width, height )
+        (Angle.degrees 0)
+        (Rectangle2d.centerPoint rect)

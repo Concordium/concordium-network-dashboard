@@ -1,4 +1,4 @@
-module Route exposing (Route(..), fromUrl, toString)
+module Route exposing (Route(..), fromUrl, isChain, toString)
 
 import Url exposing (Url)
 import Url.Parser exposing (..)
@@ -45,3 +45,16 @@ toString route =
 
         ChainSelected hash ->
             "/chain/" ++ hash
+
+
+isChain : Route -> Bool
+isChain route =
+    case route of
+        ChainInit ->
+            True
+
+        ChainSelected hash ->
+            True
+
+        _ ->
+            False
