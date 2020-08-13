@@ -27,8 +27,7 @@ To build and run the app in watch mode with source maps, run
 npm run dev
 ```
 
-This opens [http://localhost:3000](http://localhost:3000) in a browser
-and is the preferred method of running the app during development.
+This opens the app (http://localhost:3001) in a browser and refreshes automatically when files are changed.
 
 Other common build/run targets include:
   

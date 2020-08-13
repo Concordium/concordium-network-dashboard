@@ -5,7 +5,9 @@ import Browser.Navigation as Nav
 import Chain.Build as Build exposing (..)
 import Chain.DictTree as DictTree exposing (DictTree)
 import Chain.Flatten as Flatten exposing (DrawableChain, emptyDrawableChain)
+import Chain.Grid exposing (GridSpec)
 import Chain.Interpolate as Interpolate
+import Chain.Transition as Transition exposing (..)
 import Chain.View as View
 import Context exposing (..)
 import Dict
@@ -16,14 +18,12 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input exposing (button)
 import File exposing (File)
-import Grid exposing (GridSpec)
 import Http
 import Json.Decode as Decode
 import List.Extra as List
 import RemoteData exposing (..)
 import Task
 import Time exposing (..)
-import Transition exposing (..)
 import Tree exposing (Tree)
 
 
@@ -336,7 +336,8 @@ viewDebugButtons show =
     case show of
         True ->
             row [ padding 10, spacing 10 ]
-                [ viewButton (Just SaveHistory) "Save History"
+                [ text "Dev tools:"
+                , viewButton (Just SaveHistory) "Save History"
                 , viewButton (Just ReplayHistory) "Replay History"
                 ]
 
