@@ -2,6 +2,7 @@ module Transaction.Summary exposing (..)
 
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
+import Transaction.Amount exposing (Energy, decodeEnergy)
 import Transaction.Event exposing (..)
 
 
@@ -10,7 +11,7 @@ type alias TransactionSummary =
     , sender : Maybe String
     , cost : Int
     , result : TransactionResult
-    , energyCost : Int
+    , energyCost : Energy
     , tipe : Maybe String
     }
 
@@ -58,5 +59,5 @@ transactionSummaryDecoder =
         |> required "sender" (D.nullable D.string)
         |> required "cost" D.int
         |> required "result" decodeTransactionResult
-        |> required "energyCost" D.int
+        |> required "energyCost" decodeEnergy
         |> required "type" (D.nullable D.string)
