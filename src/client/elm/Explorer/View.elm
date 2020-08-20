@@ -15,6 +15,7 @@ import Round
 import Svg exposing (Svg)
 import Time
 import TimeHelpers
+import Transaction.Amount exposing (Amount(..), amountToString)
 import Transaction.Event exposing (..)
 import Transaction.Summary exposing (..)
 import Widgets exposing (arrowRight, remoteDataView)
@@ -298,7 +299,7 @@ viewTransaction ctx txSummary =
 
                                 Nothing ->
                                     softSenderFallback event
-                        , viewTransactionEvent ctx event txSummary
+                        , viewTransactionEvent ctx event
                         , el [ width (shrink |> minimum 120), alignRight ]
                             (el [ alignRight ] <| text <| String.fromInt txSummary.cost)
                         , el
@@ -371,7 +372,7 @@ viewSpecialEvent ctx specialEvent =
         , el [ width (shrink |> minimum 95), Font.color ctx.palette.fg3 ]
             (text "Chain")
         , row []
-            [ text <| "Rewarded " ++ String.fromInt specialEvent.rewardAmount
+            [ text <| "Rewarded " ++ amountToString specialEvent.rewardAmount
             , arrowRight
             , viewAddress ctx
                 (AddressAccount specialEvent.bakerAccount)
@@ -538,18 +539,18 @@ iconForTag ctx tag =
                 (el [ paddingXY 6 0 ] <| text "?")
 
 
-viewTransactionEvent : Context a -> TransactionEvent -> TransactionSummary -> Element Msg
-viewTransactionEvent ctx txEvent txSummary =
+viewTransactionEvent : Context a -> TransactionEvent -> Element Msg
+viewTransactionEvent ctx txEvent =
     case txEvent of
         TransactionEventTransfer event ->
             -- type alias EventTransfer =
-            --     { amount : Int
+            --     { amount : Amount
             --     , tag : String
             --     , to : AccountInfo
             --     , from : AccountInfo
             --     }
             row []
-                [ text <| "Sent " ++ String.fromInt event.amount
+                [ text <| "Sent " ++ amountToString event.amount
                 , arrowRight
                 , viewAddress ctx event.to
                 ]
@@ -690,7 +691,7 @@ viewTransactionEvent ctx txEvent txSummary =
         TransactionEventContractInitialized event ->
             -- type alias EventContractInitialized =
             --     { tag : String
-            --     , amount : Int
+            --     , amount : Amount
             --     , address : ContractAddress
             --     , name : Int
             --     , ref : String
@@ -706,7 +707,7 @@ viewTransactionEvent ctx txEvent txSummary =
         TransactionEventContractMessage event ->
             -- type alias EventContractMessage =
             --     { tag : String
-            --     , amount : Int
+            --     , amount : Amount
             --     , address : ContractAddress
             --     , message : String
             --     }
@@ -715,7 +716,7 @@ viewTransactionEvent ctx txEvent txSummary =
                     [ text "Sent"
                     , text <|
                         " ["
-                            ++ String.fromInt event.amount
+                            ++ amountToString event.amount
                             ++ " + "
                     , el
                         [ Font.color ctx.palette.c3

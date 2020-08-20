@@ -6,6 +6,7 @@ import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
 import Task
 import Time exposing (Posix)
+import Transaction.Amount exposing (Amount, decodeAmount)
 import Transaction.Summary exposing (..)
 
 
@@ -126,7 +127,7 @@ blockSummaryDecoder =
 
 type alias SpecialEvent =
     { bakerId : Int
-    , rewardAmount : Int
+    , rewardAmount : Amount
     , bakerAccount : String
     }
 
@@ -135,7 +136,7 @@ specialEventDecoder : D.Decoder SpecialEvent
 specialEventDecoder =
     D.succeed SpecialEvent
         |> required "bakerId" D.int
-        |> required "rewardAmount" D.int
+        |> required "rewardAmount" decodeAmount
         |> required "bakerAccount" D.string
 
 
