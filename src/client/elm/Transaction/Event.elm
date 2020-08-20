@@ -2,6 +2,7 @@ module Transaction.Event exposing (..)
 
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (required)
+import Transaction.Amount exposing (Amount, decodeAmount)
 
 
 
@@ -68,7 +69,7 @@ transactionEventsDecoder =
 
 
 type alias EventTransfer =
-    { amount : Int
+    { amount : Amount
     , tag : String
     , to : AccountInfo
     , from : AccountInfo
@@ -78,7 +79,7 @@ type alias EventTransfer =
 eventTransferDecoder : D.Decoder EventTransfer
 eventTransferDecoder =
     D.succeed EventTransfer
-        |> required "amount" D.int
+        |> required "amount" decodeAmount
         |> required "tag" (expectedTag "Transferred")
         |> required "to" accountInfoDecoder
         |> required "from" accountInfoDecoder
@@ -260,7 +261,7 @@ eventModuleDeployedDecoder =
 
 type alias EventContractInitialized =
     { tag : String
-    , amount : Int
+    , amount : Amount
     , address : ContractAddress
     , name : Int
     , ref : String
@@ -271,7 +272,7 @@ eventContractInitializedDecoder : D.Decoder EventContractInitialized
 eventContractInitializedDecoder =
     D.succeed EventContractInitialized
         |> required "tag" (expectedTag "ContractInitialized")
-        |> required "amount" D.int
+        |> required "amount" decodeAmount
         |> required "address" contractAddressDecoder
         |> required "name" D.int
         |> required "ref" D.string
@@ -279,7 +280,7 @@ eventContractInitializedDecoder =
 
 type alias EventContractMessage =
     { tag : String
-    , amount : Int
+    , amount : Amount
     , address : ContractAddress
     , message : String
     }
@@ -289,7 +290,7 @@ eventContractMessageDecoder : D.Decoder EventContractMessage
 eventContractMessageDecoder =
     D.succeed EventContractMessage
         |> required "tag" (expectedTag "Updated")
-        |> required "amount" D.int
+        |> required "amount" decodeAmount
         |> required "address" contractAddressDecoder
         |> required "message" D.string
 
