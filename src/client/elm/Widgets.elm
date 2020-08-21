@@ -5,12 +5,14 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
-import Helpers exposing (..)
 import Icons
 import Loading
+import Material.Icons.Sharp as MaterialIcons
+import Material.Icons.Types exposing (Coloring(..))
 import Palette exposing (Palette, toHex, veryDark, withAlphaEl)
 import RemoteData exposing (RemoteData(..), WebData)
 import Svg exposing (Svg)
+import Tooltip exposing (..)
 
 
 type alias Widget =
@@ -58,7 +60,9 @@ viewWidget ctx widget =
                 , height (px 50)
                 , width (px 50)
                 ]
-                (el [ Font.color widget.color, centerY, centerX ] (Element.map never <| html <| widget.icon))
+                (el [ Font.color widget.color, centerY, centerX ]
+                    (Element.map never <| html <| widget.icon)
+                )
             , column [ spacing 10 ]
                 [ row []
                     [ el [ Font.color (withAlphaEl 0.7 widget.color) ]
@@ -68,17 +72,11 @@ viewWidget ctx widget =
 
                       else
                         el
-                            [ Background.color ctx.palette.bg3
+                            [ paddingEach { left = 3, right = 0, top = 0, bottom = 0 }
                             , Font.color ctx.palette.fg3
-                            , Font.size 10
-                            , Border.rounded 10
-                            , paddingXY 10 5
-                            , stringTooltipAboveWidget ctx
-                                (paragraph [ Font.size 14, width (fill |> minimum 300) ]
-                                    [ text widget.description ]
-                                )
+                            , stringTooltipAboveWidget ctx (text widget.description)
                             ]
-                            (text "i")
+                            (html <| MaterialIcons.info 16 Inherit)
                     ]
                 , column [ Font.color widget.color, Font.size 25 ]
                     [ remoteDataView ctx.palette text widget.value ]
