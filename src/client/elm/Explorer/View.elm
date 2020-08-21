@@ -7,7 +7,6 @@ import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Explorer.Request exposing (..)
-import Helpers exposing (..)
 import Icons exposing (..)
 import Palette exposing (withAlphaEl)
 import RemoteData exposing (RemoteData(..), WebData)
@@ -15,6 +14,7 @@ import Round
 import Svg exposing (Svg)
 import Time
 import TimeHelpers
+import Tooltip exposing (..)
 import Transaction.Amount exposing (Amount(..), amountToString)
 import Transaction.Event exposing (..)
 import Transaction.Summary exposing (..)
@@ -246,16 +246,16 @@ viewContentHeadline ctx =
             ++ bottomBorder ctx
         )
         [ el [ width (shrink |> minimum 30) ]
-            (el [ Font.color ctx.palette.fg3 ] <| text "TYPE")
+            (el [ Font.color ctx.palette.fg1 ] <| text "TYPE")
         , el [ width (shrink |> minimum 95) ]
-            (el [ Font.color ctx.palette.fg3 ] <| text "SENDER")
+            (el [ Font.color ctx.palette.fg1 ] <| text "SENDER")
         , row []
-            [ el [ Font.color ctx.palette.fg3 ] <| text "CONTENT"
+            [ el [ Font.color ctx.palette.fg1 ] <| text "CONTENT"
             ]
         , el [ width (shrink |> minimum 120), alignRight ]
-            (el [ Font.color ctx.palette.fg3, alignRight ] <| text "COST")
+            (el [ Font.color ctx.palette.fg1, alignRight ] <| text "COST")
         , el [ width (shrink |> minimum 105), alignRight ]
-            (el [ Font.color ctx.palette.fg3 ] <| text "TX HASH")
+            (el [ Font.color ctx.palette.fg1 ] <| text "TX HASH")
         ]
 
 
@@ -269,10 +269,10 @@ viewTransaction ctx txSummary =
         softSenderFallback event_ =
             case event_ of
                 TransactionEventAccountCreated event ->
-                    el [ Font.color ctx.palette.fg3 ] <| viewAddress ctx (AddressAccount event.account)
+                    el [ Font.color ctx.palette.fg1 ] <| viewAddress ctx (AddressAccount event.account)
 
                 TransactionEventCredentialDeployed event ->
-                    el [ Font.color ctx.palette.fg3 ] <| viewAddress ctx (AddressAccount event.account)
+                    el [ Font.color ctx.palette.fg1 ] <| viewAddress ctx (AddressAccount event.account)
 
                 _ ->
                     none
@@ -369,7 +369,7 @@ viewSpecialEvent ctx specialEvent =
             [ el [ stringTooltipAbove ctx "Baking reward" ]
                 (html <| Icons.baking_bread 20)
             ]
-        , el [ width (shrink |> minimum 95), Font.color ctx.palette.fg3 ]
+        , el [ width (shrink |> minimum 95), Font.color ctx.palette.fg1 ]
             (text "Chain")
         , row []
             [ text <| "Rewarded " ++ amountToString specialEvent.rewardAmount
@@ -381,7 +381,7 @@ viewSpecialEvent ctx specialEvent =
         , el
             [ alignRight
             , width (shrink |> minimum 70)
-            , Font.color ctx.palette.fg3
+            , Font.color ctx.palette.fg1
             ]
             (el [] <| text <| "n/a")
         , el [ alignRight ] (html <| Icons.status_success 20)
@@ -405,7 +405,7 @@ viewFinalizationData ctx finalizationData =
                     [ el [ stringTooltipAbove ctx "Finalization event", Font.color ctx.palette.c2 ]
                         (html <| Icons.block_finalized 20)
                     ]
-                , el [ width (shrink |> minimum 95), Font.color ctx.palette.fg3 ]
+                , el [ width (shrink |> minimum 95), Font.color ctx.palette.fg1 ]
                     (text "Chain")
                 , let
                     totalWeight =
@@ -453,7 +453,7 @@ viewFinalizationData ctx finalizationData =
                 , el
                     [ alignRight
                     , width (shrink |> minimum 70)
-                    , Font.color ctx.palette.fg3
+                    , Font.color ctx.palette.fg1
                     ]
                     (el [] <| text <| "n/a")
                 , el [ alignRight ] (html <| Icons.status_success 20)
