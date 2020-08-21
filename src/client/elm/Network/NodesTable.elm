@@ -6,10 +6,10 @@ import Element exposing (..)
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Formatting exposing (..)
-import Helpers exposing (..)
 import Network exposing (Host, Model, Msg(..), NetworkNode, SortBy(..), SortMode(..), viewSummaryWidgets)
 import Palette exposing (Palette)
 import Round
+import Tooltip exposing (..)
 import Widgets exposing (content, remoteDataView)
 
 
@@ -45,7 +45,7 @@ nodesTable ctx sortMode nodes =
             [ spacing 10
             , Font.color ctx.palette.fg2
             , Font.alignRight
-            , padding_ 0 20 0 2
+            , paddingEach { left = 0, top = 20, right = 0, bottom = 2 }
             ]
             { data = nodes
             , columns =
@@ -200,11 +200,13 @@ sortableHeaderWithTooltip ctx sortMode sortBy name tooltip =
                 [ spacing 5
                 , Font.color ctx.palette.fg1
                 , pointer
-                , stringTooltipAbove ctx tooltip
                 , onClick <| SortSet sortBy
                 ]
-                [ el [ alignRight ] (text name)
-                , image [ alignRight, width (px 10) ] { src = url, description = "Sort Ascending Icon" }
+                [ el [ alignRight, stringTooltipAbove ctx tooltip ] (text name)
+                , image [ alignRight, width (px 10) ]
+                    { src = url
+                    , description = "Sort Ascending Icon"
+                    }
                 ]
 
         withoutIcon =
@@ -212,9 +214,8 @@ sortableHeaderWithTooltip ctx sortMode sortBy name tooltip =
                 [ onClick <| SortSet sortBy
                 , Font.color ctx.palette.fg1
                 , pointer
-                , stringTooltipAbove ctx tooltip
                 ]
-                (text name)
+                (el [ alignRight, stringTooltipAbove ctx tooltip ] (text name))
     in
     case sortMode of
         SortAsc sortBy_ ->

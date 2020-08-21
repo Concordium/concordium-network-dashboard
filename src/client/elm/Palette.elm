@@ -80,9 +80,9 @@ defaultLight =
     { bg1 = veryLightGray
     , bg2 = white
     , bg3 = lightBrown
-    , fg1 = fromHex "#181817"
-    , fg2 = darkBrown
-    , fg3 = blueishVeryDarkGray
+    , fg1 = brownishBlack
+    , fg2 = brownishDarkGray
+    , fg3 = brownishGray
     , c1 = darkish lightBlueNew
     , c2 = fromHex "#33A61E"
     , c3 = darkish purple
@@ -123,8 +123,16 @@ mapPalette fn original =
 -- Light
 
 
-brownishLightGray =
-    fromHex ""
+brownishBlack =
+    fromHex "#181817"
+
+
+brownishDarkGray =
+    fromHex "#2B2B28"
+
+
+brownishGray =
+    fromHex "#494946"
 
 
 lightBrown =
@@ -216,7 +224,7 @@ lightGray =
 
 
 nearWhite =
-    fromHex "#dddddd"
+    fromHex "#ccccdd"
 
 
 white =

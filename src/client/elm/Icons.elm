@@ -45,41 +45,29 @@ iconBase size group =
 --
 
 
-tooltip_arrow : Float -> Svg msg
-tooltip_arrow size =
-    iconBase size
-        [ g
-            [ id "Icons/Tooltip/DownArrow"
-            , fillRule "evenodd"
-            ]
-            [ polygon
-                [ id "Rectangle"
-                , fill "currentColor"
-                , transform "translate(15.857639, 15.642361) rotate(-315.000000) translate(-15.857639, -15.642361)"
-                , points "37.8270537 0.64089433 38.1315025 30.6438279 8.43301769 30.6438279 -6.41622472 15.7945855 8.43301769 0.945343083"
-                ]
-                []
-            ]
-        ]
-
-
-tooltip_arrow_round : Float -> Svg msg
-tooltip_arrow_round size =
+tooltip_arrow : Float -> Color -> Svg msg
+tooltip_arrow size borderColor =
     svg
         [ Typed.width (px size)
-        , Typed.height (px (size * 1.5))
-        , Typed.viewBox 0 0 42 (42 + 21)
+        , Typed.height (px size)
+        , Typed.viewBox 0 0 42 42
         , version "1.1"
         ]
         [ g
-            [ id "Icons/Tooltip/DownArrow"
+            [ stroke "none"
+            , strokeWidth "1"
+            , fill "none"
             , fillRule "evenodd"
             ]
-            [ path
-                [ fill "currentColor"
-                , d "M21,62 C35,45 42,31.3333333 42,21 C42,9.40202025 32.5979797,0 21,0 C9.40202025,0 7.81597009e-14,9.40202025 7.81597009e-14,21 C7.81597009e-14,31.3333333 7,45 21,62 Z"
+            [ g [ id "Tri", fill "currentColor" ]
+                [ polyline
+                    [ stroke (colorToHex borderColor)
+                    , strokeWidth "3"
+                    , fill "currentColor"
+                    , points "0 0 21 30 42 0"
+                    ]
+                    []
                 ]
-                []
             ]
         ]
 
