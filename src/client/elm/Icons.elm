@@ -26,6 +26,7 @@ import Svg.Attributes
         )
 import TypedSvg.Attributes as Typed
 import TypedSvg.Types exposing (Paint(..), px)
+import Chain exposing (Msg)
 
 
 iconBase : Float -> List (Svg msg) -> Svg msg
@@ -267,6 +268,46 @@ arrow_right size =
                 , fill "currentColor"
                 , fillRule "nonzero"
                 , points "23.4257692 13.9973077 28.8875641 19.474359 7.26923077 19.474359 7.26923077 22.525641 28.8875641 22.525641 23.4105128 28.0026923 25.5769231 30.1538462 34.7307692 21 25.5769231 11.8461538"
+                ]
+                []
+            ]
+        ]
+
+
+-- arrow/up
+arrow_up : Float -> Svg msg
+arrow_up size =
+    iconBase size 
+        [ g
+            [id "Icons/Arrow/Up"
+            , stroke "none"
+            , strokeWidth "1"
+            , fillRule "evenodd"
+            ]
+            [ Svg.path
+                [ d "M21.5742 5.10813L39.0739 22.6012C39.87 23.3972 41.1811 23.3972 41.9772 22.6012C42.7732 21.8051 42.7732 20.494 41.9772 19.6979L23.086 0.806782C22.6713 0.392033 22.1228 0.198038 21.5742 0.211417C21.0257 0.198038 20.4771 0.392033 20.0624 0.806782L1.17126 19.6979C0.375206 20.494 0.375206 21.8051 1.17126 22.6012C1.96731 23.3972 3.27845 23.3972 4.0745 22.6012L21.5742 5.10813Z"
+                , id "Arrow/Up"
+                , fill "currentColor"
+                ]
+                []
+            ]
+        ]
+
+
+-- arrow/down
+arrow_down : Float -> Svg msg
+arrow_down size =
+    iconBase size 
+        [ g
+            [id "Icons/Arrow/Down"
+            , stroke "none"
+            , strokeWidth "1"
+            , fillRule "evenodd"
+            ]
+            [ Svg.path
+                [ d "M21.5742 18.0901L4.0745 0.597038C3.27845 -0.199013 1.96731 -0.199013 1.17126 0.597038C0.375206 1.39309 0.375206 2.70423 1.17126 3.50028L20.0624 22.3914C20.4771 22.8062 21.0257 23.0002 21.5742 22.9868C22.1228 23.0002 22.6713 22.8062 23.086 22.3914L41.9772 3.50028C42.7732 2.70423 42.7732 1.39309 41.9772 0.597038C41.1811 -0.199012 39.87 -0.199012 39.0739 0.597038L21.5742 18.0901Z"
+                , id "Arrow/Down"
+                , fill "currentColor"
                 ]
                 []
             ]
