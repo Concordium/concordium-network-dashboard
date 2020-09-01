@@ -10,7 +10,10 @@ import Network exposing (Host, Model, Msg(..), NetworkNode, SortBy(..), SortMode
 import Palette exposing (Palette)
 import Round
 import Tooltip exposing (..)
+import Icons exposing (..)
+import Svg exposing (Svg)
 import Widgets exposing (content, remoteDataView)
+import Material.Icons.Types exposing (Icon)
 
 
 view : Context a -> Model -> Element Msg
@@ -159,7 +162,7 @@ nodesTable ctx sortMode nodes =
 sortableHeader : Context a -> SortMode -> SortBy -> String -> Element Msg
 sortableHeader ctx sortMode sortBy name =
     let
-        withIcon url =
+        withIcon arrow =
             row
                 [ spacing 5
                 , Font.color ctx.palette.fg1
@@ -167,7 +170,7 @@ sortableHeader ctx sortMode sortBy name =
                 , onClick <| SortSet sortBy
                 ]
                 [ el [ alignRight ] (text name)
-                , image [ alignRight, width (px 10) ] { src = url, description = "Sort Ascending Icon" }
+                , el [ alignRight, moveDown 3 ] (html arrow)
                 ]
 
         withoutIcon =
@@ -176,14 +179,14 @@ sortableHeader ctx sortMode sortBy name =
     case sortMode of
         SortAsc sortBy_ ->
             if sortBy_ == sortBy then
-                withIcon "/assets/images/icon-arrow-up.png"
+                withIcon <| Icons.arrow_up 12
 
             else
                 withoutIcon
 
         SortDesc sortBy_ ->
             if sortBy_ == sortBy then
-                withIcon "/assets/images/icon-arrow-down.png"
+                withIcon <| Icons.arrow_down 12
 
             else
                 withoutIcon
@@ -195,7 +198,7 @@ sortableHeader ctx sortMode sortBy name =
 sortableHeaderWithTooltip : Context a -> SortMode -> SortBy -> String -> String -> Element Msg
 sortableHeaderWithTooltip ctx sortMode sortBy name tooltip =
     let
-        withIcon url =
+        withIcon arrow =
             row
                 [ spacing 5
                 , Font.color ctx.palette.fg1
@@ -203,10 +206,7 @@ sortableHeaderWithTooltip ctx sortMode sortBy name tooltip =
                 , onClick <| SortSet sortBy
                 ]
                 [ el [ alignRight, stringTooltipAbove ctx tooltip ] (text name)
-                , image [ alignRight, width (px 10) ]
-                    { src = url
-                    , description = "Sort Ascending Icon"
-                    }
+                , el [ alignRight, moveDown 3 ] (html arrow)
                 ]
 
         withoutIcon =
@@ -220,14 +220,14 @@ sortableHeaderWithTooltip ctx sortMode sortBy name tooltip =
     case sortMode of
         SortAsc sortBy_ ->
             if sortBy_ == sortBy then
-                withIcon "/assets/images/icon-arrow-up.png"
+                withIcon <| Icons.arrow_up 12
 
             else
                 withoutIcon
 
         SortDesc sortBy_ ->
             if sortBy_ == sortBy then
-                withIcon "/assets/images/icon-arrow-down.png"
+                withIcon <| Icons.arrow_down 12
 
             else
                 withoutIcon
