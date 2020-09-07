@@ -135,6 +135,9 @@ viewBlockHash ctx blockInfo =
         icon =
             blockIcon blockInfo 20
 
+        copyIcon =
+            Icons.copy_to_clipboard 18
+
         color =
             blockColor ctx blockInfo
     in
@@ -145,15 +148,22 @@ viewBlockHash ctx blockInfo =
             , Background.color (withAlphaEl 0.1 color)
             , Font.color (withAlphaEl 0.6 color)
             , paddingXY 10 10
-            , stringTooltipAboveWithCopy ctx "Block hash"
-            , onClick (CopyToClipboard blockInfo.blockHash)
             ]
             [ el [] (html icon)
             , el [ width (px 10) ] none
-            , paragraph []
-                [ el [ Font.color color ] (text short)
-                , text remaining
+            , el [ stringTooltipAbove ctx "Block hash" ]
+                (paragraph []
+                    [ el [ Font.color color ] (text short)
+                    , text remaining
+                    ]
+                )
+            , el [ width (px 10) ] none
+            , el
+                [ stringTooltipAbove ctx "Copy to clipboard"
+                , pointer
+                , onClick (CopyToClipboard blockInfo.blockHash)
                 ]
+                (html copyIcon)
             ]
         )
 
@@ -201,12 +211,21 @@ viewSlotTime ctx blockInfo =
         , spacing 10
         , Font.color color
         , alignRight
-        , stringTooltipAboveWithCopy ctx "Slot time"
-        , onClick (CopyToClipboard slotTime)
         ]
         [ el [ Font.color (withAlphaEl 0.5 <| color) ]
             (html <| Icons.time_stopwatch 20)
-        , text slotTime
+        , el
+            [ Font.color color
+            , stringTooltipAbove ctx "Slot time"
+            ]
+            (text slotTime)
+        , el
+            [ Font.color (withAlphaEl 0.5 <| color)
+            , stringTooltipAbove ctx "Copy to clipboard"
+            , pointer
+            , onClick (CopyToClipboard slotTime)
+            ]
+            (html <| Icons.copy_to_clipboard 18)
         ]
 
 
@@ -305,6 +324,7 @@ viewTransaction ctx txSummary =
                         , el
                             [ alignRight
                             , stringTooltipAboveWithCopy ctx txSummary.hash
+                            , pointer
                             , onClick (CopyToClipboard txSummary.hash)
                             ]
                             (el [ alignRight ] <| text <| String.left 8 txSummary.hash)
@@ -347,6 +367,7 @@ viewTransaction ctx txSummary =
                 , el
                     [ alignRight
                     , stringTooltipAboveWithCopy ctx txSummary.hash
+                    , pointer
                     , onClick (CopyToClipboard txSummary.hash)
                     ]
                     (el [ alignRight ] <| text <| String.left 8 txSummary.hash)
@@ -643,6 +664,7 @@ viewTransactionEvent ctx txEvent =
                 , arrowRight
                 , el
                     [ stringTooltipAboveWithCopy ctx event.newKey
+                    , pointer
                     , onClick (CopyToClipboard event.newKey)
                     ]
                   <|
@@ -663,6 +685,7 @@ viewTransactionEvent ctx txEvent =
                 , arrowRight
                 , el
                     [ stringTooltipAboveWithCopy ctx event.newKey
+                    , pointer
                     , onClick (CopyToClipboard event.newKey)
                     ]
                   <|
@@ -681,6 +704,7 @@ viewTransactionEvent ctx txEvent =
                 , arrowRight
                 , el
                     [ stringTooltipAboveWithCopy ctx event.contents
+                    , pointer
                     , onClick (CopyToClipboard event.contents)
                     ]
                   <|
@@ -793,7 +817,10 @@ viewAsAddressContract ctx contractAddress =
                 ++ String.fromInt contractAddress.subindex
                 ++ "}"
     in
-    el [ stringTooltipAboveWithCopy ctx content, onClick (CopyToClipboard content) ]
+    el  [ stringTooltipAboveWithCopy ctx content
+        , pointer
+        , onClick (CopyToClipboard content) 
+        ]
         (viewAddress ctx
             (AddressContract <|
                 String.fromInt contractAddress.index
@@ -810,6 +837,7 @@ viewAddress ctx addr =
             row
                 [ spacing 4
                 , stringTooltipAboveWithCopy ctx address
+                , pointer
                 , onClick (CopyToClipboard address)
                 ]
                 [ el [] (html <| Icons.account_user 18)

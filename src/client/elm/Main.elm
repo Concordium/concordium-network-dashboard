@@ -16,6 +16,7 @@ import Explorer
 import Explorer.Request
 import Explorer.View
 import Html exposing (Html)
+import Html.Attributes exposing (style)
 import Json.Decode as D
 import Json.Encode as E
 import Material.Icons.Sharp as Icon
@@ -25,8 +26,10 @@ import Network.Logo as Logo
 import Network.Node
 import Network.NodesTable
 import Palette exposing (ColorMode(..), Palette)
+import Process
 import Route exposing (Route(..))
 import Storage
+import Task
 import Time
 import Url exposing (Url)
 import Widgets exposing (content)
@@ -49,6 +52,8 @@ type alias Model =
     , networkModel : Network.Model
     , chainModel : Chain.Model
     , explorerModel : Explorer.Model
+    , clipboardContents : String
+    , showToast : Bool
     }
 
 
@@ -58,6 +63,7 @@ type Msg
     | UrlChanged Url
     | WindowResized Int Int
     | CopyToClipboard String
+    | HideToast
     | StorageDocReceived D.Value
       --
     | NetworkMsg Network.Msg
@@ -103,6 +109,8 @@ init flags url key =
                 , networkModel = Network.init { collectorUrl = cfg.collectorUrl }
                 , chainModel = chainInit
                 , explorerModel = Explorer.init { middlewareUrl = cfg.middlewareUrl }
+                , clipboardContents = ""
+                , showToast = False
                 }
     in
     ( initModel
@@ -146,7 +154,10 @@ update msg model =
             ( { model | window = { width = width, height = height } }, Cmd.none )
 
         CopyToClipboard text ->
-            ( model, Clipboard.copy text )
+            ( { model | clipboardContents = text, showToast = True }, Cmd.batch [ Clipboard.copy text, Process.sleep 5000 |> Task.perform (\_ -> HideToast) ] )
+
+        HideToast ->
+            ( { model | showToast = False }, Cmd.none )
 
         StorageDocReceived res ->
             let
@@ -323,7 +334,7 @@ viewColorModeToggle ctx =
 
 viewChain : Model -> Element Msg
 viewChain model =
-    content <|
+    Widgets.content <|
         column [ width fill, height fill, spacing 20 ]
             [ viewSummaryWidgets model model.networkModel.nodes
             , el
@@ -336,11 +347,45 @@ viewChain model =
                 ]
                 (Chain.view model model.chainModel (not <| Config.isProduction model.config))
                 |> Element.map ChainMsg
-            , Element.map translateMsg <|
-                Explorer.View.view model
-                    model.explorerModel.blockInfo
-                    model.explorerModel.blockSummary
+            , row [ viewCopiedToast model, centerX ]
+                [ Element.map translateMsg <|
+                    Explorer.View.view model
+                        model.explorerModel.blockInfo
+                        model.explorerModel.blockSummary
+                ]
             ]
+
+
+viewCopiedToast : Model -> Attribute Msg
+viewCopiedToast model =
+    let
+        fadingAttributes =
+            if model.showToast then
+                [ transparent False
+                , htmlAttribute <| style "transition" "opacity 200ms ease-out 200ms"
+                ]
+
+            else
+                [ transparent True
+                , htmlAttribute <| style "transition" "opacity 200ms ease-out 200ms"
+                ]
+    in
+    inFront <|
+        el
+            ([ width (fill |> maximum 800)
+             , height (fill |> maximum 45)
+             , Background.color <| Palette.darkish model.palette.bg2
+             , Border.color <| model.palette.fg3
+             , Border.rounded 6
+             , Border.width 1
+             , centerX
+             , Font.center
+             , paddingXY 0 14
+             , moveUp 490
+             ]
+                ++ fadingAttributes
+            )
+            (text <| String.append "Copied: \"" <| String.append model.clipboardContents "\"")
 
 
 translateMsg : Explorer.View.Msg -> Msg
