@@ -1008,3 +1008,26 @@ lastFinalizedBlockEMA size =
                 []
             ]
         ]
+
+
+copy_to_clipboard : Float -> Svg msg
+copy_to_clipboard size =
+    iconBase size
+        [ g
+            [ id "Icons/Copy/Clipboard"
+            , stroke "none"
+            , strokeWidth "1"
+            , fill "currentColor"
+            ]
+            [ Svg.path
+                [ d "M3,3.89A.89.89,0,0,1,3.89,3H27V1.26A1.25,1.25,0,0,0,25.74,0H1.26A1.25,1.25,0,0,0,0,1.26V33.74A1.25,1.25,0,0,0,1.26,35H3Z"
+                , id "Back-Shape"
+                ]
+                []
+            , Svg.path
+                [ d "M32.74,7H8.26A1.25,1.25,0,0,0,7,8.26V40.74A1.25,1.25,0,0,0,8.26,42H32.74A1.25,1.25,0,0,0,34,40.74V8.26A1.25,1.25,0,0,0,32.74,7ZM31,39H10V35.78H31Zm0-6.44H10V29.33H31Zm0-6.45H10V22.89H31Zm0-6.44H10V16.44H31Zm0-6.45H10V10H31Z"
+                , id "Front-shape"
+                ]
+                []
+            ]
+        ]
