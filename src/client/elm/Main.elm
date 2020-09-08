@@ -3,7 +3,6 @@ module Main exposing (..)
 import Browser exposing (..)
 import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
-import Chain
 import Clipboard
 import Config exposing (Config)
 import Context exposing (Context)
@@ -21,6 +20,7 @@ import Json.Decode as D
 import Json.Encode as E
 import Material.Icons.Sharp as Icon
 import Material.Icons.Types exposing (Coloring(..))
+import Maybe.Extra
 import Network exposing (viewSummaryWidgets)
 import Network.Logo as Logo
 import Network.Node
@@ -32,7 +32,7 @@ import Storage
 import Task
 import Time
 import Url exposing (Url)
-import Widgets exposing (content)
+import Widgets
 
 
 type alias Flags =
@@ -50,10 +50,8 @@ type alias Model =
     , colorMode : ColorMode
     , currentRoute : Route
     , networkModel : Network.Model
-    , chainModel : Chain.Model
     , explorerModel : Explorer.Model
-    , clipboardContents : String
-    , showToast : Bool
+    , toastModel : Maybe String
     }
 
 
@@ -62,12 +60,12 @@ type Msg
     | UrlClicked UrlRequest
     | UrlChanged Url
     | WindowResized Int Int
-    | CopyToClipboard String
+    | ShowToast String
     | HideToast
     | StorageDocReceived D.Value
+    | ContextMsg Context.GlobalMsg
       --
     | NetworkMsg Network.Msg
-    | ChainMsg Chain.Msg
     | ToggleDarkMode
     | ExplorerMsg Explorer.Msg
 
@@ -90,8 +88,8 @@ init flags url key =
         cfg =
             Config.defaultConfig (Config.parseEnv flags.isProduction)
 
-        ( chainInit, chainCmd ) =
-            Chain.init cfg.collectorUrl
+        ( explorerModel, explorerCmd ) =
+            Explorer.init cfg
 
         route =
             Route.fromUrl url
@@ -107,17 +105,15 @@ init flags url key =
                 , colorMode = Dark
                 , currentRoute = route
                 , networkModel = Network.init { collectorUrl = cfg.collectorUrl }
-                , chainModel = chainInit
-                , explorerModel = Explorer.init { middlewareUrl = cfg.middlewareUrl }
-                , clipboardContents = ""
-                , showToast = False
+                , explorerModel = explorerModel
+                , toastModel = Nothing
                 }
     in
     ( initModel
     , Cmd.batch
         [ initCmd
         , Storage.loadAll ()
-        , Cmd.map ChainMsg chainCmd
+        , Cmd.map ExplorerMsg explorerCmd
         ]
     )
 
@@ -153,11 +149,11 @@ update msg model =
         WindowResized width height ->
             ( { model | window = { width = width, height = height } }, Cmd.none )
 
-        CopyToClipboard text ->
-            ( { model | clipboardContents = text, showToast = True }, Cmd.batch [ Clipboard.copy text, Process.sleep 5000 |> Task.perform (\_ -> HideToast) ] )
+        ShowToast text ->
+            ( { model | toastModel = Just text }, Process.sleep 5000 |> Task.perform (\_ -> HideToast) )
 
         HideToast ->
-            ( { model | showToast = False }, Cmd.none )
+            ( { model | toastModel = Nothing }, Cmd.none )
 
         StorageDocReceived res ->
             let
@@ -197,19 +193,21 @@ update msg model =
                 Err a ->
                     ( model, Cmd.none )
 
+        ContextMsg contextMsg ->
+            let
+                ( newModel, cmd ) =
+                    case contextMsg of
+                        Context.CopyToClipboard str ->
+                            update (ShowToast str) model
+            in
+            ( newModel, Cmd.batch [ Context.update contextMsg, cmd ] )
+
         NetworkMsg networkMsg ->
             let
                 ( newNetworkModel, newNetworkCmd ) =
                     Network.update networkMsg model.networkModel model.currentRoute model.key
             in
             ( { model | networkModel = newNetworkModel }, Cmd.map NetworkMsg newNetworkCmd )
-
-        ChainMsg chainMsg ->
-            let
-                ( chainModel, chainCmd ) =
-                    Chain.update model chainMsg model.chainModel
-            in
-            ( { model | chainModel = chainModel }, Cmd.map ChainMsg chainCmd )
 
         ToggleDarkMode ->
             case model.colorMode of
@@ -223,12 +221,12 @@ update msg model =
                     , Storage.save { id = "dashboard", tipe = "colormode", value = E.string "Dark" }
                     )
 
-        ExplorerMsg eMsg ->
+        ExplorerMsg explorerMsg ->
             let
                 ( newExplorerModel, newExplorerCmd ) =
-                    Explorer.update eMsg model.explorerModel
+                    Explorer.update model explorerMsg model.explorerModel
             in
-            ( { model | explorerModel = newExplorerModel }, Cmd.map ExplorerMsg newExplorerCmd )
+            ( { model | explorerModel = newExplorerModel }, Cmd.map (Context.translate ContextMsg ExplorerMsg) newExplorerCmd )
 
 
 onRouteInit : Route -> Model -> ( Model, Cmd Msg )
@@ -240,7 +238,11 @@ onRouteInit page model =
             )
 
         ChainSelected hash ->
-            ( { model | chainModel = Chain.selectBlock model.chainModel hash }
+            let
+                explorerModel =
+                    model.explorerModel
+            in
+            ( { model | explorerModel = { explorerModel | blockHash = Just hash } }
             , Explorer.Request.getBlockInfo model.explorerModel.config hash (ExplorerMsg << Explorer.ReceivedBlockInfo)
             )
 
@@ -256,7 +258,7 @@ subscriptions model =
         , Time.every 1000 CurrentTime
         , Sub.map NetworkMsg <| Network.subscriptions
         , if Route.isChain model.currentRoute then
-            Sub.map ChainMsg <| Chain.subscriptions model.chainModel
+            Sub.map ExplorerMsg <| Explorer.subscriptions model.explorerModel
 
           else
             Sub.none
@@ -337,22 +339,7 @@ viewChain model =
     Widgets.content <|
         column [ width fill, height fill, spacing 20 ]
             [ viewSummaryWidgets model model.networkModel.nodes
-            , el
-                [ width fill
-                , height (fill |> minimum 200)
-                , Background.color <| Palette.darkish model.palette.bg2
-                , Border.color <| model.palette.bg2
-                , Border.rounded 6
-                , Border.width 1
-                ]
-                (Chain.view model model.chainModel (not <| Config.isProduction model.config))
-                |> Element.map ChainMsg
-            , row [ viewCopiedToast model, centerX ]
-                [ Element.map translateMsg <|
-                    Explorer.View.view model
-                        model.explorerModel.blockInfo
-                        model.explorerModel.blockSummary
-                ]
+            , Element.map (Context.translate ContextMsg ExplorerMsg) <| Explorer.View.view model model.explorerModel (not <| Config.isProduction model.config)
             ]
 
 
@@ -360,22 +347,16 @@ viewCopiedToast : Model -> Attribute Msg
 viewCopiedToast model =
     let
         fadingAttributes =
-            if model.showToast then
-                [ transparent False
-                , htmlAttribute <| style "transition" "opacity 200ms ease-out 200ms"
-                ]
-
-            else
-                [ transparent True
-                , htmlAttribute <| style "transition" "opacity 200ms ease-out 200ms"
-                ]
+            [ transparent <| Maybe.Extra.isNothing model.toastModel
+            , htmlAttribute <| style "transition" "opacity 200ms ease-out 200ms"
+            ]
     in
     inFront <|
         el
             ([ width (fill |> maximum 800)
              , height (fill |> maximum 45)
              , Background.color <| Palette.darkish model.palette.bg2
-             , Border.color <| model.palette.fg3
+             , Border.color model.palette.fg3
              , Border.rounded 6
              , Border.width 1
              , centerX
@@ -385,17 +366,7 @@ viewCopiedToast model =
              ]
                 ++ fadingAttributes
             )
-            (text <| String.append "Copied: \"" <| String.append model.clipboardContents "\"")
-
-
-translateMsg : Explorer.View.Msg -> Msg
-translateMsg msg =
-    case msg of
-        Explorer.View.CopyToClipboard str ->
-            CopyToClipboard str
-
-        Explorer.View.BlockClicked block ->
-            ChainMsg (Chain.BlockClicked block)
+            (text <| "Copied: \"" ++ Maybe.withDefault "" model.toastModel ++ "\"")
 
 
 theme : Palette Color -> Element msg -> Html.Html msg

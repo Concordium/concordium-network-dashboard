@@ -1,5 +1,6 @@
 module Explorer.Request exposing (..)
 
+import Config exposing (Config)
 import Http exposing (..)
 import Iso8601
 import Json.Decode as D
@@ -8,11 +9,6 @@ import Task
 import Time exposing (Posix)
 import Transaction.Amount exposing (Amount, decodeAmount)
 import Transaction.Summary exposing (..)
-
-
-type alias Config =
-    { middlewareUrl : String
-    }
 
 
 

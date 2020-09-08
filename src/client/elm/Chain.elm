@@ -1,4 +1,4 @@
-module Chain exposing (Model, Msg(..), init, selectBlock, subscriptions, update, view)
+module Chain exposing (Model, Msg(..), init, subscriptions, update, view)
 
 import Browser.Events
 import Browser.Navigation as Nav
@@ -22,6 +22,7 @@ import Http
 import Json.Decode as Decode
 import List.Extra as List
 import RemoteData exposing (..)
+import Route exposing (Route(..))
 import Task
 import Time exposing (..)
 import Tree exposing (Tree)
@@ -43,7 +44,6 @@ type alias Model =
     , errors : List Http.Error
     , replay : Maybe Replay
     , gridSpec : Maybe GridSpec
-    , blockClicked : Maybe String
     }
 
 
@@ -60,7 +60,6 @@ init collectorEndpoint =
       , errors = []
       , replay = Nothing
       , gridSpec = Nothing
-      , blockClicked = Nothing
       }
     , Build.getNodeInfo collectorEndpoint GotNodeInfo
     )
@@ -166,17 +165,7 @@ update ctx msg model =
             )
 
         BlockClicked hash ->
-            ( model, Nav.pushUrl ctx.key ("/chain/" ++ hash) )
-
-
-selectBlock : Model -> String -> Model
-selectBlock model hash =
-    { model | blockClicked = Just hash }
-
-
-type alias OutputMsgs msg =
-    { onBlockClicked : String -> msg
-    }
+            ( model, Nav.pushUrl ctx.key (Route.toString <| ChainSelected hash) )
 
 
 updateNodes : List Node -> List (List Node) -> List (List Node)
@@ -279,22 +268,22 @@ updateChain ctx depth nodes model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    if Transition.isComplete model.transition then
-        Time.every 1000 TickSecond
+    Sub.batch
+        [ Time.every 1000 TickSecond
+        , if Transition.isComplete model.transition then
+            Browser.Events.onAnimationFrameDelta (round >> OnAnimationFrame)
 
-    else
-        Sub.batch
-            [ Time.every 1000 TickSecond
-            , Browser.Events.onAnimationFrameDelta (round >> OnAnimationFrame)
-            ]
+          else
+            Sub.none
+        ]
 
 
 
 -- View
 
 
-view : Context a -> Model -> Bool -> Element Msg
-view ctx model showDebugButtons =
+view : Context a -> Model -> Maybe String -> Bool -> Element Msg
+view ctx model selectedBlock showDevTools =
     case model.lastFinalized of
         Just lastFinalized ->
             let
@@ -315,10 +304,10 @@ view ctx model showDebugButtons =
                     , lastFinalized = lastFinalized
                     , nodes = nodes
                     , onBlockClick = Just BlockClicked
-                    , selectedBlock = model.blockClicked
+                    , selectedBlock = selectedBlock
                     }
             in
-            column [ width fill, height fill, inFront (viewDebugButtons showDebugButtons) ]
+            column [ width fill, height fill, inFront (viewDebugButtons showDevTools) ]
                 [ el
                     [ centerX
                     , centerY

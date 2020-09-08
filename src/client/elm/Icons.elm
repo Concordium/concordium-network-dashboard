@@ -1,5 +1,6 @@
 module Icons exposing (..)
 
+import Chain exposing (Msg)
 import Color exposing (Color)
 import Color.Convert exposing (colorToHex)
 import Svg exposing (..)
@@ -26,7 +27,6 @@ import Svg.Attributes
         )
 import TypedSvg.Attributes as Typed
 import TypedSvg.Types exposing (Paint(..), px)
-import Chain exposing (Msg)
 
 
 iconBase : Float -> List (Svg msg) -> Svg msg
@@ -274,12 +274,15 @@ arrow_right size =
         ]
 
 
+
 -- arrow/up
+
+
 arrow_up : Float -> Svg msg
 arrow_up size =
-    iconBase size 
+    iconBase size
         [ g
-            [id "Icons/Arrow/Up"
+            [ id "Icons/Arrow/Up"
             , stroke "none"
             , strokeWidth "1"
             , fillRule "evenodd"
@@ -294,12 +297,15 @@ arrow_up size =
         ]
 
 
+
 -- arrow/down
+
+
 arrow_down : Float -> Svg msg
 arrow_down size =
-    iconBase size 
+    iconBase size
         [ g
-            [id "Icons/Arrow/Down"
+            [ id "Icons/Arrow/Down"
             , stroke "none"
             , strokeWidth "1"
             , fillRule "evenodd"

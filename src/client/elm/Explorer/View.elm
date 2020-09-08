@@ -1,15 +1,16 @@
 module Explorer.View exposing (..)
 
+import Chain
 import Context exposing (Context)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
+import Explorer exposing (..)
 import Explorer.Request exposing (..)
 import Icons exposing (..)
 import Palette exposing (withAlphaEl)
-import RemoteData exposing (RemoteData(..), WebData)
 import Round
 import Svg exposing (Svg)
 import Time
@@ -21,53 +22,65 @@ import Transaction.Summary exposing (..)
 import Widgets exposing (arrowRight, remoteDataView)
 
 
-type Msg
-    = CopyToClipboard String
-    | BlockClicked String
+type alias Msg =
+    Context.Msg Explorer.Msg
 
 
-view : Context a -> WebData BlockInfo -> WebData BlockSummary -> Element Msg
-view ctx remoteBlockInfo remoteBlockSummary =
-    column [ spacing 40, width fill ]
-        [ viewContainer ctx
-            (remoteDataView ctx.palette
-                (\blockInfo ->
-                    let
-                        summaries =
-                            remoteDataView ctx.palette
-                                (\blockSummary ->
-                                    let
-                                        transactionSummaries =
-                                            blockSummary.transactionSummaries
-                                                |> List.map (viewTransaction ctx)
+view : Context a -> Model -> Bool -> Element Msg
+view ctx model showDevTools =
+    column []
+        [ el
+            [ width fill
+            , height (fill |> minimum 200)
+            , Background.color <| Palette.darkish ctx.palette.bg2
+            , Border.color <| ctx.palette.bg2
+            , Border.rounded 6
+            , Border.width 1
+            ]
+            (Element.map (Context.Local << ChainMsg) <| Chain.view ctx model.chainModel model.blockHash showDevTools)
+        , row [ centerX ]
+            [ column [ spacing 40, width fill ]
+                [ viewContainer ctx
+                    (remoteDataView ctx.palette
+                        (\blockInfo ->
+                            let
+                                summaries =
+                                    remoteDataView ctx.palette
+                                        (\blockSummary ->
+                                            let
+                                                transactionSummaries =
+                                                    blockSummary.transactionSummaries
+                                                        |> List.map (viewTransaction ctx)
 
-                                        specialEvents =
-                                            blockSummary.specialEvents
-                                                |> List.map (viewSpecialEvent ctx)
+                                                specialEvents =
+                                                    blockSummary.specialEvents
+                                                        |> List.map (viewSpecialEvent ctx)
 
-                                        finalizations =
-                                            viewFinalizationData ctx blockSummary.finalizationData
+                                                finalizations =
+                                                    viewFinalizationData ctx blockSummary.finalizationData
 
-                                        summaryItems =
-                                            transactionSummaries ++ specialEvents ++ finalizations
-                                    in
-                                    if List.length summaryItems > 0 then
-                                        column [ width fill ] summaryItems
+                                                summaryItems =
+                                                    transactionSummaries ++ specialEvents ++ finalizations
+                                            in
+                                            if List.length summaryItems > 0 then
+                                                column [ width fill ] summaryItems
 
-                                    else
-                                        column [ width fill ] [ text "This block has no transactions in it." ]
-                                )
-                                remoteBlockSummary
-                    in
-                    column
-                        [ width fill ]
-                        [ viewHeader ctx blockInfo
-                        , viewContentHeadline ctx
-                        , summaries
-                        ]
-                )
-                remoteBlockInfo
-            )
+                                            else
+                                                column [ width fill ] [ text "This block has no transactions in it." ]
+                                        )
+                                        model.blockSummary
+                            in
+                            column
+                                [ width fill ]
+                                [ viewHeader ctx blockInfo
+                                , viewContentHeadline ctx
+                                , summaries
+                                ]
+                        )
+                        model.blockInfo
+                    )
+                ]
+            ]
         ]
 
 
@@ -113,7 +126,7 @@ viewParentLink ctx blockInfo =
     row
         [ Font.color color
         , pointer
-        , onClick (BlockClicked blockInfo.blockParent)
+        , onClick (Context.Local <| ChainMsg <| Chain.BlockClicked blockInfo.blockParent)
         ]
         [ row [ stringTooltipAbove ctx "Go to parent block" ]
             [ el [] (html icon)
@@ -161,7 +174,7 @@ viewBlockHash ctx blockInfo =
             , el
                 [ stringTooltipAbove ctx "Copy to clipboard"
                 , pointer
-                , onClick (CopyToClipboard blockInfo.blockHash)
+                , onClick (Context.copyToClipboard blockInfo.blockHash)
                 ]
                 (html copyIcon)
             ]
@@ -223,7 +236,7 @@ viewSlotTime ctx blockInfo =
             [ Font.color (withAlphaEl 0.5 <| color)
             , stringTooltipAbove ctx "Copy to clipboard"
             , pointer
-            , onClick (CopyToClipboard slotTime)
+            , onClick (Context.copyToClipboard slotTime)
             ]
             (html <| Icons.copy_to_clipboard 18)
         ]
@@ -325,7 +338,7 @@ viewTransaction ctx txSummary =
                             [ alignRight
                             , stringTooltipAboveWithCopy ctx txSummary.hash
                             , pointer
-                            , onClick (CopyToClipboard txSummary.hash)
+                            , onClick (Context.copyToClipboard txSummary.hash)
                             ]
                             (el [ alignRight ] <| text <| String.left 8 txSummary.hash)
                         , el [ alignRight ] (html <| Icons.status_success 20)
@@ -368,7 +381,7 @@ viewTransaction ctx txSummary =
                     [ alignRight
                     , stringTooltipAboveWithCopy ctx txSummary.hash
                     , pointer
-                    , onClick (CopyToClipboard txSummary.hash)
+                    , onClick (Context.copyToClipboard txSummary.hash)
                     ]
                     (el [ alignRight ] <| text <| String.left 8 txSummary.hash)
                 , el [ alignRight, Font.color ctx.palette.failure ] (html <| Icons.status_failure 20)
@@ -448,7 +461,7 @@ viewFinalizationData ctx finalizationData =
                   row []
                     [ text <| "Finalized "
                     , el
-                        [ onClick (BlockClicked data.blockPointer)
+                        [ onClick (Context.Local <| ChainMsg <| Chain.BlockClicked data.blockPointer)
                         , pointer
                         ]
                       <|
@@ -665,7 +678,7 @@ viewTransactionEvent ctx txEvent =
                 , el
                     [ stringTooltipAboveWithCopy ctx event.newKey
                     , pointer
-                    , onClick (CopyToClipboard event.newKey)
+                    , onClick (Context.copyToClipboard event.newKey)
                     ]
                   <|
                     text <|
@@ -686,7 +699,7 @@ viewTransactionEvent ctx txEvent =
                 , el
                     [ stringTooltipAboveWithCopy ctx event.newKey
                     , pointer
-                    , onClick (CopyToClipboard event.newKey)
+                    , onClick (Context.copyToClipboard event.newKey)
                     ]
                   <|
                     text <|
@@ -705,7 +718,7 @@ viewTransactionEvent ctx txEvent =
                 , el
                     [ stringTooltipAboveWithCopy ctx event.contents
                     , pointer
-                    , onClick (CopyToClipboard event.contents)
+                    , onClick (Context.copyToClipboard event.contents)
                     ]
                   <|
                     text <|
@@ -817,9 +830,10 @@ viewAsAddressContract ctx contractAddress =
                 ++ String.fromInt contractAddress.subindex
                 ++ "}"
     in
-    el  [ stringTooltipAboveWithCopy ctx content
+    el
+        [ stringTooltipAboveWithCopy ctx content
         , pointer
-        , onClick (CopyToClipboard content) 
+        , onClick (Context.copyToClipboard content)
         ]
         (viewAddress ctx
             (AddressContract <|
@@ -838,7 +852,7 @@ viewAddress ctx addr =
                 [ spacing 4
                 , stringTooltipAboveWithCopy ctx address
                 , pointer
-                , onClick (CopyToClipboard address)
+                , onClick (Context.copyToClipboard address)
                 ]
                 [ el [] (html <| Icons.account_user 18)
                 , text (String.left 8 address)
