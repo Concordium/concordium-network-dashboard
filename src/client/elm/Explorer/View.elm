@@ -6,10 +6,10 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
+import Explorer exposing (Model)
 import Explorer.Request exposing (..)
 import Icons exposing (..)
 import Palette exposing (withAlphaEl)
-import RemoteData exposing (RemoteData(..), WebData)
 import Round
 import Svg exposing (Svg)
 import Time
@@ -26,8 +26,8 @@ type Msg
     | BlockClicked String
 
 
-view : Context a -> WebData BlockInfo -> WebData BlockSummary -> Element Msg
-view ctx remoteBlockInfo remoteBlockSummary =
+view : Context a -> Model -> Element Msg
+view ctx model =
     column [ spacing 40, width fill ]
         [ viewContainer ctx
             (remoteDataView ctx.palette
@@ -57,7 +57,7 @@ view ctx remoteBlockInfo remoteBlockSummary =
                                     else
                                         column [ width fill ] [ text "This block has no transactions in it." ]
                                 )
-                                remoteBlockSummary
+                                model.blockSummary
                     in
                     column
                         [ width fill ]
@@ -66,7 +66,7 @@ view ctx remoteBlockInfo remoteBlockSummary =
                         , summaries
                         ]
                 )
-                remoteBlockInfo
+                model.blockInfo
             )
         ]
 
@@ -817,9 +817,10 @@ viewAsAddressContract ctx contractAddress =
                 ++ String.fromInt contractAddress.subindex
                 ++ "}"
     in
-    el  [ stringTooltipAboveWithCopy ctx content
+    el
+        [ stringTooltipAboveWithCopy ctx content
         , pointer
-        , onClick (CopyToClipboard content) 
+        , onClick (CopyToClipboard content)
         ]
         (viewAddress ctx
             (AddressContract <|
