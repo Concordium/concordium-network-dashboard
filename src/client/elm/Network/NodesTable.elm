@@ -6,14 +6,12 @@ import Element exposing (..)
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Formatting exposing (..)
+import Icons exposing (..)
 import Network exposing (Host, Model, Msg(..), NetworkNode, SortBy(..), SortMode(..), viewSummaryWidgets)
 import Palette exposing (Palette)
 import Round
 import Tooltip exposing (..)
-import Icons exposing (..)
-import Svg exposing (Svg)
 import Widgets exposing (content, remoteDataView)
-import Material.Icons.Types exposing (Icon)
 
 
 view : Context a -> Model -> Element Msg

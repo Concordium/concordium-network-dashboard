@@ -32,12 +32,27 @@ import Storage
 import Task
 import Time
 import Url exposing (Url)
-import Widgets exposing (content)
+import Widgets
 
 
 type alias Flags =
     { window : { width : Int, height : Int }
     , isProduction : Bool
+    }
+
+
+{-| Model for the notification toast.
+Note that visibility needs to be changeable independently from contents
+(i.e. they cannot be replaced by a single Maybe) because the visibility is animated:
+The text would change while the toast is still visible.
+The showCount field is used by the HideToast message to cancel the hiding
+if another toast message has been set since the hide was scheduled.
+This is the only way to do it as timeouts cannot be cancelled.
+-}
+type alias ToastModel =
+    { visible : Bool
+    , contents : String
+    , showCount : Int
     }
 
 
@@ -52,8 +67,7 @@ type alias Model =
     , networkModel : Network.Model
     , chainModel : Chain.Model
     , explorerModel : Explorer.Model
-    , clipboardContents : String
-    , showToast : Bool
+    , toastModel : ToastModel
     }
 
 
@@ -63,7 +77,8 @@ type Msg
     | UrlChanged Url
     | WindowResized Int Int
     | CopyToClipboard String
-    | HideToast
+    | ShowToast String Float
+    | HideToast Int
     | StorageDocReceived D.Value
       --
     | NetworkMsg Network.Msg
@@ -109,8 +124,7 @@ init flags url key =
                 , networkModel = Network.init { collectorUrl = cfg.collectorUrl }
                 , chainModel = chainInit
                 , explorerModel = Explorer.init { middlewareUrl = cfg.middlewareUrl }
-                , clipboardContents = ""
-                , showToast = False
+                , toastModel = { visible = False, contents = "", showCount = 0 }
                 }
     in
     ( initModel
@@ -154,10 +168,32 @@ update msg model =
             ( { model | window = { width = width, height = height } }, Cmd.none )
 
         CopyToClipboard text ->
-            ( { model | clipboardContents = text, showToast = True }, Cmd.batch [ Clipboard.copy text, Process.sleep 5000 |> Task.perform (\_ -> HideToast) ] )
+            let
+                ( newModel, cmd ) =
+                    update (ShowToast text 5000) model
+            in
+            ( newModel, Cmd.batch [ Clipboard.copy text, cmd ] )
 
-        HideToast ->
-            ( { model | showToast = False }, Cmd.none )
+        ShowToast text hideDelayMs ->
+            let
+                newShowCount =
+                    model.toastModel.showCount + 1
+            in
+            ( { model | toastModel = { visible = True, contents = text, showCount = newShowCount } }
+            , Process.sleep hideDelayMs |> Task.perform (\_ -> HideToast newShowCount)
+            )
+
+        HideToast showCount ->
+            if showCount /= model.toastModel.showCount then
+                -- Noop: Another toast message has been set (and another process for hiding it is waiting to get triggered).
+                ( model, Cmd.none )
+
+            else
+                let
+                    toastModel =
+                        model.toastModel
+                in
+                ( { model | toastModel = { toastModel | visible = False } }, Cmd.none )
 
         StorageDocReceived res ->
             let
@@ -184,7 +220,7 @@ update msg model =
                                         _ ->
                                             ( model, Cmd.none )
 
-                                Err e ->
+                                Err err ->
                                     -- let
                                     --     x =
                                     --         Debug.log "error decoding colormode" (D.errorToString e)
@@ -194,7 +230,7 @@ update msg model =
                         _ ->
                             ( model, Cmd.none )
 
-                Err a ->
+                Err err ->
                     ( model, Cmd.none )
 
         NetworkMsg networkMsg ->
@@ -223,10 +259,10 @@ update msg model =
                     , Storage.save { id = "dashboard", tipe = "colormode", value = E.string "Dark" }
                     )
 
-        ExplorerMsg eMsg ->
+        ExplorerMsg explorerMsg ->
             let
                 ( newExplorerModel, newExplorerCmd ) =
-                    Explorer.update eMsg model.explorerModel
+                    Explorer.update explorerMsg model.explorerModel
             in
             ( { model | explorerModel = newExplorerModel }, Cmd.map ExplorerMsg newExplorerCmd )
 
@@ -334,6 +370,10 @@ viewColorModeToggle ctx =
 
 viewChain : Model -> Element Msg
 viewChain model =
+    let
+        showDevTools =
+            not <| Config.isProduction model.config
+    in
     Widgets.content <|
         column [ width fill, height fill, spacing 20 ]
             [ viewSummaryWidgets model model.networkModel.nodes
@@ -341,17 +381,14 @@ viewChain model =
                 [ width fill
                 , height (fill |> minimum 200)
                 , Background.color <| Palette.darkish model.palette.bg2
-                , Border.color <| model.palette.bg2
+                , Border.color model.palette.bg2
                 , Border.rounded 6
                 , Border.width 1
                 ]
-                (Chain.view model model.chainModel (not <| Config.isProduction model.config))
-                |> Element.map ChainMsg
+                (Element.map ChainMsg <| Chain.view model model.chainModel showDevTools)
             , row [ viewCopiedToast model, centerX ]
                 [ Element.map translateMsg <|
-                    Explorer.View.view model
-                        model.explorerModel.blockInfo
-                        model.explorerModel.blockSummary
+                    Explorer.View.view model model.explorerModel
                 ]
             ]
 
@@ -360,22 +397,16 @@ viewCopiedToast : Model -> Attribute Msg
 viewCopiedToast model =
     let
         fadingAttributes =
-            if model.showToast then
-                [ transparent False
-                , htmlAttribute <| style "transition" "opacity 200ms ease-out 200ms"
-                ]
-
-            else
-                [ transparent True
-                , htmlAttribute <| style "transition" "opacity 200ms ease-out 200ms"
-                ]
+            [ transparent <| not <| model.toastModel.visible
+            , htmlAttribute <| style "transition" "opacity 200ms ease-out 200ms"
+            ]
     in
     inFront <|
         el
             ([ width (fill |> maximum 800)
              , height (fill |> maximum 45)
              , Background.color <| Palette.darkish model.palette.bg2
-             , Border.color <| model.palette.fg3
+             , Border.color model.palette.fg3
              , Border.rounded 6
              , Border.width 1
              , centerX
@@ -385,7 +416,7 @@ viewCopiedToast model =
              ]
                 ++ fadingAttributes
             )
-            (text <| String.append "Copied: \"" <| String.append model.clipboardContents "\"")
+            (text <| "Copied: \"" ++ model.toastModel.contents ++ "\"")
 
 
 translateMsg : Explorer.View.Msg -> Msg

@@ -22,6 +22,7 @@ import Http
 import Json.Decode as Decode
 import List.Extra as List
 import RemoteData exposing (..)
+import Route exposing (Route(..))
 import Task
 import Time exposing (..)
 import Tree exposing (Tree)
@@ -166,17 +167,12 @@ update ctx msg model =
             )
 
         BlockClicked hash ->
-            ( model, Nav.pushUrl ctx.key ("/chain/" ++ hash) )
+            ( model, Nav.pushUrl ctx.key (Route.toString <| ChainSelected hash) )
 
 
 selectBlock : Model -> String -> Model
 selectBlock model hash =
     { model | blockClicked = Just hash }
-
-
-type alias OutputMsgs msg =
-    { onBlockClicked : String -> msg
-    }
 
 
 updateNodes : List Node -> List (List Node) -> List (List Node)
@@ -279,14 +275,14 @@ updateChain ctx depth nodes model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    if Transition.isComplete model.transition then
-        Time.every 1000 TickSecond
+    Sub.batch
+        [ Time.every 1000 TickSecond
+        , if Transition.isComplete model.transition then
+            Sub.none
 
-    else
-        Sub.batch
-            [ Time.every 1000 TickSecond
-            , Browser.Events.onAnimationFrameDelta (round >> OnAnimationFrame)
-            ]
+          else
+            Browser.Events.onAnimationFrameDelta (round >> OnAnimationFrame)
+        ]
 
 
 
@@ -294,7 +290,7 @@ subscriptions model =
 
 
 view : Context a -> Model -> Bool -> Element Msg
-view ctx model showDebugButtons =
+view ctx model showDevTools =
     case model.lastFinalized of
         Just lastFinalized ->
             let
@@ -318,7 +314,7 @@ view ctx model showDebugButtons =
                     , selectedBlock = model.blockClicked
                     }
             in
-            column [ width fill, height fill, inFront (viewDebugButtons showDebugButtons) ]
+            column [ width fill, height fill, inFront (viewDebugButtons showDevTools) ]
                 [ el
                     [ centerX
                     , centerY
