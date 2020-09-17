@@ -8,7 +8,7 @@ pipeline {
         }
         stage('build') {
             steps {
-                sshagent (credentials: ['jenkins']) {
+                sshagent (credentials: ['6a7625a8-34f4-4c39-b0be-ed5b49aabc16']) {
                     sh './build-for-k8s.sh'
                 }
             }
