@@ -320,7 +320,7 @@ viewTransaction ctx txSummary =
                                     softSenderFallback event
                         , viewTransactionEvent ctx event
                         , el [ width (shrink |> minimum 120), alignRight ]
-                            (el [ alignRight ] <| text <| String.fromInt txSummary.cost)
+                            (el [ alignRight ] <| text <| amountToString txSummary.cost)
                         , el
                             [ alignRight
                             , stringTooltipAboveWithCopy ctx txSummary.hash
@@ -363,7 +363,7 @@ viewTransaction ctx txSummary =
                     else
                         [ text <| tag ]
                 , el [ width (shrink |> minimum 120), alignRight ]
-                    (el [ alignRight ] <| text <| String.fromInt txSummary.cost)
+                    (el [ alignRight ] <| text <| amountToString txSummary.cost)
                 , el
                     [ alignRight
                     , stringTooltipAboveWithCopy ctx txSummary.hash
