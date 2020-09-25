@@ -4,12 +4,13 @@ import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
 import Transaction.Amount exposing (Energy, decodeEnergy)
 import Transaction.Event exposing (..)
+import Transaction.Amount exposing (Amount, decodeAmount)
 
 
 type alias TransactionSummary =
     { hash : String
     , sender : Maybe String
-    , cost : Int
+    , cost : Amount
     , result : TransactionResult
     , energyCost : Energy
     , tipe : Maybe String
@@ -57,7 +58,7 @@ transactionSummaryDecoder =
     D.succeed TransactionSummary
         |> required "hash" D.string
         |> required "sender" (D.nullable D.string)
-        |> required "cost" D.int
+        |> required "cost" decodeAmount
         |> required "result" decodeTransactionResult
         |> required "energyCost" decodeEnergy
         |> required "type" (D.nullable D.string)
