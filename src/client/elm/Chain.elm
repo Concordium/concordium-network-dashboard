@@ -9,9 +9,8 @@ import Chain.Grid exposing (GridSpec)
 import Chain.Interpolate as Interpolate
 import Chain.Transition as Transition exposing (..)
 import Chain.View as View
+import CollectionHelpers exposing (maxFrequency)
 import Context exposing (..)
-import Dict
-import Dict.Extra
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -193,16 +192,13 @@ updateChain ctx depth nodes model =
         maybeBestBlock =
             nodes
                 |> List.map (\node -> ( node.bestBlockHeight, node.bestBlock ))
-                |> Dict.Extra.frequencies
-                |> Dict.toList
-                |> List.maximumBy Tuple.second
-                |> Maybe.map Tuple.first
+                |> maxFrequency
 
         -- The finalized block with the highest height.
         maybeLastFinalized =
             nodes
                 |> List.map (\node -> ( node.finalizedBlockHeight, node.finalizedBlock ))
-                |> List.maximumBy Tuple.first
+                |> maxFrequency
 
         -- Block sequences for all nodes.
         sequences =
