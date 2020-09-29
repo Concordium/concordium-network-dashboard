@@ -1,6 +1,7 @@
 port module Network exposing (..)
 
 import Browser.Navigation as Nav exposing (Key)
+import CollectionHelpers exposing (maxFrequency)
 import Context exposing (Context)
 import Dict exposing (Dict)
 import Dict.Extra as Dict
@@ -268,14 +269,21 @@ viewSummaryWidgets ctx remoteNodes =
                   , icon = Icons.lastFinalizedBlock iconSize
                   , value =
                         RemoteData.map
-                            (\nodes ->
+                            (\nodeDict ->
                                 asSecondsAgo ctx.time
-                                    (Maybe.withDefault ""
-                                        (withinHighestStatFor
-                                            .finalizedBlockHeight
-                                            nodes
-                                            .finalizedTime
-                                        )
+                                    (let
+                                        nodes =
+                                            Dict.values nodeDict
+                                     in
+                                     nodes
+                                        |> List.map .finalizedBlockHeight
+                                        |> maxFrequency
+                                        |> Maybe.map
+                                            (\height ->
+                                                List.filter (\node -> node.finalizedBlockHeight == height) nodes
+                                            )
+                                        |> Maybe.andThen (List.filterMap .finalizedTime >> List.maximum)
+                                        |> Maybe.withDefault ""
                                     )
                             )
                             remoteNodes
@@ -347,57 +355,13 @@ nodePeersOnly nodes =
 and returns that, or the default if unknown.
 -}
 majorityStatFor :
-    (NetworkNode -> comparable)
+    (a -> comparable)
     -> comparable
-    -> Dict Host NetworkNode
+    -> Dict b a
     -> comparable
 majorityStatFor getter default nodes =
-    let
-        stats =
-            nodes
-                |> Dict.toList
-                |> List.map Tuple.second
-                |> List.map getter
-
-        highestResult =
-            stats
-                |> List.foldl
-                    (\v dict ->
-                        Dict.update v
-                            (\mCount ->
-                                case mCount of
-                                    Just count ->
-                                        Just <| count + 1
-
-                                    Nothing ->
-                                        Just 1
-                            )
-                            dict
-                    )
-                    Dict.empty
-                |> Dict.toList
-                |> List.maximumBy (\( attr, count ) -> count)
-    in
-    case highestResult of
-        Just ( highestSeenKey, groupedDictCount ) ->
-            highestSeenKey
-
-        Nothing ->
-            default
-
-
-{-| For the given node attribute, finds highest value across all
-nodes and returns that, or the default if unknown
--}
-withinHighestStatFor :
-    (NetworkNode -> Float)
-    -> Dict.Dict String NetworkNode
-    -> (NetworkNode -> Maybe String)
-    -> Maybe String
-withinHighestStatFor getter nodes withinGetter =
     nodes
-        |> Dict.toList
-        |> List.map Tuple.second
-        |> List.maximumBy (\node -> getter node)
-        |> Maybe.map withinGetter
-        |> Maybe.withDefault (Just "")
+        |> Dict.values
+        |> List.map getter
+        |> maxFrequency
+        |> Maybe.withDefault default

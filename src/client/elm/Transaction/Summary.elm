@@ -2,9 +2,8 @@ module Transaction.Summary exposing (..)
 
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
-import Transaction.Amount exposing (Energy, decodeEnergy)
+import Transaction.Amount exposing (Amount, Energy, decodeAmount, decodeEnergy)
 import Transaction.Event exposing (..)
-import Transaction.Amount exposing (Amount, decodeAmount)
 
 
 type alias TransactionSummary =
