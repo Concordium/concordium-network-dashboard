@@ -837,12 +837,13 @@ viewAddress ctx addr =
         AddressAccount address ->
             row
                 [ spacing 4
-                , stringTooltipAboveWithCopy ctx address
+                , stringTooltipAbove ctx address
                 , pointer
                 , onClick (CopyToClipboard address)
                 ]
                 [ el [] (html <| Icons.account_user 18)
                 , text (String.left 8 address)
+                , el [] (html <| Icons.copy_to_clipboard 18)
                 ]
 
         AddressContract address ->
