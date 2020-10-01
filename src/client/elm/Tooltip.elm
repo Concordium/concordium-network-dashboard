@@ -86,10 +86,10 @@ stringTooltipAboveWithCopy ctx content =
                 (spacing 3 :: tooltipStyle ctx)
                 [ paragraph [] [ text content ]
                 , el
-                    [ Font.size 9
-                    , Font.color (ctx.palette.fg1 |> withAlphaEl 0.4)
+                    [ Font.size 11
+                    , Font.color (ctx.palette.fg1 |> withAlphaEl 0.6)
                     ]
-                    (text "(click to copy)")
+                    (text "Click to copy")
                 ]
             , downArrow ctx
             ]
