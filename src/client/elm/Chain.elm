@@ -1,4 +1,13 @@
-module Chain exposing (Model, Msg(..), init, selectBlock, subscriptions, update, view)
+module Chain exposing
+    ( Model
+    , Msg(..)
+    , init
+    , selectBlock
+    , selectedBlockFinalizationChanged
+    , subscriptions
+    , update
+    , view
+    )
 
 import Browser.Events
 import Browser.Navigation as Nav
@@ -22,6 +31,7 @@ import Json.Decode as Decode
 import List.Extra as List
 import RemoteData exposing (..)
 import Route exposing (Route(..))
+import Set
 import Task
 import Time exposing (..)
 import Tree exposing (Tree)
@@ -43,7 +53,7 @@ type alias Model =
     , errors : List Http.Error
     , replay : Maybe Replay
     , gridSpec : Maybe GridSpec
-    , blockClicked : Maybe String
+    , selectedBlock : Maybe String
     }
 
 
@@ -60,7 +70,7 @@ init collectorEndpoint =
       , errors = []
       , replay = Nothing
       , gridSpec = Nothing
-      , blockClicked = Nothing
+      , selectedBlock = Nothing
       }
     , Build.getNodeInfo collectorEndpoint GotNodeInfo
     )
@@ -171,7 +181,53 @@ update ctx msg model =
 
 selectBlock : Model -> String -> Model
 selectBlock model hash =
-    { model | blockClicked = Just hash }
+    { model | selectedBlock = Just hash }
+
+
+selectedBlockFinalizationChanged : Model -> Model -> Bool
+selectedBlockFinalizationChanged lastModel currentModel =
+    if lastModel.selectedBlock == currentModel.selectedBlock then
+        Maybe.map3
+            (\selectedBlockHeight lastFinalizedHeight lastModelLastFinalizedHeight ->
+                lastModelLastFinalizedHeight /= lastFinalizedHeight && selectedBlockHeight <= lastFinalizedHeight
+            )
+            (getSelectedBlockHeight lastModel)
+            (Maybe.map Tuple.first currentModel.lastFinalized)
+            (Maybe.map Tuple.first lastModel.lastFinalized)
+            |> Maybe.withDefault False
+
+    else
+        False
+
+
+getSelectedBlockHeight : Model -> Maybe Int
+getSelectedBlockHeight model =
+    model.selectedBlock
+        |> Maybe.andThen
+            (getBlockHeight
+                (model.nodes
+                    |> List.head
+                    |> Maybe.withDefault []
+                )
+            )
+
+
+{-| Note: Only searches blocks back to last best block
+-}
+getBlockHeight : List Node -> String -> Maybe Int
+getBlockHeight nodes hash =
+    nodes
+        |> List.map (Build.prepareBlockSequence >> List.filter (\proto -> Tuple.second proto == hash))
+        |> List.concat
+        |> Set.fromList
+        |> (\candidates ->
+                case Set.toList candidates of
+                    [ single ] ->
+                        Just (Tuple.first single)
+
+                    _ ->
+                        Nothing
+           )
 
 
 updateNodes : List Node -> List (List Node) -> List (List Node)
@@ -307,7 +363,7 @@ view ctx model showDevTools =
                     , lastFinalized = lastFinalized
                     , nodes = nodes
                     , onBlockClick = Just BlockClicked
-                    , selectedBlock = model.blockClicked
+                    , selectedBlock = model.selectedBlock
                     }
             in
             column [ width fill, height fill, inFront (viewDebugButtons showDevTools) ]

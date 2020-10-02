@@ -244,8 +244,33 @@ update msg model =
             let
                 ( chainModel, chainCmd ) =
                     Chain.update model chainMsg model.chainModel
+
+                updateExplorerCmd =
+                    case chainMsg of
+                        Chain.GotNodeInfo _ ->
+                            if Chain.selectedBlockFinalizationChanged model.chainModel chainModel then
+                                chainModel.selectedBlock
+                                    |> Maybe.map
+                                        (\hash ->
+                                            Explorer.Request.getBlockInfo
+                                                model.explorerModel.config
+                                                hash
+                                                (ExplorerMsg << Explorer.ReceivedBlockInfo)
+                                        )
+                                    |> Maybe.withDefault Cmd.none
+
+                            else
+                                Cmd.none
+
+                        _ ->
+                            Cmd.none
             in
-            ( { model | chainModel = chainModel }, Cmd.map ChainMsg chainCmd )
+            ( { model | chainModel = chainModel }
+            , Cmd.batch
+                [ Cmd.map ChainMsg chainCmd
+                , updateExplorerCmd
+                ]
+            )
 
         ToggleDarkMode ->
             case model.colorMode of
