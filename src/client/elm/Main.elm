@@ -288,8 +288,25 @@ update msg model =
             let
                 ( newExplorerModel, newExplorerCmd ) =
                     Explorer.update explorerMsg model.explorerModel
+
+                chainModel =
+                    case explorerMsg of
+                        Explorer.ReceivedConsensusStatus res ->
+                            let
+                                maybeBestBlock =
+                                    res
+                                        |> Result.toMaybe
+                                        |> Maybe.map .bestBlock
+
+                                oldChainModel =
+                                    model.chainModel
+                            in
+                            { oldChainModel | selectedBlock = maybeBestBlock }
+
+                        _ ->
+                            model.chainModel
             in
-            ( { model | explorerModel = newExplorerModel }, Cmd.map ExplorerMsg newExplorerCmd )
+            ( { model | explorerModel = newExplorerModel, chainModel = chainModel }, Cmd.map ExplorerMsg newExplorerCmd )
 
 
 onRouteInit : Route -> Model -> ( Model, Cmd Msg )
