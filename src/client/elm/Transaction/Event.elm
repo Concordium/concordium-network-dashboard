@@ -11,6 +11,11 @@ import Transaction.Amount exposing (Amount, decodeAmount)
 
 type TransactionEvent
     = TransactionEventTransfer EventTransfer
+    | TransactionEventAmountAddedByDecryption EventAmountAddedByDecryption
+    | TransactionEventEncryptedSelfAmountAdded EventEncryptedSelfAmountAdded
+      -- Enctrypted Transfers
+    | TransactionEventNewEncryptedAmount EventNewEncryptedAmount
+    | TransactionEventEncryptedAmountsRemoved EventEncryptedAmountsRemoved
       -- Accounts
     | TransactionEventAccountCreated EventAccountCreated
     | TransactionEventCredentialDeployed EventCredentialDeployed
@@ -38,6 +43,12 @@ transactionEventsDecoder : D.Decoder TransactionEvent
 transactionEventsDecoder =
     D.oneOf
         [ D.map TransactionEventTransfer eventTransferDecoder
+        , D.map TransactionEventAmountAddedByDecryption eventAmountAddedByDecryptionDecoder
+        , D.map TransactionEventEncryptedSelfAmountAdded eventEncryptedSelfAmountAddedDecoder
+
+        -- Encrypted Transfers
+        , D.map TransactionEventNewEncryptedAmount eventNewEncryptedAmountDecoder
+        , D.map TransactionEventEncryptedAmountsRemoved eventEncryptedAmountsRemovedDecoder
 
         -- Accounts
         , D.map TransactionEventAccountCreated eventAccountCreatedDecoder
@@ -68,6 +79,10 @@ transactionEventsDecoder =
         ]
 
 
+
+-- Transfers
+
+
 type alias EventTransfer =
     { amount : Amount
     , tag : String
@@ -83,6 +98,66 @@ eventTransferDecoder =
         |> required "tag" (expectedTag "Transferred")
         |> required "to" accountInfoDecoder
         |> required "from" accountInfoDecoder
+
+
+type alias EventEncryptedSelfAmountAdded =
+    { account : String
+    , amount : Amount
+    , tag : String
+    }
+
+
+eventEncryptedSelfAmountAddedDecoder : D.Decoder EventEncryptedSelfAmountAdded
+eventEncryptedSelfAmountAddedDecoder =
+    D.succeed EventEncryptedSelfAmountAdded
+        |> required "account" D.string
+        |> required "amount" decodeAmount
+        |> required "tag" (expectedTag "EncryptedSelfAmountAdded")
+
+
+type alias EventAmountAddedByDecryption =
+    { account : String
+    , amount : Amount
+    , tag : String
+    }
+
+
+eventAmountAddedByDecryptionDecoder : D.Decoder EventAmountAddedByDecryption
+eventAmountAddedByDecryptionDecoder =
+    D.succeed EventAmountAddedByDecryption
+        |> required "account" D.string
+        |> required "amount" decodeAmount
+        |> required "tag" (expectedTag "AmountAddedByDecryption")
+
+
+
+-- Encrypted Transfers
+
+
+type alias EventNewEncryptedAmount =
+    { account : String
+    , tag : String
+    }
+
+
+eventNewEncryptedAmountDecoder : D.Decoder EventNewEncryptedAmount
+eventNewEncryptedAmountDecoder =
+    D.succeed EventNewEncryptedAmount
+        |> required "account" D.string
+        |> required "tag" (expectedTag "NewEncryptedAmount")
+
+
+type alias EventEncryptedAmountsRemoved =
+    { account : String
+    , tag : String
+    }
+
+
+eventEncryptedAmountsRemovedDecoder : D.Decoder EventEncryptedAmountsRemoved
+eventEncryptedAmountsRemovedDecoder =
+    D.succeed EventEncryptedAmountsRemoved
+        |> required "account" D.string
+        |> required "tag" (expectedTag "EncryptedAmountsRemoved")
 
 
 

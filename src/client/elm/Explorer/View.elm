@@ -536,6 +536,30 @@ iconForEvent ctx event_ =
                     (html <| Icons.smart_contract_message 20)
                 ]
 
+        TransactionEventAmountAddedByDecryption event ->
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Unshield amount" ]
+                    (html <| Icons.shield 20)
+                ]
+
+        TransactionEventEncryptedSelfAmountAdded event ->
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Shield amount" ]
+                    (html <| Icons.shield 20)
+                ]
+
+        TransactionEventNewEncryptedAmount event ->
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Recieve encrypted amount" ]
+                    (html <| Icons.shield 20)
+                ]
+
+        TransactionEventEncryptedAmountsRemoved event ->
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Transfer encrypted amount" ]
+                    (html <| Icons.shield 20)
+                ]
+
         _ ->
             text "UNIMPLEMENTED"
 
@@ -563,6 +587,7 @@ iconForTag ctx tag =
 viewTransactionEvent : Context a -> TransactionEvent -> Element Msg
 viewTransactionEvent ctx txEvent =
     case txEvent of
+        -- Transfers
         TransactionEventTransfer event ->
             -- type alias EventTransfer =
             --     { amount : Amount
@@ -574,6 +599,43 @@ viewTransactionEvent ctx txEvent =
                 [ text <| "Sent " ++ amountToString event.amount
                 , arrowRight
                 , viewAddress ctx event.to
+                ]
+
+        TransactionEventEncryptedSelfAmountAdded event ->
+            -- type alias EventEncryptedSelfAmountAdded =
+            --     { account : AccountInfo
+            --     , amount : Amount
+            --     }
+            row []
+                [ text <| amountToString event.amount ++ " was shielded on "
+                , viewAddress ctx (AddressAccount event.account)
+                ]
+
+        TransactionEventAmountAddedByDecryption event ->
+            -- type alias EventAmountAddedByDecryption =
+            --     { account : AccountInfo
+            --     , amount : Amount
+            --     }
+            row []
+                [ text <| amountToString event.amount ++ " was unshielded on "
+                , viewAddress ctx (AddressAccount event.account)
+                ]
+
+        -- Encrypted transfers
+        TransactionEventNewEncryptedAmount event ->
+            --  type alias EventNewEncryptedAmount =
+            --      { account : AccountInfo }
+            row []
+                [ viewAddress ctx (AddressAccount event.account)
+                , text " received an encrypted amount."
+                ]
+
+        TransactionEventEncryptedAmountsRemoved event ->
+            --type alias EventEncryptedAmountsRemoved =
+            --      { account : AccountInfo }
+            row []
+                [ viewAddress ctx (AddressAccount event.account)
+                , text " sent an encrypted amount."
                 ]
 
         -- Accounts
