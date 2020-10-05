@@ -5,6 +5,7 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
+import Http
 import Icons
 import Loading
 import Material.Icons.Sharp as MaterialIcons
@@ -97,7 +98,7 @@ viewWidget ctx widget =
 -- Remote Data Helper
 
 
-remoteDataView : Palette Color -> (c -> Element msg) -> RemoteData e c -> Element msg
+remoteDataView : Palette Color -> (c -> Element msg) -> WebData c -> Element msg
 remoteDataView palette successView remoteData =
     case remoteData of
         NotAsked ->
@@ -107,10 +108,35 @@ remoteDataView palette successView remoteData =
             loader palette.fg3
 
         Failure error ->
-            badge palette.warning "Error"
+            el [ Font.color palette.danger ] (paragraph [] [ text <| "Error: " ++ errorToString error ])
 
         Success data ->
             successView data
+
+
+errorToString : Http.Error -> String
+errorToString error =
+    case error of
+        Http.BadUrl url ->
+            "The URL " ++ url ++ " was invalid"
+
+        Http.Timeout ->
+            "Unable to reach the server, try again"
+
+        Http.NetworkError ->
+            "Unable to reach the server, check your network connection"
+
+        Http.BadStatus 500 ->
+            "The server had a problem, try again later"
+
+        Http.BadStatus 400 ->
+            "Verify your information and try again"
+
+        Http.BadStatus _ ->
+            "Unknown error"
+
+        Http.BadBody errorMessage ->
+            errorMessage
 
 
 loader : Element.Color -> Element msg
