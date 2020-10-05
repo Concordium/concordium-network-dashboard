@@ -1,5 +1,6 @@
 module Chain.View exposing (..)
 
+import Angle
 import Chain.Build exposing (..)
 import Chain.Flatten exposing (..)
 import Chain.Grid as Grid exposing (GridSpec)
@@ -93,56 +94,55 @@ viewBlock ctx clickMsg selectedBlock ({ hash, rect, color, fractionNodesAt } as 
     ( hash
     , g
         (click ++ [ TypedSvg.Attributes.cursor CursorPointer, opacity (Opacity alpha) ])
-        ([ Svg.rectangle2d
+        [ Svg.rectangle2d
             [ rx (px 4)
             , ry (px 4)
             , fill (Paint <| fadeOut 0.7 color)
             , highlight
             ]
             rect
-         , Svg.translateBy translation <| viewText (String.left 4 hash) 16 color
-         ]
-            ++ viewNodes ctx block
-        )
+        , Svg.translateBy translation <| viewText (String.left 4 hash) 16 color
+        , viewNodeFractionBar ctx block
+        ]
     )
 
 
-viewNodes : Context a -> DrawableBlock -> List (Svg msg)
-viewNodes ctx block =
+viewNodeFractionBar : Context a -> DrawableBlock -> Svg msg
+viewNodeFractionBar ctx block =
     let
-        attrs =
-            { size = 4, circlesPerRow = 8, maxCircles = 16 }
+        fullWidth =
+            64
 
-        circleFromIndex : Int -> Int -> Float -> Int -> Svg msg
-        circleFromIndex size circlesPerRow totalCircles index =
-            let
-                xp =
-                    index |> remainderBy circlesPerRow
+        height =
+            7
 
-                yp =
-                    (toFloat index / toFloat circlesPerRow) |> floor
+        width =
+            block.fractionNodesAt * fullWidth
 
-                alpha =
-                    (totalCircles - toFloat index) |> round |> toFloat |> clamp 0 0.8
-            in
-            Rectangle2d.interpolate block.rect (toFloat (xp + 1) / toFloat (circlesPerRow + 1)) -0.15
-                |> Point2d.translateBy (Vector2d.pixels 0 (toFloat size * toFloat yp * -1.5))
-                |> Circle2d.withRadius (Pixels.pixels (toFloat size / 2.0))
-                |> Svg.circle2d
-                    [ fill (Paint <| Palette.withAlphaCo alpha <| Palette.uiToColor ctx.palette.c3)
-                    , Svg.Attributes.style "transition: fill 400ms ease-out"
-                    ]
-
-        numCircles =
-            block.fractionNodesAt * attrs.maxCircles
+        translation =
+            Vector2d.from
+                Point2d.origin
+                (Rectangle2d.centerPoint block.rect)
+                |> Vector2d.plus (Vector2d.pixels (-fullWidth / 2) -29)
     in
-    List.range 0 (floor (attrs.maxCircles - 1))
-        |> List.map (circleFromIndex attrs.size attrs.circlesPerRow numCircles)
-
-
-fraction : Float -> Float
-fraction f =
-    f - toFloat (truncate f)
+    Svg.translateBy translation <|
+        Svg.rectangle2d
+            [ fill
+                (Paint <|
+                    Palette.uiToColor ctx.palette.c3
+                )
+            , Svg.Attributes.style
+                "transition: width 300ms ease-out"
+            , rx (px 2)
+            , ry (px 2)
+            ]
+        <|
+            Rectangle2d.with
+                { x1 = Pixels.pixels 0
+                , y1 = Pixels.pixels 0
+                , x2 = Pixels.pixels width
+                , y2 = Pixels.pixels height
+                }
 
 
 viewText : String -> Float -> Color -> Svg msg
