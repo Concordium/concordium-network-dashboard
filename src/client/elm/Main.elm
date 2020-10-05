@@ -332,6 +332,7 @@ view model =
             column
                 [ width fill
                 , Background.color model.palette.bg1
+                , clipX
                 , paddingEach { bottom = 60, left = 0, right = 0, top = 0 }
                 ]
                 [ viewHeader model
