@@ -512,6 +512,12 @@ iconForEvent ctx event_ =
                     (html <| Icons.delegation_delegated 20)
                 ]
 
+        TransactionEventStakeUndelegated event ->
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Stake undelegation" ]
+                    (html <| Icons.delegation_undelegated 20)
+                ]
+
         TransactionEventBakerAdded event ->
             row [ spacing 10 ]
                 [ el [ stringTooltipAbove ctx "Baker addition" ]
@@ -835,14 +841,19 @@ viewTransactionEvent ctx txEvent =
             -- type alias EventStakeUndelegated =
             --   { tag : String
             --   , account : String
-            --   , baker : Int
+            --   , baker : Maybe Int
             --   }
             row []
                 [ text "Undelegated"
                 , arrowRight
                 , viewAddress ctx
                     (AddressAccount event.account)
-                , text <| " (Baker: " ++ String.fromInt event.baker ++ ")"
+                , case event.baker of
+                    Just id ->
+                        text <| " (Baker: " ++ String.fromInt id ++ ")"
+
+                    Nothing ->
+                        Element.none
                 ]
 
         -- Core

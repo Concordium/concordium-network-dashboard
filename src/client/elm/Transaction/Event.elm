@@ -405,7 +405,7 @@ eventStakeDelegatedDecoder =
 type alias EventStakeUndelegated =
     { tag : String
     , account : String
-    , baker : Int
+    , baker : Maybe Int
     }
 
 
@@ -414,7 +414,7 @@ eventStakeUndelegatedDecoder =
     D.succeed EventStakeUndelegated
         |> required "tag" (expectedTag "StakeUndelegated")
         |> required "account" D.string
-        |> required "baker" D.int
+        |> required "baker" (D.nullable D.int)
 
 
 
