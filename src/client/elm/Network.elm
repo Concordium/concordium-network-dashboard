@@ -1,7 +1,7 @@
 port module Network exposing (..)
 
 import Browser.Navigation as Nav exposing (Key)
-import CollectionHelpers exposing (maxFrequency)
+import CollectionHelpers exposing (maxFrequency, median)
 import Context exposing (Context)
 import Dict exposing (Dict)
 import Dict.Extra as Dict
@@ -9,9 +9,9 @@ import Element exposing (..)
 import Formatting exposing (asSecondsAgo, averageStatSecondsFor)
 import Http
 import Icons
+import Iso8601
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
-import List.Extra as List
 import Palette
 import RemoteData exposing (RemoteData(..), WebData)
 import Route exposing (Route(..))
@@ -262,10 +262,11 @@ viewSummaryWidgets ctx remoteNodes =
                         RemoteData.map
                             (\nodes ->
                                 majorityStatFor
-                                    (\n ->
-                                        asSecondsAgo
-                                            ctx.time
-                                            (Maybe.withDefault "" n.bestArrivedTime)
+                                    (\node ->
+                                        Maybe.withDefault "" node.bestArrivedTime
+                                            |> Iso8601.toTime
+                                            |> Result.toMaybe
+                                            |> asSecondsAgo ctx.time
                                     )
                                     ""
                                     nodes
@@ -280,21 +281,24 @@ viewSummaryWidgets ctx remoteNodes =
                   , value =
                         RemoteData.map
                             (\nodeDict ->
-                                asSecondsAgo ctx.time
-                                    (let
-                                        nodes =
-                                            Dict.values nodeDict
-                                     in
-                                     nodes
-                                        |> List.map .finalizedBlockHeight
-                                        |> maxFrequency
-                                        |> Maybe.map
-                                            (\height ->
-                                                List.filter (\node -> node.finalizedBlockHeight == height) nodes
-                                            )
-                                        |> Maybe.andThen (List.filterMap .finalizedTime >> List.maximum)
-                                        |> Maybe.withDefault ""
-                                    )
+                                let
+                                    nodes =
+                                        Dict.values nodeDict
+                                in
+                                nodes
+                                    |> List.map .finalizedBlockHeight
+                                    |> maxFrequency
+                                    |> Maybe.andThen
+                                        (\height ->
+                                            List.filter (\node -> node.finalizedBlockHeight == height) nodes
+                                                |> List.filterMap .finalizedTime
+                                                |> List.filterMap (Iso8601.toTime >> Result.toMaybe)
+                                                |> List.map Time.posixToMillis
+                                                |> List.sort
+                                                |> median
+                                        )
+                                    |> Maybe.map Time.millisToPosix
+                                    |> asSecondsAgo ctx.time
                             )
                             remoteNodes
                   , subvalue = Nothing
