@@ -86,6 +86,7 @@ type alias Model =
     , nodes : WebData (Dict Host NetworkNode)
     , sortMode : SortMode
     , selectedNode : WebData (Result String NetworkNode)
+    , nodePage : Int
     }
 
 
@@ -96,6 +97,8 @@ type Msg
     | SortSet SortBy
     | NodeClicked String
     | TaskPerformed
+    | PreviousNodePage
+    | NextNodePage
 
 
 init : Config -> Model
@@ -104,6 +107,7 @@ init cfg =
     , nodes = Loading
     , sortMode = SortNone
     , selectedNode = NotAsked
+    , nodePage = 0
     }
 
 
@@ -162,7 +166,7 @@ update msg model currentRoute key =
                             else
                                 SortAsc sortBy
             in
-            ( { model | sortMode = newSortMode }, Cmd.none )
+            ( { model | sortMode = newSortMode, nodePage = 0 }, Cmd.none )
 
         NodeClicked nodeId ->
             ( selectNode model nodeId
@@ -171,6 +175,12 @@ update msg model currentRoute key =
 
         TaskPerformed ->
             ( model, Cmd.none )
+
+        PreviousNodePage ->
+            ( { model | nodePage = max 0 (model.nodePage - 1) }, Cmd.none )
+
+        NextNodePage ->
+            ( { model | nodePage = max 0 (model.nodePage + 1) }, Cmd.none )
 
 
 selectNode : Model -> String -> Model
