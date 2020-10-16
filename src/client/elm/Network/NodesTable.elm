@@ -6,12 +6,30 @@ import Element exposing (..)
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Formatting exposing (..)
+import Html.Attributes as HtmlAttr
 import Icons exposing (..)
 import Network exposing (Host, Model, Msg(..), NetworkNode, SortBy(..), SortMode(..), viewSummaryWidgets)
-import Palette exposing (Palette)
+import Palette exposing (Palette, darkish)
 import Round
+import Svg.Attributes exposing (visibility)
 import Tooltip exposing (..)
 import Widgets exposing (content, remoteDataView)
+
+
+nodesPerPage : Int
+nodesPerPage =
+    50
+
+
+visible : Bool -> Attribute msg
+visible b =
+    htmlAttribute <|
+        HtmlAttr.style "visibility" <|
+            if b then
+                "visible"
+
+            else
+                "hidden"
 
 
 view : Context a -> Model -> Element Msg
@@ -22,15 +40,44 @@ view ctx model =
             , remoteDataView ctx.palette
                 (\nodes ->
                     let
+                        nodesFrom =
+                            model.nodePage * nodesPerPage
+
                         listNodes =
                             nodes
                                 |> Dict.toList
                                 |> List.map Tuple.second
+                                |> sortNodesMode model.sortMode
 
-                        sortedNodes =
-                            sortNodesMode model.sortMode listNodes
+                        visibleNodes =
+                            listNodes
+                                |> List.drop nodesFrom
+                                |> List.take nodesPerPage
+
+                        nodesTo =
+                            nodesFrom + List.length visibleNodes
+
+                        totalPages =
+                            ceiling (toFloat (List.length listNodes) / toFloat nodesPerPage) - 1
                     in
-                    nodesTable ctx model.sortMode sortedNodes
+                    column [ spacing 10 ]
+                        [ nodesTable ctx model.sortMode visibleNodes
+                        , row [ centerX ]
+                            [ el
+                                [ onClick PreviousNodePage
+                                , pointer
+                                , visible (model.nodePage > 0)
+                                ]
+                                (text "Prev ")
+                            , text <| String.fromInt (nodesFrom + 1) ++ " - " ++ String.fromInt nodesTo
+                            , el
+                                [ onClick NextNodePage
+                                , pointer
+                                , visible (model.nodePage < totalPages)
+                                ]
+                                (text " Next")
+                            ]
+                        ]
                 )
                 model.nodes
             ]
@@ -51,7 +98,7 @@ nodesTable ctx sortMode nodes =
             { data = nodes
             , columns =
                 [ { header = el [ Font.alignLeft ] <| sortableHeader ctx sortMode SortName "Name"
-                  , width = fill
+                  , width = px 250
                   , view =
                         \node ->
                             el
