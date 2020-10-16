@@ -189,7 +189,17 @@ selectedBlockFinalizationChanged lastModel currentModel =
     if lastModel.selectedBlock == currentModel.selectedBlock then
         Maybe.map3
             (\selectedBlockHeight lastFinalizedHeight lastModelLastFinalizedHeight ->
-                lastModelLastFinalizedHeight /= lastFinalizedHeight && selectedBlockHeight <= lastFinalizedHeight
+                let
+                    wasNotFinalized =
+                        selectedBlockHeight > lastModelLastFinalizedHeight
+
+                    newIsFinalized =
+                        lastModelLastFinalizedHeight /= lastFinalizedHeight
+
+                    selectedIsFinalized =
+                        selectedBlockHeight <= lastFinalizedHeight
+                in
+                wasNotFinalized && newIsFinalized && selectedIsFinalized
             )
             (getSelectedBlockHeight lastModel)
             (Maybe.map Tuple.first currentModel.lastFinalized)
@@ -328,7 +338,7 @@ updateChain ctx depth nodes model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Time.every 1000 TickSecond
+        [ Time.every 2000 TickSecond
         , if Transition.isComplete model.transition then
             Sub.none
 
