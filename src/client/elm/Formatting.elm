@@ -3,7 +3,6 @@ module Formatting exposing (..)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Font as Font
-import Iso8601
 import Palette exposing (Palette)
 import Round
 import Time exposing (Posix)
@@ -157,23 +156,22 @@ enCompact { withAffix } tense distanceId =
         |> maybeAffix
 
 
-asSecondsAgo : Time.Posix -> String -> String
-asSecondsAgo currentTime targetTime =
-    case Iso8601.toTime targetTime of
-        Err x ->
-            "-"
-
-        Ok p ->
-            if Time.Extra.diff Time.Extra.Second Time.utc currentTime (Time.millisToPosix 0) == 0 then
-                -- Handle case where app is initialised and we don't yet have a real currentTime value
-                "-"
+asSecondsAgo : Time.Posix -> Maybe Time.Posix -> String
+asSecondsAgo currentTime maybeTargetTime =
+    case maybeTargetTime of
+        Just targetTime ->
+            -- Handle case where app is initialized and we don't yet have a real currentTime value.
+            -- TODO (mbo) Make time a Maybe if this is a real concern.
+            if Time.posixToMillis currentTime == 0 then
+                ""
 
             else
-                let
-                    secondsAgo =
-                        Time.Extra.diff Time.Extra.Second Time.utc p currentTime
-                in
-                secondsAsText secondsAgo
+                Time.Extra.diff Time.Extra.Second Time.utc targetTime currentTime
+                    |> max 0 -- Clamp time to zero to avoid displaying time from the future.
+                    |> secondsAsText
+
+        Nothing ->
+            "N/A"
 
 
 secondsAsText : Int -> String
