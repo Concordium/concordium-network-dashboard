@@ -8,6 +8,7 @@ import Element.Font as Font
 import Formatting exposing (..)
 import Html.Attributes as HtmlAttr
 import Icons exposing (..)
+import Iso8601
 import Network exposing (Host, Model, Msg(..), NetworkNode, SortBy(..), SortMode(..), viewSummaryWidgets)
 import Palette exposing (Palette, darkish)
 import Round
@@ -186,7 +187,11 @@ nodesTable ctx sortMode nodes =
                   , width = fill
                   , view =
                         \node ->
-                            text <| asSecondsAgo ctx.time (Maybe.withDefault "" node.finalizedTime)
+                            Maybe.withDefault "" node.finalizedTime
+                                |> Iso8601.toTime
+                                |> Result.toMaybe
+                                |> asSecondsAgo ctx.time
+                                |> text
                   }
                 , { header = el [ Font.color ctx.palette.fg1 ] (text "Block EMA")
                   , width = fill
