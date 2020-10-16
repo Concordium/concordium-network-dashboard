@@ -61,7 +61,7 @@ view ctx model =
                         totalPages =
                             ceiling (toFloat (List.length listNodes) / toFloat nodesPerPage) - 1
                     in
-                    column [ spacing 10 ]
+                    column [ spacing 10, width fill ]
                         [ nodesTable ctx model.sortMode visibleNodes
                         , row [ centerX ]
                             [ el
