@@ -9,7 +9,6 @@ import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode
 import RemoteData exposing (WebData)
 import Tree exposing (Tree(..), singleton, tree)
-import Tree.Zipper as Zipper exposing (Zipper)
 
 
 type alias Node =
@@ -100,8 +99,21 @@ getNodeInfo collectorEndpoint responseMsg =
         }
 
 
+getBlockByHeight : String -> Int -> (WebData String -> msg) -> Cmd msg
+getBlockByHeight collectorEndpoint height responseMsg =
+    Http.get
+        { url = collectorEndpoint ++ "/v1/blocksByHeight/" ++ String.fromInt height
+        , expect = Http.expectJson (RemoteData.fromResult >> responseMsg) decodeBlockHash
+        }
+
+
 
 -- Decoders / Encoders
+
+
+decodeBlockHash : Decode.Decoder String
+decodeBlockHash =
+    Decode.index 0 Decode.string
 
 
 decodeNode : Decode.Decoder Node
@@ -171,22 +183,21 @@ prepareBlockSequence node =
 {-| Convert a tree of "proto blocks" into a tree of blocks which know about their finalization state
 and nodes that report them as their best block.
 -}
-annotate : List Node -> String -> Tree ProtoBlock -> Tree Block
-annotate nodes lastFinalizedBlock sourceTree =
-    annotateChain nodes sourceTree
-        |> colorize lastFinalizedBlock
+annotate : List Node -> Int -> Tree ProtoBlock -> Tree Block
+annotate nodes lastFinalizedHeight sourceTree =
+    annotateChain nodes lastFinalizedHeight sourceTree
 
 
-annotateChain : List Node -> Tree ProtoBlock -> Tree Block
-annotateChain nodes sourceTree =
+annotateChain : List Node -> Int -> Tree ProtoBlock -> Tree Block
+annotateChain nodes lastFinalizedHeight sourceTree =
     Tree.restructure
-        (annotateBlock nodes)
+        (annotateBlock nodes lastFinalizedHeight)
         annotateChildren
         sourceTree
 
 
-annotateBlock : List Node -> ProtoBlock -> Block
-annotateBlock nodes ( height, hash ) =
+annotateBlock : List Node -> Int -> ProtoBlock -> Block
+annotateBlock nodes lastFinalizedHeight ( height, hash ) =
     let
         nodesAt =
             nodes
@@ -199,7 +210,7 @@ annotateBlock nodes ( height, hash ) =
     { hash = hash
     , nodesAt = nodesAt
     , fractionNodesAt = fractionNodesAt
-    , status = Candidate
+    , status = statusFromHeight lastFinalizedHeight height
     , forkWidth = 1
     , blockHeight = height
     }
@@ -225,29 +236,14 @@ annotateChildren label children =
                 )
 
 
-{-| Starting from the last finalized block, mark all ancestor blocks as finalized.
--}
-colorize : String -> Tree Block -> Tree Block
-colorize lastFinalizedBlock tree =
-    let
-        startZipper =
-            tree
-                |> Zipper.fromTree
-                |> Zipper.findFromRoot
-                    (.hash >> (==) lastFinalizedBlock)
+statusFromHeight : Int -> Int -> BlockStatus
+statusFromHeight lastFinalizedHeight blockHeight =
+    case compare blockHeight lastFinalizedHeight of
+        LT ->
+            Finalized
 
-        colorizeUp zipper =
-            let
-                coloredZipper =
-                    Zipper.mapLabel (\label -> { label | status = Finalized }) zipper
-            in
-            case Zipper.parent coloredZipper of
-                Nothing ->
-                    coloredZipper
+        EQ ->
+            LastFinalized
 
-                Just parent ->
-                    colorizeUp parent
-    in
-    Maybe.map colorizeUp startZipper
-        |> Maybe.map Zipper.toTree
-        |> Maybe.withDefault tree
+        GT ->
+            Candidate
