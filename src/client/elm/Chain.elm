@@ -2,6 +2,7 @@ module Chain exposing
     ( Model
     , Msg(..)
     , init
+    , rebuild
     , selectBlock
     , selectedBlockFinalizationChanged
     , subscriptions
@@ -14,7 +15,7 @@ import Browser.Navigation as Nav
 import Chain.Build as Build exposing (..)
 import Chain.DictTree as DictTree exposing (DictTree)
 import Chain.Flatten as Flatten exposing (DrawableChain, emptyDrawableChain)
-import Chain.Grid exposing (GridSpec)
+import Chain.Grid as Grid exposing (GridSpec)
 import Chain.Interpolate as Interpolate
 import Chain.Transition as Transition exposing (..)
 import Chain.View as View
@@ -29,6 +30,7 @@ import File exposing (File)
 import Http
 import Json.Decode as Decode
 import List.Extra as List
+import Maybe
 import RemoteData exposing (..)
 import Route exposing (Route(..))
 import Set
@@ -53,12 +55,13 @@ type alias Model =
     , errors : List Http.Error
     , replay : Maybe Replay
     , gridSpec : Maybe GridSpec
+    , maxWidth : Int
     , selectedBlock : Maybe String
     }
 
 
-init : String -> ( Model, Cmd Msg )
-init collectorEndpoint =
+init : String -> Int -> ( Model, Cmd Msg )
+init collectorEndpoint maxWidth =
     ( { endpoint = collectorEndpoint
       , nodes = []
       , initialBlockHeight = Nothing
@@ -70,6 +73,7 @@ init collectorEndpoint =
       , errors = []
       , replay = Nothing
       , gridSpec = Nothing
+      , maxWidth = maxWidth
       , selectedBlock = Nothing
       }
     , Build.getNodeInfo collectorEndpoint GotNodeInfo
@@ -93,6 +97,7 @@ spec offset =
 
 type Msg
     = GotNodeInfo (WebData (List Node))
+    | GotParentBlockByHeight ProtoBlock (WebData String)
     | LoadedHistory File
     | ReplayHistory
     | SaveHistory
@@ -100,6 +105,7 @@ type Msg
     | TickSecond Posix
     | OnAnimationFrame Int
     | BlockClicked String
+    | MaxWidthChanged Int
 
 
 update : Context a -> Msg -> Model -> ( Model, Cmd Msg )
@@ -107,7 +113,7 @@ update ctx msg model =
     case msg of
         GotNodeInfo (Success nodeInfo) ->
             if Just nodeInfo /= List.head model.nodes then
-                ( updateChain ctx 5 nodeInfo model, Cmd.none )
+                updateChain ctx nodeInfo model
 
             else
                 ( model, Cmd.none )
@@ -116,6 +122,21 @@ update ctx msg model =
             ( { model | errors = error :: model.errors }, Cmd.none )
 
         GotNodeInfo _ ->
+            ( model, Cmd.none )
+
+        GotParentBlockByHeight child (Success parentHash) ->
+            { model
+                | tree =
+                    DictTree.addAll
+                        [ [ ( Tuple.first child - 1, parentHash ), child ] ]
+                        model.tree
+            }
+                |> rebuild ctx
+
+        GotParentBlockByHeight _ (Failure error) ->
+            ( { model | errors = error :: model.errors }, Cmd.none )
+
+        GotParentBlockByHeight _ _ ->
             ( model, Cmd.none )
 
         SaveHistory ->
@@ -177,6 +198,18 @@ update ctx msg model =
 
         BlockClicked hash ->
             ( model, Nav.pushUrl ctx.key (Route.toString <| ChainSelected hash) )
+
+        MaxWidthChanged maxWidth ->
+            let
+                newModel =
+                    { model | maxWidth = maxWidth }
+            in
+            case List.head model.nodes of
+                Nothing ->
+                    ( newModel, Cmd.none )
+
+                Just nodes ->
+                    updateChain ctx nodes newModel
 
 
 selectBlock : Model -> String -> Model
@@ -251,8 +284,8 @@ updateNodes new current =
         current
 
 
-updateChain : Context a -> Int -> List Node -> Model -> Model
-updateChain ctx depth nodes model =
+updateChain : Context a -> List Node -> Model -> ( Model, Cmd Msg )
+updateChain ctx nodes model =
     let
         -- The best block according to the majority of the nodes.
         maybeBestBlock =
@@ -275,37 +308,58 @@ updateChain ctx depth nodes model =
             DictTree.addAll sequences model.tree
     in
     case ( maybeBestBlock, maybeLastFinalized ) of
-        ( Just bestBlock, Just ( lastFinalizedHeight, lastFinalizedBlock ) ) ->
+        ( Just bestBlock, Just finalBlock ) ->
             let
-                -- Find deepmost blocks of all branches up to a depth of `depth` from the best block
-                -- according to the majority of the nodes.
+                lastFinalizedHeight = Tuple.first finalBlock
+
+                -- Set the block offset in the grid specification, if it does not exist yet.
+                -- this is used as a starting point for shifting the viewBox, to avoid
+                -- a bug that occurs if the viewBox position is too far out.
+                gridSpec =
+                    Maybe.withDefault (spec lastFinalizedHeight) model.gridSpec
+
+                targetDepth =
+                    Grid.maxCells model.maxWidth gridSpec
+
+                -- Find "highest" blocks of all branches up to max height of `targetDepth` from the last finalized block.
                 -- The reason for not going beyond that is to ensure that this block remains included in the view.
                 ( stepsWalkedForwards, last ) =
                     newTree
-                        |> DictTree.walkForwardFrom bestBlock depth
+                        |> DictTree.walkForwardFrom finalBlock targetDepth
                         |> List.maximumBy Tuple.first
                         |> Maybe.withDefault ( 0, bestBlock )
 
-                -- Walk back from the last block to find the start block.
+                -- Walk back from the last block to find the start block, which is two blocks before the last finalized block.
                 ( stepsWalkedBackwards, start ) =
                     newTree
-                        |> DictTree.walkBackwardFrom last (depth - 1)
+                        |> DictTree.walkBackwardFrom last (targetDepth - 2)
 
                 -- Convert dict into tree of "proto blocks" which is then "annotated" into the final model (a tree of "blocks").
                 annotatedTree =
-                    DictTree.buildForward depth start newTree [] Tree.tree
-                        |> annotate nodes lastFinalizedBlock
+                    DictTree.buildForward targetDepth start newTree [] Tree.tree
+                        |> annotate nodes lastFinalizedHeight
 
-                firstBlockHeight =
-                    Tree.label annotatedTree |> .blockHeight
-
-                gridSpec =
-                    Maybe.withDefault (spec firstBlockHeight) model.gridSpec
+                ( firstBlockHash, firstBlockHeight ) =
+                    let
+                        first =
+                            Tree.label annotatedTree
+                    in
+                    ( first.hash, first.blockHeight )
 
                 newDrawableChain =
                     Flatten.flattenTree ctx gridSpec lastFinalizedHeight 2 annotatedTree
+
+                loadAdditionalBlockCmd =
+                    if newDrawableChain.width < targetDepth then
+                        Build.getBlockByHeight
+                            model.endpoint
+                            (firstBlockHeight - 1)
+                            (GotParentBlockByHeight ( firstBlockHeight, firstBlockHash ))
+
+                    else
+                        Cmd.none
             in
-            { model
+            ( { model
                 | annotatedTree = Just annotatedTree
                 , nodes = updateNodes nodes model.nodes
                 , tree = newTree
@@ -325,10 +379,22 @@ updateChain ctx depth nodes model =
                             model.initialBlockHeight
                         )
                 , gridSpec = Just gridSpec
-            }
+              }
+            , loadAdditionalBlockCmd
+            )
 
         _ ->
-            model
+            ( model, Cmd.none )
+
+
+rebuild : Context a -> Model -> ( Model, Cmd Msg )
+rebuild ctx model =
+    case List.head model.nodes of
+        Just nodes ->
+            updateChain ctx nodes model
+
+        Nothing ->
+            ( model, Cmd.none )
 
 
 
@@ -374,6 +440,7 @@ view ctx model showDevTools =
                     , nodes = nodes
                     , onBlockClick = Just BlockClicked
                     , selectedBlock = model.selectedBlock
+                    , maxWidth = model.maxWidth
                     }
             in
             column [ width fill, height fill, inFront (viewDebugButtons showDevTools) ]
@@ -381,6 +448,7 @@ view ctx model showDevTools =
                     [ centerX
                     , centerY
                     , spacing (round gridSpec.gutterHeight)
+                    , clip
                     ]
                     (html <| View.viewChain ctx vcontext currentDrawableChain)
                 ]

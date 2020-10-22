@@ -165,6 +165,9 @@ flattenTree ctx gridSpec lastFinalizedBlockHeight maxNumVertical chain =
         firstBlockHeight =
             Tree.label chain |> .blockHeight
 
+        lastBlockHeight =
+            firstBlockHeight + width
+
         collapsedX =
             firstBlockHeight - lastFinalizedBlockHeight
 
@@ -172,7 +175,7 @@ flattenTree ctx gridSpec lastFinalizedBlockHeight maxNumVertical chain =
             max 0 (maxNumVertical - height)
 
         offsetX =
-            Grid.intersection gridSpec firstBlockHeight 0
+            Grid.intersection gridSpec lastBlockHeight 0
                 |> Point2d.toPixels
                 |> .x
     in

@@ -65,3 +65,17 @@ inset x y rect =
         ( width, height )
         (Angle.degrees 0)
         (Rectangle2d.centerPoint rect)
+
+
+maxCells : Int -> GridSpec -> Int
+maxCells windowWidth { outerPadding, cellWidth, gutterWidth } =
+    (toFloat windowWidth - (2 * outerPadding)) / (cellWidth + gutterWidth) |> round
+
+
+maxCellsWidth : Int -> GridSpec -> Int
+maxCellsWidth windowWidth ({ cellWidth, gutterWidth } as spec) =
+    let
+        ncells =
+            maxCells windowWidth spec
+    in
+    ncells * round cellWidth + (ncells - 1) * round gutterWidth
