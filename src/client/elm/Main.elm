@@ -106,7 +106,7 @@ init flags url key =
             Config.defaultConfig (Config.parseEnv flags.isProduction)
 
         ( chainInit, chainCmd ) =
-            Chain.init cfg.collectorUrl
+            Chain.init cfg.collectorUrl (chainWidthFromWidth flags.window.width)
 
         route =
             Route.fromUrl url
@@ -165,7 +165,9 @@ update msg model =
             ( { initModel | currentRoute = route }, initCmds )
 
         WindowResized width height ->
-            ( { model | window = { width = width, height = height } }, Cmd.none )
+            ( { model | window = { width = width, height = height } }
+            , Task.perform identity (Task.succeed <| ChainMsg <| Chain.MaxWidthChanged (chainWidthFromWidth width))
+            )
 
         CopyToClipboard text ->
             let
@@ -273,7 +275,7 @@ update msg model =
             )
 
         ToggleDarkMode ->
-            case model.colorMode of
+            (case model.colorMode of
                 Dark ->
                     ( { model | palette = Palette.defaultLight, colorMode = Light }
                     , Storage.save { id = "dashboard", tipe = "colormode", value = E.string "Light" }
@@ -283,6 +285,8 @@ update msg model =
                     ( { model | palette = Palette.defaultDark, colorMode = Dark }
                     , Storage.save { id = "dashboard", tipe = "colormode", value = E.string "Dark" }
                     )
+            )
+                |> rebuildChain
 
         ExplorerMsg explorerMsg ->
             let
@@ -307,6 +311,20 @@ update msg model =
                             model.chainModel
             in
             ( { model | explorerModel = newExplorerModel, chainModel = chainModel }, Cmd.map ExplorerMsg newExplorerCmd )
+
+
+rebuildChain : ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
+rebuildChain ( model, cmd ) =
+    let
+        ( chainModel, chainCmd ) =
+            Chain.rebuild model model.chainModel
+    in
+    ( { model | chainModel = chainModel }, Cmd.batch [ cmd, Cmd.map ChainMsg chainCmd ] )
+
+
+chainWidthFromWidth : Int -> Int
+chainWidthFromWidth width =
+    min (width - 100) 1100
 
 
 onRouteInit : Route -> Model -> ( Model, Cmd Msg )
@@ -395,20 +413,20 @@ viewHeader ctx =
 
 viewColorModeToggle : Context a -> Element Msg
 viewColorModeToggle ctx =
-    case ctx.colorMode of
-        Palette.Dark ->
-            el
-                [ onClick ToggleDarkMode
-                , mouseOver [ Font.color ctx.palette.fg1 ]
-                ]
-                (html <| Icon.brightness_5 14 Inherit)
+    let
+        icon =
+            case ctx.colorMode of
+                Palette.Dark ->
+                    html <| Icon.brightness_5 14 Inherit
 
-        Palette.Light ->
-            el
-                [ onClick ToggleDarkMode
-                , mouseOver [ Font.color ctx.palette.fg1 ]
-                ]
-                (html <| Icon.brightness_2 14 Inherit)
+                Palette.Light ->
+                    html <| Icon.brightness_2 14 Inherit
+    in
+    el
+        [ onClick ToggleDarkMode
+        , mouseOver [ Font.color ctx.palette.fg1 ]
+        ]
+        icon
 
 
 viewChain : Model -> Element Msg

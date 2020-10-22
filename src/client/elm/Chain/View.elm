@@ -1,10 +1,8 @@
 module Chain.View exposing (..)
 
-import Angle
 import Chain.Build exposing (..)
 import Chain.Flatten exposing (..)
 import Chain.Grid as Grid exposing (GridSpec)
-import Circle2d exposing (Circle2d)
 import Color exposing (Color)
 import Color.Manipulate exposing (fadeOut)
 import Context exposing (..)
@@ -27,6 +25,7 @@ import Vector2d exposing (Vector2d)
 
 type alias ViewSettings msg =
     { gridSpec : GridSpec
+    , maxWidth : Int
     , lastFinalized : ProtoBlock
     , nodes : List Node
     , onBlockClick : Maybe (String -> msg)
@@ -44,16 +43,16 @@ viewDimensions gridSpec vwidth vheight =
 
 
 viewChain : Context a -> ViewSettings msg -> DrawableChain -> Svg msg
-viewChain ctx { gridSpec, lastFinalized, nodes, onBlockClick, selectedBlock } chain =
+viewChain ctx { gridSpec, maxWidth, lastFinalized, nodes, onBlockClick, selectedBlock } chain =
     let
         ( viewWidth, viewHeight ) =
-            viewDimensions gridSpec chain.width chain.height
+            viewDimensions gridSpec (Grid.maxCells maxWidth gridSpec) chain.height
     in
     Keyed.node "svg"
         [ width (px viewWidth)
         , height (px viewHeight)
         , viewBox
-            (chain.viewBoxOffsetX - gridSpec.outerPadding)
+            (chain.viewBoxOffsetX + gridSpec.outerPadding - viewWidth)
             -gridSpec.outerPadding
             viewWidth
             viewHeight
@@ -99,6 +98,7 @@ viewBlock ctx clickMsg selectedBlock ({ hash, rect, color, fractionNodesAt } as 
             , ry (px 4)
             , fill (Paint <| fadeOut 0.7 color)
             , highlight
+            , strokeWidth (px 2)
             ]
             rect
         , Svg.translateBy translation <| viewText (String.left 4 hash) 16 color
@@ -133,8 +133,8 @@ viewNodeFractionBar ctx block =
                 )
             , Svg.Attributes.style
                 "transition: width 300ms ease-out"
-            , rx (px 2)
-            , ry (px 2)
+            , rx (px 3)
+            , ry (px 3)
             ]
         <|
             Rectangle2d.with
