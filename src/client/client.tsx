@@ -3,7 +3,7 @@ import { setup as clipboardSetup } from "./Clipboard"
 import { setup as storageSetup } from "./Storage"
 
 window.loadApp = (isProduction) => {
-  const {clientWidth, clientHeight} = document.documentElement
+  const { clientWidth, clientHeight } = document.documentElement
   const app = Elm.Main.init({
     flags: {
       window: {
