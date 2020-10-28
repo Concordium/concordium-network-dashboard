@@ -167,7 +167,8 @@ asSecondsAgo currentTime maybeTargetTime =
 
             else
                 Time.Extra.diff Time.Extra.Second Time.utc targetTime currentTime
-                    |> max 0 -- Clamp time to zero to avoid displaying time from the future.
+                    |> max 0
+                    -- Clamp time to zero to avoid displaying time from the future.
                     |> secondsAsText
 
         Nothing ->
