@@ -102,7 +102,7 @@ remoteDataView : Palette Color -> (c -> Element msg) -> WebData c -> Element msg
 remoteDataView palette successView remoteData =
     case remoteData of
         NotAsked ->
-            none
+            loader palette.fg3
 
         Loading ->
             loader palette.fg3

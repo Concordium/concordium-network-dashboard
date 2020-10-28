@@ -38,7 +38,9 @@ update msg model =
         ReceivedConsensusStatus res ->
             case res of
                 Ok consensusStatus ->
-                    ( model, getBlockInfo model.config consensusStatus.bestBlock ReceivedBlockInfo )
+                    ( { model | blockInfo = Loading }
+                    , getBlockInfo model.config consensusStatus.bestBlock ReceivedBlockInfo
+                    )
 
                 Err err ->
                     ( model, Cmd.none )
@@ -47,8 +49,8 @@ update msg model =
             case blockInfoRes of
                 Ok blockInfo ->
                     ( { model
-                        | blockInfo =
-                            Success blockInfo
+                        | blockInfo = Success blockInfo
+                        , blockSummary = Loading
                       }
                     , getBlockSummary model.config blockInfo.blockHash ReceivedBlockSummary
                     )
@@ -58,8 +60,7 @@ update msg model =
 
         ReceivedBlockSummary blockSummaryResult ->
             ( { model
-                | blockSummary =
-                    RemoteData.fromResult blockSummaryResult
+                | blockSummary = RemoteData.fromResult blockSummaryResult
               }
             , Cmd.none
             )
