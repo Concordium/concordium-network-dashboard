@@ -310,7 +310,8 @@ updateChain ctx nodes model =
     case ( maybeBestBlock, maybeLastFinalized ) of
         ( Just bestBlock, Just finalBlock ) ->
             let
-                lastFinalizedHeight = Tuple.first finalBlock
+                lastFinalizedHeight =
+                    Tuple.first finalBlock
 
                 -- Set the block offset in the grid specification, if it does not exist yet.
                 -- this is used as a starting point for shifting the viewBox, to avoid
