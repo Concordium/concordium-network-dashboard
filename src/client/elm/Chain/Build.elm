@@ -230,15 +230,32 @@ annotateChildren label children =
                             |> List.map (Tree.label >> .forkWidth)
                             |> List.sum
                 }
-                (List.sortBy
-                    (Tree.map .fractionNodesAt
-                        >> Tree.flatten
-                        >> List.maximum
-                        >> Maybe.withDefault 0
-                        >> (*) -1
-                    )
-                    children
-                )
+                (List.sortBy subtreeWeighting children)
+
+
+{-| Calculates a weighting for sorting subtrees that prioritizes the tree containing
+the block that most nodes consider `bestBlock`. If there is a draw, the total number of nodes
+in the subtree is considered.
+-}
+subtreeWeighting : Tree Block -> Float
+subtreeWeighting tree =
+    tree
+        |> Tree.map .fractionNodesAt
+        |> Tree.flatten
+        |> (\blocks ->
+                let
+                    maxTimes10 =
+                        blocks
+                            |> List.maximum
+                            |> Maybe.withDefault 0
+                            |> (*) 10
+
+                    sum =
+                        List.sum blocks
+                in
+                maxTimes10 + sum
+           )
+        |> (*) -1
 
 
 statusFromHeight : Int -> Int -> BlockStatus
