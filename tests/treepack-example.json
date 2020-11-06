@@ -33,6 +33,21 @@
             ]
         },
         {
+            "nodeName": "Node2a",
+            "nodeId": "2a",
+            "bestBlock": "c2",
+            "bestBlockHeight": 2,
+            "finalizedBlock": "a1",
+            "finalizedBlockHeight": 1,
+            "finalizedBlockParent": "p",
+            "ancestorsSinceBestBlock": [
+                "c2",
+                "b1",
+                "a1",
+                "p"
+            ]
+        },
+        {
             "nodeName": "Node3",
             "nodeId": "3",
             "bestBlock": "d3",
