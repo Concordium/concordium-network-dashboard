@@ -231,7 +231,12 @@ annotateChildren label children =
                             |> List.sum
                 }
                 (List.sortBy
-                    (Tree.map .fractionNodesAt >> Tree.flatten >> List.sum >> (*) -1)
+                    (Tree.map .fractionNodesAt
+                        >> Tree.flatten
+                        >> List.maximum
+                        >> Maybe.withDefault 0
+                        >> (*) -1
+                    )
                     children
                 )
 
