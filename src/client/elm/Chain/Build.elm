@@ -34,8 +34,8 @@ type alias Block =
     , nodesAt : List String
     , fractionNodesAt : Float
     , status : BlockStatus
-    , forkWidth : Int
-    , blockHeight : Int
+    , x : Int
+    , y : Int
     }
 
 
@@ -205,14 +205,18 @@ annotateBlock nodes lastFinalizedHeight ( height, hash ) =
                 |> List.map .nodeId
 
         fractionNodesAt =
-            toFloat (List.length nodesAt) / toFloat (List.length nodes)
+            if List.length nodes == 0 then
+                0
+
+            else
+                toFloat (List.length nodesAt) / toFloat (List.length nodes)
     in
     { hash = hash
     , nodesAt = nodesAt
     , fractionNodesAt = fractionNodesAt
     , status = statusFromHeight lastFinalizedHeight height
-    , forkWidth = 1
-    , blockHeight = height
+    , x = height
+    , y = 0
     }
 
 
@@ -223,19 +227,69 @@ annotateChildren label children =
             singleton label
 
         _ ->
+            let
+                sortedChildren =
+                    List.sortBy subtreeWeighting children
+
+                positionedChildren =
+                    calculateY sortedChildren
+            in
             tree
-                { label
-                    | forkWidth =
-                        children
-                            |> List.map (Tree.label >> .forkWidth)
-                            |> List.sum
-                }
-                (List.sortBy
-                    (Tree.map .fractionNodesAt >> Tree.flatten >> List.sum >> (*) -1)
-                    children
-                )
+                label
+                positionedChildren
 
 
+calculateY : List (Tree Block) -> List (Tree Block)
+calculateY children =
+    children
+        |> List.foldl
+            (\child placedChildren ->
+                let
+                    maxX =
+                        child |> Tree.flatten |> List.map .x |> List.foldl max 1
+
+                    previousMaxY =
+                        List.head placedChildren
+                            |> Maybe.map
+                                (Tree.flatten
+                                    >> List.filter (\label -> label.x <= maxX)
+                                    >> List.map .y
+                                    >> List.foldl max 0
+                                    >> (+) 1
+                                )
+                            |> Maybe.withDefault 0
+                in
+                Tree.map (\label -> { label | y = label.y + previousMaxY }) child :: placedChildren
+            )
+            []
+
+
+subtreeWeighting : Tree Block -> Float
+subtreeWeighting tree =
+    tree
+        |> Tree.map .fractionNodesAt
+        |> Tree.flatten
+        |> (\blocks ->
+                let
+                    maxTimes10 =
+                        blocks
+                            |> List.maximum
+                            |> Maybe.withDefault 0
+                            |> (*) 10
+
+                    sum =
+                        List.sum blocks
+                in
+                maxTimes10 + sum
+           )
+        |> (*) -1
+
+
+{-| Calculate the status of a block based on its height and the height of the last finalized block
+TODO:
+Update this to statusFromPosition, taking into account that blocks
+on branches in the finalized section are not considered finalized but discarded
+-}
 statusFromHeight : Int -> Int -> BlockStatus
 statusFromHeight lastFinalizedHeight blockHeight =
     case compare blockHeight lastFinalizedHeight of
