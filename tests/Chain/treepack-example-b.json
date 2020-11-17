@@ -66,13 +66,12 @@
         {
             "nodeName": "Node4",
             "nodeId": "4",
-            "bestBlock": "d4",
+            "bestBlock": "c4",
             "bestBlockHeight": 3,
             "finalizedBlock": "a1",
             "finalizedBlockHeight": 1,
             "finalizedBlockParent": "p",
             "ancestorsSinceBestBlock": [
-                "d4",
                 "c4",
                 "b4",
                 "a1",
