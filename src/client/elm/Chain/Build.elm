@@ -180,8 +180,8 @@ prepareBlockSequence node =
 -- Annotating the chain to prepare for viewing
 
 
-{-| Convert a tree of "proto blocks" into a tree of blocks which know about their finalization state
-and nodes that report them as their best block.
+{-| Convert a tree of "proto blocks" into a tree of blocks which know about their finalization state,
+nodes that report them as their best block and their positioning for drawing.
 -}
 annotate : List Node -> Int -> Tree ProtoBlock -> Tree Block
 annotate nodes lastFinalizedHeight sourceTree =
