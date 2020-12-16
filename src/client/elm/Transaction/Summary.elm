@@ -2,17 +2,17 @@ module Transaction.Summary exposing (..)
 
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
-import Transaction.Amount exposing (Amount, Energy, decodeAmount, decodeEnergy)
 import Transaction.Event exposing (..)
+import Types as T
 
 
 type alias TransactionSummary =
     { hash : String
     , sender : Maybe String
-    , cost : Amount
+    , cost : T.Amount
     , result : TransactionResult
-    , energyCost : Energy
-    , tipe : Maybe String
+    , energyCost : T.Energy
+    , tipe : Maybe TransactionSummaryType
     }
 
 
@@ -43,12 +43,25 @@ decodeTransactionResult =
         ]
 
 
+type alias TransactionSummaryType =
+    { tipe : String
+    , contents : String
+    }
+
+
+transactionSummaryTypeDecoder : D.Decoder TransactionSummaryType
+transactionSummaryTypeDecoder =
+    D.succeed TransactionSummaryType
+        |> required "type" D.string
+        |> required "contents" D.string
+
+
 decodeNumerousToString : D.Decoder String
 decodeNumerousToString =
     D.oneOf
         [ D.string
         , D.int |> D.map String.fromInt
-        , accountInfoDecoder |> D.map accountInfoAddress
+        , T.accountInfoDecoder |> D.map T.accountInfoAddress
         ]
 
 
@@ -57,7 +70,7 @@ transactionSummaryDecoder =
     D.succeed TransactionSummary
         |> required "hash" D.string
         |> required "sender" (D.nullable D.string)
-        |> required "cost" decodeAmount
+        |> required "cost" T.decodeAmount
         |> required "result" decodeTransactionResult
-        |> required "energyCost" decodeEnergy
-        |> required "type" (D.nullable D.string)
+        |> required "energyCost" T.decodeEnergy
+        |> required "type" (D.nullable transactionSummaryTypeDecoder)
