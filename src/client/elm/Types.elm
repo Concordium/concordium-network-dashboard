@@ -1,6 +1,87 @@
-module Transaction.Amount exposing (..)
+module Types exposing (..)
 
+import Dict
 import Json.Decode as D
+import Json.Decode.Pipeline exposing (required, resolve)
+
+
+type alias AccountAddress =
+    String
+
+
+accountAddressDecoder : D.Decoder AccountAddress
+accountAddressDecoder =
+    D.string
+
+
+type alias ContractAddress =
+    { index : Int
+    , subindex : Int
+    }
+
+
+contractAddressDecoder : D.Decoder ContractAddress
+contractAddressDecoder =
+    D.succeed ContractAddress
+        |> required "index" D.int
+        |> required "subindex" D.int
+
+
+type AccountInfo
+    = AddressAccount String
+    | AddressContract String
+    | AddressUnknown
+
+
+accountInfoAddress : AccountInfo -> String
+accountInfoAddress accountInfo =
+    case accountInfo of
+        AddressAccount address ->
+            address
+
+        AddressContract address ->
+            address
+
+        AddressUnknown ->
+            ""
+
+
+accountInfoDecoder : D.Decoder AccountInfo
+accountInfoDecoder =
+    D.succeed
+        (\tipe address ->
+            case tipe of
+                "AddressAccount" ->
+                    AddressAccount address
+
+                "AddressContract" ->
+                    AddressContract address
+
+                _ ->
+                    AddressUnknown
+        )
+        |> required "type" D.string
+        |> required "address" D.string
+
+
+type alias AccountAmounts =
+    Dict.Dict AccountAddress Amount
+
+
+accountAmountsDecoder : D.Decoder AccountAmounts
+accountAmountsDecoder =
+    let
+        accAmntPairDecoder =
+            D.succeed toPair
+                |> required "address" accountAddressDecoder
+                |> required "amount" decodeAmount
+                |> resolve
+
+        toPair : AccountAddress -> Amount -> D.Decoder ( AccountAddress, Amount )
+        toPair accAddr amnt =
+            D.succeed ( accAddr, amnt )
+    in
+    D.map Dict.fromList <| D.list accAmntPairDecoder
 
 
 {-| Energy is represented as an Int.

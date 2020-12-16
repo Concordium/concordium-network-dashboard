@@ -2,7 +2,7 @@ module Transaction.Event exposing (..)
 
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (required)
-import Transaction.Amount exposing (Amount, decodeAmount)
+import Types as T
 
 
 
@@ -23,16 +23,14 @@ type TransactionEvent
       -- Baking
     | TransactionEventBakerAdded EventBakerAdded
     | TransactionEventBakerRemoved EventBakerRemoved
-    | TransactionEventBakerAccountUpdated EventBakerAccountUpdated
-    | TransactionEventBakerKeyUpdated EventBakerKeyUpdated
-    | TransactionEventBakerElectionKeyUpdated EventBakerElectionKeyUpdated
+    | TransactionEventBakerStakeIncreased EventBakerStakeIncreased
+    | TransactionEventBakerStakeDecreased EventBakerStakeDecreased
+    | TransactionEventBakerSetRestakeEarnings EventBakerSetRestakeEarnings
+    | TransactionEventBakerKeysUpdated EventBakerKeysUpdated
       -- Contracts
     | TransactionEventModuleDeployed EventModuleDeployed
     | TransactionEventContractInitialized EventContractInitialized
     | TransactionEventContractMessage EventContractMessage
-      -- Delegation
-    | TransactionEventStakeDelegated EventStakeDelegated
-    | TransactionEventStakeUndelegated EventStakeUndelegated
       -- Core
     | TransactionEventElectionDifficultyUpdated EventElectionDifficultyUpdated
       -- Errors
@@ -58,18 +56,15 @@ transactionEventsDecoder =
         -- Baking
         , D.map TransactionEventBakerAdded eventBakerAddedDecoder
         , D.map TransactionEventBakerRemoved eventBakerRemovedDecoder
-        , D.map TransactionEventBakerAccountUpdated eventBakerAccountUpdatedDecoder
-        , D.map TransactionEventBakerKeyUpdated eventBakerKeyUpdatedDecoder
-        , D.map TransactionEventBakerElectionKeyUpdated eventBakerElectionKeyUpdatedDecoder
+        , D.map TransactionEventBakerStakeIncreased eventBakerStakeIncreasedDecoder
+        , D.map TransactionEventBakerStakeDecreased eventBakerStakeDecreasedDecoder
+        , D.map TransactionEventBakerSetRestakeEarnings eventBakerSetRestakeEarningsDecoder
+        , D.map TransactionEventBakerKeysUpdated eventBakerKeysUpdatedDecoder
 
         -- Contracts
         , D.map TransactionEventModuleDeployed eventModuleDeployedDecoder
         , D.map TransactionEventContractInitialized eventContractInitializedDecoder
         , D.map TransactionEventContractMessage eventContractMessageDecoder
-
-        -- Delegation
-        , D.map TransactionEventStakeDelegated eventStakeDelegatedDecoder
-        , D.map TransactionEventStakeUndelegated eventStakeUndelegatedDecoder
 
         -- Core
         , D.map TransactionEventElectionDifficultyUpdated eventElectionDifficultyUpdatedDecoder
@@ -84,25 +79,25 @@ transactionEventsDecoder =
 
 
 type alias EventTransfer =
-    { amount : Amount
+    { amount : T.Amount
     , tag : String
-    , to : AccountInfo
-    , from : AccountInfo
+    , to : T.AccountInfo
+    , from : T.AccountInfo
     }
 
 
 eventTransferDecoder : D.Decoder EventTransfer
 eventTransferDecoder =
     D.succeed EventTransfer
-        |> required "amount" decodeAmount
+        |> required "amount" T.decodeAmount
         |> required "tag" (expectedTag "Transferred")
-        |> required "to" accountInfoDecoder
-        |> required "from" accountInfoDecoder
+        |> required "to" T.accountInfoDecoder
+        |> required "from" T.accountInfoDecoder
 
 
 type alias EventEncryptedSelfAmountAdded =
     { account : String
-    , amount : Amount
+    , amount : T.Amount
     , tag : String
     }
 
@@ -110,14 +105,14 @@ type alias EventEncryptedSelfAmountAdded =
 eventEncryptedSelfAmountAddedDecoder : D.Decoder EventEncryptedSelfAmountAdded
 eventEncryptedSelfAmountAddedDecoder =
     D.succeed EventEncryptedSelfAmountAdded
-        |> required "account" D.string
-        |> required "amount" decodeAmount
+        |> required "account" T.accountAddressDecoder
+        |> required "amount" T.decodeAmount
         |> required "tag" (expectedTag "EncryptedSelfAmountAdded")
 
 
 type alias EventAmountAddedByDecryption =
     { account : String
-    , amount : Amount
+    , amount : T.Amount
     , tag : String
     }
 
@@ -125,8 +120,8 @@ type alias EventAmountAddedByDecryption =
 eventAmountAddedByDecryptionDecoder : D.Decoder EventAmountAddedByDecryption
 eventAmountAddedByDecryptionDecoder =
     D.succeed EventAmountAddedByDecryption
-        |> required "account" D.string
-        |> required "amount" decodeAmount
+        |> required "account" T.accountAddressDecoder
+        |> required "amount" T.decodeAmount
         |> required "tag" (expectedTag "AmountAddedByDecryption")
 
 
@@ -143,7 +138,7 @@ type alias EventNewEncryptedAmount =
 eventNewEncryptedAmountDecoder : D.Decoder EventNewEncryptedAmount
 eventNewEncryptedAmountDecoder =
     D.succeed EventNewEncryptedAmount
-        |> required "account" D.string
+        |> required "account" T.accountAddressDecoder
         |> required "tag" (expectedTag "NewEncryptedAmount")
 
 
@@ -156,7 +151,7 @@ type alias EventEncryptedAmountsRemoved =
 eventEncryptedAmountsRemovedDecoder : D.Decoder EventEncryptedAmountsRemoved
 eventEncryptedAmountsRemovedDecoder =
     D.succeed EventEncryptedAmountsRemoved
-        |> required "account" D.string
+        |> required "account" T.accountAddressDecoder
         |> required "tag" (expectedTag "EncryptedAmountsRemoved")
 
 
@@ -189,7 +184,7 @@ eventCredentialDeployedDecoder =
     D.succeed EventCredentialDeployed
         |> required "tag" (expectedTag "CredentialDeployed")
         |> required "regId" D.string
-        |> required "account" D.string
+        |> required "account" T.accountAddressDecoder
 
 
 type alias EventAccountEncryptionKeyDeployed =
@@ -202,7 +197,7 @@ eventAccountEncryptionKeyDeployedDecoder : D.Decoder EventAccountEncryptionKeyDe
 eventAccountEncryptionKeyDeployedDecoder =
     D.succeed EventAccountEncryptionKeyDeployed
         |> required "key" (expectedTag "AccountEncryptionKeyDeployed")
-        |> required "account" D.string
+        |> required "account" T.accountAddressDecoder
 
 
 
@@ -212,6 +207,11 @@ eventAccountEncryptionKeyDeployedDecoder =
 type alias EventBakerAdded =
     { tag : String
     , bakerId : Int
+    , signKey : String
+    , electionKey : String
+    , aggregationKey : String
+    , stake : T.Amount
+    , restakeEarnings : Bool
     }
 
 
@@ -219,49 +219,18 @@ eventBakerAddedDecoder : D.Decoder EventBakerAdded
 eventBakerAddedDecoder =
     D.succeed EventBakerAdded
         |> required "tag" (expectedTag "BakerAdded")
-        |> required "contents" D.int
-
-
-type AccountInfo
-    = AddressAccount String
-    | AddressContract String
-    | AddressUnknown
-
-
-accountInfoAddress : AccountInfo -> String
-accountInfoAddress accountInfo =
-    case accountInfo of
-        AddressAccount address ->
-            address
-
-        AddressContract address ->
-            address
-
-        AddressUnknown ->
-            ""
-
-
-accountInfoDecoder : D.Decoder AccountInfo
-accountInfoDecoder =
-    D.succeed
-        (\tipe address ->
-            case tipe of
-                "AddressAccount" ->
-                    AddressAccount address
-
-                "AddressContract" ->
-                    AddressContract address
-
-                _ ->
-                    AddressUnknown
-        )
-        |> required "type" D.string
-        |> required "address" D.string
+        |> required "bakerId" D.int
+        |> required "signKey" D.string
+        |> required "electionKey" D.string
+        |> required "aggregationKey" D.string
+        |> required "stake" T.decodeAmount
+        |> required "restakeEarnings" D.bool
 
 
 type alias EventBakerRemoved =
     { tag : String
     , bakerId : Int
+    , account : T.AccountAddress
     }
 
 
@@ -269,52 +238,80 @@ eventBakerRemovedDecoder : D.Decoder EventBakerRemoved
 eventBakerRemovedDecoder =
     D.succeed EventBakerRemoved
         |> required "tag" (expectedTag "BakerRemoved")
-        |> required "contents" D.int
+        |> required "bakerId" D.int
+        |> required "account" T.accountAddressDecoder
 
 
-type alias EventBakerAccountUpdated =
+type alias EventBakerStakeIncreased =
     { tag : String
     , bakerId : Int
-    , newAccount : String
+    , account : T.AccountAddress
+    , newStake : T.Amount
     }
 
 
-eventBakerAccountUpdatedDecoder : D.Decoder EventBakerAccountUpdated
-eventBakerAccountUpdatedDecoder =
-    D.succeed EventBakerAccountUpdated
-        |> required "tag" (expectedTag "BakerAccountUpdated")
+eventBakerStakeIncreasedDecoder : D.Decoder EventBakerStakeIncreased
+eventBakerStakeIncreasedDecoder =
+    D.succeed EventBakerStakeIncreased
+        |> required "tag" (expectedTag "BakerStakeIncreased")
         |> required "bakerId" D.int
-        |> required "newAccount" D.string
+        |> required "account" T.accountAddressDecoder
+        |> required "newStake" T.decodeAmount
 
 
-type alias EventBakerKeyUpdated =
+type alias EventBakerStakeDecreased =
     { tag : String
     , bakerId : Int
-    , newKey : String
+    , account : T.AccountAddress
+    , newStake : T.Amount
     }
 
 
-eventBakerKeyUpdatedDecoder : D.Decoder EventBakerKeyUpdated
-eventBakerKeyUpdatedDecoder =
-    D.succeed EventBakerKeyUpdated
-        |> required "tag" (expectedTag "BakerKeyUpdated")
+eventBakerStakeDecreasedDecoder : D.Decoder EventBakerStakeDecreased
+eventBakerStakeDecreasedDecoder =
+    D.succeed EventBakerStakeDecreased
+        |> required "tag" (expectedTag "BakerStakeDecreased")
         |> required "bakerId" D.int
-        |> required "newKey" D.string
+        |> required "account" T.accountAddressDecoder
+        |> required "newStake" T.decodeAmount
 
 
-type alias EventBakerElectionKeyUpdated =
+type alias EventBakerSetRestakeEarnings =
     { tag : String
     , bakerId : Int
-    , newKey : String
+    , account : T.AccountAddress
+    , restakeEarnings : Bool
     }
 
 
-eventBakerElectionKeyUpdatedDecoder : D.Decoder EventBakerElectionKeyUpdated
-eventBakerElectionKeyUpdatedDecoder =
-    D.succeed EventBakerElectionKeyUpdated
-        |> required "tag" (expectedTag "BakerElectionKeyUpdated")
+eventBakerSetRestakeEarningsDecoder : D.Decoder EventBakerSetRestakeEarnings
+eventBakerSetRestakeEarningsDecoder =
+    D.succeed EventBakerSetRestakeEarnings
+        |> required "tag" (expectedTag "BakerSetRestakeEarnings")
         |> required "bakerId" D.int
-        |> required "newKey" D.string
+        |> required "account" T.accountAddressDecoder
+        |> required "restakeEarnings" D.bool
+
+
+type alias EventBakerKeysUpdated =
+    { tag : String
+    , bakerId : Int
+    , account : T.AccountAddress
+    , signKey : String
+    , electionKey : String
+    , aggregationKey : String
+    }
+
+
+eventBakerKeysUpdatedDecoder : D.Decoder EventBakerKeysUpdated
+eventBakerKeysUpdatedDecoder =
+    D.succeed EventBakerKeysUpdated
+        |> required "tag" (expectedTag "BakerKeysUpdated")
+        |> required "bakerId" D.int
+        |> required "account" T.accountAddressDecoder
+        |> required "signKey" D.string
+        |> required "electionKey" D.string
+        |> required "aggregationKey" D.string
 
 
 
@@ -336,8 +333,8 @@ eventModuleDeployedDecoder =
 
 type alias EventContractInitialized =
     { tag : String
-    , amount : Amount
-    , address : ContractAddress
+    , amount : T.Amount
+    , address : T.ContractAddress
     , name : Int
     , ref : String
     }
@@ -347,16 +344,16 @@ eventContractInitializedDecoder : D.Decoder EventContractInitialized
 eventContractInitializedDecoder =
     D.succeed EventContractInitialized
         |> required "tag" (expectedTag "ContractInitialized")
-        |> required "amount" decodeAmount
-        |> required "address" contractAddressDecoder
+        |> required "amount" T.decodeAmount
+        |> required "address" T.contractAddressDecoder
         |> required "name" D.int
         |> required "ref" D.string
 
 
 type alias EventContractMessage =
     { tag : String
-    , amount : Amount
-    , address : ContractAddress
+    , amount : T.Amount
+    , address : T.ContractAddress
     , message : String
     }
 
@@ -365,56 +362,9 @@ eventContractMessageDecoder : D.Decoder EventContractMessage
 eventContractMessageDecoder =
     D.succeed EventContractMessage
         |> required "tag" (expectedTag "Updated")
-        |> required "amount" decodeAmount
-        |> required "address" contractAddressDecoder
+        |> required "amount" T.decodeAmount
+        |> required "address" T.contractAddressDecoder
         |> required "message" D.string
-
-
-type alias ContractAddress =
-    { index : Int
-    , subindex : Int
-    }
-
-
-contractAddressDecoder : D.Decoder ContractAddress
-contractAddressDecoder =
-    D.succeed ContractAddress
-        |> required "index" D.int
-        |> required "subindex" D.int
-
-
-
--- Delegation
-
-
-type alias EventStakeDelegated =
-    { tag : String
-    , account : String
-    , baker : Int
-    }
-
-
-eventStakeDelegatedDecoder : D.Decoder EventStakeDelegated
-eventStakeDelegatedDecoder =
-    D.succeed EventStakeDelegated
-        |> required "tag" (expectedTag "StakeDelegated")
-        |> required "account" D.string
-        |> required "baker" D.int
-
-
-type alias EventStakeUndelegated =
-    { tag : String
-    , account : String
-    , baker : Maybe Int
-    }
-
-
-eventStakeUndelegatedDecoder : D.Decoder EventStakeUndelegated
-eventStakeUndelegatedDecoder =
-    D.succeed EventStakeUndelegated
-        |> required "tag" (expectedTag "StakeUndelegated")
-        |> required "account" D.string
-        |> required "baker" (D.nullable D.int)
 
 
 
