@@ -3,11 +3,12 @@ module Explorer.Request exposing (..)
 import Http exposing (..)
 import Iso8601
 import Json.Decode as D
-import Json.Decode.Pipeline exposing (optional, required)
+import Json.Decode.Pipeline exposing (optional, required, resolve)
 import Task
 import Time exposing (Posix)
-import Transaction.Amount exposing (Amount, decodeAmount)
+import Transaction.Event exposing (expectedTag)
 import Transaction.Summary exposing (..)
+import Types as T
 
 
 type alias Config =
@@ -125,19 +126,97 @@ blockSummaryDecoder =
         |> optional "finalizationData" (D.nullable finalizationDataDecoder) Nothing
 
 
-type alias SpecialEvent =
-    { bakerId : Int
-    , rewardAmount : Amount
-    , bakerAccount : String
-    }
+type SpecialEvent
+    = SpecialEventBakingRewards BakingRewards
+    | SpecialEventMint Mint
+    | SpecialEventFinalizationRewards FinalizationRewards
+    | SpecialEventBlockReward BlockReward
 
 
 specialEventDecoder : D.Decoder SpecialEvent
 specialEventDecoder =
-    D.succeed SpecialEvent
-        |> required "bakerId" D.int
-        |> required "rewardAmount" decodeAmount
-        |> required "bakerAccount" D.string
+    D.oneOf
+        [ D.map SpecialEventBakingRewards bakingRewardsDecoder
+        , D.map SpecialEventMint mintDecoder
+        , D.map SpecialEventFinalizationRewards finalizationRewardsDecoder
+        , D.map SpecialEventBlockReward blockRewardDecoder
+        ]
+
+
+
+-- SpecialEvents
+
+
+type alias BakingRewards =
+    { tag : String
+    , bakerRewards : T.AccountAmounts
+    , remainder : T.Amount
+    }
+
+
+bakingRewardsDecoder : D.Decoder BakingRewards
+bakingRewardsDecoder =
+    D.succeed BakingRewards
+        |> required "tag" (expectedTag "BakingRewards")
+        |> required "bakerRewards" T.accountAmountsDecoder
+        |> required "remainder" T.decodeAmount
+
+
+type alias Mint =
+    { tag : String
+    , mintBakingReward : T.Amount
+    , mintFinalizationReward : T.Amount
+    , mintPlatformDevelopmentCharge : T.Amount
+    , foundationAccount : T.AccountAddress
+    }
+
+
+mintDecoder : D.Decoder Mint
+mintDecoder =
+    D.succeed Mint
+        |> required "tag" (expectedTag "Mint")
+        |> required "mintBakingReward" T.decodeAmount
+        |> required "mintFinalizationReward" T.decodeAmount
+        |> required "mintPlatformDevelopmentCharge" T.decodeAmount
+        |> required "foundationAccount" T.accountAddressDecoder
+
+
+type alias FinalizationRewards =
+    { tag : String
+    , finalizationRewards : T.AccountAmounts
+    , remainder : T.Amount
+    }
+
+
+finalizationRewardsDecoder : D.Decoder FinalizationRewards
+finalizationRewardsDecoder =
+    D.succeed FinalizationRewards
+        |> required "tag" (expectedTag "FinalizationRewards")
+        |> required "finalizationRewards" T.accountAmountsDecoder
+        |> required "remainder" T.decodeAmount
+
+
+type alias BlockReward =
+    { tag : String
+    , transactionFees : T.Amount
+    , oldGASAccount : T.Amount
+    , newGASAccount : T.Amount
+    , bakerReward : T.Amount
+    , foundationCharge : T.Amount
+    , baker : T.AccountAddress
+    }
+
+
+blockRewardDecoder : D.Decoder BlockReward
+blockRewardDecoder =
+    D.succeed BlockReward
+        |> required "tag" (expectedTag "BlockReward")
+        |> required "transactionFees" T.decodeAmount
+        |> required "oldGASAccount" T.decodeAmount
+        |> required "newGASAccount" T.decodeAmount
+        |> required "bakerReward" T.decodeAmount
+        |> required "foundationCharge" T.decodeAmount
+        |> required "baker" T.accountAddressDecoder
 
 
 type alias FinalizationData =
