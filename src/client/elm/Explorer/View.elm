@@ -379,7 +379,8 @@ viewSpecialEvent : Context a -> SpecialEvent -> Element Msg
 viewSpecialEvent ctx specialEvent =
     let
         ( tooltip, icon, content ) =
-            case specialEvent of -- TODO: Update icons and show more info
+            case specialEvent of
+                -- TODO: Update icons and show more info
                 SpecialEventBakingRewards _ ->
                     ( "Baking rewards"
                     , Icons.baking_bread 20
@@ -705,18 +706,6 @@ viewTransactionEvent ctx txEvent =
                 , viewAddress ctx (AddressAccount event.account)
                 ]
 
-        TransactionEventAccountEncryptionKeyDeployed event ->
-            -- type alias EventAccountEncryptionKeyDeployed =
-            --   { key : String
-            --   , account : String
-            --   }
-            row
-                []
-                [ text <| "Deployed account encryption key"
-                , arrowRight
-                , viewAddress ctx (AddressAccount event.account)
-                ]
-
         -- Baking
         TransactionEventBakerAdded event ->
             row []
@@ -915,6 +904,11 @@ viewAddress ctx addr =
                 , text "(Error: Address Failed)"
                 ]
 
+
+
 -- Show a baker as "#{accountAddress} (ID #{bakerId})"
+
+
 bakerToString : Int -> AccountAddress -> String
-bakerToString bakerId addr = addr ++ " (ID " ++ String.fromInt bakerId ++ ")"
+bakerToString bakerId addr =
+    addr ++ " (ID " ++ String.fromInt bakerId ++ ")"
