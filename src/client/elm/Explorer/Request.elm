@@ -6,8 +6,8 @@ import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
 import Task
 import Time exposing (Posix)
-import Transaction.Amount exposing (Amount, decodeAmount)
 import Transaction.Summary exposing (..)
+import Types as T
 
 
 type alias Config =
@@ -125,19 +125,89 @@ blockSummaryDecoder =
         |> optional "finalizationData" (D.nullable finalizationDataDecoder) Nothing
 
 
-type alias SpecialEvent =
-    { bakerId : Int
-    , rewardAmount : Amount
-    , bakerAccount : String
+
+-- SpecialEvents
+
+
+type SpecialEvent
+    = SpecialEventBakingRewards BakingRewards
+    | SpecialEventMint Mint
+    | SpecialEventFinalizationRewards FinalizationRewards
+    | SpecialEventBlockReward BlockReward
+
+
+type alias BakingRewards =
+    { bakerRewards : T.AccountAmounts
+    , remainder : T.Amount
+    }
+
+
+type alias Mint =
+    { mintBakingReward : T.Amount
+    , mintFinalizationReward : T.Amount
+    , mintPlatformDevelopmentCharge : T.Amount
+    , foundationAccount : T.AccountAddress
+    }
+
+
+type alias FinalizationRewards =
+    { finalizationRewards : T.AccountAmounts
+    , remainder : T.Amount
+    }
+
+
+type alias BlockReward =
+    { transactionFees : T.Amount
+    , oldGASAccount : T.Amount
+    , newGASAccount : T.Amount
+    , bakerReward : T.Amount
+    , foundationCharge : T.Amount
+    , baker : T.AccountAddress
     }
 
 
 specialEventDecoder : D.Decoder SpecialEvent
 specialEventDecoder =
-    D.succeed SpecialEvent
-        |> required "bakerId" D.int
-        |> required "rewardAmount" decodeAmount
-        |> required "bakerAccount" D.string
+    let
+        decode : String -> D.Decoder SpecialEvent
+        decode tag =
+            case tag of
+                "BakingRewards" ->
+                    D.succeed BakingRewards
+                        |> required "bakerRewards" T.accountAmountsDecoder
+                        |> required "remainder" T.decodeAmount
+                        |> D.map SpecialEventBakingRewards
+
+                "Mint" ->
+                    D.succeed Mint
+                        |> required "mintBakingReward" T.decodeAmount
+                        |> required "mintFinalizationReward" T.decodeAmount
+                        |> required "mintPlatformDevelopmentCharge" T.decodeAmount
+                        |> required "foundationAccount" T.accountAddressDecoder
+                        |> D.map SpecialEventMint
+
+                "FinalizationRewards" ->
+                    D.succeed FinalizationRewards
+                        |> required "finalizationRewards" T.accountAmountsDecoder
+                        |> required "remainder" T.decodeAmount
+                        |> D.map SpecialEventFinalizationRewards
+
+                "BlockReward" ->
+                    D.succeed BlockReward
+                        |> required "transactionFees" T.decodeAmount
+                        |> required "oldGASAccount" T.decodeAmount
+                        |> required "newGASAccount" T.decodeAmount
+                        |> required "bakerReward" T.decodeAmount
+                        |> required "foundationCharge" T.decodeAmount
+                        |> required "baker" T.accountAddressDecoder
+                        |> D.map SpecialEventBlockReward
+
+                _ ->
+                    D.fail """Invalid SpecialEvent tag.
+                              Expected one of the following: BakingRewards, Mint,
+                              FinalizationRewards, BlockReward."""
+    in
+    D.field "tag" D.string |> D.andThen decode
 
 
 type alias FinalizationData =
