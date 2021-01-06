@@ -34,10 +34,22 @@ type Msg
 type alias SummaryItem =
     { content : List (Element Msg), details : Maybe (Element Msg) }
 
-bakingRewardAccountUpper = "Baking reward account"
-bakingRewardAccountLower = toLower(bakingRewardAccountUpper)
-finalizationRewardAccountUpper = "Finalization reward account"
-finalizationRewardAccountLower = toLower(finalizationRewardAccountUpper)
+
+bakingRewardAccountUpper =
+    "Baking reward account"
+
+
+bakingRewardAccountLower =
+    toLower bakingRewardAccountUpper
+
+
+finalizationRewardAccountUpper =
+    "Finalization reward account"
+
+
+finalizationRewardAccountLower =
+    toLower finalizationRewardAccountUpper
+
 
 isJust : Maybe a -> Bool
 isJust maybe =
@@ -524,24 +536,37 @@ viewBar ctx parts =
                         , padding 4
                         , Font.center
                         , Font.color p.color
+                        , alignBottom
                         ]
                     <|
                         text p.hint
+                )
+                parts
+        , row [ width fill ] <|
+            List.map
+                (\p ->
+                    el
+                        [ width (fillPortion <| round (p.percentage * 100))
+                        , padding 4
+                        , Font.center
+                        , Font.color p.color
+                        ]
+                    <|
+                        text (asPercentage p.percentage)
                 )
                 parts
         , row [ width fill, Border.rounded 5, clip, Border.width 1, Border.color ctx.palette.bg1 ] <|
             List.map
                 (\p ->
                     el
-                        [ clip
-                        , width (fillPortion <| round (p.percentage * 100))
+                        [ width (fillPortion <| round (p.percentage * 100))
                         , Background.color p.color
                         , Font.color ctx.palette.bg1
-                        , padding 4
+                        , padding 5
                         , Font.center
                         ]
                     <|
-                        text (asPercentage p.percentage)
+                        Element.none
                 )
                 parts
         ]
@@ -647,7 +672,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                 SpecialEventFinalizationRewards event ->
                     { tooltip = "Rewarded finalizers"
                     , icon = Icons.coin_gtu 20
-                    , content = row [ spacing 10 ] [ text <| "Distributed " ++ finalizationRewardAccountLower]
+                    , content = row [ spacing 10 ] [ text <| "Distributed " ++ finalizationRewardAccountLower ]
                     , details =
                         let
                             finalizationAccountDistributed =
