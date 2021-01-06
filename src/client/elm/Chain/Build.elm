@@ -264,25 +264,28 @@ calculateY children =
             []
 
 
+{-| Calculates a weighting for sorting subtrees that prioritizes the tree containing
+the block that most nodes consider `bestBlock`. If there is a draw, the total weight
+of the subtree is considered.
+-}
 subtreeWeighting : Tree Block -> Float
 subtreeWeighting tree =
-    tree
-        |> Tree.map .fractionNodesAt
-        |> Tree.flatten
-        |> (\blocks ->
-                let
-                    maxTimes10 =
-                        blocks
-                            |> List.maximum
-                            |> Maybe.withDefault 0
-                            |> (*) 10
+    let
+        weights =
+            tree
+                |> Tree.map .fractionNodesAt
+                |> Tree.flatten
 
-                    sum =
-                        List.sum blocks
-                in
-                maxTimes10 + sum
-           )
-        |> (*) -1
+        maxWeight =
+            weights
+                |> List.maximum
+                |> Maybe.withDefault 0
+
+        weight =
+            10 * maxWeight + List.sum weights
+    in
+    -- Negate weight to do descending sort.
+    -weight
 
 
 {-| Calculate the status of a block based on its height and the height of the last finalized block
