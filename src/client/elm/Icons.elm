@@ -29,15 +29,34 @@ import TypedSvg.Attributes as Typed
 import TypedSvg.Types exposing (ClipPath(..), Paint(..), px)
 
 
+{-| Build a SVG of the specified size, using a ViewBox 0 0 42 42.
+-}
 iconBase : Float -> List (Svg msg) -> Svg msg
-iconBase size group =
+iconBase =
+    iconBaseWithCustomViewBox <| ViewBox 0 0 42 42
+
+
+{-| Build a SVG of the specified size, using a custom viewbox.
+-}
+iconBaseWithCustomViewBox : ViewBox -> Float -> List (Svg msg) -> Svg msg
+iconBaseWithCustomViewBox vb size group =
     svg
         [ Typed.width (px size)
         , Typed.height (px size)
-        , Typed.viewBox 0 0 42 42
+        , Typed.viewBox vb.x vb.y vb.width vb.height
         , version "1.1"
         ]
         group
+
+
+{-| ViewBox used in SVG.
+-}
+type alias ViewBox =
+    { x : Float
+    , y : Float
+    , width : Float
+    , height : Float
+    }
 
 
 
@@ -48,12 +67,7 @@ iconBase size group =
 
 tooltip_arrow : Float -> Color -> Svg msg
 tooltip_arrow size borderColor =
-    svg
-        [ Typed.width (px size)
-        , Typed.height (px size)
-        , Typed.viewBox 0 0 42 42
-        , version "1.1"
-        ]
+    iconBase size
         [ g
             [ stroke "none"
             , strokeWidth "1"
@@ -117,6 +131,76 @@ baking_oven size =
                 , id "Smart-Contracts-Copy"
                 , fill "currentColor"
                 , fillRule "nonzero"
+                ]
+                []
+            ]
+        ]
+
+
+minting_leaves : Float -> Svg msg
+minting_leaves size =
+    iconBaseWithCustomViewBox
+        (ViewBox 0 0 512 512)
+        size
+        [ g
+            [ id "Icons/Minting/Leaves"
+            , stroke "none"
+            , strokeWidth "1"
+            , fillRule "evenodd"
+            ]
+            [ Svg.path
+                [ d "m113.707 512-58.132-120.208c-43.694-90.351-18.098-196.268 55.842-257.579 46.027-38.166 89.94-78.812 130.239-122.984l10.244-11.229 23.821 31.473c29.393 38.834 51.822 80.128 65.073 121.97z"
+                , fill "#00aa95"
+                , fillRule "nonzero"
+                ]
+                []
+            , Svg.path
+                [ d "m468.766 149.938-7.743-38.704c-38.269 90.207-136.426 138.139-192.689 200.383-98.392 108.852-154.627 200.383-154.627 200.383h58.256c258.928 0 334.274-174.759 296.803-362.062z"
+                , fill "#00cc76"
+                , fillRule "nonzero"
+                ]
+                []
+            , Svg.path
+                [ d "m461.022 111.234-14.112 5.649c-34.771 13.919-70.217 25.975-106.117 36.56v.001c-21.412 6.314-42.985 12.104-64.674 17.454-93.258 23.005-162.413 107.214-162.413 207.575v133.527c.001 0 242.122-152.806 347.316-400.766z"
+                , fill "#a5e887"
+                , fillRule "nonzero"
+                ]
+                []
+            ]
+        ]
+
+
+coin_gtu : Float -> Svg msg
+coin_gtu size =
+    iconBaseWithCustomViewBox
+        (ViewBox 0 0 192 192)
+        size
+        [ g
+            [ id "Icons/Coin/GTU"
+            ]
+            [ Svg.path
+                [ fill "#fedc42"
+                , d "M41.78,150.22A76.68,76.68,0,0,1,150.22,41.78l13.66-13.66A96,96,0,0,0,28.12,163.88Z"
+                ]
+                []
+            , Svg.path
+                [ fill "#fecb38"
+                , d "M41.78,150.22A76.68,76.68,0,0,0,150.22,41.78l13.66-13.66A96,96,0,0,1,28.12,163.88Z"
+                ]
+                []
+            , Svg.path
+                [ fill "#f7a636"
+                , d "M56.36,161.65,161.65,56.36A76.69,76.69,0,1,0,56.36,161.65Z"
+                ]
+                []
+            , Svg.path
+                [ fill "#f4972c"
+                , d "M56.33,161.63a76.69,76.69,0,0,0,105.3-105.3Z"
+                ]
+                []
+            , Svg.path
+                [ fill "#b76117"
+                , d "M138.71,112.06h-10.2v-9.47H115.27v9.47H105.13v9.47h10.14V133a49.26,49.26,0,0,1-14.3,2.34q-16.11,0-25.07-10.28T67,96.3q0-18.67,8.36-28.92T98.81,57.12q10.27,0,29.58,6.55V51.44a111.13,111.13,0,0,0-29.46-4.23Q77,47.21,65,60.05t-12,36.16q0,23.72,11.89,36.36T99,145.22q12.6,0,29.57-4.86V121.53h10.2Z"
                 ]
                 []
             ]

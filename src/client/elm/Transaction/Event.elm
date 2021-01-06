@@ -2,6 +2,7 @@ module Transaction.Event exposing (..)
 
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (required)
+import Time exposing (Posix)
 import Types as T
 
 
@@ -10,15 +11,21 @@ import Types as T
 
 
 type TransactionEvent
-    = TransactionEventTransfer EventTransfer
+    = TransactionEventTransferred EventTransferred
+    | TransactionEventTransferredWithSchedule EventTransferredWithSchedule
     | TransactionEventAmountAddedByDecryption EventAmountAddedByDecryption
     | TransactionEventEncryptedSelfAmountAdded EventEncryptedSelfAmountAdded
-      -- Enctrypted Transfers
+      -- Encrypted Transfers
     | TransactionEventNewEncryptedAmount EventNewEncryptedAmount
     | TransactionEventEncryptedAmountsRemoved EventEncryptedAmountsRemoved
       -- Accounts
     | TransactionEventAccountCreated EventAccountCreated
     | TransactionEventCredentialDeployed EventCredentialDeployed
+      -- Account Keys
+    | TransactionEventAccountKeysUpdated
+    | TransactionEventAccountKeysAdded
+    | TransactionEventAccountKeysRemoved
+    | TransactionEventAccountKeysSignThresholdUpdated
       -- Baking
     | TransactionEventBakerAdded EventBakerAdded
     | TransactionEventBakerRemoved EventBakerRemoved
@@ -29,9 +36,9 @@ type TransactionEvent
       -- Contracts
     | TransactionEventModuleDeployed EventModuleDeployed
     | TransactionEventContractInitialized EventContractInitialized
-    | TransactionEventContractMessage EventContractMessage
+    | TransactionEventContractUpdated EventContractUpdated
       -- Core
-    | TransactionEventElectionDifficultyUpdated EventElectionDifficultyUpdated
+    | TransactionEventUpdateEnqueued EventUpdateEnqueued
       -- Errors
     | TransactionEventRejected EventRejected
 
@@ -40,21 +47,30 @@ type TransactionEvent
 -- Transfers
 
 
-type alias EventTransfer =
+type alias EventTransferred =
     { amount : T.Amount
-    , to : T.AccountInfo
-    , from : T.AccountInfo
+    , to : T.Address
+    , from : T.Address
     }
 
 
-type alias EventEncryptedSelfAmountAdded =
-    { account : String
-    , amount : T.Amount
+type alias EventTransferredWithSchedule =
+    { releaseSchedule : T.ReleaseSchedule
+    , from : T.AccountAddress
+    , to : T.AccountAddress
     }
 
 
 type alias EventAmountAddedByDecryption =
-    { account : String
+    { account : T.AccountAddress
+    , amount : T.Amount
+    }
+
+
+{-| Haskell version also has field "newAmount".
+-}
+type alias EventEncryptedSelfAmountAdded =
+    { account : T.AccountAddress
     , amount : T.Amount
     }
 
@@ -63,10 +79,14 @@ type alias EventAmountAddedByDecryption =
 -- Encrypted Transfers
 
 
+{-| Haskell version also has fields "newIndex" and "encryptedAmount".
+-}
 type alias EventNewEncryptedAmount =
     { account : String }
 
 
+{-| Haskell version also has fields "newAmount", "inputAmount", and "upToIndex".
+-}
 type alias EventEncryptedAmountsRemoved =
     { account : String }
 
@@ -85,18 +105,13 @@ type alias EventCredentialDeployed =
     }
 
 
-type alias EventAccountEncryptionKeyDeployed =
-    { key : String
-    , account : String
-    }
-
-
 
 -- Baking
 
 
 type alias EventBakerAdded =
     { bakerId : Int
+    , account : T.AccountAddress
     , signKey : String
     , electionKey : String
     , aggregationKey : String
@@ -150,17 +165,19 @@ type alias EventModuleDeployed =
 
 
 type alias EventContractInitialized =
-    { amount : T.Amount
+    { ref : String
     , address : T.ContractAddress
-    , name : Int
-    , ref : String
+    , amount : T.Amount
+    , events : List T.ContractEvent
     }
 
 
-type alias EventContractMessage =
-    { amount : T.Amount
-    , address : T.ContractAddress
+type alias EventContractUpdated =
+    { address : T.ContractAddress
+    , instigator : T.Address
+    , amount : T.Amount
     , message : String
+    , events : List T.ContractEvent
     }
 
 
@@ -168,8 +185,137 @@ type alias EventContractMessage =
 -- Core
 
 
-type alias EventElectionDifficultyUpdated =
-    { difficulty : Int }
+type alias EventUpdateEnqueued =
+    { effectiveTime : Posix
+    , payload : UpdatePayload
+    }
+
+
+type UpdatePayload
+    = MintDistributionPayload MintDistribution
+    | TransactionFeeDistributionPayload TransactionFeeDistribution
+    | GasRewardsPayload GasRewards
+    | ElectionDifficultyPayload Float
+    | EuroPerEnergyPayload Float
+    | MicroGtuPerEnergyPayload Int
+    | FoundationAccountPayload T.AccountAddress
+    | AuthorizationPayload Authorization
+
+
+type alias MintDistribution =
+    { mintPerSlot : Float
+    , bakingReward : Float
+    , finalizationReward : Float
+    }
+
+
+type alias TransactionFeeDistribution =
+    { gasAccount : Float
+    , baker : Float
+    }
+
+
+type alias GasRewards =
+    { chainUpdate : Float
+    , accountCreation : Float
+    , baker : Float
+    , finalizationProof : Float
+    }
+
+
+type alias Authorization =
+    {}
+
+
+
+-- type alias Authorization =
+--     { keys : List AuthorizationKey
+--     , emergency : AuthorizationAccess
+--     , authorization : AuthorizationAccess
+--     , protocol : AuthorizationAccess
+--     , electionDifficulty : AuthorizationAccess
+--     , euroPerEnergy : AuthorizationAccess
+--     , microGTUPerEuro : AuthorizationAccess
+--     , foundationAccount : AuthorizationAccess
+--     , mintDistribution : AuthorizationAccess
+--     , transactionFeeDistribution : AuthorizationAccess
+--     , paramGASRewards : AuthorizationAccess
+--     }
+-- type alias KeyIndex =
+--     Int
+-- type alias AuthorizationKey =
+--     { schemeId : String
+--     , verifyKey : String
+--     }
+-- type alias AuthorizationAccess =
+--     { authorizedKeys : List KeyIndex
+--     , threshold : Int
+--     }
+
+
+updatePayloadDecoder : D.Decoder UpdatePayload
+updatePayloadDecoder =
+    let
+        decode updateType =
+            D.field "update" <|
+                case updateType of
+                    "mintDistribution" ->
+                        mintDistributionDecoder |> D.map MintDistributionPayload
+
+                    "transactionFeeDistribution" ->
+                        transactionFeeDistributionDecoder |> D.map TransactionFeeDistributionPayload
+
+                    "gASRewards" ->
+                        gasRewardsDecoder |> D.map GasRewardsPayload
+
+                    "electionDifficulty" ->
+                        D.float |> D.map ElectionDifficultyPayload
+
+                    "euroPerEnergy" ->
+                        D.float |> D.map EuroPerEnergyPayload
+
+                    "microGTUPerEuro" ->
+                        D.int |> D.map MicroGtuPerEnergyPayload
+
+                    "foundationAccount" ->
+                        T.accountAddressDecoder |> D.map FoundationAccountPayload
+
+                    "authorization" ->
+                        authorizationDecoder |> D.map AuthorizationPayload
+
+                    _ ->
+                        D.fail "Unknown update type"
+    in
+    D.field "updateType" D.string |> D.andThen decode
+
+
+mintDistributionDecoder : D.Decoder MintDistribution
+mintDistributionDecoder =
+    D.succeed MintDistribution
+        |> required "mintPerSlot" D.float
+        |> required "bakingReward" D.float
+        |> required "finalizationReward" D.float
+
+
+transactionFeeDistributionDecoder : D.Decoder TransactionFeeDistribution
+transactionFeeDistributionDecoder =
+    D.succeed TransactionFeeDistribution
+        |> required "gasAccount" D.float
+        |> required "baker" D.float
+
+
+gasRewardsDecoder : D.Decoder GasRewards
+gasRewardsDecoder =
+    D.succeed GasRewards
+        |> required "chainUpdate" D.float
+        |> required "accountCreation" D.float
+        |> required "baker" D.float
+        |> required "finalizationProof" D.float
+
+
+authorizationDecoder : D.Decoder Authorization
+authorizationDecoder =
+    D.succeed Authorization
 
 
 
@@ -190,11 +336,18 @@ transactionEventsDecoder =
         decode tag =
             case tag of
                 "Transferred" ->
-                    D.succeed EventTransfer
+                    D.succeed EventTransferred
                         |> required "amount" T.decodeAmount
-                        |> required "to" T.accountInfoDecoder
-                        |> required "from" T.accountInfoDecoder
-                        |> D.map TransactionEventTransfer
+                        |> required "to" T.addressDecoder
+                        |> required "from" T.addressDecoder
+                        |> D.map TransactionEventTransferred
+
+                "TransferredWithSchedule" ->
+                    D.succeed EventTransferredWithSchedule
+                        |> required "amount" T.releaseScheduleDecoder
+                        |> required "from" T.accountAddressDecoder
+                        |> required "to" T.accountAddressDecoder
+                        |> D.map TransactionEventTransferredWithSchedule
 
                 "AmountAddedByDecryption" ->
                     D.succeed EventAmountAddedByDecryption
@@ -231,10 +384,24 @@ transactionEventsDecoder =
                         |> required "account" T.accountAddressDecoder
                         |> D.map TransactionEventCredentialDeployed
 
+                -- Account Keys
+                "AccountKeysUpdated" ->
+                    D.succeed TransactionEventAccountKeysUpdated
+
+                "AccountKeysAdded" ->
+                    D.succeed TransactionEventAccountKeysAdded
+
+                "AccountKeysRemoved" ->
+                    D.succeed TransactionEventAccountKeysRemoved
+
+                "AccountKeysSignThresholdUpdated" ->
+                    D.succeed TransactionEventAccountKeysSignThresholdUpdated
+
                 -- Baking
                 "BakerAdded" ->
                     D.succeed EventBakerAdded
                         |> required "bakerId" D.int
+                        |> required "account" T.accountAddressDecoder
                         |> required "signKey" D.string
                         |> required "electionKey" D.string
                         |> required "aggregationKey" D.string
@@ -286,24 +453,27 @@ transactionEventsDecoder =
 
                 "ContractInitialized" ->
                     D.succeed EventContractInitialized
-                        |> required "amount" T.decodeAmount
-                        |> required "address" T.contractAddressDecoder
-                        |> required "name" D.int
                         |> required "ref" D.string
+                        |> required "address" T.contractAddressDecoder
+                        |> required "amount" T.decodeAmount
+                        |> required "events" (D.list T.contractEventDecoder)
                         |> D.map TransactionEventContractInitialized
 
                 "Updated" ->
-                    D.succeed EventContractMessage
-                        |> required "amount" T.decodeAmount
+                    D.succeed EventContractUpdated
                         |> required "address" T.contractAddressDecoder
+                        |> required "instigator" T.addressDecoder
+                        |> required "amount" T.decodeAmount
                         |> required "message" D.string
-                        |> D.map TransactionEventContractMessage
+                        |> required "events" (D.list T.contractEventDecoder)
+                        |> D.map TransactionEventContractUpdated
 
                 -- Core
-                "ElectionDifficultyUpdated" ->
-                    D.succeed EventElectionDifficultyUpdated
-                        |> required "difficulty" D.int
-                        |> D.map TransactionEventElectionDifficultyUpdated
+                "UpdateEnqueued" ->
+                    D.succeed EventUpdateEnqueued
+                        |> required "effectiveTime" (D.map (\seconds -> Time.millisToPosix (seconds * 1000)) D.int)
+                        |> required "payload" updatePayloadDecoder
+                        |> D.map TransactionEventUpdateEnqueued
 
                 -- Errors
                 _ ->
