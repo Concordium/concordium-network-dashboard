@@ -3,8 +3,51 @@ module Types exposing (..)
 import Dict
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (required, resolve)
+import Maybe
+import Time
 
 
+{-| Parallel to Concordium.Types.Address.
+Must stay in sync.
+-}
+type Address
+    = AddressAccount AccountAddress
+    | AddressContract ContractAddress
+
+
+addressDecoder : D.Decoder Address
+addressDecoder =
+    let
+        decode : String -> D.Decoder Address
+        decode tipe =
+            case tipe of
+                "AddressAccount" ->
+                    D.map AddressAccount <| D.field "address" accountAddressDecoder
+
+                "AddressContract" ->
+                    D.map AddressContract <| D.field "address" contractAddressDecoder
+
+                _ ->
+                    D.fail "Invalid address. Expected type AddressAccount or AddressContract."
+    in
+    D.succeed decode
+        |> required "type" D.string
+        |> resolve
+
+
+addressToString : Address -> String
+addressToString addr =
+    case addr of
+        AddressAccount accAddr ->
+            accAddr
+
+        AddressContract contrAddr ->
+            contractAddressToString contrAddr
+
+
+{-| Parallel to Concordium.Types.Address.
+Must stay in sync.
+-}
 type alias AccountAddress =
     String
 
@@ -14,6 +57,9 @@ accountAddressDecoder =
     D.string
 
 
+{-| Parallel to Concordium.Types.ContractAddress.
+Must stay in sync.
+-}
 type alias ContractAddress =
     { index : Int
     , subindex : Int
@@ -27,43 +73,16 @@ contractAddressDecoder =
         |> required "subindex" D.int
 
 
-type AccountInfo
-    = AddressAccount String
-    | AddressContract String
-    | AddressUnknown
+{-| Show contractAddress in the following format: "<INDEX,SUBINDEX>".
+-}
+contractAddressToString : ContractAddress -> String
+contractAddressToString { index, subindex } =
+    "<" ++ String.fromInt index ++ "," ++ String.fromInt subindex ++ ">"
 
 
-accountInfoAddress : AccountInfo -> String
-accountInfoAddress accountInfo =
-    case accountInfo of
-        AddressAccount address ->
-            address
-
-        AddressContract address ->
-            address
-
-        AddressUnknown ->
-            ""
-
-
-accountInfoDecoder : D.Decoder AccountInfo
-accountInfoDecoder =
-    D.succeed
-        (\tipe address ->
-            case tipe of
-                "AddressAccount" ->
-                    AddressAccount address
-
-                "AddressContract" ->
-                    AddressContract address
-
-                _ ->
-                    AddressUnknown
-        )
-        |> required "type" D.string
-        |> required "address" D.string
-
-
+{-| Parallel to Concordium.Types.Transactions.AccountAmounts.
+Must stay in sync.
+-}
 type alias AccountAmounts =
     Dict.Dict AccountAddress Amount
 
@@ -82,6 +101,48 @@ accountAmountsDecoder =
             D.succeed ( accAddr, amnt )
     in
     D.map Dict.fromList <| D.list accAmntPairDecoder
+
+
+{-| Parallel to Concordium.Types.Timestamp.
+Must stay in sync.
+
+It wraps an Int representing _seconds_ since unix epoch.
+
+-}
+type alias Timestamp =
+    Time.Posix
+
+
+timestampDecoder : D.Decoder Timestamp
+timestampDecoder =
+    D.map Time.millisToPosix <| D.int
+
+
+type alias ReleaseSchedule =
+    List ( Timestamp, Amount )
+
+
+releaseScheduleDecoder : D.Decoder ReleaseSchedule
+releaseScheduleDecoder =
+    let
+        pairDecoder =
+            D.map2 Tuple.pair
+                (D.index 0 timestampDecoder)
+                (D.index 1 decodeAmount)
+    in
+    D.list pairDecoder
+
+
+{-| Parallel to Concordium.Wasm.ContractEvent.
+Must stay in sync.
+-}
+type alias ContractEvent =
+    String
+
+
+contractEventDecoder : D.Decoder ContractEvent
+contractEventDecoder =
+    D.string
 
 
 {-| Energy is represented as an Int.
@@ -167,3 +228,56 @@ amountFromInt value =
     case amountFromString (String.fromInt value) of
         Gtu v ->
             Gtu { v | hasRoundingError = value >= 2 ^ 53 }
+
+
+roundTo : Int -> Float -> Float
+roundTo decimals n =
+    let
+        p =
+            10 ^ toFloat decimals
+    in
+    (n * p |> round |> toFloat) / p
+
+
+floorTo : Int -> Float -> Float
+floorTo decimals n =
+    let
+        p =
+            10 ^ toFloat decimals
+    in
+    (n * p |> floor |> toFloat) / p
+
+
+amountFromFloat : Float -> Amount
+amountFromFloat f =
+    Gtu { value = String.fromFloat <| roundTo 6 f, hasRoundingError = True }
+
+
+amountToFloat : Amount -> Maybe Float
+amountToFloat (Gtu amount) =
+    String.toFloat amount.value
+
+
+addAmounts : Amount -> Amount -> Maybe Amount
+addAmounts left right =
+    Maybe.map2 (\l r -> amountFromFloat <| l + r) (amountToFloat left) (amountToFloat right)
+
+
+zeroAmount : Amount
+zeroAmount =
+    Gtu { value = "0.0", hasRoundingError = False }
+
+
+unsafeAmountToFloat : Amount -> Float
+unsafeAmountToFloat amount =
+    Maybe.withDefault 0 <| amountToFloat amount
+
+
+unsafeAddAmounts : Amount -> Amount -> Amount
+unsafeAddAmounts left right =
+    Maybe.withDefault zeroAmount (addAmounts left right)
+
+
+unsafeSumAmounts : List Amount -> Amount
+unsafeSumAmounts amounts =
+    List.foldl unsafeAddAmounts zeroAmount amounts
