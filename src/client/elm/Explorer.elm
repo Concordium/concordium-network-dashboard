@@ -3,17 +3,26 @@ module Explorer exposing (..)
 import Explorer.Request exposing (..)
 import Http
 import RemoteData exposing (..)
+import Set exposing (Set)
 
 
 type alias BlockHash =
     String
 
 
+type alias DisplayDetailBlockSummary =
+    { blockSummary : BlockSummary
+
+    -- A set of indexes of transactions with details actively displayed in the view.
+    , detailsDisplayed : Set Int
+    }
+
+
 type alias Model =
     { config : Config
     , blockHash : Maybe String
     , blockInfo : WebData BlockInfo
-    , blockSummary : WebData BlockSummary
+    , blockSummary : WebData DisplayDetailBlockSummary
     }
 
 
@@ -21,6 +30,7 @@ type Msg
     = ReceivedConsensusStatus (Result Http.Error ConsensusStatus)
     | ReceivedBlockInfo (Result Http.Error BlockInfo)
     | ReceivedBlockSummary (Result Http.Error BlockSummary)
+    | ToggleDisplayDetails Int
 
 
 init : Config -> Model
@@ -60,7 +70,32 @@ update msg model =
 
         ReceivedBlockSummary blockSummaryResult ->
             ( { model
-                | blockSummary = RemoteData.fromResult blockSummaryResult
+                | blockSummary =
+                    blockSummaryResult
+                        |> Result.map (\blockSummary -> { blockSummary = blockSummary, detailsDisplayed = Set.empty })
+                        |> RemoteData.fromResult
               }
             , Cmd.none
             )
+
+        ToggleDisplayDetails index ->
+            let
+                nextBlockSummary =
+                    model.blockSummary
+                        |> RemoteData.map
+                            (\displayDetailBlockSummary ->
+                                { displayDetailBlockSummary
+                                    | detailsDisplayed =
+                                        let
+                                            detailsDisplayed =
+                                                displayDetailBlockSummary.detailsDisplayed
+                                        in
+                                        if Set.member index detailsDisplayed then
+                                            Set.remove index detailsDisplayed
+
+                                        else
+                                            Set.insert index detailsDisplayed
+                                }
+                            )
+            in
+            ( { model | blockSummary = nextBlockSummary }, Cmd.none )
