@@ -6,6 +6,7 @@ import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
 import Task
 import Time exposing (Posix)
+import Transaction.Event exposing (GasRewards, MintDistribution, TransactionFeeDistribution, gasRewardsDecoder, mintDistributionDecoder, transactionFeeDistributionDecoder)
 import Transaction.Summary exposing (..)
 import Types as T
 
@@ -114,6 +115,7 @@ type alias BlockSummary =
     { specialEvents : List SpecialEvent
     , transactionSummaries : List TransactionSummary
     , finalizationData : Maybe FinalizationData
+    , updates : Updates
     }
 
 
@@ -123,6 +125,73 @@ blockSummaryDecoder =
         |> required "specialEvents" (D.list specialEventDecoder)
         |> required "transactionSummaries" (D.list transactionSummaryDecoder)
         |> optional "finalizationData" (D.nullable finalizationDataDecoder) Nothing
+        |> required "updates" updatesDecoder
+
+
+
+-- Updates
+
+
+type alias Updates =
+    { chainParameters : ChainParameters
+    }
+
+
+type alias ChainParameters =
+    { rewardParameters : RewardParameters
+    , microGTUPerEuro : Relation
+    , foundationAccountIndex : Int
+    , accountCreationLimit : Int
+    , bakerCooldownEpochs : Int
+    , electionDifficulty : Float
+    , euroPerEnergy : Relation
+    }
+
+
+type alias RewardParameters =
+    { mintDistribution : MintDistribution
+    , transactionFeeDistribution : TransactionFeeDistribution
+    , gasRewards : GasRewards
+    }
+
+
+type alias Relation =
+    { denominator : Int
+    , numerator : Int
+    }
+
+
+updatesDecoder : D.Decoder Updates
+updatesDecoder =
+    D.succeed Updates
+        |> required "chainParameters" chainParametersDecoder
+
+
+chainParametersDecoder : D.Decoder ChainParameters
+chainParametersDecoder =
+    D.succeed ChainParameters
+        |> required "rewardParameters" rewardParametersDecoder
+        |> required "microGTUPerEuro" relationDecoder
+        |> required "foundationAccountIndex" D.int
+        |> required "accountCreationLimit" D.int
+        |> required "bakerCooldownEpochs" D.int
+        |> required "electionDifficulty" D.float
+        |> required "euroPerEnergy" relationDecoder
+
+
+rewardParametersDecoder : D.Decoder RewardParameters
+rewardParametersDecoder =
+    D.succeed RewardParameters
+        |> required "mintDistribution" mintDistributionDecoder
+        |> required "transactionFeeDistribution" transactionFeeDistributionDecoder
+        |> required "gASRewards" gasRewardsDecoder
+
+
+relationDecoder : D.Decoder Relation
+relationDecoder =
+    D.succeed Relation
+        |> required "denominator" D.int
+        |> required "numerator" D.int
 
 
 
@@ -162,6 +231,7 @@ type alias BlockReward =
     , newGASAccount : T.Amount
     , bakerReward : T.Amount
     , foundationCharge : T.Amount
+    , foundationAccount : T.AccountAddress
     , baker : T.AccountAddress
     }
 
@@ -199,6 +269,7 @@ specialEventDecoder =
                         |> required "newGASAccount" T.decodeAmount
                         |> required "bakerReward" T.decodeAmount
                         |> required "foundationCharge" T.decodeAmount
+                        |> required "foundationAccount" T.accountAddressDecoder
                         |> required "baker" T.accountAddressDecoder
                         |> D.map SpecialEventBlockReward
 
