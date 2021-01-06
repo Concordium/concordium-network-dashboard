@@ -61,7 +61,7 @@ decodeNumerousToString =
     D.oneOf
         [ D.string
         , D.int |> D.map String.fromInt
-        , T.accountInfoDecoder |> D.map T.accountInfoAddress
+        , T.addressDecoder |> D.map T.addressToString
         ]
 
 
