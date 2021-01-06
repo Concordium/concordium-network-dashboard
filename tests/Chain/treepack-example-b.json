@@ -12,9 +12,7 @@
                 "e1",
                 "d1",
                 "c1",
-                "b1",
-                "a1",
-                "p"
+                "b1"
             ]
         },
         {
@@ -27,9 +25,7 @@
             "finalizedBlockParent": "p",
             "ancestorsSinceBestBlock": [
                 "c2",
-                "b1",
-                "a1",
-                "p"
+                "b1"
             ]
         },
         {
@@ -42,9 +38,7 @@
             "finalizedBlockParent": "p",
             "ancestorsSinceBestBlock": [
                 "c2",
-                "b1",
-                "a1",
-                "p"
+                "b1"
             ]
         },
         {
@@ -58,9 +52,7 @@
             "ancestorsSinceBestBlock": [
                 "d3",
                 "c1",
-                "b1",
-                "a1",
-                "p"
+                "b1"
             ]
         },
         {
@@ -73,9 +65,7 @@
             "finalizedBlockParent": "p",
             "ancestorsSinceBestBlock": [
                 "c4",
-                "b4",
-                "a1",
-                "p"
+                "b4"
             ]
         }
     ]
