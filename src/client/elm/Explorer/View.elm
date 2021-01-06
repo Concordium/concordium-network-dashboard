@@ -15,9 +15,9 @@ import Svg exposing (Svg)
 import Time
 import TimeHelpers
 import Tooltip exposing (..)
-import Transaction.Amount exposing (Amount(..), amountToString)
 import Transaction.Event exposing (..)
 import Transaction.Summary exposing (..)
+import Types exposing (AccountAddress, AccountInfo(..), Amount(..), ContractAddress, amountToString)
 import Widgets exposing (arrowRight, remoteDataView)
 
 
@@ -377,6 +377,34 @@ viewTransaction ctx txSummary =
 
 viewSpecialEvent : Context a -> SpecialEvent -> Element Msg
 viewSpecialEvent ctx specialEvent =
+    let
+        ( tooltip, icon, content ) =
+            case specialEvent of
+                -- TODO: Update icons and show more info
+                SpecialEventBakingRewards _ ->
+                    ( "Baking rewards"
+                    , Icons.baking_bread 20
+                    , [ text "Baking Rewards" ]
+                    )
+
+                SpecialEventMint event ->
+                    ( "Mint"
+                    , Icons.system_cog 20
+                    , [ text "Minting" ]
+                    )
+
+                SpecialEventFinalizationRewards _ ->
+                    ( "Finalization rewards"
+                    , Icons.system_cog 20
+                    , [ text "Finalization Rewards" ]
+                    )
+
+                SpecialEventBlockReward _ ->
+                    ( "Block reward"
+                    , Icons.system_cog 20
+                    , [ text "Block Reward" ]
+                    )
+    in
     row
         ([ width fill
          , height (px 46)
@@ -387,18 +415,12 @@ viewSpecialEvent ctx specialEvent =
             ++ bottomBorder ctx
         )
         [ row [ spacing 10, width (shrink |> minimum 30) ]
-            [ el [ stringTooltipAbove ctx "Baking reward" ]
-                (html <| Icons.baking_bread 20)
+            [ el [ stringTooltipAbove ctx tooltip ]
+                (html <| icon)
             ]
         , el [ width (shrink |> minimum 95), Font.color ctx.palette.fg1 ]
             (text "Chain")
-        , row []
-            [ text <| "Rewarded " ++ amountToString specialEvent.rewardAmount
-            , arrowRight
-            , viewAddress ctx
-                (AddressAccount specialEvent.bakerAccount)
-            , el [] <| text <| " (Baker: " ++ String.fromInt specialEvent.bakerId ++ ")"
-            ]
+        , row [] content
         , el
             [ alignRight
             , width (shrink |> minimum 70)
@@ -506,21 +528,39 @@ iconForEvent ctx event_ =
                     (html <| Icons.account_credentials_deployed 18)
                 ]
 
-        TransactionEventStakeDelegated event ->
-            row [ spacing 10 ]
-                [ el [ stringTooltipAbove ctx "Stake delegation" ]
-                    (html <| Icons.delegation_delegated 20)
-                ]
-
-        TransactionEventStakeUndelegated event ->
-            row [ spacing 10 ]
-                [ el [ stringTooltipAbove ctx "Stake undelegation" ]
-                    (html <| Icons.delegation_undelegated 20)
-                ]
-
         TransactionEventBakerAdded event ->
             row [ spacing 10 ]
                 [ el [ stringTooltipAbove ctx "Baker addition" ]
+                    (html <| Icons.baking_bread 20)
+                ]
+
+        TransactionEventBakerRemoved event ->
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Baker removal" ]
+                    (html <| Icons.baking_bread 20)
+                ]
+
+        TransactionEventBakerStakeIncreased event ->
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Baker stake increase" ]
+                    (html <| Icons.baking_bread 20)
+                ]
+
+        TransactionEventBakerStakeDecreased event ->
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Baker stake decrease" ]
+                    (html <| Icons.baking_bread 20)
+                ]
+
+        TransactionEventBakerSetRestakeEarnings event ->
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Baker restake earnings change" ]
+                    (html <| Icons.baking_bread 20)
+                ]
+
+        TransactionEventBakerKeysUpdated event ->
+            row [ spacing 10 ]
+                [ el [ stringTooltipAbove ctx "Baker keys update" ]
                     (html <| Icons.baking_bread 20)
                 ]
 
@@ -573,10 +613,6 @@ iconForEvent ctx event_ =
 iconForTag : Context a -> String -> Element msg
 iconForTag ctx tag =
     case tag of
-        "InvalidStakeDelegationTarget" ->
-            el [ stringTooltipAbove ctx "Invalid delegation target" ]
-                (html <| Icons.delegation_delegated 20)
-
         "InvalidBakerRemoveSource" ->
             el [ stringTooltipAbove ctx "Invalid baker remove source" ]
                 (html <| Icons.baking_bread 20)
@@ -670,24 +706,8 @@ viewTransactionEvent ctx txEvent =
                 , viewAddress ctx (AddressAccount event.account)
                 ]
 
-        TransactionEventAccountEncryptionKeyDeployed event ->
-            -- type alias EventAccountEncryptionKeyDeployed =
-            --   { key : String
-            --   , account : String
-            --   }
-            row
-                []
-                [ text <| "Deployed account encryption key"
-                , arrowRight
-                , viewAddress ctx (AddressAccount event.account)
-                ]
-
         -- Baking
         TransactionEventBakerAdded event ->
-            -- type alias EventBakerAdded =
-            --     { tag : String
-            --     , contents : Int
-            --     }
             row []
                 [ text <| "Added"
                 , arrowRight
@@ -695,70 +715,58 @@ viewTransactionEvent ctx txEvent =
                 ]
 
         TransactionEventBakerRemoved event ->
-            -- type alias EventBakerRemoved =
-            --   { tag : String
-            --   , bakerId : Int
-            --   }
             row []
                 [ text <| "Removed"
                 , arrowRight
-                , text <| "Baker " ++ String.fromInt event.bakerId
+                , text <| "Baker " ++ bakerToString event.bakerId event.account
                 ]
 
-        TransactionEventBakerAccountUpdated event ->
-            -- type alias EventBakerAccountUpdated =
-            --   { tag : String
-            --   , bakerId : Int
-            --   , newAccount : String
-            --   }
+        TransactionEventBakerStakeIncreased event ->
             row []
-                [ text <| "Updated baker account"
+                [ text <| "Increased stake"
                 , arrowRight
-                , text <| "Baker " ++ String.fromInt event.bakerId
+                , text <| "Baker " ++ bakerToString event.bakerId event.account
                 , arrowRight
-                , viewAddress ctx (AddressAccount event.newAccount)
+                , text <| amountToString event.newStake
                 ]
 
-        TransactionEventBakerKeyUpdated event ->
-            -- type alias EventBakerKeyUpdated =
-            --   { tag : String
-            --   , bakerId : Int
-            --   , newKey : String
-            --   }
+        TransactionEventBakerStakeDecreased event ->
             row []
-                [ text <| "Updated baker key"
+                [ text <| "Decreased stake"
                 , arrowRight
-                , text <| "Baker " ++ String.fromInt event.bakerId
+                , text <| "Baker " ++ bakerToString event.bakerId event.account
+                , arrowRight
+                , text <| amountToString event.newStake
+                ]
+
+        TransactionEventBakerSetRestakeEarnings event ->
+            row []
+                [ text <| "Restake earnings"
+                , arrowRight
+                , text <| "Baker " ++ bakerToString event.bakerId event.account
+                , arrowRight
+                , text <|
+                    if event.restakeEarnings then
+                        "Set"
+
+                    else
+                        "Unset"
+                ]
+
+        TransactionEventBakerKeysUpdated event ->
+            row []
+                [ text <| "Updated baker keys"
+                , arrowRight
+                , text <| "Baker " ++ bakerToString event.bakerId event.account
                 , arrowRight
                 , el
-                    [ stringTooltipAboveWithCopy ctx event.newKey
+                    [ stringTooltipAboveWithCopy ctx event.signKey
                     , pointer
-                    , onClick (CopyToClipboard event.newKey)
+                    , onClick (CopyToClipboard event.signKey)
                     ]
                   <|
                     text <|
-                        String.left 8 event.newKey
-                ]
-
-        TransactionEventBakerElectionKeyUpdated event ->
-            -- type alias EventBakerElectionKeyUpdated =
-            --     { tag : String
-            --     , bakerId : Int
-            --     , newKey : String
-            --     }
-            row []
-                [ text <| "Updated baker election key"
-                , arrowRight
-                , text <| "Baker " ++ String.fromInt event.bakerId
-                , arrowRight
-                , el
-                    [ stringTooltipAboveWithCopy ctx event.newKey
-                    , pointer
-                    , onClick (CopyToClipboard event.newKey)
-                    ]
-                  <|
-                    text <|
-                        String.left 8 event.newKey
+                        String.left 8 event.signKey
                 ]
 
         -- Contracts
@@ -821,40 +829,6 @@ viewTransactionEvent ctx txEvent =
                     , viewAsAddressContract ctx event.address
                     ]
                 )
-
-        -- Delegation
-        TransactionEventStakeDelegated event ->
-            -- type alias EventStakeDelegated =
-            --     { tag : String
-            --     , account : String
-            --     , baker : Int
-            --     }
-            row []
-                [ text "Delegated"
-                , arrowRight
-                , viewAddress ctx
-                    (AddressAccount event.account)
-                , text <| " (Baker: " ++ String.fromInt event.baker ++ ")"
-                ]
-
-        TransactionEventStakeUndelegated event ->
-            -- type alias EventStakeUndelegated =
-            --   { tag : String
-            --   , account : String
-            --   , baker : Maybe Int
-            --   }
-            row []
-                [ text "Undelegated"
-                , arrowRight
-                , viewAddress ctx
-                    (AddressAccount event.account)
-                , case event.baker of
-                    Just id ->
-                        text <| " (Baker: " ++ String.fromInt id ++ ")"
-
-                    Nothing ->
-                        Element.none
-                ]
 
         -- Core
         TransactionEventElectionDifficultyUpdated event ->
@@ -929,3 +903,12 @@ viewAddress ctx addr =
                 [ el [ Font.color ctx.palette.danger ] (html <| Icons.close 18)
                 , text "(Error: Address Failed)"
                 ]
+
+
+
+-- Show a baker as "#{accountAddress} (ID #{bakerId})"
+
+
+bakerToString : Int -> AccountAddress -> String
+bakerToString bakerId addr =
+    addr ++ " (ID " ++ String.fromInt bakerId ++ ")"

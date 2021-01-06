@@ -3,7 +3,7 @@ module Transaction.SummaryTest exposing (..)
 import Expect exposing (Expectation)
 import Json.Decode as D exposing (Error(..))
 import Test exposing (..)
-import Transaction.Amount exposing (Amount(..), decodeAmount)
+import Types exposing (Amount(..), decodeAmount)
 
 
 suite : Test

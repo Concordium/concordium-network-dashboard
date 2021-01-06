@@ -17,7 +17,6 @@ import Chain.DictTree as DictTree exposing (DictTree)
 import Chain.Flatten as Flatten exposing (DrawableChain, emptyDrawableChain)
 import Chain.Grid as Grid exposing (GridSpec)
 import Chain.Interpolate as Interpolate
-import Chain.Transition as Transition exposing (..)
 import Chain.View as View
 import CollectionHelpers exposing (maxFrequency)
 import Context exposing (..)
@@ -36,6 +35,7 @@ import Route exposing (Route(..))
 import Set
 import Task
 import Time exposing (..)
+import Transition exposing (..)
 import Tree exposing (Tree)
 
 
