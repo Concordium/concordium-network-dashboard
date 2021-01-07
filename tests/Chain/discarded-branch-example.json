@@ -1,0 +1,47 @@
+[
+    [
+        {
+            "nodeName": "Node1",
+            "nodeId": "1",
+            "bestBlock": "d1",
+            "bestBlockHeight": 4,
+            "finalizedBlock": "b1",
+            "finalizedBlockHeight": 1,
+            "finalizedBlockParent": "a1",
+            "ancestorsSinceBestBlock": [
+                "d1",
+                "c1"
+            ]
+        }
+    ],
+    [
+        {
+            "nodeName": "Node1",
+            "nodeId": "1",
+            "bestBlock": "d1",
+            "bestBlockHeight": 4,
+            "finalizedBlock": "a1",
+            "finalizedBlockHeight": 0,
+            "finalizedBlockParent": "p",
+            "ancestorsSinceBestBlock": [
+                "d1",
+                "c1",
+                "b1"
+            ]
+        },
+        {
+            "nodeName": "Node2",
+            "nodeId": "1",
+            "bestBlock": "d2",
+            "bestBlockHeight": 4,
+            "finalizedBlock": "a1",
+            "finalizedBlockHeight": 0,
+            "finalizedBlockParent": "p",
+            "ancestorsSinceBestBlock": [
+                "d2",
+                "c2",
+                "b2"
+            ]
+        }
+    ]
+]

@@ -43,6 +43,7 @@ type BlockStatus
     = Finalized
     | LastFinalized
     | Candidate
+    | Discarded
 
 
 
@@ -214,7 +215,7 @@ annotateBlock nodes lastFinalizedHeight ( height, hash ) =
     { hash = hash
     , nodesAt = nodesAt
     , fractionNodesAt = fractionNodesAt
-    , status = statusFromHeight lastFinalizedHeight height
+    , status = statusFromX lastFinalizedHeight height
     , x = height
     , y = 0
     }
@@ -232,22 +233,24 @@ annotateChildren label children =
                     List.sortBy subtreeWeighting children
 
                 positionedChildren =
-                    calculateY sortedChildren
+                    calculateYandUpdateStatus sortedChildren
             in
             tree
                 label
                 positionedChildren
 
 
-calculateY : List (Tree Block) -> List (Tree Block)
-calculateY children =
+calculateYandUpdateStatus : List (Tree Block) -> List (Tree Block)
+calculateYandUpdateStatus children =
     children
         |> List.foldl
             (\child placedChildren ->
                 let
+                    -- calculate the length of the branch
                     maxX =
-                        child |> Tree.flatten |> List.map .x |> List.foldl max 1
+                        child |> Tree.map .x |> Tree.foldl max 1
 
+                    -- calculate the heighest y position of the previous branches up to maxX
                     previousMaxY =
                         List.head placedChildren
                             |> Maybe.map
@@ -258,8 +261,24 @@ calculateY children =
                                     >> (+) 1
                                 )
                             |> Maybe.withDefault 0
+
+                    -- get the current branches root status
+                    childStatus =
+                        child |> Tree.label |> .status
+
+                    -- update all blocks in the child branch
+                    updateLabel rootStatus label =
+                        { label
+                            | y = label.y + previousMaxY
+                            , status =
+                                if statusWithY (label.y + previousMaxY) rootStatus == Discarded then
+                                    Discarded
+
+                                else
+                                    label.status
+                        }
                 in
-                Tree.map (\label -> { label | y = label.y + previousMaxY }) child :: placedChildren
+                Tree.map (updateLabel childStatus) child :: placedChildren
             )
             []
 
@@ -288,14 +307,12 @@ subtreeWeighting tree =
     -weight
 
 
-{-| Calculate the status of a block based on its height and the height of the last finalized block
-TODO:
-Update this to statusFromPosition, taking into account that blocks
-on branches in the finalized section are not considered finalized but discarded
+{-| Calculate the initial status of a block based on its height and the height of the last finalized block
+This does not take into account discarded blocks, which are marked as such after the Y position is calculated
 -}
-statusFromHeight : Int -> Int -> BlockStatus
-statusFromHeight lastFinalizedHeight blockHeight =
-    case compare blockHeight lastFinalizedHeight of
+statusFromX : Int -> Int -> BlockStatus
+statusFromX lastFinalizedHeight x =
+    case compare x lastFinalizedHeight of
         LT ->
             Finalized
 
@@ -304,3 +321,12 @@ statusFromHeight lastFinalizedHeight blockHeight =
 
         GT ->
             Candidate
+
+
+statusWithY : Int -> BlockStatus -> BlockStatus
+statusWithY y status =
+    if y > 0 && (status == Finalized || status == LastFinalized) then
+        Discarded
+
+    else
+        status

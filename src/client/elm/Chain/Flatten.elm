@@ -102,6 +102,9 @@ blockColor palette status =
             Candidate ->
                 palette.c1
 
+            Discarded ->
+                palette.deactivated
+
 
 emptyDrawableChain : DrawableChain
 emptyDrawableChain =
