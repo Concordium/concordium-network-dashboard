@@ -14,6 +14,7 @@ import Html.Attributes exposing (style)
 import Icons exposing (..)
 import Palette exposing (withAlphaEl)
 import Set exposing (Set)
+import String exposing (toLower)
 import Svg exposing (Svg)
 import Time
 import TimeHelpers
@@ -33,6 +34,10 @@ type Msg
 type alias SummaryItem =
     { content : List (Element Msg), details : Maybe (Element Msg) }
 
+bakingRewardAccountUpper = "Baking reward account"
+bakingRewardAccountLower = toLower(bakingRewardAccountUpper)
+finalizationRewardAccountUpper = "Finalization reward account"
+finalizationRewardAccountLower = toLower(finalizationRewardAccountUpper)
 
 isJust : Maybe a -> Bool
 isJust maybe =
@@ -557,7 +562,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                     , icon = Icons.coin_gtu 20
                     , content =
                         row [ spacing 10 ]
-                            [ text "Distributed Baking Reward Account" ]
+                            [ text <| "Distributed " ++ bakingRewardAccountLower ]
                     , details =
                         let
                             bakerRewardList =
@@ -570,11 +575,11 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                 T.unsafeAddAmounts event.remainder bakingAccountDistributed
                         in
                         viewDetailRow
-                            [ paragraph [] [ text "Every epoch, the Baking Reward Account is distributed among all bakers during the epoch." ]
-                            , el [ centerX ] <| viewSpecialAccount ctx ctx.palette.c1 "Baking Reward Account" bakingAccountTotal
+                            [ paragraph [] [ text <| "Every epoch, the " ++ bakingRewardAccountLower ++ " is distributed among all bakers during the epoch." ]
+                            , el [ centerX ] <| viewSpecialAccount ctx ctx.palette.c1 bakingRewardAccountUpper bakingAccountTotal
                             , paragraph [] [ text "The amount is distributed according to the share of blocks a baker have baked during the epoch." ]
-                            , paragraph [] [ text "Some amount of GTU might be left because of rounding, these are left in the Baking Reward Account for the next epoch." ]
-                            , el [ centerX ] <| viewSpecialAccount ctx ctx.palette.c1 "Baking Reward Account" event.remainder
+                            , paragraph [] [ text <| "Some amount of GTU might be left because of rounding, these are left in the " ++ bakingRewardAccountLower ++ " for the next epoch." ]
+                            , el [ centerX ] <| viewSpecialAccount ctx ctx.palette.c1 bakingRewardAccountUpper event.remainder
                             ]
                             [ viewTable ctx
                                 { data = Dict.toList event.bakerRewards
@@ -623,16 +628,16 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                 ]
                             , viewDetailRow [ paragraph [] [ text "These GTU are distributed among special accounts for maintaining the blockchain and for rewarding bakers and finalizers. " ] ]
                                 [ viewBar ctx
-                                    [ { color = ctx.palette.c1, percentage = rewardParameters.mintDistribution.bakingReward, hint = "Baking Reward Account" }
-                                    , { color = ctx.palette.c2, percentage = rewardParameters.mintDistribution.finalizationReward, hint = "Finalization Reward Account" }
+                                    [ { color = ctx.palette.c1, percentage = rewardParameters.mintDistribution.bakingReward, hint = bakingRewardAccountUpper }
+                                    , { color = ctx.palette.c2, percentage = rewardParameters.mintDistribution.finalizationReward, hint = finalizationRewardAccountUpper }
                                     , { color = ctx.palette.fg2, percentage = foundationMintFraction, hint = "Foundation" }
                                     ]
                                 ]
                             , viewDetailRow
                                 []
                                 [ row [ spaceEvenly, centerX, spacing 30 ]
-                                    [ viewHeaderBox ctx ctx.palette.c1 "Baking Reward Account" <| viewPlusAmount ctx event.mintBakingReward
-                                    , viewHeaderBox ctx ctx.palette.c2 "Finalization Reward Account" <| viewPlusAmount ctx event.mintFinalizationReward
+                                    [ viewHeaderBox ctx ctx.palette.c1 bakingRewardAccountUpper <| viewPlusAmount ctx event.mintBakingReward
+                                    , viewHeaderBox ctx ctx.palette.c2 finalizationRewardAccountUpper <| viewPlusAmount ctx event.mintFinalizationReward
                                     , viewHeaderBox ctx ctx.palette.fg2 "Foundation" <| viewPlusAmount ctx event.mintPlatformDevelopmentCharge
                                     ]
                                 ]
@@ -642,7 +647,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                 SpecialEventFinalizationRewards event ->
                     { tooltip = "Rewarded finalizers"
                     , icon = Icons.coin_gtu 20
-                    , content = row [ spacing 10 ] [ text "Distributed Finalization Reward Account" ]
+                    , content = row [ spacing 10 ] [ text <| "Distributed " ++ finalizationRewardAccountLower]
                     , details =
                         let
                             finalizationAccountDistributed =
@@ -652,10 +657,10 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                 T.unsafeAddAmounts event.remainder finalizationAccountDistributed
                         in
                         viewDetailRow
-                            [ paragraph [] [ text "Every time a finalization proof is included in a block, the Finalization Reward Account is distributed among the finalizers according to their share of the finalization stake." ]
-                            , el [ centerX ] <| viewSpecialAccount ctx ctx.palette.c2 "Finalization Reward Account" finalizationAccountTotal
-                            , paragraph [] [ text "The remaining GTU which does not distribute evenly, stays in the Finalization Reward Account for the next time." ]
-                            , el [ centerX ] <| viewSpecialAccount ctx ctx.palette.c2 "Finalization Reward Account" event.remainder
+                            [ paragraph [] [ text <| "Every time a finalization proof is included in a block, the " ++ finalizationRewardAccountLower ++ " is distributed among the finalizers according to their share of the finalization stake." ]
+                            , el [ centerX ] <| viewSpecialAccount ctx ctx.palette.c2 finalizationRewardAccountUpper finalizationAccountTotal
+                            , paragraph [] [ text <| "The remaining GTU which does not distribute evenly, stays in the " ++ finalizationRewardAccountLower ++ " for the next time." ]
+                            , el [ centerX ] <| viewSpecialAccount ctx ctx.palette.c2 finalizationRewardAccountUpper event.remainder
                             ]
                             [ viewTable ctx
                                 { data = Dict.toList event.finalizationRewards
@@ -1338,8 +1343,8 @@ viewEventUpdateEnueuedDetails ctx event =
                 [ el [ centerX ] <| viewHeaderBox ctx ctx.palette.fg2 "Minted pr. slot" <| text <| String.fromFloat mintDistribution.mintPerSlot
                 , viewBar
                     ctx
-                    [ { color = ctx.palette.c1, percentage = mintDistribution.bakingReward, hint = "Baking Reward Account" }
-                    , { color = ctx.palette.c2, percentage = mintDistribution.finalizationReward, hint = "Finalization Reward Account" }
+                    [ { color = ctx.palette.c1, percentage = mintDistribution.bakingReward, hint = bakingRewardAccountUpper }
+                    , { color = ctx.palette.c2, percentage = mintDistribution.finalizationReward, hint = finalizationRewardAccountUpper }
                     , { color = ctx.palette.fg2, percentage = foundationFraction, hint = "Foundation" }
                     ]
                 ]
