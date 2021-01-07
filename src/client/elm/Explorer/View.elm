@@ -855,10 +855,22 @@ viewFinalizationData ctx finalizationData =
                     Just <|
                         column [ spacing 20 ]
                             [ viewDetailRow
-                                [ paragraph [ Font.center ] [ text "A proof of a block being finalized." ]
-                                , paragraph [ Font.center ] [ text <| "Finalized block: ", el [ onClick (BlockClicked data.blockPointer), pointer, Font.color ctx.palette.c2 ] <| text data.blockPointer ]
-                                , paragraph [ Font.center ] [ text <| "Index: " ++ String.fromInt data.index ]
-                                , paragraph [ Font.center ] [ text <| "Delay: " ++ String.fromInt data.delay ]
+                                [ paragraph [] [ text "A proof of a block being finalized." ]
+                                , paragraph [] [ text <| "Finalized block: ", el [ onClick (BlockClicked data.blockPointer), pointer, Font.color ctx.palette.c2 ] <| text data.blockPointer ]
+                                , paragraph [] [ text <| "Finalization index: " ++ String.fromInt data.index ]
+                                , paragraph []
+                                    [ text <|
+                                        "The finalized block had to have at least "
+                                            ++ String.fromInt data.delay
+                                            ++ " descending block"
+                                            ++ (if data.delay == 1 then
+                                                    ""
+
+                                                else
+                                                    "s"
+                                               )
+                                            ++ ", when it was finalized."
+                                    ]
                                 ]
                                 [ viewTable ctx
                                     { data = data.finalizers
