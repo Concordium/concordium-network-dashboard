@@ -657,9 +657,9 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                 T.unsafeAddAmounts event.remainder finalizationAccountDistributed
                         in
                         viewDetailRow
-                            [ paragraph [] [ text <| "Every time a finalization proof is included in a block, the " ++ finalizationRewardAccountLower ++ " is distributed among the finalizers according to their share of the finalization stake." ]
+                            [ paragraph [] [ text <| "Every time a finalization proof is included in a block the " ++ finalizationRewardAccountLower ++ " distributes a reward among the finalizers. The reward is proportional to the finalizers' share of finalization stake." ]
                             , el [ centerX ] <| viewSpecialAccount ctx ctx.palette.c2 finalizationRewardAccountUpper finalizationAccountTotal
-                            , paragraph [] [ text <| "The remaining GTU which does not distribute evenly, stays in the " ++ finalizationRewardAccountLower ++ " for the next time." ]
+                            , paragraph [] [ text <| "The remaining GTU (which does not distribute evenly among the finalizers) stays in the " ++ finalizationRewardAccountLower ++ "." ]
                             , el [ centerX ] <| viewSpecialAccount ctx ctx.palette.c2 finalizationRewardAccountUpper event.remainder
                             ]
                             [ viewTable ctx

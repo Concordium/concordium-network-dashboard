@@ -173,7 +173,7 @@ amountToString amount =
     (case amount of
         Gtu { value, hasRoundingError } ->
             if hasRoundingError then
-                "~" ++ value
+                "approx. " ++ value
 
             else
                 value
