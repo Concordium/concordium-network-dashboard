@@ -28,11 +28,11 @@ import Widgets exposing (arrowRight, remoteDataView)
 type Msg
     = CopyToClipboard String
     | BlockClicked String
-    | ToggleDetails Int
+    | ToggleDetails Int Int
 
 
 type alias SummaryItem =
-    { content : List (Element Msg), details : Maybe (Element Msg) }
+    List SummaryItemEvent
 
 
 bakingRewardAccountUpper =
@@ -51,14 +51,8 @@ finalizationRewardAccountLower =
     toLower finalizationRewardAccountUpper
 
 
-isJust : Maybe a -> Bool
-isJust maybe =
-    case maybe of
-        Just _ ->
-            True
-
-        Nothing ->
-            False
+type alias SummaryItemEvent =
+    { content : Element Msg, details : Maybe (Element Msg) }
 
 
 view : Context a -> Model -> Element Msg
@@ -83,8 +77,44 @@ view ctx model =
                                         finalizations =
                                             viewFinalizationData ctx blockSummary.finalizationData
 
+                                        summaryItems : List SummaryItem
                                         summaryItems =
-                                            transactionSummaries ++ specialEvents ++ finalizations
+                                            transactionSummaries :: specialEvents ++ [ finalizations ]
+
+                                        viewWithDetails content details displayDetails itemIndex eventIndex =
+                                            [ el
+                                                ([ width fill
+                                                 , onClick (ToggleDetails itemIndex eventIndex)
+                                                 , pointer
+                                                 , htmlAttribute <| style "transition" "border 200ms ease-in"
+                                                 ]
+                                                    ++ (if displayDetails then
+                                                            [ Background.color <| Palette.lightish ctx.palette.bg2
+                                                            , Border.color (Palette.lightish ctx.palette.bg2)
+                                                            ]
+
+                                                        else
+                                                            []
+                                                       )
+                                                )
+                                                content
+                                            , el
+                                                ([ width fill
+                                                 , Background.color <| Palette.veryLight ctx.palette.bg2
+                                                 , htmlAttribute <| style "transition" "max-height 200ms ease-in"
+                                                 ]
+                                                    ++ (if displayDetails then
+                                                            [ htmlAttribute <| style "max-height" "1000px"
+                                                            ]
+
+                                                        else
+                                                            [ htmlAttribute <| style "max-height" "0"
+                                                            , htmlAttribute <| style "overflow-y" "hidden"
+                                                            ]
+                                                       )
+                                                )
+                                                details
+                                            ]
                                     in
                                     if List.isEmpty summaryItems then
                                         column [ width fill ] [ text "This block has no transactions in it." ]
@@ -92,55 +122,28 @@ view ctx model =
                                     else
                                         column [ width fill ] <|
                                             List.concat <|
-                                                List.indexedMap
-                                                    (\index summaryItem ->
-                                                        let
-                                                            displayDetails =
-                                                                Set.member index detailsDisplayed
-                                                        in
-                                                        [ viewItemRow ctx
-                                                            (if isJust summaryItem.details then
-                                                                [ onClick (ToggleDetails index), pointer, htmlAttribute <| style "transition" "border 200ms ease-in" ]
-                                                                    ++ (if displayDetails then
-                                                                            [ Background.color <| Palette.lightish ctx.palette.bg2
-                                                                            , Border.color (Palette.lightish ctx.palette.bg2)
-                                                                            ]
+                                                List.concat <|
+                                                    List.indexedMap
+                                                        (\itemIndex summaryItem ->
+                                                            List.indexedMap
+                                                                (\eventIndex summaryItemEvent ->
+                                                                    case summaryItemEvent.details of
+                                                                        Just details ->
+                                                                            let
+                                                                                displayDetails =
+                                                                                    detailsDisplayed
+                                                                                        |> Dict.get itemIndex
+                                                                                        |> Maybe.withDefault Set.empty
+                                                                                        |> Set.member eventIndex
+                                                                            in
+                                                                            viewWithDetails summaryItemEvent.content details displayDetails itemIndex eventIndex
 
-                                                                        else
-                                                                            []
-                                                                       )
-
-                                                             else
-                                                                []
-                                                            )
-                                                            summaryItem.content
-                                                        ]
-                                                            ++ (case summaryItem.details of
-                                                                    Just details ->
-                                                                        [ el
-                                                                            ([ width fill
-                                                                             , Background.color <| Palette.veryLight ctx.palette.bg2
-                                                                             , htmlAttribute <| style "transition" "max-height 200ms ease-in"
-                                                                             ]
-                                                                                ++ bottomBorder ctx
-                                                                                ++ (if displayDetails then
-                                                                                        [ htmlAttribute <| style "max-height" "1000px"
-                                                                                        ]
-
-                                                                                    else
-                                                                                        [ htmlAttribute <| style "max-height" "0"
-                                                                                        , htmlAttribute <| style "overflow-y" "hidden"
-                                                                                        ]
-                                                                                   )
-                                                                            )
-                                                                            details
-                                                                        ]
-
-                                                                    Nothing ->
-                                                                        []
-                                                               )
-                                                    )
-                                                    summaryItems
+                                                                        Nothing ->
+                                                                            [ summaryItemEvent.content ]
+                                                                )
+                                                                summaryItem
+                                                        )
+                                                        summaryItems
                                 )
                                 model.blockSummary
                     in
@@ -386,7 +389,7 @@ type alias TransactionEventItem =
     }
 
 
-viewTransaction : Context a -> TransactionSummary -> List SummaryItem
+viewTransaction : Context a -> TransactionSummary -> SummaryItem
 viewTransaction ctx txSummary =
     let
         sender =
@@ -406,74 +409,96 @@ viewTransaction ctx txSummary =
 
                 _ ->
                     none
-    in
-    case txSummary.result of
-        TransactionAccepted events ->
+
+        viewMainEventItem event =
             let
-                v event =
-                    let
-                        item =
-                            viewTransactionEvent ctx event
-                    in
-                    { content =
-                        [ el [ width (shrink |> minimum 30) ] <|
-                            el [ stringTooltipAbove ctx item.tooltip ] item.icon
-                        , el [ width (shrink |> minimum 95) ] <|
-                            case sender of
-                                Just address ->
-                                    viewAddress ctx address
-
-                                Nothing ->
-                                    softSenderFallback event
-                        ]
-                            ++ item.content
-                            ++ [ el [ width (shrink |> minimum 120), alignRight ]
-                                    (el [ alignRight ] <| text <| T.amountToString txSummary.cost)
-                               , el
-                                    [ alignRight
-                                    , stringTooltipAboveWithCopy ctx txSummary.hash
-                                    , pointer
-                                    , onClick (CopyToClipboard txSummary.hash)
-                                    ]
-                                    (el [ alignRight ] <| text <| String.left 8 txSummary.hash)
-                               , el [ alignRight ] (html <| Icons.status_success 20)
-                               ]
-                    , details = item.details
-                    }
+                item =
+                    viewTransactionEvent ctx event
             in
-            events
-                |> List.map v
-
-        TransactionRejected tag contents ->
-            [ { content =
-                    [ row [ width (shrink |> minimum 30) ]
-                        [ el [ Font.color ctx.palette.failure ]
-                            (iconForTag ctx tag)
-                        ]
+            { content =
+                viewItemRow ctx [] <|
+                    [ el [ width (shrink |> minimum 30) ] <|
+                        el [ stringTooltipAbove ctx item.tooltip ] item.icon
                     , el [ width (shrink |> minimum 95) ] <|
                         case sender of
                             Just address ->
                                 viewAddress ctx address
 
                             Nothing ->
-                                none
-                    , paragraph [ Font.color ctx.palette.failure ] <|
-                        if contents /= "" then
-                            [ text <| tag ++ ": " ++ contents ]
-
-                        else
-                            [ text <| tag ]
-                    , el [ width (shrink |> minimum 120), alignRight ]
-                        (el [ alignRight ] <| text <| T.amountToString txSummary.cost)
-                    , el
-                        [ alignRight
-                        , stringTooltipAboveWithCopy ctx txSummary.hash
-                        , pointer
-                        , onClick (CopyToClipboard txSummary.hash)
-                        ]
-                        (el [ alignRight ] <| text <| String.left 8 txSummary.hash)
-                    , el [ alignRight, Font.color ctx.palette.failure ] (html <| Icons.status_failure 20)
+                                softSenderFallback event
                     ]
+                        ++ item.content
+                        ++ [ el [ width (shrink |> minimum 120), alignRight ]
+                                (el [ alignRight ] <| text <| T.amountToString txSummary.cost)
+                           , el
+                                [ alignRight
+                                , stringTooltipAboveWithCopy ctx txSummary.hash
+                                , pointer
+                                , onClick (CopyToClipboard txSummary.hash)
+                                ]
+                                (el [ alignRight ] <| text <| String.left 8 txSummary.hash)
+                           , el [ alignRight ] (html <| Icons.status_success 20)
+                           ]
+            , details = item.details
+            }
+
+        viewSubEvent event =
+            let
+                item =
+                    viewTransactionEvent ctx event
+            in
+            { content =
+                viewItemRow ctx [] <|
+                    [ el [ width (shrink |> minimum 30) ] <|
+                        el [ stringTooltipAbove ctx item.tooltip ] item.icon
+                    , el [ width (shrink |> minimum 95) ] Element.none
+                    , el [ width (px 20) ] Element.none
+                    ]
+                        ++ item.content
+            , details = item.details
+            }
+    in
+    case txSummary.result of
+        TransactionAccepted events ->
+            case events of
+                [] ->
+                    []
+
+                mainEvent :: subEvents ->
+                    [ viewMainEventItem mainEvent ] ++ List.map viewSubEvent subEvents
+
+        TransactionRejected tag contents ->
+            [ { content =
+                    viewItemRow ctx
+                        []
+                        [ row [ width (shrink |> minimum 30) ]
+                            [ el [ Font.color ctx.palette.failure ]
+                                (iconForTag ctx tag)
+                            ]
+                        , el [ width (shrink |> minimum 95) ] <|
+                            case sender of
+                                Just address ->
+                                    viewAddress ctx address
+
+                                Nothing ->
+                                    none
+                        , paragraph [ Font.color ctx.palette.failure ] <|
+                            if contents /= "" then
+                                [ text <| tag ++ ": " ++ contents ]
+
+                            else
+                                [ text <| tag ]
+                        , el [ width (shrink |> minimum 120), alignRight ]
+                            (el [ alignRight ] <| text <| T.amountToString txSummary.cost)
+                        , el
+                            [ alignRight
+                            , stringTooltipAboveWithCopy ctx txSummary.hash
+                            , pointer
+                            , onClick (CopyToClipboard txSummary.hash)
+                            ]
+                            (el [ alignRight ] <| text <| String.left 8 txSummary.hash)
+                        , el [ alignRight, Font.color ctx.palette.failure ] (html <| Icons.status_failure 20)
+                        ]
               , details = Nothing
               }
             ]
@@ -810,18 +835,21 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                             ]
                     }
     in
-    { content =
-        [ row [ spacing 10, width (shrink |> minimum 30) ]
-            [ el [ stringTooltipAbove ctx tooltip ]
-                (html <| icon)
-            ]
-        , el [ width (shrink |> minimum 95), Font.color ctx.palette.fg1 ]
-            (text "Chain")
-        , content
-        , el [ alignRight ] (html <| Icons.status_success 20)
-        ]
-    , details = Just details
-    }
+    [ { content =
+            viewItemRow ctx
+                []
+                [ row [ spacing 10, width (shrink |> minimum 30) ]
+                    [ el [ stringTooltipAbove ctx tooltip ]
+                        (html <| icon)
+                    ]
+                , el [ width (shrink |> minimum 95), Font.color ctx.palette.fg1 ]
+                    (text "Chain")
+                , content
+                , el [ alignRight ] (html <| Icons.status_success 20)
+                ]
+      , details = Just details
+      }
+    ]
 
 
 italic : String -> Element msg
@@ -834,7 +862,7 @@ super str =
     html <| Html.sup [] [ Html.text str ]
 
 
-viewFinalizationData : Context a -> Maybe FinalizationData -> List SummaryItem
+viewFinalizationData : Context a -> Maybe FinalizationData -> SummaryItem
 viewFinalizationData ctx finalizationData =
     case finalizationData of
         Just data ->
@@ -863,19 +891,21 @@ viewFinalizationData ctx finalizationData =
                     tableColumn [ Font.bold ] -1 value
             in
             [ { content =
-                    [ row [ spacing 10, width (shrink |> minimum 30) ]
-                        [ el [ stringTooltipAbove ctx "Finalization event", Font.color ctx.palette.c2 ]
-                            (html <| Icons.block_finalized 20)
+                    viewItemRow ctx
+                        []
+                        [ row [ spacing 10, width (shrink |> minimum 30) ]
+                            [ el [ stringTooltipAbove ctx "Finalization event", Font.color ctx.palette.c2 ]
+                                (html <| Icons.block_finalized 20)
+                            ]
+                        , el [ width (shrink |> minimum 95), Font.color ctx.palette.fg1 ]
+                            (text "Chain")
+                        , row []
+                            [ text <| "Finalized "
+                            , el [] <| text <| String.left 8 data.blockPointer
+                            , text " "
+                            ]
+                        , el [ alignRight ] (html <| Icons.status_success 20)
                         ]
-                    , el [ width (shrink |> minimum 95), Font.color ctx.palette.fg1 ]
-                        (text "Chain")
-                    , row []
-                        [ text <| "Finalized "
-                        , el [] <| text <| String.left 8 data.blockPointer
-                        , text " "
-                        ]
-                    , el [ alignRight ] (html <| Icons.status_success 20)
-                    ]
               , details =
                     Just <|
                         column [ spacing 20 ]
@@ -1026,8 +1056,9 @@ viewTransactionEvent ctx txEvent =
             , details = Nothing
             , content =
                 [ row []
-                    [ text <| "Transferred " ++ T.amountToString event.amount
-                    , arrowRight
+                    [ text <| "Transferred " ++ T.amountToString event.amount ++ " from "
+                    , viewAddress ctx event.from
+                    , text " to "
                     , viewAddress ctx event.to
                     ]
                 ]
@@ -1291,7 +1322,8 @@ viewTransactionEvent ctx txEvent =
                             [ paragraph [] [ text "Contract instance was initialized" ] ]
                             [ viewKeyValue ctx
                                 [ ( "Module", el [ stringTooltipAboveWithCopy ctx "", pointer, onClick (CopyToClipboard event.ref) ] <| text event.ref )
-                                , ( "Contract address", viewAsAddressContract ctx event.address )
+                                , ( "Contract address", viewAddress ctx <| T.AddressContract event.address )
+                                , ( "Contract", text <| event.contractName )
                                 , ( "Amount", text <| T.amountToString event.amount )
                                 ]
                             ]
@@ -1306,14 +1338,14 @@ viewTransactionEvent ctx txEvent =
                         ]
             , content =
                 [ row []
-                    [ text "Instantiated contract with address: "
+                    [ text <| "Instantiated contract '" ++ event.contractName ++ "' with address: "
                     , viewAsAddressContract ctx event.address
+                    , text <| " from module: " ++ String.left 8 event.ref
                     ]
                 ]
             }
 
         TransactionEventContractUpdated event ->
-            -- TODO: Show information about contract events.
             { icon = html <| Icons.smart_contract_message 20
             , tooltip = "Contract update"
             , details =
@@ -1322,16 +1354,14 @@ viewTransactionEvent ctx txEvent =
                         [ viewDetailRow
                             [ paragraph [] [ text "Contract instance was updated" ] ]
                             [ viewKeyValue ctx
-                                [ ( "Contract address", viewAsAddressContract ctx event.address )
+                                [ ( "Contract address", viewAddress ctx <| T.AddressContract event.address )
+                                , ( "Contract", text event.contractName )
+                                , ( "Function", text event.functionName )
                                 , ( "Amount", text <| T.amountToString event.amount )
-                                , ( "Parameter", text <| event.message )
                                 ]
                             ]
                         , viewDetailRow
-                            [ paragraph [] [ text "Crontact actions" ] ]
-                            []
-                        , viewDetailRow
-                            [ paragraph [] [ text "Crontact events emitted" ] ]
+                            [ paragraph [] [ text "Contract events emitted" ] ]
                             [ if List.isEmpty event.events then
                                 paragraph [ Font.center ] [ text "No events" ]
 
@@ -1341,7 +1371,7 @@ viewTransactionEvent ctx txEvent =
                         ]
             , content =
                 [ row []
-                    [ text "Updated contract at "
+                    [ text <| "Updated contract instance at address: "
                     , viewAsAddressContract ctx event.address
                     ]
                 ]
