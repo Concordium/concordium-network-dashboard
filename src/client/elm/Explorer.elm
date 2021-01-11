@@ -1,5 +1,6 @@
 module Explorer exposing (..)
 
+import Dict exposing (Dict)
 import Explorer.Request exposing (..)
 import Http
 import RemoteData exposing (..)
@@ -14,7 +15,7 @@ type alias DisplayDetailBlockSummary =
     { blockSummary : BlockSummary
 
     -- A set of indexes of transactions with details actively displayed in the view.
-    , detailsDisplayed : Set Int
+    , detailsDisplayed : Dict Int (Set Int)
     }
 
 
@@ -30,7 +31,7 @@ type Msg
     = ReceivedConsensusStatus (Result Http.Error ConsensusStatus)
     | ReceivedBlockInfo (Result Http.Error BlockInfo)
     | ReceivedBlockSummary (Result Http.Error BlockSummary)
-    | ToggleDisplayDetails Int
+    | ToggleDisplayDetails Int Int
 
 
 init : Config -> Model
@@ -72,13 +73,13 @@ update msg model =
             ( { model
                 | blockSummary =
                     blockSummaryResult
-                        |> Result.map (\blockSummary -> { blockSummary = blockSummary, detailsDisplayed = Set.empty })
+                        |> Result.map (\blockSummary -> { blockSummary = blockSummary, detailsDisplayed = Dict.empty })
                         |> RemoteData.fromResult
               }
             , Cmd.none
             )
 
-        ToggleDisplayDetails index ->
+        ToggleDisplayDetails itemIndex eventIndex ->
             let
                 nextBlockSummary =
                     model.blockSummary
@@ -87,14 +88,19 @@ update msg model =
                                 { displayDetailBlockSummary
                                     | detailsDisplayed =
                                         let
-                                            detailsDisplayed =
+                                            eventSet =
                                                 displayDetailBlockSummary.detailsDisplayed
-                                        in
-                                        if Set.member index detailsDisplayed then
-                                            Set.remove index detailsDisplayed
+                                                    |> Dict.get itemIndex
+                                                    |> Maybe.withDefault Set.empty
 
-                                        else
-                                            Set.insert index detailsDisplayed
+                                            newEventSet =
+                                                if Set.member eventIndex eventSet then
+                                                    Set.remove eventIndex eventSet
+
+                                                else
+                                                    Set.insert eventIndex eventSet
+                                        in
+                                        Dict.insert itemIndex newEventSet displayDetailBlockSummary.detailsDisplayed
                                 }
                             )
             in
