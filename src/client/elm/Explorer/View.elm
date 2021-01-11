@@ -471,6 +471,7 @@ viewTransaction ctx txSummary =
             [ { content =
                     viewItemRow ctx
                         []
+                    <|
                         [ row [ width (shrink |> minimum 30) ]
                             [ el [ Font.color ctx.palette.failure ]
                                 (iconForTag ctx tag)
@@ -482,26 +483,40 @@ viewTransaction ctx txSummary =
 
                                 Nothing ->
                                     none
-                        , paragraph [ Font.color ctx.palette.failure ] <|
-                            if contents /= "" then
-                                [ text <| tag ++ ": " ++ contents ]
-
-                            else
-                                [ text <| tag ]
-                        , el [ width (shrink |> minimum 120), alignRight ]
-                            (el [ alignRight ] <| text <| T.amountToString txSummary.cost)
-                        , el
-                            [ alignRight
-                            , stringTooltipAboveWithCopy ctx txSummary.hash
-                            , pointer
-                            , onClick (CopyToClipboard txSummary.hash)
-                            ]
-                            (el [ alignRight ] <| text <| String.left 8 txSummary.hash)
-                        , el [ alignRight, Font.color ctx.palette.failure ] (html <| Icons.status_failure 20)
                         ]
+                            ++ item.content
+                            ++ [ el [ width (shrink |> minimum 120), alignRight ]
+                                    (el [ alignRight ] <| text <| T.amountToString txSummary.cost)
+                               , el
+                                    [ alignRight
+                                    , stringTooltipAboveWithCopy ctx txSummary.hash
+                                    , pointer
+                                    , onClick (CopyToClipboard txSummary.hash)
+                                    ]
+                                    (el [ alignRight ] <| text <| String.left 8 txSummary.hash)
+                               , el [ alignRight, Font.color ctx.palette.failure ] (html <| Icons.status_failure 20)
+                               ]
               , details = Nothing
               }
             ]
+
+
+viewRejectionReason : Context a -> RejectReason -> TransactionEventItem
+viewRejectionReason ctx reason =
+    case reason of
+        AmountTooLarge account amount ->
+            { icon = el [ paddingXY 6 0 ] <| text "?"
+            , tooltip = "Insufficient funds"
+            , content = [ paragraph [ Font.color ctx.palette.failure ] [ text "The sending account has insufficient funds" ] ]
+            , details = Nothing
+            }
+
+        _ ->
+            { icon = el [ paddingXY 6 0 ] <| text "?"
+            , tooltip = "Unknown"
+            , content = []
+            , details = Nothing
+            }
 
 
 asPercentage : Float -> String
@@ -1389,12 +1404,11 @@ viewTransactionEvent ctx txEvent =
             }
 
         -- Errors
-        TransactionEventRejected event ->
-            { icon = Element.none
-            , tooltip = ""
+        TransactionEventUnknownTag tag ->
+            { icon = el [ paddingXY 6 0, Font.color ctx.palette.danger ] <| text "?"
+            , tooltip = "Unsupported event"
             , details = Nothing
-            , content =
-                [ text event.reason ]
+            , content = [ text <| "Event '" ++ tag ++ "' is currently not supported in the dashboard." ]
             }
 
 

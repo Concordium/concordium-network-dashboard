@@ -281,3 +281,23 @@ unsafeAddAmounts left right =
 unsafeSumAmounts : List Amount -> Amount
 unsafeSumAmounts amounts =
     List.foldl unsafeAddAmounts zeroAmount amounts
+
+
+type alias ModuleRef =
+    String
+
+
+type alias InitName =
+    String
+
+
+type alias ReceiveName =
+    String
+
+
+type alias BakerId =
+    Int
+
+
+type alias BakerAggregationVerifyKey =
+    String
