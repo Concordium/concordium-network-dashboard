@@ -168,6 +168,7 @@ type alias EventContractInitialized =
     { ref : String
     , address : T.ContractAddress
     , amount : T.Amount
+    , contractName : String
     , events : List T.ContractEvent
     }
 
@@ -177,6 +178,8 @@ type alias EventContractUpdated =
     , instigator : T.Address
     , amount : T.Amount
     , message : String
+    , contractName : String
+    , functionName : String
     , events : List T.ContractEvent
     }
 
@@ -251,6 +254,14 @@ type alias Authorization =
 --     { authorizedKeys : List KeyIndex
 --     , threshold : Int
 --     }
+-- Errors
+
+
+type alias EventRejected =
+    { transactionType : String
+    , reason : String
+    , hash : String
+    }
 
 
 updatePayloadDecoder : D.Decoder UpdatePayload
@@ -318,16 +329,35 @@ authorizationDecoder =
     D.succeed Authorization
 
 
+contractInitNameDecoder : D.Decoder String
+contractInitNameDecoder =
+    D.string
+        |> D.andThen
+            (\str ->
+                if String.startsWith "init_" str then
+                    D.succeed <| String.dropLeft 5 str
 
--- Errors
+                else
+                    D.fail "Invalid init function name"
+            )
 
 
-type alias EventRejected =
-    -- @TODO swap to camel case
-    { transactionType : String
-    , reason : String
-    , hash : String
-    }
+contractReceiveNameDecoder : D.Decoder { contractName : String, functionName : String }
+contractReceiveNameDecoder =
+    D.string
+        |> D.andThen
+            (\str ->
+                let
+                    parts =
+                        String.split "." str
+                in
+                case ( List.head parts, List.tail parts ) of
+                    ( Just contractName, Just functionNameParts ) ->
+                        D.succeed <| { contractName = contractName, functionName = String.join "." functionNameParts }
+
+                    _ ->
+                        D.fail "Invalid receive function name"
+            )
 
 
 transactionEventsDecoder : D.Decoder TransactionEvent
@@ -456,6 +486,7 @@ transactionEventsDecoder =
                         |> required "ref" D.string
                         |> required "address" T.contractAddressDecoder
                         |> required "amount" T.decodeAmount
+                        |> required "initName" contractInitNameDecoder
                         |> required "events" (D.list T.contractEventDecoder)
                         |> D.map TransactionEventContractInitialized
 
@@ -465,6 +496,8 @@ transactionEventsDecoder =
                         |> required "instigator" T.addressDecoder
                         |> required "amount" T.decodeAmount
                         |> required "message" D.string
+                        |> required "receiveName" (D.map .contractName contractReceiveNameDecoder)
+                        |> required "receiveName" (D.map .functionName contractReceiveNameDecoder)
                         |> required "events" (D.list T.contractEventDecoder)
                         |> D.map TransactionEventContractUpdated
 
