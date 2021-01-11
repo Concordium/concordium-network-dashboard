@@ -489,8 +489,8 @@ translateMsg msg =
         Explorer.View.BlockClicked block ->
             ChainMsg (Chain.BlockClicked block)
 
-        Explorer.View.ToggleDetails index ->
-            ExplorerMsg <| Explorer.ToggleDisplayDetails index
+        Explorer.View.ToggleDetails itemIndex eventIndex ->
+            ExplorerMsg <| Explorer.ToggleDisplayDetails itemIndex eventIndex
 
 
 theme : Palette Color -> Element msg -> Html.Html msg
