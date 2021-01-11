@@ -40,7 +40,7 @@ type TransactionEvent
       -- Core
     | TransactionEventUpdateEnqueued EventUpdateEnqueued
       -- Errors
-    | TransactionEventRejected EventRejected
+    | TransactionEventUnknownTag String
 
 
 
@@ -509,11 +509,7 @@ transactionEventsDecoder =
                         |> D.map TransactionEventUpdateEnqueued
 
                 -- Errors
-                _ ->
-                    D.succeed EventRejected
-                        |> required "transactionType" D.string
-                        |> required "reason" D.string
-                        |> required "hash" D.string
-                        |> D.map TransactionEventRejected
+                unknownTag ->
+                    D.succeed <| TransactionEventUnknownTag unknownTag
     in
     D.field "tag" D.string |> D.andThen decode
