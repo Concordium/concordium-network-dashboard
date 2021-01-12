@@ -345,10 +345,10 @@ bottomBorder ctx =
 viewContentCells : { tipe : Element msg, sender : Element msg, event : Element msg, cost : Element msg, txHash : Element msg } -> List (Element msg)
 viewContentCells content =
     [ el [ width (shrink |> minimum 30) ] content.tipe
-    , el [ width (shrink |> minimum 95) ] content.sender
     , el [ width fill ] content.event
-    , el [ width (shrink |> minimum 120), alignRight ] content.cost
-    , el [ width (shrink |> minimum 105), alignRight ] content.txHash
+    , el [ width (shrink |> minimum 95) ] content.sender
+    , el [ width (shrink |> minimum 120) ] content.cost
+    , el [ width (shrink |> minimum 105) ] content.txHash
     ]
 
 
@@ -372,9 +372,9 @@ viewContentHeadline ctx =
     viewItemRow ctx [ height (px 26), mouseOver [] ] <|
         viewContentCells
             { tipe = el [ Font.color ctx.palette.fg1 ] <| text ""
-            , sender = el [ Font.color ctx.palette.fg1 ] <| text "SENDER"
+            , sender = el [ Font.color ctx.palette.fg1, centerX ] <| text "SENDER"
             , event = el [ Font.color ctx.palette.fg1 ] <| text "EVENTS"
-            , cost = el [ Font.color ctx.palette.fg1, alignRight ] <| text "COST"
+            , cost = el [ Font.color ctx.palette.fg1, centerX ] <| text "COST"
             , txHash = el [ Font.color ctx.palette.fg1 ] <| text "TX HASH"
             }
 
@@ -1099,7 +1099,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
             viewItemRow ctx [] <|
                 viewContentCells
                     { tipe = el [ stringTooltipAbove ctx item.tooltip ] (html <| item.icon)
-                    , sender = el [ Font.color ctx.palette.fg1 ] <| text "Chain"
+                    , sender = el [ Font.color ctx.palette.fg1 ] <| none --text "Chain"
                     , event = item.content
                     , cost = none
                     , txHash = none
@@ -1153,7 +1153,7 @@ viewFinalizationData ctx finalizationData =
                     <|
                         viewContentCells
                             { tipe = el [ stringTooltipAbove ctx "Finalization event", Font.color ctx.palette.c2 ] <| html <| Icons.block_finalized 20
-                            , sender = el [ Font.color ctx.palette.fg1 ] <| text "Chain"
+                            , sender = el [ Font.color ctx.palette.fg1 ] <| none --text "Chain"
                             , event = row [] [ text <| "Finalized ", el [] <| text <| String.left 8 data.blockPointer ]
                             , cost = none
                             , txHash = none
