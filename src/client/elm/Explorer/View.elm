@@ -411,7 +411,7 @@ viewTransactionSummary ctx txSummary =
                     el [ Font.color ctx.palette.fg1 ] <| viewAddress ctx (T.AddressAccount event.account)
 
                 TransactionEventUpdateEnqueued _ ->
-                    el [ Font.color ctx.palette.fg1 ] <| text "Foundation"
+                    el [ Font.color ctx.palette.fg1 ] <| text "Governance"
 
                 _ ->
                     none
@@ -1680,16 +1680,33 @@ viewEventUpdateEnueuedDetails ctx event =
             paragraph [ padding 20 ] [ text "Update the election difficulty to ", text <| asPercentage difficulty ]
 
         EuroPerEnergyPayload euroPerEnergy ->
-            paragraph [ padding 20 ] [ text "Update the Euro per energy to ", text <| String.fromFloat euroPerEnergy ]
+            row []
+                [ paragraph [ padding 20 ] [ text "Update the Euro per energy to " ]
+                , viewRelation ctx euroPerEnergy
+                ]
 
         MicroGtuPerEnergyPayload microGtuPerEnergy ->
-            paragraph [ padding 20 ] [ text "Update the amount of μGTU per energy to ", text <| String.fromInt microGtuPerEnergy ]
+            row []
+                [ paragraph [ padding 20 ] [ text "Update the amount of μGTU per energy to " ]
+                , viewRelation ctx microGtuPerEnergy
+                ]
 
         FoundationAccountPayload foundationAccount ->
             paragraph [ padding 20 ] [ text "Update the Foundation account to be ", viewAddress ctx <| T.AddressAccount foundationAccount ]
 
         AuthorizationPayload authorization ->
             paragraph [ padding 20 ] [ text "Update the chain update authorization." ]
+
+
+{-| Display a relation as a fraction
+-}
+viewRelation : Context a -> Relation -> Element msg
+viewRelation ctx relation =
+    column [ spacing 5 ]
+        [ el [ centerX ] <| text <| String.fromInt relation.numerator
+        , el [ width fill, Border.widthEach { top = 0, left = 0, right = 0, bottom = 1 }, Border.color ctx.palette.fg2 ] none
+        , el [ centerX ] <| text <| String.fromInt relation.denominator
+        ]
 
 
 viewAsAddressContract : Context a -> T.ContractAddress -> Element Msg

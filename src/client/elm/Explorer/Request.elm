@@ -6,7 +6,7 @@ import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
 import Task
 import Time exposing (Posix)
-import Transaction.Event exposing (GasRewards, MintDistribution, TransactionFeeDistribution, gasRewardsDecoder, mintDistributionDecoder, transactionFeeDistributionDecoder)
+import Transaction.Event exposing (GasRewards, MintDistribution, Relation, TransactionFeeDistribution, gasRewardsDecoder, mintDistributionDecoder, relationDecoder, transactionFeeDistributionDecoder)
 import Transaction.Summary exposing (..)
 import Types as T
 
@@ -155,12 +155,6 @@ type alias RewardParameters =
     }
 
 
-type alias Relation =
-    { denominator : Int
-    , numerator : Int
-    }
-
-
 updatesDecoder : D.Decoder Updates
 updatesDecoder =
     D.succeed Updates
@@ -185,13 +179,6 @@ rewardParametersDecoder =
         |> required "mintDistribution" mintDistributionDecoder
         |> required "transactionFeeDistribution" transactionFeeDistributionDecoder
         |> required "gASRewards" gasRewardsDecoder
-
-
-relationDecoder : D.Decoder Relation
-relationDecoder =
-    D.succeed Relation
-        |> required "denominator" D.int
-        |> required "numerator" D.int
 
 
 
