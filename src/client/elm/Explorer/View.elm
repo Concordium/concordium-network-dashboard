@@ -1698,6 +1698,8 @@ viewEventUpdateEnueuedDetails ctx event =
             paragraph [ padding 20 ] [ text "Update the chain update authorization." ]
 
 
+{-| Display a relation as a fraction
+-}
 viewRelation : Context a -> Relation -> Element msg
 viewRelation ctx relation =
     column [ spacing 5 ]
