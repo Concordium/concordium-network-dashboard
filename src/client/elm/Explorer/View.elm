@@ -532,40 +532,40 @@ typeDescriptionAccountTransactionType : AccountTransactionType -> TypeDescriptio
 typeDescriptionAccountTransactionType accountTransactionType =
     case accountTransactionType of
         DeployModule ->
-            { icon = html <| Icons.smart_contract_deploy 20, short = "Module deployment" }
+            { icon = html <| Icons.smart_contract_deploy 20, short = "Deploy module" }
 
         InitContract ->
-            { icon = html <| Icons.smart_contract_add_new 20, short = "Contract initialize" }
+            { icon = html <| Icons.smart_contract_add_new 20, short = "Initialize contract" }
 
         Update ->
-            { icon = html <| Icons.smart_contract_message 20, short = "Contract update" }
+            { icon = html <| Icons.smart_contract_message 20, short = "Update contract" }
 
         Transfer ->
             { icon = html <| Icons.transaction 18, short = "Transfer" }
 
         AddBaker ->
-            { icon = html <| Icons.baking_bread 20, short = "Baker addition" }
+            { icon = html <| Icons.baking_bread 20, short = "Add Baker" }
 
         RemoveBaker ->
-            { icon = html <| Icons.baking_bread 20, short = "Baker removal" }
+            { icon = html <| Icons.baking_bread 20, short = "Remove baker" }
 
         UpdateBakerStake ->
-            { icon = html <| Icons.baking_bread 20, short = "Baker stake update" }
+            { icon = html <| Icons.baking_bread 20, short = "Update Baker stake" }
 
         UpdateBakerRestakeEarnings ->
-            { icon = html <| Icons.baking_bread 20, short = "Baker restake earnings change" }
+            { icon = html <| Icons.baking_bread 20, short = "Change baker restake earnings" }
 
         UpdateBakerKeys ->
-            { icon = html <| Icons.baking_bread 20, short = "Baker keys update" }
+            { icon = html <| Icons.baking_bread 20, short = "Update baker keys" }
 
         UpdateAccountKeys ->
-            { icon = html <| Icons.account_key_deployed 18, short = "Account keys updated" }
+            { icon = html <| Icons.account_key_deployed 18, short = "Update account keys" }
 
         AddAccountKeys ->
-            { icon = html <| Icons.account_key_deployed 18, short = "Account keys added" }
+            { icon = html <| Icons.account_key_deployed 18, short = "Add account keys" }
 
         RemoveAccountKeys ->
-            { icon = html <| Icons.account_key_deployed 18, short = "Account keys removed" }
+            { icon = html <| Icons.account_key_deployed 18, short = "Remove account keys" }
 
         EncryptedAmountTransfer ->
             { icon = html <| Icons.shield 20, short = "Shielded transfer" }
@@ -577,26 +577,26 @@ typeDescriptionAccountTransactionType accountTransactionType =
             { icon = html <| Icons.shield 20, short = "Unshield amount" }
 
         TransferWithSchedule ->
-            { icon = html <| Icons.transaction 18, short = "Transferred with schedule" }
+            { icon = html <| Icons.transaction 18, short = "Transfer with schedule" }
 
         Malformed ->
-            { icon = el [ paddingXY 6 0 ] <| text "?", short = "Malformed transaction" }
+            { icon = el [ paddingXY 6 0 ] <| text "?", short = "Serialization" }
 
 
 typeDescriptionCredentialType : CredentialType -> TypeDescription
 typeDescriptionCredentialType credentialType =
     case credentialType of
         Initial ->
-            { icon = html <| Icons.account_credentials_deployed 18, short = "Initial credential deployment" }
+            { icon = html <| Icons.account_credentials_deployed 18, short = "Deploy initial credential" }
 
         Normal ->
-            { icon = html <| Icons.account_credentials_deployed 18, short = "Normal credential deployment" }
+            { icon = html <| Icons.account_credentials_deployed 18, short = "Deploy normal credential" }
 
 
 typeDescriptionUpdateType : UpdateType -> TypeDescription
 typeDescriptionUpdateType updateType =
     { icon = html <| Icons.system_cog 20
-    , short = "Chain update enqueued"
+    , short = "Enqueue chain update"
     }
 
 
