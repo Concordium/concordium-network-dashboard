@@ -544,13 +544,13 @@ typeDescriptionAccountTransactionType accountTransactionType =
             { icon = html <| Icons.transaction 18, short = "Transfer" }
 
         AddBaker ->
-            { icon = html <| Icons.baking_bread 20, short = "Add Baker" }
+            { icon = html <| Icons.baking_bread 20, short = "Add baker" }
 
         RemoveBaker ->
             { icon = html <| Icons.baking_bread 20, short = "Remove baker" }
 
         UpdateBakerStake ->
-            { icon = html <| Icons.baking_bread 20, short = "Update Baker stake" }
+            { icon = html <| Icons.baking_bread 20, short = "Update baker stake" }
 
         UpdateBakerRestakeEarnings ->
             { icon = html <| Icons.baking_bread 20, short = "Change baker restake earnings" }
