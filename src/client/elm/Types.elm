@@ -281,3 +281,61 @@ unsafeAddAmounts left right =
 unsafeSumAmounts : List Amount -> Amount
 unsafeSumAmounts amounts =
     List.foldl unsafeAddAmounts zeroAmount amounts
+
+
+type alias ModuleRef =
+    String
+
+
+{-| The init function name on-chain is the contract name prefixed with "init\_",
+so we strip this during decoding.
+-}
+type alias InitName =
+    String
+
+
+contractInitNameDecoder : D.Decoder InitName
+contractInitNameDecoder =
+    D.string
+        |> D.andThen
+            (\str ->
+                if String.startsWith "init_" str then
+                    D.succeed <| String.dropLeft 5 str
+
+                else
+                    D.fail "Invalid init function name"
+            )
+
+
+{-| The receive function name on-chain is the contract name appended with "."
+and then a name for the specific function.
+We split these during decoding.
+-}
+type alias ReceiveName =
+    { contractName : String, functionName : String }
+
+
+contractReceiveNameDecoder : D.Decoder ReceiveName
+contractReceiveNameDecoder =
+    D.string
+        |> D.andThen
+            (\str ->
+                let
+                    parts =
+                        String.split "." str
+                in
+                case ( List.head parts, List.tail parts ) of
+                    ( Just contractName, Just functionNameParts ) ->
+                        D.succeed <| { contractName = contractName, functionName = String.join "." functionNameParts }
+
+                    _ ->
+                        D.fail "Invalid receive function name"
+            )
+
+
+type alias BakerId =
+    Int
+
+
+type alias BakerAggregationVerifyKey =
+    String
