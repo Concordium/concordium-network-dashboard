@@ -14,7 +14,7 @@ import Html.Attributes exposing (style)
 import Icons exposing (..)
 import Palette exposing (withAlphaEl)
 import Set exposing (Set)
-import String exposing (toLower)
+import String exposing (toLower, toUpper)
 import Svg exposing (Svg)
 import Time
 import TimeHelpers
@@ -1119,6 +1119,16 @@ super str =
     html <| Html.sup [] [ Html.text str ]
 
 
+capitalize : String -> String
+capitalize str =
+    case String.toList str of
+        [] ->
+            ""
+
+        c :: cs ->
+            String.fromList <| Char.toUpper c :: cs
+
+
 viewFinalizationData : Context a -> Maybe FinalizationData -> SummaryItem
 viewFinalizationData ctx finalizationData =
     case finalizationData of
@@ -1299,16 +1309,40 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventTransferredWithSchedule event ->
+            let
+                totalAmount =
+                    event.releaseSchedule
+                        |> List.map (Tuple.second >> T.unsafeAmountToFloat)
+                        |> List.sum
+                        |> T.amountFromFloat
+            in
             { content =
                 [ row []
                     [ text <| "Transferred with schedule"
                     , arrowRight
                     , viewAddress ctx (T.AddressAccount event.to)
-                    , text <| " " -- TODO: Use proper spacing
-                    , viewTransferredWithScheduleDetails ctx event
                     ]
                 ]
-            , details = Nothing
+            , details =
+                Just <|
+                    column [ width fill ]
+                        [ viewDetailRow
+                            [ paragraph [] [ text <| capitalize <| T.amountToString totalAmount, text " was scheduled to be released." ] ]
+                            [ viewTable ctx
+                                { data = event.releaseSchedule
+                                , columns =
+                                    [ { header = text "Release date"
+                                      , width = fill
+                                      , view = \i ( timestamp, _ ) -> el [ centerX ] <| text <| TimeHelpers.formatTime Time.utc timestamp
+                                      }
+                                    , { header = text "Amount"
+                                      , width = fill
+                                      , view = \i ( _, amount ) -> text <| T.amountToString amount
+                                      }
+                                    ]
+                                }
+                            ]
+                        ]
             }
 
         TransactionEventEncryptedSelfAmountAdded event ->
@@ -1708,20 +1742,6 @@ viewBaker ctx bakerId addr =
         [ viewAddress ctx <| T.AddressAccount addr
         , text <| "(Baker: " ++ String.fromInt bakerId ++ ")"
         ]
-
-
-{-| Show 'details' and the release schedule on hover.
--}
-viewTransferredWithScheduleDetails : Context a -> EventTransferredWithSchedule -> Element Msg
-viewTransferredWithScheduleDetails ctx event =
-    let
-        viewRelease ( timestamp, amount ) =
-            T.amountToString amount ++ " at " ++ TimeHelpers.formatTime Time.utc timestamp
-    in
-    viewDetailsTextWithOnHover ctx <|
-        "Release schedule:\n\n"
-            -- TODO: Show differently when list is large, as it can contain 255 releases.
-            ++ (event.releaseSchedule |> List.map viewRelease |> String.join "\n")
 
 
 {-| Show the text 'details' and, on hover, show the String provided.
