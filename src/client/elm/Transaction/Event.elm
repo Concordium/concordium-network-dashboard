@@ -196,8 +196,8 @@ type UpdatePayload
     | TransactionFeeDistributionPayload TransactionFeeDistribution
     | GasRewardsPayload GasRewards
     | ElectionDifficultyPayload Float
-    | EuroPerEnergyPayload Float
-    | MicroGtuPerEnergyPayload Int
+    | EuroPerEnergyPayload Relation
+    | MicroGtuPerEnergyPayload Relation
     | FoundationAccountPayload T.AccountAddress
     | AuthorizationPayload Authorization
 
@@ -254,11 +254,17 @@ type alias Authorization =
 -- Errors
 
 
-type alias EventRejected =
-    { transactionType : String
-    , reason : String
-    , hash : String
+type alias Relation =
+    { denominator : Int
+    , numerator : Int
     }
+
+
+relationDecoder : D.Decoder Relation
+relationDecoder =
+    D.succeed Relation
+        |> required "denominator" D.int
+        |> required "numerator" D.int
 
 
 updatePayloadDecoder : D.Decoder UpdatePayload
@@ -280,10 +286,10 @@ updatePayloadDecoder =
                         D.float |> D.map ElectionDifficultyPayload
 
                     "euroPerEnergy" ->
-                        D.float |> D.map EuroPerEnergyPayload
+                        relationDecoder |> D.map EuroPerEnergyPayload
 
                     "microGTUPerEuro" ->
-                        D.int |> D.map MicroGtuPerEnergyPayload
+                        relationDecoder |> D.map MicroGtuPerEnergyPayload
 
                     "foundationAccount" ->
                         T.accountAddressDecoder |> D.map FoundationAccountPayload
