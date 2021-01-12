@@ -649,7 +649,7 @@ rejectionToItem ctx reason =
             }
 
         OutOfEnergy ->
-            { content = [ text "The transaction did not contain enough energy" ]
+            { content = [ text "The transaction ran out of energy" ]
             , details = Nothing
             }
 
