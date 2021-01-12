@@ -8,7 +8,7 @@ import Types as T
 
 type alias TransactionSummary =
     { hash : String
-    , sender : Maybe String
+    , sender : Maybe T.AccountAddress
     , cost : T.Amount
     , result : TransactionResult
     , energyCost : T.Energy
@@ -24,14 +24,8 @@ Must be in sync with `TransactionSummaryType` found in
 -}
 type TransactionSummaryType
     = AccountTransaction AccountTransactionType -- Contains a constructor `Malformed` to represent `Nothing` in the corresponding type in haskell
-    | DeploymentTransaction
-    | UpdateTransaction
-    | TransactionSummaryTypeUnknown String String -- Type, contents
-
-
-type TransactionResult
-    = TransactionAccepted (List TransactionEvent)
-    | TransactionRejected RejectReason
+    | CredentialDeploymentTransaction CredentialType
+    | UpdateTransaction UpdateType
 
 
 {-| Reason for transaction rejected
@@ -60,6 +54,39 @@ type AccountTransactionType
     | TransferToPublic
     | TransferWithSchedule
     | Malformed
+
+
+type CredentialType
+    = Initial
+    | Normal
+
+
+{-| Must be in sync with `UpdateType` found in
+<https://gitlab.com/Concordium/consensus/globalstate-types/-/blob/master/src/Concordium/Types/Updates.hs#L375>
+-}
+type UpdateType
+    = UpdateAuthorization
+      -- ^Update the access structures that authorize updates
+    | UpdateProtocol
+      -- ^Update the chain protocol
+    | UpdateElectionDifficulty
+      -- ^Update the election difficulty
+    | UpdateEuroPerEnergy
+      -- ^Update the euro per energy exchange rate
+    | UpdateMicroGTUPerEuro
+      -- ^Update the microGTU per euro exchange rate
+    | UpdateFoundationAccount
+      -- ^Update the address of the foundation account
+    | UpdateMintDistribution
+      -- ^Update the distribution of newly minted GTU
+    | UpdateTransactionFeeDistribution
+      -- ^Update the distribution of transaction fees
+    | UpdateGASRewards
+
+
+type TransactionResult
+    = TransactionAccepted (List TransactionEvent)
+    | TransactionRejected RejectReason
 
 
 {-| Reason for transaction rejected
@@ -117,7 +144,6 @@ type RejectReason
     | FirstScheduledReleaseExpired
       -- | Account tried to transfer with schedule to itself, that's not allowed.
     | ScheduledSelfTransfer T.AccountAddress
-    | UnknownReason String
 
 
 decodeTransactionResult : D.Decoder TransactionResult
@@ -130,10 +156,6 @@ decodeTransactionResult =
         ]
 
 
-
--- TODO: Support the different TransactionSummaryTypes
-
-
 transactionSummaryTypeDecoder : D.Decoder TransactionSummaryType
 transactionSummaryTypeDecoder =
     let
@@ -143,9 +165,16 @@ transactionSummaryTypeDecoder =
                     D.succeed AccountTransaction
                         |> optional "contents" accountTransactionTypeDecoder Malformed
 
-                unknownType ->
-                    D.succeed (TransactionSummaryTypeUnknown unknownType)
-                        |> required "contents" D.string
+                "credentialDeploymentTransaction" ->
+                    D.succeed CredentialDeploymentTransaction
+                        |> required "contents" credentialTypeDecoder
+
+                "updateTransaction" ->
+                    D.succeed UpdateTransaction
+                        |> required "contents" updateTypeDecoder
+
+                _ ->
+                    D.fail <| "Unknown TransactionSummaryType type: " ++ tipe
     in
     D.field "type" D.string |> D.andThen decode
 
@@ -209,6 +238,61 @@ accountTransactionTypeDecoder =
     D.string |> D.andThen decode
 
 
+updateTypeDecoder : D.Decoder UpdateType
+updateTypeDecoder =
+    D.string
+        |> D.andThen
+            (\str ->
+                case str of
+                    "updateAuthorization" ->
+                        D.succeed UpdateAuthorization
+
+                    "updateProtocol" ->
+                        D.succeed UpdateProtocol
+
+                    "updateElectionDifficulty" ->
+                        D.succeed UpdateElectionDifficulty
+
+                    "updateEuroPerEnergy" ->
+                        D.succeed UpdateEuroPerEnergy
+
+                    "updateMicroGTUPerEuro" ->
+                        D.succeed UpdateMicroGTUPerEuro
+
+                    "updateFoundationAccount" ->
+                        D.succeed UpdateFoundationAccount
+
+                    "updateMintDistribution" ->
+                        D.succeed UpdateMintDistribution
+
+                    "updateTransactionFeeDistribution" ->
+                        D.succeed UpdateTransactionFeeDistribution
+
+                    "updateGASRewards" ->
+                        D.succeed UpdateGASRewards
+
+                    _ ->
+                        D.fail <| "Unknown UpdateType type: " ++ str
+            )
+
+
+credentialTypeDecoder : D.Decoder CredentialType
+credentialTypeDecoder =
+    D.string
+        |> D.andThen
+            (\str ->
+                case str of
+                    "initial" ->
+                        D.succeed Initial
+
+                    "normal" ->
+                        D.succeed Normal
+
+                    _ ->
+                        D.fail "Invalid credential type"
+            )
+
+
 decodeNumerousToString : D.Decoder String
 decodeNumerousToString =
     D.oneOf
@@ -222,7 +306,7 @@ transactionSummaryDecoder : D.Decoder TransactionSummary
 transactionSummaryDecoder =
     D.succeed TransactionSummary
         |> required "hash" D.string
-        |> required "sender" (D.nullable D.string)
+        |> required "sender" (D.nullable T.accountAddressDecoder)
         |> required "cost" T.decodeAmount
         |> required "result" decodeTransactionResult
         |> required "energyCost" T.decodeEnergy
@@ -248,13 +332,13 @@ rejectReasonDecoder =
                 "InvalidInitMethod" ->
                     D.succeed InvalidInitMethod
                         |> custom (D.index 0 D.string)
-                        |> custom (D.index 1 D.string)
+                        |> custom (D.index 1 T.contractInitNameDecoder)
                         |> D.field "contents"
 
                 "InvalidReceiveMethod" ->
                     D.succeed InvalidReceiveMethod
                         |> custom (D.index 0 D.string)
-                        |> custom (D.index 1 D.string)
+                        |> custom (D.index 1 T.contractReceiveNameDecoder)
                         |> D.field "contents"
 
                 "InvalidModuleReference" ->
@@ -351,7 +435,7 @@ rejectReasonDecoder =
                     D.map ScheduledSelfTransfer <|
                         D.field "contents" T.accountAddressDecoder
 
-                unknownTag ->
-                    D.succeed <| UnknownReason unknownTag
+                _ ->
+                    D.fail <| "Unknown RejectReason: " ++ tag
     in
     D.field "tag" D.string |> D.andThen decode
