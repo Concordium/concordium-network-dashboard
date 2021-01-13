@@ -238,18 +238,20 @@ amountToInt (MicroGtu bigInt) =
         |> Maybe.withDefault 0
 
 
-{-| Calculates the relation between two amounts a and b as (a / b).
+{-| Divides two amounts a and b as (a / b).
 Unsafe: Since it is converting the amounts to a JS number, the result is imprecise
 if any of the amounts are larger than 2^53 - 1
 -}
-unsafeAmountRelation : Amount -> Amount -> Float
-unsafeAmountRelation (MicroGtu numinator) (MicroGtu denominator) =
-    BigInt.div numinator denominator
-        |> BigInt.toString
-        |> String.toInt
-        |> Maybe.withDefault 0
-        |> toFloat
-        |> (\n -> n / 1000000)
+unsafeAmountDivide : Amount -> Amount -> Float
+unsafeAmountDivide numerator denominator =
+    let
+        num =
+            toFloat <| amountToInt numerator
+
+        den =
+            toFloat <| amountToInt denominator
+    in
+    num / den
 
 
 roundTo : Int -> Float -> Float
