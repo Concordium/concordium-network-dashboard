@@ -1251,6 +1251,8 @@ viewTable ctx table =
         , Border.width 1
         , Border.color ctx.palette.bg2
         , Border.rounded 5
+        , htmlAttribute <| style "overflow-y" "auto"
+        , htmlAttribute <| style "max-height" "800px"
         ]
         { data = table.data, columns = columns }
 
