@@ -900,7 +900,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                       }
                                     , { header = text "Share of baked blocks"
                                       , width = fill
-                                      , view = \i ( _, amount ) -> text <| asPercentage <| T.unsafeAmountRelation amount bakingAccountDistributed
+                                      , view = \i ( _, amount ) -> text <| asPercentage <| T.unsafeAmountDivide amount bakingAccountDistributed
                                       }
                                     , { header = text "Reward"
                                       , width = fill
@@ -981,7 +981,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                       }
                                     , { header = text "Finalizer stake"
                                       , width = fill
-                                      , view = \i ( _, amount ) -> text <| asPercentage <| T.unsafeAmountRelation amount finalizationAccountTotal
+                                      , view = \i ( _, amount ) -> text <| asPercentage <| T.unsafeAmountDivide amount finalizationAccountTotal
                                       }
                                     , { header = text "Reward"
                                       , width = fill
@@ -1017,7 +1017,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                 T.subAmounts event.bakerReward <| T.addAmounts bakerRewardAmountTransactionFee bakerRewardAmountFixedGasAccount
 
                             nonGasFraction =
-                                T.unsafeAmountRelation nonGasBakerAmount event.oldGASAccount
+                                T.unsafeAmountDivide nonGasBakerAmount event.oldGASAccount
                         in
                         column [ width fill, spacing 30 ]
                             [ viewDetailRow
