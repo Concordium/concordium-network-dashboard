@@ -163,6 +163,8 @@ type Amount
     = MicroGtu BigInt
 
 
+{-| Display an amount as GTU with 6 decimals appended with the unit
+-}
 amountToString : Amount -> String
 amountToString (MicroGtu bigInt) =
     let
@@ -177,7 +179,7 @@ amountToString (MicroGtu bigInt) =
     amountString ++ " GTU"
 
 
-{-| Decode amount in μGTU which is represented as a string.
+{-| Decode amount in μGTU which is represented as a string only containing a number of microGTU.
 -}
 decodeAmount : D.Decoder Amount
 decodeAmount =
@@ -198,17 +200,24 @@ fracPartLength =
     6
 
 
+{-| Convert a string into an Amount, the string should only contain a number
+representing the amount of microGTU.
+-}
 amountFromString : String -> Maybe Amount
 amountFromString str =
     BigInt.fromIntString str
         |> Maybe.map MicroGtu
 
 
+{-| Convert an Int into an Amount, the int should represent the amount of microGTU.
+-}
 amountFromInt : Int -> Amount
 amountFromInt =
     BigInt.fromInt >> MicroGtu
 
 
+{-| Scale an amount with a float, only considers the first 5 decimals of the float
+-}
 scaleAmount : Float -> Amount -> Amount
 scaleAmount s (MicroGtu bigInt) =
     let
@@ -219,6 +228,9 @@ scaleAmount s (MicroGtu bigInt) =
         BigInt.div (BigInt.mul bigInt <| BigInt.fromInt <| round <| s * granularity) (BigInt.fromInt granularity)
 
 
+{-| Convert amount to Int.
+Unsafe if the amount is larger than 2^53-1.
+-}
 amountToInt : Amount -> Int
 amountToInt (MicroGtu bigInt) =
     BigInt.toString bigInt
@@ -226,6 +238,10 @@ amountToInt (MicroGtu bigInt) =
         |> Maybe.withDefault 0
 
 
+{-| Calculates the relation between two amounts a and b as (a / b).
+Unsafe: Since it is converting the amounts to a JS number, the result is imprecise
+if any of the amounts are larger than 2^53 - 1
+-}
 unsafeAmountRelation : Amount -> Amount -> Float
 unsafeAmountRelation (MicroGtu numinator) (MicroGtu denominator) =
     BigInt.div numinator denominator
