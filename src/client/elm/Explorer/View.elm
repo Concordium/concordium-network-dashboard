@@ -879,10 +879,10 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                 Dict.toList event.bakerRewards
 
                             bakingAccountDistributed =
-                                T.unsafeSumAmounts <| List.map (\( _, amount ) -> amount) bakerRewardList
+                                T.sumAmounts <| List.map Tuple.second bakerRewardList
 
                             bakingAccountTotal =
-                                T.unsafeAddAmounts event.remainder bakingAccountDistributed
+                                T.addAmounts event.remainder bakingAccountDistributed
                         in
                         viewDetailRow
                             [ paragraph [] [ text <| "Every epoch, the " ++ bakingRewardAccountLower ++ " is distributed among all bakers during the epoch." ]
@@ -900,7 +900,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                       }
                                     , { header = text "Share of baked blocks"
                                       , width = fill
-                                      , view = \i ( _, amount ) -> text <| asPercentage <| Maybe.withDefault 0 <| Maybe.map2 (\n d -> n / d) (T.amountToFloat amount) (T.amountToFloat bakingAccountDistributed)
+                                      , view = \i ( _, amount ) -> text <| asPercentage <| T.unsafeAmountRelation amount bakingAccountDistributed
                                       }
                                     , { header = text "Reward"
                                       , width = fill
@@ -921,7 +921,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                 1 - rewardParameters.mintDistribution.bakingReward - rewardParameters.mintDistribution.finalizationReward
 
                             mintTotal =
-                                T.unsafeSumAmounts [ event.mintPlatformDevelopmentCharge, event.mintBakingReward, event.mintFinalizationReward ]
+                                T.sumAmounts [ event.mintPlatformDevelopmentCharge, event.mintBakingReward, event.mintFinalizationReward ]
                         in
                         column [ spacing 25, width fill ]
                             [ viewDetailRow
@@ -961,10 +961,10 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                     , details =
                         let
                             finalizationAccountDistributed =
-                                T.unsafeSumAmounts <| List.map (\( _, amount ) -> amount) <| Dict.toList event.finalizationRewards
+                                T.sumAmounts <| List.map Tuple.second <| Dict.toList event.finalizationRewards
 
                             finalizationAccountTotal =
-                                T.unsafeAddAmounts event.remainder finalizationAccountDistributed
+                                T.addAmounts event.remainder finalizationAccountDistributed
                         in
                         viewDetailRow
                             [ paragraph [] [ text <| "Every time a finalization proof is included in a block the " ++ finalizationRewardAccountLower ++ " distributes a reward among the finalizers. The reward is proportional to the finalizers' share of finalization stake." ]
@@ -981,7 +981,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                       }
                                     , { header = text "Finalizer stake"
                                       , width = fill
-                                      , view = \i ( _, amount ) -> text <| asPercentage <| Maybe.withDefault 0 <| Maybe.map2 (\n d -> n / d) (T.amountToFloat amount) (T.amountToFloat finalizationAccountTotal)
+                                      , view = \i ( _, amount ) -> text <| asPercentage <| T.unsafeAmountRelation amount finalizationAccountTotal
                                       }
                                     , { header = text "Reward"
                                       , width = fill
@@ -1008,31 +1008,16 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                 1 - (rewardParameters.transactionFeeDistribution.baker + rewardParameters.transactionFeeDistribution.gasAccount)
 
                             bakerRewardAmountTransactionFee =
-                                T.floorTo 6 <|
-                                    rewardParameters.transactionFeeDistribution.baker
-                                        * T.unsafeAmountToFloat event.transactionFees
+                                T.scaleAmount rewardParameters.transactionFeeDistribution.baker event.transactionFees
 
                             bakerRewardAmountFixedGasAccount =
-                                T.floorTo 6 <|
-                                    rewardParameters.gasRewards.baker
-                                        * T.unsafeAmountToFloat event.oldGASAccount
+                                T.scaleAmount rewardParameters.gasRewards.baker event.oldGASAccount
 
                             nonGasBakerAmount =
-                                T.floorTo 6 <|
-                                    T.unsafeAmountToFloat event.bakerReward
-                                        - bakerRewardAmountTransactionFee
-                                        - bakerRewardAmountFixedGasAccount
+                                T.subAmounts event.bakerReward <| T.addAmounts bakerRewardAmountTransactionFee bakerRewardAmountFixedGasAccount
 
                             nonGasFraction =
-                                let
-                                    oldGasAccount =
-                                        T.unsafeAmountToFloat event.oldGASAccount
-                                in
-                                if oldGasAccount == 0 then
-                                    0
-
-                                else
-                                    nonGasBakerAmount / oldGasAccount
+                                T.unsafeAmountRelation nonGasBakerAmount event.oldGASAccount
                         in
                         column [ width fill, spacing 30 ]
                             [ viewDetailRow
@@ -1312,9 +1297,8 @@ viewTransactionEvent ctx txEvent =
             let
                 totalAmount =
                     event.releaseSchedule
-                        |> List.map (Tuple.second >> T.unsafeAmountToFloat)
-                        |> List.sum
-                        |> T.amountFromFloat
+                        |> List.map Tuple.second
+                        |> T.sumAmounts
             in
             { content =
                 [ row []
