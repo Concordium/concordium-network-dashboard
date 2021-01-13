@@ -900,7 +900,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                       }
                                     , { header = text "Share of baked blocks"
                                       , width = fill
-                                      , view = \i ( _, amount ) -> text <| asPercentage <| T.unsafeAmountRelation amount bakingAccountDistributed -- Maybe.map2 (\n d -> n / d) (T.amountToFloat amount) (T.amountToFloat bakingAccountDistributed)
+                                      , view = \i ( _, amount ) -> text <| asPercentage <| T.unsafeAmountRelation amount bakingAccountDistributed
                                       }
                                     , { header = text "Reward"
                                       , width = fill
@@ -981,7 +981,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                       }
                                     , { header = text "Finalizer stake"
                                       , width = fill
-                                      , view = \i ( _, amount ) -> text <| asPercentage <| T.unsafeAmountRelation amount finalizationAccountTotal -- Maybe.withDefault 0 <| Maybe.map2 (\n d -> n / d) (T.amountToFloat amount) (T.amountToFloat finalizationAccountTotal)
+                                      , view = \i ( _, amount ) -> text <| asPercentage <| T.unsafeAmountRelation amount finalizationAccountTotal
                                       }
                                     , { header = text "Reward"
                                       , width = fill

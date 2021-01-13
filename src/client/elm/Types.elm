@@ -189,7 +189,7 @@ decodeAmount =
                         D.succeed amount
 
                     Nothing ->
-                        D.fail "Invalid amount"
+                        D.fail <| "Invalid amount '" ++ str ++ "'"
             )
 
 
