@@ -1023,10 +1023,8 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                     , icon = Icons.coin_gtu 20
                     , content =
                         row []
-                            [ text <| "Rewarded " ++ T.amountToString event.bakerReward ++ " for baking this block"
-                            , arrowRight
+                            [ text <| "Rewarded " ++ T.amountToString event.bakerReward ++ " for baking this block to "
                             , viewAddress ctx (T.AddressAccount event.baker)
-                            , text " "
                             ]
                     , details =
                         let
@@ -1330,8 +1328,7 @@ viewTransactionEvent ctx txEvent =
             in
             { content =
                 [ row []
-                    [ text <| "Transferred with schedule"
-                    , arrowRight
+                    [ text <| "Transferred with schedule to "
                     , viewAddress ctx (T.AddressAccount event.to)
                     ]
                 ]
@@ -1403,8 +1400,7 @@ viewTransactionEvent ctx txEvent =
             { content =
                 [ row
                     []
-                    [ text <| "Created account"
-                    , arrowRight
+                    [ text <| "Created account "
                     , viewAddress ctx (T.AddressAccount event.account)
                     ]
                 ]
@@ -1415,8 +1411,7 @@ viewTransactionEvent ctx txEvent =
             { content =
                 [ row
                     []
-                    [ text <| "Deployed credentials"
-                    , arrowRight
+                    [ text <| "Deployed credentials "
                     , viewAddress ctx (T.AddressAccount event.account)
                     ]
                 ]
@@ -1453,8 +1448,7 @@ viewTransactionEvent ctx txEvent =
         TransactionEventBakerAdded event ->
             { content =
                 [ row []
-                    [ text <| "Added"
-                    , arrowRight
+                    [ text <| "Added baker "
                     , viewBaker ctx event.bakerId event.account
                     ]
                 ]
@@ -1464,8 +1458,7 @@ viewTransactionEvent ctx txEvent =
         TransactionEventBakerRemoved event ->
             { content =
                 [ row []
-                    [ text <| "Removed"
-                    , arrowRight
+                    [ text <| "Removed baker "
                     , viewBaker ctx event.bakerId event.account
                     ]
                 ]
@@ -1475,10 +1468,9 @@ viewTransactionEvent ctx txEvent =
         TransactionEventBakerStakeIncreased event ->
             { content =
                 [ row []
-                    [ text <| "Increased stake"
-                    , arrowRight
+                    [ text <| "Increased stake of "
                     , viewBaker ctx event.bakerId event.account
-                    , arrowRight
+                    , text " to "
                     , text <| T.amountToString event.newStake
                     ]
                 ]
@@ -1488,10 +1480,9 @@ viewTransactionEvent ctx txEvent =
         TransactionEventBakerStakeDecreased event ->
             { content =
                 [ row []
-                    [ text <| "Decreased stake"
-                    , arrowRight
+                    [ text <| "Decreased stake of "
                     , viewBaker ctx event.bakerId event.account
-                    , arrowRight
+                    , text " to "
                     , text <| T.amountToString event.newStake
                     ]
                 ]
@@ -1501,16 +1492,15 @@ viewTransactionEvent ctx txEvent =
         TransactionEventBakerSetRestakeEarnings event ->
             { content =
                 [ row []
-                    [ text <| "Restake earnings"
-                    , arrowRight
-                    , viewBaker ctx event.bakerId event.account
-                    , arrowRight
-                    , text <|
+                    [ text <|
                         if event.restakeEarnings then
-                            "Set"
+                            "Enable"
 
                         else
-                            "Unset"
+                            "Disable"
+                    , text <|
+                        " restake earnings of "
+                    , viewBaker ctx event.bakerId event.account
                     ]
                 ]
             , details = Nothing
@@ -1519,18 +1509,8 @@ viewTransactionEvent ctx txEvent =
         TransactionEventBakerKeysUpdated event ->
             { content =
                 [ row []
-                    [ text <| "Updated baker keys"
-                    , arrowRight
+                    [ text <| "Updated baker keys of "
                     , viewBaker ctx event.bakerId event.account
-                    , arrowRight
-                    , el
-                        [ stringTooltipAboveWithCopy ctx event.signKey
-                        , pointer
-                        , onClick (CopyToClipboard event.signKey)
-                        ]
-                      <|
-                        text <|
-                            String.left 8 event.signKey
                     ]
                 ]
             , details = Nothing
@@ -1540,8 +1520,7 @@ viewTransactionEvent ctx txEvent =
         TransactionEventModuleDeployed event ->
             { content =
                 [ row []
-                    [ text <| "Deployed module"
-                    , arrowRight
+                    [ text <| "Deployed module with reference "
                     , el
                         [ stringTooltipAboveWithCopy ctx event.contents
                         , pointer
