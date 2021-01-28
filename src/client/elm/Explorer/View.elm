@@ -1005,7 +1005,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                       , width = fill
                                       , view = \i ( account, _ ) -> el [ centerX ] <| viewAddress ctx <| T.AddressAccount account
                                       }
-                                    , { header = text "Finalizer stake"
+                                    , { header = text "Finalizer weight"
                                       , width = fill
                                       , view = \i ( _, amount ) -> text <| asPercentage <| T.unsafeAmountDivide amount finalizationAccountTotal
                                       }
@@ -1208,7 +1208,7 @@ viewFinalizationData ctx finalizationData =
                                           , view =
                                                 \i finalizer -> text <| String.fromInt finalizer.bakerId
                                           }
-                                        , { header = text "Finalizer stake"
+                                        , { header = text "Finalizer weight"
                                           , width = fill
                                           , view =
                                                 \i finalizer -> text <| asPercentage (toFloat finalizer.weight / toFloat totalWeight)
