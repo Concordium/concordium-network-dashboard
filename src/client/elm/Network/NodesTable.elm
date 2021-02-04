@@ -306,7 +306,7 @@ sortNodesBy sortBy listNodes =
             List.sortBy .nodeName listNodes
 
         SortBaker ->
-            List.sortBy (.consensusBakerId >> Maybe.withDefault -1) listNodes
+            List.sortBy (.consensusBakerId >> Maybe.withDefault (1/0)) listNodes
 
         SortUptime ->
             List.sortBy .uptime listNodes
