@@ -70,7 +70,7 @@ type alias NetworkNode =
     , packetsSent : Float -- @TODO as above figure out Int
     , packetsReceived : Float -- @TODO as above figure out Int
     , consensusRunning : Bool
-    , bakingCommitteeMember : Bool
+    , bakingCommitteeMember : String
     , consensusBakerId : Maybe Float
     , finalizationCommitteeMember : Bool
     }
@@ -222,7 +222,7 @@ nodeSummariesDecoder =
             |> required "packetsSent" D.float
             |> required "packetsReceived" D.float
             |> optional "consensusRunning" D.bool False
-            |> optional "bakingCommitteeMember" D.bool False
+            |> required "bakingCommitteeMember" D.string
             |> required "consensusBakerId" (D.nullable D.float)
             |> optional "finalizationCommitteeMember" D.bool False
         )

@@ -42,6 +42,24 @@ viewSelectedNode ctx node model =
             [ ( "Node name", el [ width (px 400) ] <| forceWrapTextElement node.nodeName )
             , ( "Node ID", text node.nodeId )
             , ( "Baker ID", text <| Maybe.withDefault "n/a" <| Maybe.map String.fromFloat node.consensusBakerId )
+            , ( "Baking committee"
+              , text <|
+                    case node.bakingCommitteeMember of
+                        "ActiveInCommittee" ->
+                            "Active member"
+
+                        "AddedButNotActiveInCommittee" ->
+                            "Active in at most 2 epochs"
+
+                        "AddedButWrongKeys" ->
+                            "Member, but with wrong keys"
+
+                        "NotInCommittee" ->
+                            "Not a member"
+
+                        unknown ->
+                            unknown
+              )
             , ( "Uptime", text <| asTimeAgoDuration node.uptime )
             , ( "Software version", text node.client )
             , ( "Average ping time", formatPing ctx.palette node.averagePing )
