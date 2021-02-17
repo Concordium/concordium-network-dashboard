@@ -1,14 +1,11 @@
 module Explorer exposing (..)
 
+import Api exposing (ApiResult)
 import Dict exposing (Dict)
 import Explorer.Request exposing (..)
-import Http
 import RemoteData exposing (..)
 import Set exposing (Set)
-
-
-type alias BlockHash =
-    String
+import Types as T
 
 
 type alias DisplayDetailBlockSummary =
@@ -21,16 +18,16 @@ type alias DisplayDetailBlockSummary =
 
 type alias Model =
     { config : Config
-    , blockHash : Maybe String
-    , blockInfo : WebData BlockInfo
+    , blockHash : Maybe T.BlockHash
+    , blockInfo : WebData Api.BlockInfo
     , blockSummary : WebData DisplayDetailBlockSummary
     }
 
 
 type Msg
-    = ReceivedConsensusStatus (Result Http.Error ConsensusStatus)
-    | ReceivedBlockInfo (Result Http.Error BlockInfo)
-    | ReceivedBlockSummary (Result Http.Error BlockSummary)
+    = ReceivedConsensusStatus (ApiResult Api.ConsensusStatus)
+    | ReceivedBlockInfo (ApiResult Api.BlockInfo)
+    | ReceivedBlockSummary (ApiResult BlockSummary)
     | ToggleDisplayDetails Int Int
 
 
@@ -50,7 +47,7 @@ update msg model =
             case res of
                 Ok consensusStatus ->
                     ( { model | blockInfo = Loading }
-                    , getBlockInfo model.config consensusStatus.bestBlock ReceivedBlockInfo
+                    , Api.getBlockInfo model.config consensusStatus.bestBlock ReceivedBlockInfo
                     )
 
                 Err err ->

@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Api
 import Browser exposing (..)
 import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
@@ -13,7 +14,6 @@ import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Explorer
-import Explorer.Request
 import Explorer.View
 import Html exposing (Html)
 import Html.Attributes exposing (style)
@@ -258,7 +258,7 @@ update msg model =
                                 chainModel.selectedBlock
                                     |> Maybe.map
                                         (\hash ->
-                                            Explorer.Request.getBlockInfo
+                                            Api.getBlockInfo
                                                 model.explorerModel.config
                                                 hash
                                                 (ExplorerMsg << Explorer.ReceivedBlockInfo)
@@ -343,13 +343,16 @@ onRouteInit page model =
     case page of
         ChainInit ->
             ( model
-            , Explorer.Request.getConsensusStatus model.explorerModel.config (ExplorerMsg << Explorer.ReceivedConsensusStatus)
+            , Api.getConsensusStatus model.explorerModel.config (ExplorerMsg << Explorer.ReceivedConsensusStatus)
             )
 
         ChainSelected hash ->
             ( { model | chainModel = Chain.selectBlock model.chainModel hash }
-            , Explorer.Request.getBlockInfo model.explorerModel.config hash (ExplorerMsg << Explorer.ReceivedBlockInfo)
+            , Api.getBlockInfo model.explorerModel.config hash (ExplorerMsg << Explorer.ReceivedBlockInfo)
             )
+
+        LookupTransaction txHash ->
+            ( model, Api.getTransactionStatus model.explorerModel.config txHash (LookupMsg << Lookup.ReceivedTransactionStatus) )
 
         _ ->
             ( model, Cmd.none )
