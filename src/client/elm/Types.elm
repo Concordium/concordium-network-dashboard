@@ -348,3 +348,11 @@ type alias BakerId =
 
 type alias BakerAggregationVerifyKey =
     String
+
+
+type alias BlockHash =
+    String
+
+
+type alias TxHash =
+    String

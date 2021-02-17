@@ -1,5 +1,6 @@
 module Explorer.View exposing (..)
 
+import Api exposing (BlockInfo)
 import Context exposing (Context)
 import Dict
 import Element exposing (..)

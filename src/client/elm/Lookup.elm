@@ -1,5 +1,6 @@
 module Lookup exposing (..)
 
+import Api exposing (ApiResult)
 import Browser.Navigation as Nav
 import Context exposing (Theme)
 import Element exposing (..)
@@ -8,12 +9,16 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Helpers exposing (..)
-import Route as Route exposing (Route)
+import RemoteData exposing (WebData)
+import Route exposing (Route)
+import Types as T
+import Widgets
 
 
 type alias Model =
     { navigationKey : Nav.Key
     , searchTextValue : String
+    , transactionStatusResult : WebData Api.TransactionStatus
     }
 
 
@@ -21,12 +26,14 @@ init : Nav.Key -> Model
 init navigationKey =
     { navigationKey = navigationKey
     , searchTextValue = ""
+    , transactionStatusResult = RemoteData.NotAsked
     }
 
 
 type Msg
     = SetSearchTextValue String
-    | SearchForTransaction String
+    | SearchForTransaction T.TxHash
+    | ReceivedTransactionStatus (ApiResult Api.TransactionStatus)
     | None
 
 
@@ -37,7 +44,12 @@ update msg model =
             ( { model | searchTextValue = txt }, Cmd.none )
 
         SearchForTransaction txHash ->
-            ( model, Nav.pushUrl model.navigationKey <| Route.toString <| Route.LookupTransaction txHash )
+            ( { model | transactionStatusResult = RemoteData.Loading }
+            , Nav.pushUrl model.navigationKey <| Route.toString <| Route.LookupTransaction txHash
+            )
+
+        ReceivedTransactionStatus result ->
+            ( { model | transactionStatusResult = RemoteData.fromResult result }, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
@@ -46,11 +58,22 @@ update msg model =
 view : Theme a -> Model -> Element Msg
 view theme model =
     column
+        [ spacing 10
+        , width fill
+        ]
+        [ viewTransactionSearch theme model
+        , viewTransactionStatusWebData theme model.transactionStatusResult
+        ]
+
+
+viewTransactionSearch : Theme a -> Model -> Element Msg
+viewTransactionSearch theme model =
+    column
         [ centerX
         , spacing 10
         , width
             (fill
-                |> maximum 500
+                |> maximum 580
             )
         ]
         [ Input.text
@@ -63,7 +86,7 @@ view theme model =
             { onChange = SetSearchTextValue
             , text = model.searchTextValue
             , label = Input.labelAbove [ Font.center, paddingXY 5 10, Font.size 20 ] <| text "Lookup a transaction"
-            , placeholder = Just <| Input.placeholder [ Font.color theme.palette.fg2 ] <| text "Insert transaction hash"
+            , placeholder = Just <| Input.placeholder [ Font.color theme.palette.fg2 ] <| text "Transaction hash"
             }
         , Input.button
             [ centerX
@@ -79,3 +102,32 @@ view theme model =
             , label = el [ Font.color theme.palette.fg1 ] <| text "Lookup"
             }
         ]
+
+
+viewTransactionStatusWebData : Theme a -> WebData Api.TransactionStatus -> Element Msg
+viewTransactionStatusWebData theme remoteData =
+    case remoteData of
+        RemoteData.NotAsked ->
+            Element.none
+
+        RemoteData.Loading ->
+            Widgets.loader theme.palette.fg3
+
+        RemoteData.Failure error ->
+            el [ Font.color theme.palette.danger ] (paragraph [] [ text <| "Error: " ++ Widgets.errorToString error ])
+
+        RemoteData.Success data ->
+            viewTransactionStatus theme data
+
+
+viewTransactionStatus : Theme a -> Api.TransactionStatus -> Element Msg
+viewTransactionStatus theme transactionStatus =
+    column
+        [ centerX
+        , spacing 10
+        , width
+            (fill
+                |> maximum 500
+            )
+        ]
+        [ text "asd" ]
