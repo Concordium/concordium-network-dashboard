@@ -128,7 +128,7 @@ init flags url key =
                 , chainModel = chainInit
                 , explorerModel = Explorer.init { middlewareUrl = cfg.middlewareUrl }
                 , toastModel = { visible = False, contents = "", showCount = 0 }
-                , lookupModel = Lookup.init
+                , lookupModel = Lookup.init key
                 }
     in
     ( initModel
@@ -397,6 +397,9 @@ view model =
 
                     Lookup ->
                         viewLookup model
+
+                    LookupTransaction _ ->
+                        viewLookup model
                 ]
         ]
     }
@@ -475,7 +478,12 @@ viewLookup model =
         column [ width fill, height fill, spacing 20 ]
             [ viewSummaryWidgets model model.networkModel.nodes
             , row [ viewCopiedToast model, centerX ] []
-            , Element.map LookupMsg <| Lookup.view { palette = model.palette, colorMode = model.colorMode } model.lookupModel
+            , Element.map LookupMsg <|
+                Lookup.view
+                    { palette = model.palette
+                    , colorMode = model.colorMode
+                    }
+                    model.lookupModel
             ]
 
 
