@@ -1,5 +1,6 @@
 module Lookup exposing (..)
 
+import Browser.Navigation as Nav
 import Context exposing (Theme)
 import Element exposing (..)
 import Element.Background as Background
@@ -7,16 +8,19 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Helpers exposing (..)
+import Route as Route exposing (Route)
 
 
 type alias Model =
-    { searchTextValue : String
+    { navigationKey : Nav.Key
+    , searchTextValue : String
     }
 
 
-init : Model
-init =
-    { searchTextValue = ""
+init : Nav.Key -> Model
+init navigationKey =
+    { navigationKey = navigationKey
+    , searchTextValue = ""
     }
 
 
@@ -31,6 +35,9 @@ update msg model =
     case msg of
         SetSearchTextValue txt ->
             ( { model | searchTextValue = txt }, Cmd.none )
+
+        SearchForTransaction txHash ->
+            ( model, Nav.pushUrl model.navigationKey <| Route.toString <| Route.LookupTransaction txHash )
 
         _ ->
             ( model, Cmd.none )

@@ -10,6 +10,7 @@ type Route
     | ChainInit
     | ChainSelected String
     | Lookup
+    | LookupTransaction String
 
 
 parser : Parser (Route -> a) a
@@ -20,6 +21,7 @@ parser =
         , map ChainInit (s "chain")
         , map ChainSelected (s "chain" </> string)
         , map Lookup (s "lookup")
+        , map LookupTransaction (s "lookup" </> string)
         ]
 
 
@@ -50,6 +52,9 @@ toString route =
 
         Lookup ->
             "/lookup"
+
+        LookupTransaction txHash ->
+            "/lookup/" ++ txHash
 
 
 isChain : Route -> Bool
