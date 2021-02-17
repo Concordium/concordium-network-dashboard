@@ -9,6 +9,7 @@ type Route
     | NodeView String -- Node by nodeId
     | ChainInit
     | ChainSelected String
+    | Lookup
 
 
 parser : Parser (Route -> a) a
@@ -18,6 +19,7 @@ parser =
         , map NodeView (s "node" </> string)
         , map ChainInit (s "chain")
         , map ChainSelected (s "chain" </> string)
+        , map Lookup (s "lookup")
         ]
 
 
@@ -46,6 +48,9 @@ toString route =
         ChainSelected hash ->
             "/chain/" ++ hash
 
+        Lookup ->
+            "/lookup"
+
 
 isChain : Route -> Bool
 isChain route =
@@ -53,7 +58,7 @@ isChain route =
         ChainInit ->
             True
 
-        ChainSelected hash ->
+        ChainSelected _ ->
             True
 
         _ ->
