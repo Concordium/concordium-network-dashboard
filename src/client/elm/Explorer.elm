@@ -3,6 +3,7 @@ module Explorer exposing (..)
 import Api exposing (ApiResult)
 import Dict exposing (Dict)
 import Explorer.Request exposing (..)
+import Helpers exposing (toggleSetMember)
 import RemoteData exposing (..)
 import Set exposing (Set)
 import Types as T
@@ -84,20 +85,9 @@ update msg model =
                             (\displayDetailBlockSummary ->
                                 { displayDetailBlockSummary
                                     | detailsDisplayed =
-                                        let
-                                            eventSet =
-                                                displayDetailBlockSummary.detailsDisplayed
-                                                    |> Dict.get itemIndex
-                                                    |> Maybe.withDefault Set.empty
-
-                                            newEventSet =
-                                                if Set.member eventIndex eventSet then
-                                                    Set.remove eventIndex eventSet
-
-                                                else
-                                                    Set.insert eventIndex eventSet
-                                        in
-                                        Dict.insert itemIndex newEventSet displayDetailBlockSummary.detailsDisplayed
+                                        Dict.update itemIndex
+                                            (Maybe.withDefault Set.empty >> toggleSetMember eventIndex >> Just)
+                                            displayDetailBlockSummary.detailsDisplayed
                                 }
                             )
             in
