@@ -177,14 +177,10 @@ viewTransactionStatus theme data =
                         |> Maybe.withDefault Set.empty
             in
             viewContainer theme <|
-                column
-                    [ centerX
-                    , spacing 5
-                    ]
-                <|
+                column [ centerX, spacing 5, width fill ] <|
                     [ el [ centerX ] (Element.map explorerToLookupMsg <| viewBlockHash theme blockHash finalized)
                     , viewContentHeadline theme
-                    , column [] <| viewSummaryItem theme item displayedEvents (ToggleDisplayDetails index)
+                    , column [ width fill ] <| viewSummaryItem theme item displayedEvents (ToggleDisplayDetails index)
                     ]
     in
     case data.transactionStatus of
@@ -203,12 +199,12 @@ viewTransactionStatus theme data =
                     else
                         "The transaction is not finalized yet, but committed to " ++ String.fromInt numberOfBlocks ++ " blocks:"
             in
-            column [ centerX, spacing 20 ] <|
+            column [ spacing 20, width fill ] <|
                 (el [ centerX, padding 10 ] <| text inBlockMessage)
                     :: List.indexedMap (viewTransactionStatusBlock False) (Dict.toList blocks)
 
         Api.Finalized block ->
-            column [ centerX, spacing 20 ]
+            column [ spacing 20, width fill ]
                 [ el [ centerX, padding 10 ] <| text "The transaction was finalized in block:", viewTransactionStatusBlock True 0 block ]
 
 
