@@ -1,6 +1,6 @@
 module Tooltip exposing (..)
 
-import Context exposing (Context)
+import Context exposing (Theme)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -29,7 +29,7 @@ tooltip placement content =
             none
 
 
-downArrow : Context a -> Element Never
+downArrow : Theme a -> Element Never
 downArrow ctx =
     el
         [ width fill
@@ -43,7 +43,7 @@ downArrow ctx =
         none
 
 
-tooltipStyle : Context a -> List (Attribute msg)
+tooltipStyle : Theme a -> List (Attribute msg)
 tooltipStyle ctx =
     [ paddingXY 12 10
     , Border.rounded 5
@@ -54,7 +54,7 @@ tooltipStyle ctx =
     ]
 
 
-stringTooltipAbove : Context a -> String -> Attribute msg
+stringTooltipAbove : Theme a -> String -> Attribute msg
 stringTooltipAbove ctx content =
     tooltip above
         (column []
@@ -66,7 +66,7 @@ stringTooltipAbove ctx content =
         )
 
 
-stringTooltipAboveWidget : Context a -> Element Never -> Attribute msg
+stringTooltipAboveWidget : Theme a -> Element Never -> Attribute msg
 stringTooltipAboveWidget ctx content =
     tooltip above
         (column []
@@ -78,7 +78,7 @@ stringTooltipAboveWidget ctx content =
         )
 
 
-stringTooltipAboveWithCopy : Context a -> String -> Attribute msg
+stringTooltipAboveWithCopy : Theme a -> String -> Attribute msg
 stringTooltipAboveWithCopy ctx content =
     tooltip above
         (column []

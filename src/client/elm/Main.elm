@@ -317,11 +317,16 @@ update msg model =
             ( { model | explorerModel = newExplorerModel, chainModel = chainModel }, Cmd.map ExplorerMsg newExplorerCmd )
 
         LookupMsg lookupMsg ->
-            let
-                ( newLookupModel, cmd ) =
-                    Lookup.update lookupMsg model.lookupModel
-            in
-            ( { model | lookupModel = newLookupModel }, Cmd.map LookupMsg cmd )
+            case lookupMsg of
+                Lookup.CopyToClipboard str ->
+                    update (CopyToClipboard str) model
+
+                _ ->
+                    let
+                        ( newLookupModel, cmd ) =
+                            Lookup.update lookupMsg model.lookupModel
+                    in
+                    ( { model | lookupModel = newLookupModel }, Cmd.map LookupMsg cmd )
 
 
 rebuildChain : ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
@@ -352,7 +357,11 @@ onRouteInit page model =
             )
 
         LookupTransaction txHash ->
-            ( model, Api.getTransactionStatus model.explorerModel.config txHash (LookupMsg << Lookup.ReceivedTransactionStatus) )
+            let
+                lookupModel =
+                    model.lookupModel
+            in
+            ( { model | lookupModel = { lookupModel | searchTextValue = txHash } }, Api.getTransactionStatus model.explorerModel.config txHash (LookupMsg << Lookup.ReceivedTransactionStatus) )
 
         _ ->
             ( model, Cmd.none )

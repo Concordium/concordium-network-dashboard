@@ -1,5 +1,8 @@
 module Api exposing (..)
 
+{-| Functions and types for making API requests for the middleware.
+-}
+
 import Dict exposing (Dict)
 import Http
 import Iso8601
