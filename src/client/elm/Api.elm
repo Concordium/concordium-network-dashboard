@@ -137,15 +137,20 @@ blockInfoDecoder =
 -- Get transaction status
 
 
-getTransactionStatus : Config -> T.TxHash -> (ApiResult TransactionStatus -> msg) -> Cmd msg
+getTransactionStatus : Config -> T.TxHash -> (ApiResult TransactionStatusResponse -> msg) -> Cmd msg
 getTransactionStatus cfg txHash msg =
-    getMiddleware cfg ("/v1/transactionStatus/" ++ txHash) transactionStatusDecoder msg
+    getMiddleware cfg ("/v1/transactionStatus/" ++ txHash) transactionStatusResponseDecoder msg
 
 
 type TransactionStatus
     = Received
     | Committed (Dict T.BlockHash TxSummary.TransactionSummary)
     | Finalized ( T.BlockHash, TxSummary.TransactionSummary )
+
+
+type TransactionStatusResponse
+    = Status TransactionStatus
+    | InvalidTransactionHash
 
 
 transactionStatusDecoder : D.Decoder TransactionStatus
@@ -175,3 +180,19 @@ transactionStatusDecoder =
                     D.fail <| "Unknown transaction status:" ++ status
     in
     D.field "status" D.string |> D.andThen decode
+
+
+transactionStatusResponseDecoder : D.Decoder TransactionStatusResponse
+transactionStatusResponseDecoder =
+    D.oneOf
+        [ D.map Status transactionStatusDecoder
+        , D.string
+            |> D.andThen
+                (\str ->
+                    if str == "Invalid transaction hash." then
+                        D.succeed InvalidTransactionHash
+
+                    else
+                        D.fail "Unknown transaction status response"
+                )
+        ]
