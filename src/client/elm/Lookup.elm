@@ -1,6 +1,6 @@
 module Lookup exposing (..)
 
-import Api exposing (ApiResult)
+import Api exposing (ApiResult, TransactionStatusResponse(..))
 import Browser.Navigation as Nav
 import Context exposing (Theme)
 import Dict exposing (Dict)
@@ -20,7 +20,7 @@ import Widgets
 
 
 type alias DisplayDetailTransactionStatus =
-    { transactionStatus : Api.TransactionStatus
+    { transactionStatusResponse : Api.TransactionStatusResponse
 
     -- A map from index of block to a set of event indexes with details actively displayed in the view.
     , detailsDisplayed : Dict Int (Set Int)
@@ -45,7 +45,7 @@ init navigationKey =
 type Msg
     = SetSearchTextValue String
     | SearchForTransaction T.TxHash
-    | ReceivedTransactionStatus (ApiResult Api.TransactionStatus)
+    | ReceivedTransactionStatus (ApiResult Api.TransactionStatusResponse)
     | CopyToClipboard String -- Is mapped and handled in Main module
     | ToggleDisplayDetails Int Int
     | None
@@ -67,7 +67,7 @@ update msg model =
                 | transactionStatusResult =
                     RemoteData.fromResult result
                         |> RemoteData.map
-                            (\txStatus -> { transactionStatus = txStatus, detailsDisplayed = Dict.empty })
+                            (\txStatusResponse -> { transactionStatusResponse = txStatusResponse, detailsDisplayed = Dict.empty })
               }
             , Cmd.none
             )
@@ -183,29 +183,36 @@ viewTransactionStatus theme data =
                     , column [ width fill ] <| viewSummaryItem theme item displayedEvents (ToggleDisplayDetails index)
                     ]
     in
-    case data.transactionStatus of
-        Api.Received ->
-            el [ centerX, padding 10 ] <| text "Transaction is received by the node, but not committed to a block yet."
+    case data.transactionStatusResponse of
+        Api.InvalidTransactionHash ->
+            el [ centerX, padding 10, Font.color theme.palette.warning ] <| text "Invalid transaction hash"
 
-        Api.Committed blocks ->
-            let
-                numberOfBlocks =
-                    Dict.size blocks
+        Api.Status transactionStatus ->
+            case transactionStatus of
+                Api.Received ->
+                    el [ centerX, padding 10 ] <| text "Transaction is received by the node, but not committed to a block yet."
 
-                inBlockMessage =
-                    if numberOfBlocks == 1 then
-                        "The transaction is not finalized yet, but committed to the block:"
+                Api.Committed blocks ->
+                    let
+                        numberOfBlocks =
+                            Dict.size blocks
 
-                    else
-                        "The transaction is not finalized yet, but committed to " ++ String.fromInt numberOfBlocks ++ " blocks:"
-            in
-            column [ spacing 20, width fill ] <|
-                (el [ centerX, padding 10 ] <| text inBlockMessage)
-                    :: List.indexedMap (viewTransactionStatusBlock False) (Dict.toList blocks)
+                        inBlockMessage =
+                            if numberOfBlocks == 1 then
+                                "The transaction is not finalized yet, but committed to the block:"
 
-        Api.Finalized block ->
-            column [ spacing 20, width fill ]
-                [ el [ centerX, padding 10 ] <| text "The transaction was finalized in block:", viewTransactionStatusBlock True 0 block ]
+                            else
+                                "The transaction is not finalized yet, but committed to " ++ String.fromInt numberOfBlocks ++ " blocks:"
+                    in
+                    column [ spacing 20, width fill ] <|
+                        (el [ centerX, padding 10, Font.color theme.palette.c1 ] <| text inBlockMessage)
+                            :: List.indexedMap (viewTransactionStatusBlock False) (Dict.toList blocks)
+
+                Api.Finalized block ->
+                    column [ spacing 20, width fill ]
+                        [ el [ centerX, padding 10, Font.color theme.palette.c2 ] <| text "The transaction was finalized in block:"
+                        , viewTransactionStatusBlock True 0 block
+                        ]
 
 
 explorerToLookupMsg : Explorer.View.Msg -> Msg
