@@ -19,7 +19,7 @@ import Types as T
 import Widgets
 
 
-type alias DisplayDetailTransactionStatus =
+type alias DisplayDetailTransactionStatusResponse =
     { transactionStatusResponse : Api.TransactionStatusResponse
 
     -- A map from index of block to a set of event indexes with details actively displayed in the view.
@@ -30,7 +30,7 @@ type alias DisplayDetailTransactionStatus =
 type alias Model =
     { navigationKey : Nav.Key
     , searchTextValue : String
-    , transactionStatusResult : WebData DisplayDetailTransactionStatus
+    , transactionStatusResult : WebData DisplayDetailTransactionStatusResponse
     }
 
 
@@ -147,7 +147,7 @@ viewTransactionSearch theme model =
         ]
 
 
-viewTransactionStatusWebData : Theme a -> WebData DisplayDetailTransactionStatus -> Element Msg
+viewTransactionStatusWebData : Theme a -> WebData DisplayDetailTransactionStatusResponse -> Element Msg
 viewTransactionStatusWebData theme remoteData =
     case remoteData of
         RemoteData.NotAsked ->
@@ -163,7 +163,7 @@ viewTransactionStatusWebData theme remoteData =
             viewTransactionStatus theme data
 
 
-viewTransactionStatus : Theme a -> DisplayDetailTransactionStatus -> Element Msg
+viewTransactionStatus : Theme a -> DisplayDetailTransactionStatusResponse -> Element Msg
 viewTransactionStatus theme data =
     let
         viewTransactionStatusBlock finalized index ( blockHash, txSummary ) =
