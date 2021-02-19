@@ -1,6 +1,6 @@
 module Api exposing (..)
 
-{-| Functions and types for making API requests for the middleware.
+{-| Functions and types for making API requests to the middleware.
 -}
 
 import Dict exposing (Dict)
@@ -22,6 +22,8 @@ type alias ApiResult a =
     Result Http.Error a
 
 
+{-| Make a GET request to the middleware
+-}
 getMiddleware : Config -> String -> D.Decoder a -> (ApiResult a -> msg) -> Cmd msg
 getMiddleware cfg url decoder msg =
     Http.get { url = cfg.middlewareUrl ++ url, expect = expectJson_ msg decoder }
@@ -142,12 +144,25 @@ getTransactionStatus cfg txHash msg =
     getMiddleware cfg ("/v1/transactionStatus/" ++ txHash) transactionStatusResponseDecoder msg
 
 
+{-| The current status of a transaction where:
+
+`Received` means transaction is received by the node, but not in a block yet,
+`Committed` means Transaction is committed to one or more blocks and
+`Finalized` means Transaction is finalized in a block
+
+-}
 type TransactionStatus
     = Received
     | Committed (Dict T.BlockHash TxSummary.TransactionSummary)
     | Finalized ( T.BlockHash, TxSummary.TransactionSummary )
 
 
+{-| The response from getting the transaction status.
+
+Since the middleware will either return the transaction status or a string
+with the error as the body.
+
+-}
 type TransactionStatusResponse
     = Status TransactionStatus
     | InvalidTransactionHash
