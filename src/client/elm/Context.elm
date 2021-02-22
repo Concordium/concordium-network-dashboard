@@ -11,10 +11,16 @@ type alias Window =
 
 
 type alias Context a =
+    Theme
+        { a
+            | key : Key
+            , time : Posix
+            , window : Window
+        }
+
+
+type alias Theme a =
     { a
-        | key : Key
-        , time : Posix
-        , window : Window
-        , palette : Palette Color
+        | palette : Palette Color
         , colorMode : Palette.ColorMode
     }

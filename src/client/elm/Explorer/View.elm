@@ -1,7 +1,8 @@
 module Explorer.View exposing (..)
 
-import Context exposing (Context)
-import Dict
+import Api exposing (BlockInfo)
+import Context exposing (Theme)
+import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -14,14 +15,14 @@ import Html.Attributes exposing (style)
 import Icons exposing (..)
 import Palette exposing (withAlphaEl)
 import Set exposing (Set)
-import String exposing (toLower, toUpper)
+import String exposing (toLower)
 import Svg exposing (Svg)
 import Time
 import TimeHelpers
 import Tooltip exposing (..)
 import Transaction.Event exposing (..)
 import Transaction.Summary exposing (..)
-import Types as T exposing (AccountAddress)
+import Types as T
 import Widgets exposing (arrowRight, remoteDataView)
 
 
@@ -31,8 +32,24 @@ type Msg
     | ToggleDetails Int Int
 
 
-type alias SummaryItem =
-    List SummaryItemEvent
+type alias SummaryItem msg =
+    List (SummaryItemEvent msg)
+
+
+type alias SummaryItemEvent msg =
+    { content : Element msg, details : Maybe (Element msg) }
+
+
+mapSummaryItem : (a -> b) -> SummaryItem a -> SummaryItem b
+mapSummaryItem fn item =
+    List.map (mapSummaryItemEvent fn) item
+
+
+mapSummaryItemEvent : (a -> b) -> SummaryItemEvent a -> SummaryItemEvent b
+mapSummaryItemEvent fn x =
+    { content = Element.map fn x.content
+    , details = Maybe.map (Element.map fn) x.details
+    }
 
 
 bakingRewardAccountUpper =
@@ -51,11 +68,7 @@ finalizationRewardAccountLower =
     toLower finalizationRewardAccountUpper
 
 
-type alias SummaryItemEvent =
-    { content : Element Msg, details : Maybe (Element Msg) }
-
-
-view : Context a -> Model -> Element Msg
+view : Theme a -> Model -> Element Msg
 view ctx model =
     column [ spacing 40, width fill ]
         [ viewContainer ctx
@@ -77,73 +90,15 @@ view ctx model =
                                         finalizations =
                                             viewFinalizationData ctx blockSummary.finalizationData
 
-                                        summaryItems : List SummaryItem
+                                        summaryItems : List (SummaryItem Msg)
                                         summaryItems =
                                             transactionSummaries :: specialEvents ++ [ finalizations ]
-
-                                        viewWithDetails content details displayDetails itemIndex eventIndex =
-                                            [ el
-                                                ([ width fill
-                                                 , onClick (ToggleDetails itemIndex eventIndex)
-                                                 , pointer
-                                                 , htmlAttribute <| style "transition" "border 200ms ease-in"
-                                                 ]
-                                                    ++ (if displayDetails then
-                                                            [ Background.color <| Palette.lightish ctx.palette.bg2
-                                                            , Border.color (Palette.lightish ctx.palette.bg2)
-                                                            ]
-
-                                                        else
-                                                            []
-                                                       )
-                                                )
-                                                content
-                                            , el
-                                                ([ width fill
-                                                 , Background.color <| Palette.veryLight ctx.palette.bg2
-                                                 , htmlAttribute <| style "transition" "max-height 200ms ease-in"
-                                                 ]
-                                                    ++ (if displayDetails then
-                                                            [ htmlAttribute <| style "max-height" "1000px"
-                                                            ]
-
-                                                        else
-                                                            [ htmlAttribute <| style "max-height" "0"
-                                                            , htmlAttribute <| style "overflow-y" "hidden"
-                                                            ]
-                                                       )
-                                                )
-                                                details
-                                            ]
                                     in
                                     if List.isEmpty summaryItems then
                                         column [ width fill ] [ text "This block has no transactions in it." ]
 
                                     else
-                                        column [ width fill ] <|
-                                            List.concat <|
-                                                List.concat <|
-                                                    List.indexedMap
-                                                        (\itemIndex summaryItem ->
-                                                            List.indexedMap
-                                                                (\eventIndex summaryItemEvent ->
-                                                                    case summaryItemEvent.details of
-                                                                        Just details ->
-                                                                            let
-                                                                                displayDetails =
-                                                                                    detailsDisplayed
-                                                                                        |> Dict.get itemIndex
-                                                                                        |> Maybe.withDefault Set.empty
-                                                                                        |> Set.member eventIndex
-                                                                            in
-                                                                            viewWithDetails summaryItemEvent.content details displayDetails itemIndex eventIndex
-
-                                                                        Nothing ->
-                                                                            [ summaryItemEvent.content ]
-                                                                )
-                                                                summaryItem
-                                                        )
-                                                        summaryItems
+                                        column [ width fill ] <| viewSummaryItems ctx summaryItems detailsDisplayed ToggleDetails
                                 )
                                 model.blockSummary
                     in
@@ -159,7 +114,78 @@ view ctx model =
         ]
 
 
-viewContainer : Context a -> Element msg -> Element msg
+viewSummaryItems : Theme a -> List (SummaryItem msg) -> Dict Int (Set Int) -> (Int -> Int -> msg) -> List (Element msg)
+viewSummaryItems theme summaryItems detailsDisplayed onEventClick =
+    summaryItems
+        |> List.indexedMap
+            (\itemIndex summaryItem ->
+                viewSummaryItem theme
+                    summaryItem
+                    (detailsDisplayed
+                        |> Dict.get itemIndex
+                        |> Maybe.withDefault Set.empty
+                    )
+                    (onEventClick itemIndex)
+            )
+        |> List.concat
+
+
+viewSummaryItem : Theme a -> SummaryItem msg -> Set Int -> (Int -> msg) -> List (Element msg)
+viewSummaryItem theme item itemDetailsDisplayed onEventClick =
+    item
+        |> List.indexedMap
+            (\eventIndex summaryItemEvent ->
+                viewSummaryItemEvent theme
+                    summaryItemEvent
+                    (Set.member eventIndex itemDetailsDisplayed)
+                    (onEventClick eventIndex)
+            )
+        |> List.concat
+
+
+viewSummaryItemEvent : Theme a -> SummaryItemEvent msg -> Bool -> msg -> List (Element msg)
+viewSummaryItemEvent theme event displayDetails onContentClick =
+    case event.details of
+        Just details ->
+            [ el
+                ([ width fill
+                 , onClick onContentClick
+                 , pointer
+                 , htmlAttribute <| style "transition" "border 200ms ease-in"
+                 ]
+                    ++ (if displayDetails then
+                            [ Background.color <| Palette.lightish theme.palette.bg2
+                            , Border.color (Palette.lightish theme.palette.bg2)
+                            ]
+
+                        else
+                            []
+                       )
+                )
+                event.content
+            , el
+                ([ width fill
+                 , Background.color <| Palette.veryLight theme.palette.bg2
+                 , htmlAttribute <| style "transition" "max-height 200ms ease-in"
+                 ]
+                    ++ (if displayDetails then
+                            [ htmlAttribute <| style "max-height" "1000px"
+                            ]
+
+                        else
+                            [ htmlAttribute <| style "max-height" "0"
+                            , htmlAttribute <| style "overflow-y" "hidden"
+                            ]
+                       )
+                )
+                details
+            ]
+
+        Nothing ->
+            [ event.content ]
+
+
+viewContainer : Theme a -> Element msg -> Element msg
 viewContainer ctx content =
     el
         [ height fill
@@ -179,24 +205,24 @@ viewContainer ctx content =
         content
 
 
-viewHeader : Context a -> BlockInfo -> Element Msg
-viewHeader ctx blockInfo =
-    row ([ width fill, spacing 15, paddingXY 6 0 ] ++ bottomBorder ctx)
-        [ viewParentLink ctx blockInfo
-        , viewBlockHash ctx blockInfo
-        , viewBlockStats ctx blockInfo
+viewHeader : Theme a -> BlockInfo -> Element Msg
+viewHeader theme blockInfo =
+    row ([ width fill, spacing 15, paddingXY 6 0 ] ++ bottomBorder theme)
+        [ viewParentLink theme blockInfo
+        , viewBlockHash theme blockInfo.blockHash blockInfo.finalized
+        , viewBlockStats theme blockInfo
         ]
 
 
-viewParentLink : Context a -> BlockInfo -> Element Msg
+viewParentLink : Theme a -> BlockInfo -> Element Msg
 viewParentLink ctx blockInfo =
     let
         color =
-            blockColor ctx blockInfo
+            blockColor ctx blockInfo.finalized
                 |> withAlphaEl 0.5
 
         icon =
-            blockIcon blockInfo 20
+            blockIcon blockInfo.finalized 20
     in
     row
         [ Font.color color
@@ -212,22 +238,22 @@ viewParentLink ctx blockInfo =
         ]
 
 
-viewBlockHash : Context a -> BlockInfo -> Element Msg
-viewBlockHash ctx blockInfo =
+viewBlockHash : Theme a -> T.BlockHash -> Bool -> Element Msg
+viewBlockHash theme blockHash finalized =
     let
         ( short, remaining ) =
-            ( String.left 4 blockInfo.blockHash
-            , String.dropLeft 4 blockInfo.blockHash
+            ( String.left 4 blockHash
+            , String.dropLeft 4 blockHash
             )
 
         icon =
-            blockIcon blockInfo 20
+            blockIcon finalized 20
 
         copyIcon =
             Icons.copy_to_clipboard 18
 
         color =
-            blockColor ctx blockInfo
+            blockColor theme finalized
     in
     el [ paddingXY 0 6 ]
         (row
@@ -239,7 +265,7 @@ viewBlockHash ctx blockInfo =
             ]
             [ el [] (html icon)
             , el [ width (px 10) ] none
-            , el [ stringTooltipAbove ctx "Block hash" ]
+            , el [ stringTooltipAbove theme "Block hash" ]
                 (paragraph []
                     [ el [ Font.color color ] (text short)
                     , text remaining
@@ -247,34 +273,34 @@ viewBlockHash ctx blockInfo =
                 )
             , el [ width (px 10) ] none
             , el
-                [ stringTooltipAbove ctx "Copy to clipboard"
+                [ stringTooltipAbove theme "Copy to clipboard"
                 , pointer
-                , onClick (CopyToClipboard blockInfo.blockHash)
+                , onClick (CopyToClipboard blockHash)
                 ]
                 (html copyIcon)
             ]
         )
 
 
-blockColor : Context a -> BlockInfo -> Color
-blockColor ctx blockInfo =
-    if blockInfo.finalized == True then
+blockColor : Theme a -> Bool -> Color
+blockColor ctx finalized =
+    if finalized then
         ctx.palette.c2
 
     else
         ctx.palette.c1
 
 
-blockIcon : BlockInfo -> Float -> Svg msg
-blockIcon blockInfo =
-    if blockInfo.finalized == True then
+blockIcon : Bool -> Float -> Svg msg
+blockIcon finalized =
+    if finalized then
         Icons.block_finalized
 
     else
         Icons.block_not_finalized
 
 
-viewBlockStats : Context a -> BlockInfo -> Element Msg
+viewBlockStats : Theme a -> BlockInfo -> Element Msg
 viewBlockStats ctx blockInfo =
     row [ alignRight, spacing 15 ]
         [ viewBlockHeight ctx blockInfo
@@ -282,11 +308,11 @@ viewBlockStats ctx blockInfo =
         ]
 
 
-viewSlotTime : Context a -> BlockInfo -> Element Msg
+viewSlotTime : Theme a -> BlockInfo -> Element Msg
 viewSlotTime ctx blockInfo =
     let
         color =
-            blockColor ctx blockInfo
+            blockColor ctx blockInfo.finalized
 
         slotTime =
             -- @TODO add timezone support?
@@ -317,11 +343,11 @@ viewSlotTime ctx blockInfo =
         ]
 
 
-viewBlockHeight : Context a -> BlockInfo -> Element msg
+viewBlockHeight : Theme a -> BlockInfo -> Element msg
 viewBlockHeight ctx blockInfo =
     let
         color =
-            blockColor ctx blockInfo
+            blockColor ctx blockInfo.finalized
     in
     row
         [ height fill
@@ -335,7 +361,7 @@ viewBlockHeight ctx blockInfo =
         ]
 
 
-bottomBorder : Context a -> List (Attribute msg)
+bottomBorder : Theme a -> List (Attribute msg)
 bottomBorder ctx =
     [ Border.widthEach { top = 0, left = 0, right = 0, bottom = 1 }
     , Border.color ctx.palette.bg1
@@ -352,7 +378,7 @@ viewContentCells content =
     ]
 
 
-viewItemRow : Context a -> List (Attribute msg) -> List (Element msg) -> Element msg
+viewItemRow : Theme a -> List (Attribute msg) -> List (Element msg) -> Element msg
 viewItemRow ctx attrs children =
     row
         ([ width fill
@@ -367,25 +393,25 @@ viewItemRow ctx attrs children =
         children
 
 
-viewContentHeadline : Context a -> Element msg
-viewContentHeadline ctx =
-    viewItemRow ctx [ height (px 26), mouseOver [] ] <|
+viewContentHeadline : Theme a -> Element msg
+viewContentHeadline theme =
+    viewItemRow theme [ height (px 26), mouseOver [] ] <|
         viewContentCells
-            { tipe = el [ Font.color ctx.palette.fg1 ] <| text ""
-            , sender = el [ Font.color ctx.palette.fg1, centerX ] <| text "SENDER"
-            , event = el [ Font.color ctx.palette.fg1 ] <| text "EVENTS"
-            , cost = el [ Font.color ctx.palette.fg1, centerX ] <| text "COST"
-            , txHash = el [ Font.color ctx.palette.fg1 ] <| text "TX HASH"
+            { tipe = el [ Font.color theme.palette.fg1 ] <| text ""
+            , sender = el [ Font.color theme.palette.fg1, centerX ] <| text "SENDER"
+            , event = el [ Font.color theme.palette.fg1 ] <| text "EVENTS"
+            , cost = el [ Font.color theme.palette.fg1, centerX ] <| text "COST"
+            , txHash = el [ Font.color theme.palette.fg1 ] <| text "TX HASH"
             }
 
 
-type alias TransactionEventItem =
-    { content : List (Element Msg)
-    , details : Maybe (Element Msg)
+type alias TransactionEventItem msg =
+    { content : List (Element msg)
+    , details : Maybe (Element msg)
     }
 
 
-viewTransactionSummary : Context a -> TransactionSummary -> SummaryItem
+viewTransactionSummary : Theme a -> TransactionSummary -> SummaryItem Msg
 viewTransactionSummary ctx txSummary =
     let
         typeDecription =
@@ -499,8 +525,8 @@ viewTransactionSummary ctx txSummary =
             ]
 
 
-type alias TypeDescription =
-    { icon : Element Msg
+type alias TypeDescription msg =
+    { icon : Element msg
 
     {- |Short description
 
@@ -510,12 +536,12 @@ type alias TypeDescription =
     }
 
 
-iconFromTypeDescription : Context a -> TypeDescription -> Element Msg
+iconFromTypeDescription : Theme a -> TypeDescription msg -> Element msg
 iconFromTypeDescription ctx tyDesc =
     el [ stringTooltipAbove ctx tyDesc.short ] tyDesc.icon
 
 
-typeDescriptionTransactionSummaryType : TransactionSummaryType -> TypeDescription
+typeDescriptionTransactionSummaryType : TransactionSummaryType -> TypeDescription msg
 typeDescriptionTransactionSummaryType transactionSummaryType =
     case transactionSummaryType of
         AccountTransaction ty ->
@@ -528,7 +554,7 @@ typeDescriptionTransactionSummaryType transactionSummaryType =
             typeDescriptionUpdateType ty
 
 
-typeDescriptionAccountTransactionType : AccountTransactionType -> TypeDescription
+typeDescriptionAccountTransactionType : AccountTransactionType -> TypeDescription msg
 typeDescriptionAccountTransactionType accountTransactionType =
     case accountTransactionType of
         DeployModule ->
@@ -583,7 +609,7 @@ typeDescriptionAccountTransactionType accountTransactionType =
             { icon = el [ paddingXY 6 0 ] <| text "?", short = "Serialization" }
 
 
-typeDescriptionCredentialType : CredentialType -> TypeDescription
+typeDescriptionCredentialType : CredentialType -> TypeDescription msg
 typeDescriptionCredentialType credentialType =
     case credentialType of
         Initial ->
@@ -593,14 +619,14 @@ typeDescriptionCredentialType credentialType =
             { icon = html <| Icons.account_credentials_deployed 18, short = "Deploy normal credential" }
 
 
-typeDescriptionUpdateType : UpdateType -> TypeDescription
+typeDescriptionUpdateType : UpdateType -> TypeDescription msg
 typeDescriptionUpdateType updateType =
     { icon = html <| Icons.system_cog 20
     , short = "Enqueue chain update"
     }
 
 
-rejectionToItem : Context a -> RejectReason -> { content : List (Element Msg), details : Maybe (Element Msg) }
+rejectionToItem : Theme a -> RejectReason -> { content : List (Element Msg), details : Maybe (Element Msg) }
 rejectionToItem ctx reason =
     case reason of
         ModuleNotWF ->
@@ -769,7 +795,7 @@ asPercentage n =
     String.left 5 (String.fromFloat (T.roundTo 4 n * 100)) ++ "%"
 
 
-viewHeaderBox : Context a -> Color -> String -> Element msg -> Element msg
+viewHeaderBox : Theme a -> Color -> String -> Element msg -> Element msg
 viewHeaderBox ctx color header content =
     column [ Border.width 1, Border.rounded 5, Border.color color ]
         [ el
@@ -793,12 +819,12 @@ viewHeaderBox ctx color header content =
         ]
 
 
-viewSpecialAccount : Context a -> Color -> String -> T.Amount -> Element Msg
+viewSpecialAccount : Theme a -> Color -> String -> T.Amount -> Element Msg
 viewSpecialAccount ctx color name amount =
     viewHeaderBox ctx color name <| text <| T.amountToString amount
 
 
-viewPlusAmount : Context a -> T.Amount -> Element Msg
+viewPlusAmount : Theme a -> T.Amount -> Element Msg
 viewPlusAmount ctx amount =
     el [ Font.color ctx.palette.success, Font.center, width fill ] <| text <| "+ " ++ T.amountToString amount
 
@@ -810,7 +836,7 @@ type alias BarPart =
     }
 
 
-viewBar : Context a -> List BarPart -> Element msg
+viewBar : Theme a -> List BarPart -> Element msg
 viewBar ctx parts =
     column [ width fill ]
         [ row [ width fill ] <|
@@ -862,7 +888,7 @@ viewDetailRow l r =
     row [ width fill, spacing 20, padding 20 ] [ column [ width (fillPortion 2), spacing 20 ] l, column [ width (fillPortion 3), spacing 20 ] r ]
 
 
-viewSpecialEvent : Context a -> RewardParameters -> SpecialEvent -> SummaryItem
+viewSpecialEvent : Theme a -> RewardParameters -> SpecialEvent -> SummaryItem Msg
 viewSpecialEvent ctx rewardParameters specialEvent =
     let
         item =
@@ -1114,7 +1140,7 @@ capitalize str =
             String.fromList <| Char.toUpper c :: cs
 
 
-viewFinalizationData : Context a -> Maybe FinalizationData -> SummaryItem
+viewFinalizationData : Theme a -> Maybe FinalizationData -> SummaryItem Msg
 viewFinalizationData ctx finalizationData =
     case finalizationData of
         Just data ->
@@ -1209,7 +1235,7 @@ viewFinalizationData ctx finalizationData =
             []
 
 
-viewTable : Context a -> { data : List records, columns : List (IndexedColumn records msg) } -> Element msg
+viewTable : Theme a -> { data : List records, columns : List (IndexedColumn records msg) } -> Element msg
 viewTable ctx table =
     let
         tableColumn attrs index value =
@@ -1257,7 +1283,7 @@ viewTable ctx table =
         { data = table.data, columns = columns }
 
 
-viewKeyValue : Context a -> List ( String, Element msg ) -> Element msg
+viewKeyValue : Theme a -> List ( String, Element msg ) -> Element msg
 viewKeyValue ctx data =
     viewTable ctx
         { data = data
@@ -1279,7 +1305,7 @@ isEven n =
     modBy 2 n == 0
 
 
-viewTransactionEvent : Context a -> TransactionEvent -> TransactionEventItem
+viewTransactionEvent : Theme a -> TransactionEvent -> TransactionEventItem Msg
 viewTransactionEvent ctx txEvent =
     case txEvent of
         -- Transfers
@@ -1600,7 +1626,7 @@ viewTransactionEvent ctx txEvent =
             }
 
 
-viewEventUpdateEnueuedDetails : Context a -> EventUpdateEnqueued -> Element Msg
+viewEventUpdateEnueuedDetails : Theme a -> EventUpdateEnqueued -> Element Msg
 viewEventUpdateEnueuedDetails ctx event =
     case event.payload of
         MintDistributionPayload mintDistribution ->
@@ -1686,7 +1712,7 @@ viewEventUpdateEnueuedDetails ctx event =
 
 {-| Display a relation as a fraction
 -}
-viewRelation : Context a -> Relation -> Element msg
+viewRelation : Theme a -> Relation -> Element msg
 viewRelation ctx relation =
     column [ spacing 5 ]
         [ el [ centerX ] <| text <| String.fromInt relation.numerator
@@ -1695,7 +1721,7 @@ viewRelation ctx relation =
         ]
 
 
-viewAsAddressContract : Context a -> T.ContractAddress -> Element Msg
+viewAsAddressContract : Theme a -> T.ContractAddress -> Element Msg
 viewAsAddressContract ctx contractAddress =
     let
         content =
@@ -1715,7 +1741,7 @@ viewAsAddressContract ctx contractAddress =
             T.AddressContract contractAddress
 
 
-viewAddress : Context a -> T.Address -> Element Msg
+viewAddress : Theme a -> T.Address -> Element Msg
 viewAddress ctx addr =
     case addr of
         T.AddressAccount address ->
@@ -1738,7 +1764,7 @@ viewAddress ctx addr =
 
 {-| View a baker as "<acc> (Baker: <baker-id>)". The account is shown using `viewAddress`.
 -}
-viewBaker : Context a -> Int -> T.AccountAddress -> Element Msg
+viewBaker : Theme a -> Int -> T.AccountAddress -> Element Msg
 viewBaker ctx bakerId addr =
     row
         [ spacing 4 ]
@@ -1749,7 +1775,7 @@ viewBaker ctx bakerId addr =
 
 {-| Show the text 'details' and, on hover, show the String provided.
 -}
-viewDetailsTextWithOnHover : Context a -> String -> Element Msg
+viewDetailsTextWithOnHover : Theme a -> String -> Element Msg
 viewDetailsTextWithOnHover ctx details =
     el
         [ Font.color (ctx.palette.c2 |> withAlphaEl 0.6)

@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Api
 import Browser exposing (..)
 import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
@@ -13,12 +14,12 @@ import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Explorer
-import Explorer.Request
 import Explorer.View
 import Html exposing (Html)
 import Html.Attributes exposing (style)
 import Json.Decode as D
 import Json.Encode as E
+import Lookup
 import Material.Icons.Sharp as Icon
 import Material.Icons.Types exposing (Coloring(..))
 import Network exposing (viewSummaryWidgets)
@@ -68,6 +69,7 @@ type alias Model =
     , chainModel : Chain.Model
     , explorerModel : Explorer.Model
     , toastModel : ToastModel
+    , lookupModel : Lookup.Model
     }
 
 
@@ -85,6 +87,7 @@ type Msg
     | ChainMsg Chain.Msg
     | ToggleDarkMode
     | ExplorerMsg Explorer.Msg
+    | LookupMsg Lookup.Msg
 
 
 main : Program Flags Model Msg
@@ -125,6 +128,7 @@ init flags url key =
                 , chainModel = chainInit
                 , explorerModel = Explorer.init { middlewareUrl = cfg.middlewareUrl }
                 , toastModel = { visible = False, contents = "", showCount = 0 }
+                , lookupModel = Lookup.init key
                 }
     in
     ( initModel
@@ -254,7 +258,7 @@ update msg model =
                                 chainModel.selectedBlock
                                     |> Maybe.map
                                         (\hash ->
-                                            Explorer.Request.getBlockInfo
+                                            Api.getBlockInfo
                                                 model.explorerModel.config
                                                 hash
                                                 (ExplorerMsg << Explorer.ReceivedBlockInfo)
@@ -312,6 +316,18 @@ update msg model =
             in
             ( { model | explorerModel = newExplorerModel, chainModel = chainModel }, Cmd.map ExplorerMsg newExplorerCmd )
 
+        LookupMsg lookupMsg ->
+            case lookupMsg of
+                Lookup.CopyToClipboard str ->
+                    update (CopyToClipboard str) model
+
+                _ ->
+                    let
+                        ( newLookupModel, cmd ) =
+                            Lookup.update lookupMsg model.lookupModel
+                    in
+                    ( { model | lookupModel = newLookupModel }, Cmd.map LookupMsg cmd )
+
 
 rebuildChain : ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
 rebuildChain ( model, cmd ) =
@@ -332,13 +348,20 @@ onRouteInit page model =
     case page of
         ChainInit ->
             ( model
-            , Explorer.Request.getConsensusStatus model.explorerModel.config (ExplorerMsg << Explorer.ReceivedConsensusStatus)
+            , Api.getConsensusStatus model.explorerModel.config (ExplorerMsg << Explorer.ReceivedConsensusStatus)
             )
 
         ChainSelected hash ->
             ( { model | chainModel = Chain.selectBlock model.chainModel hash }
-            , Explorer.Request.getBlockInfo model.explorerModel.config hash (ExplorerMsg << Explorer.ReceivedBlockInfo)
+            , Api.getBlockInfo model.explorerModel.config hash (ExplorerMsg << Explorer.ReceivedBlockInfo)
             )
+
+        LookupTransaction txHash ->
+            let
+                lookupModel =
+                    model.lookupModel
+            in
+            ( { model | lookupModel = { lookupModel | searchTextValue = txHash } }, Api.getTransactionStatus model.explorerModel.config txHash (LookupMsg << Lookup.ReceivedTransactionStatus) )
 
         _ ->
             ( model, Cmd.none )
@@ -375,14 +398,20 @@ view model =
                     Network ->
                         Element.map NetworkMsg <| Network.NodesTable.view model model.networkModel
 
-                    NodeView nodeName ->
+                    NodeView _ ->
                         Element.map NetworkMsg <| Network.Node.view model model.networkModel
 
                     ChainInit ->
                         viewChain model
 
-                    ChainSelected hash ->
+                    ChainSelected _ ->
                         viewChain model
+
+                    Lookup ->
+                        viewLookup model
+
+                    LookupTransaction _ ->
+                        viewLookup model
                 ]
         ]
     }
@@ -406,6 +435,7 @@ viewHeader ctx =
         , row [ alignRight, spacing 20, Font.color ctx.palette.fg2 ]
             [ link linkstyle { url = Route.toString Network, label = text "Network" }
             , link linkstyle { url = Route.toString ChainInit, label = text "Chain" }
+            , link linkstyle { url = Route.toString Lookup, label = text "Lookup" }
             , viewColorModeToggle ctx
             ]
         ]
@@ -454,6 +484,21 @@ viewChain model =
             ]
 
 
+viewLookup : Model -> Element Msg
+viewLookup model =
+    Widgets.content <|
+        column [ width fill, height fill, spacing 20 ]
+            [ viewSummaryWidgets model model.networkModel.nodes
+            , row [ viewCopiedToast model, centerX ] []
+            , Element.map LookupMsg <|
+                Lookup.view
+                    { palette = model.palette
+                    , colorMode = model.colorMode
+                    }
+                    model.lookupModel
+            ]
+
+
 viewCopiedToast : Model -> Attribute Msg
 viewCopiedToast model =
     let
@@ -495,7 +540,15 @@ translateMsg msg =
 
 theme : Palette Color -> Element msg -> Html.Html msg
 theme palette elements =
-    layout
+    layoutWith
+        { options =
+            [ focusStyle
+                { borderColor = Just palette.fg1
+                , backgroundColor = Just palette.bg2
+                , shadow = Nothing
+                }
+            ]
+        }
         [ width fill
         , height fill
         , Background.color <| palette.bg1
