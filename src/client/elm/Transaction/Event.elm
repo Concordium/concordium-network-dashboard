@@ -199,7 +199,7 @@ type UpdatePayload
     | EuroPerEnergyPayload Relation
     | MicroGtuPerEnergyPayload Relation
     | FoundationAccountPayload T.AccountAddress
-    | AuthorizationPayload Authorization
+    | AuthorizationPayload Authorizations
 
 
 type alias MintDistribution =
@@ -223,34 +223,35 @@ type alias GasRewards =
     }
 
 
+type alias Authorizations =
+    { mintDistribution : Authorization
+    , transactionFeeDistribution : Authorization
+    , authorization : Authorization
+    , microGTUPerEuro : Authorization
+    , protocol : Authorization
+    , paramGASRewards : Authorization
+    , emergency : Authorization
+    , keys : List AuthorizationKey
+    }
+
+
 type alias Authorization =
-    {}
+    { threshold : Int
+    , authorizedKeys : List KeyIndex
+    }
+
+
+type alias KeyIndex =
+    Int
+
+
+type alias AuthorizationKey =
+    { verifyKey : String
+    , schemeId : String
+    }
 
 
 
--- type alias Authorization =
---     { keys : List AuthorizationKey
---     , emergency : AuthorizationAccess
---     , authorization : AuthorizationAccess
---     , protocol : AuthorizationAccess
---     , electionDifficulty : AuthorizationAccess
---     , euroPerEnergy : AuthorizationAccess
---     , microGTUPerEuro : AuthorizationAccess
---     , foundationAccount : AuthorizationAccess
---     , mintDistribution : AuthorizationAccess
---     , transactionFeeDistribution : AuthorizationAccess
---     , paramGASRewards : AuthorizationAccess
---     }
--- type alias KeyIndex =
---     Int
--- type alias AuthorizationKey =
---     { schemeId : String
---     , verifyKey : String
---     }
--- type alias AuthorizationAccess =
---     { authorizedKeys : List KeyIndex
---     , threshold : Int
---     }
 -- Errors
 
 
@@ -295,7 +296,7 @@ updatePayloadDecoder =
                         T.accountAddressDecoder |> D.map FoundationAccountPayload
 
                     "authorization" ->
-                        authorizationDecoder |> D.map AuthorizationPayload
+                        authorizationsDecoder |> D.map AuthorizationPayload
 
                     _ ->
                         D.fail "Unknown update type"
@@ -327,9 +328,31 @@ gasRewardsDecoder =
         |> required "finalizationProof" D.float
 
 
-authorizationDecoder : D.Decoder Authorization
-authorizationDecoder =
+authorizationsDecoder : D.Decoder Authorizations
+authorizationsDecoder =
+    D.succeed Authorizations
+        |> required "mintDistribution" authorizationDecorder
+        |> required "transactionFeeDistribution" authorizationDecorder
+        |> required "authorization" authorizationDecorder
+        |> required "microGTUPerEuro" authorizationDecorder
+        |> required "protocol" authorizationDecorder
+        |> required "paramGASRewards" authorizationDecorder
+        |> required "emergency" authorizationDecorder
+        |> required "keys" (D.list authorizationKeyDecorder)
+
+
+authorizationDecorder : D.Decoder Authorization
+authorizationDecorder =
     D.succeed Authorization
+        |> required "threshold" D.int
+        |> required "authorizedKeys" (D.list D.int)
+
+
+authorizationKeyDecorder : D.Decoder AuthorizationKey
+authorizationKeyDecorder =
+    D.succeed AuthorizationKey
+        |> required "verifyKey" D.string
+        |> required "schemeId" D.string
 
 
 transactionEventsDecoder : D.Decoder TransactionEvent
