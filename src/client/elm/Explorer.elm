@@ -9,11 +9,30 @@ import Set exposing (Set)
 import Types as T
 
 
+{-| Block summary together with state used when displaying.
+-}
 type alias DisplayDetailBlockSummary =
     { blockSummary : BlockSummary
+    , state : BlockSummaryDisplayState
+    }
 
-    -- A set of indexes of transactions with details actively displayed in the view.
-    , detailsDisplayed : Dict Int (Set Int)
+
+{-| State used by the view when displaying the block summary
+-}
+type alias BlockSummaryDisplayState =
+    { -- A mapping from an index of a transaction to a set of indecies of events
+      -- in that transaction, with details currently open.
+      transactionWithDetailsOpen : Dict Int (Set Int)
+
+    -- A set of indicies of events with details open.
+    , specialEventWithDetailsOpen : Set Int
+    }
+
+
+initialBlockSummaryDisplayState : BlockSummaryDisplayState
+initialBlockSummaryDisplayState =
+    { transactionWithDetailsOpen = Dict.empty
+    , specialEventWithDetailsOpen = Set.empty
     }
 
 
@@ -29,7 +48,14 @@ type Msg
     = ReceivedConsensusStatus (ApiResult Api.ConsensusStatus)
     | ReceivedBlockInfo (ApiResult Api.BlockInfo)
     | ReceivedBlockSummary (ApiResult BlockSummary)
-    | ToggleDisplayDetails Int Int
+    | Display DisplayMsg
+
+
+{-| Messages for manipulating the display state
+-}
+type DisplayMsg
+    = ToggleTransactionDetails Int Int
+    | ToggleSpecialEventDetails Int
 
 
 init : Config -> Model
@@ -71,24 +97,39 @@ update msg model =
             ( { model
                 | blockSummary =
                     blockSummaryResult
-                        |> Result.map (\blockSummary -> { blockSummary = blockSummary, detailsDisplayed = Dict.empty })
+                        |> Result.map (\blockSummary -> { blockSummary = blockSummary, state = initialBlockSummaryDisplayState })
                         |> RemoteData.fromResult
               }
             , Cmd.none
             )
 
-        ToggleDisplayDetails itemIndex eventIndex ->
+        Display displayMsg ->
             let
                 nextBlockSummary =
                     model.blockSummary
                         |> RemoteData.map
                             (\displayDetailBlockSummary ->
                                 { displayDetailBlockSummary
-                                    | detailsDisplayed =
-                                        Dict.update itemIndex
-                                            (Maybe.withDefault Set.empty >> toggleSetMember eventIndex >> Just)
-                                            displayDetailBlockSummary.detailsDisplayed
+                                    | state = updateDisplayState displayMsg displayDetailBlockSummary.state
                                 }
                             )
             in
             ( { model | blockSummary = nextBlockSummary }, Cmd.none )
+
+
+updateDisplayState : DisplayMsg -> BlockSummaryDisplayState -> BlockSummaryDisplayState
+updateDisplayState msg state =
+    case msg of
+        ToggleTransactionDetails transactionIndex eventIndex ->
+            { state
+                | transactionWithDetailsOpen =
+                    Dict.update
+                        transactionIndex
+                        (Maybe.withDefault Set.empty >> toggleSetMember eventIndex >> Just)
+                        state.transactionWithDetailsOpen
+            }
+
+        ToggleSpecialEventDetails eventIndex ->
+            { state
+                | specialEventWithDetailsOpen = toggleSetMember eventIndex state.specialEventWithDetailsOpen
+            }

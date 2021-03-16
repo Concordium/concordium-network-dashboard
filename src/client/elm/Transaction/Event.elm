@@ -197,9 +197,10 @@ type UpdatePayload
     | GasRewardsPayload GasRewards
     | ElectionDifficultyPayload Float
     | EuroPerEnergyPayload Relation
-    | MicroGtuPerEnergyPayload Relation
+    | MicroGtuPerEuroPayload Relation
     | FoundationAccountPayload T.AccountAddress
     | AuthorizationPayload Authorizations
+    | ProtocolUpdatePayload ProtocolUpdate
 
 
 type alias MintDistribution =
@@ -228,6 +229,9 @@ type alias Authorizations =
     , transactionFeeDistribution : Authorization
     , authorization : Authorization
     , microGTUPerEuro : Authorization
+    , euroPerEnergy : Authorization
+    , electionDifficulty : Authorization
+    , foundationAccount : Authorization
     , protocol : Authorization
     , paramGASRewards : Authorization
     , emergency : Authorization
@@ -248,6 +252,14 @@ type alias KeyIndex =
 type alias AuthorizationKey =
     { verifyKey : String
     , schemeId : String
+    }
+
+
+type alias ProtocolUpdate =
+    { message : String
+    , specificationURL : String
+    , specificationHash : String
+    , specificationAuxiliaryData : String
     }
 
 
@@ -290,13 +302,16 @@ updatePayloadDecoder =
                         relationDecoder |> D.map EuroPerEnergyPayload
 
                     "microGTUPerEuro" ->
-                        relationDecoder |> D.map MicroGtuPerEnergyPayload
+                        relationDecoder |> D.map MicroGtuPerEuroPayload
 
                     "foundationAccount" ->
                         T.accountAddressDecoder |> D.map FoundationAccountPayload
 
                     "authorization" ->
                         authorizationsDecoder |> D.map AuthorizationPayload
+
+                    "protocol" ->
+                        protocolUpdateDecoder |> D.map ProtocolUpdatePayload
 
                     _ ->
                         D.fail "Unknown update type"
@@ -335,6 +350,9 @@ authorizationsDecoder =
         |> required "transactionFeeDistribution" authorizationDecorder
         |> required "authorization" authorizationDecorder
         |> required "microGTUPerEuro" authorizationDecorder
+        |> required "euroPerEnergy" authorizationDecorder
+        |> required "electionDifficulty" authorizationDecorder
+        |> required "foundationAccount" authorizationDecorder
         |> required "protocol" authorizationDecorder
         |> required "paramGASRewards" authorizationDecorder
         |> required "emergency" authorizationDecorder
@@ -353,6 +371,15 @@ authorizationKeyDecorder =
     D.succeed AuthorizationKey
         |> required "verifyKey" D.string
         |> required "schemeId" D.string
+
+
+protocolUpdateDecoder : D.Decoder ProtocolUpdate
+protocolUpdateDecoder =
+    D.succeed ProtocolUpdate
+        |> required "message" D.string
+        |> required "specificationURL" D.string
+        |> required "specificationHash" D.string
+        |> required "specificationAuxiliaryData" D.string
 
 
 transactionEventsDecoder : D.Decoder TransactionEvent
