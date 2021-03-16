@@ -98,15 +98,13 @@ type alias UpdateQueues =
 
 type alias UpdateQueue a =
     { nextSequenceNumber : Int
-    , queue : List a
+    , queue : List (UpdateQueueItem a)
     }
 
 
-type alias ProtocolUpdate =
-    { message : String
-    , specificationURL : String
-    , specificationHash : String
-    , specificationAuxiliaryData : String
+type alias UpdateQueueItem a =
+    { effectiveTime : Posix
+    , update : a
     }
 
 
@@ -156,16 +154,14 @@ updateQueueDecoder : D.Decoder a -> D.Decoder (UpdateQueue a)
 updateQueueDecoder decoder =
     D.succeed UpdateQueue
         |> required "nextSequenceNumber" D.int
-        |> required "queue" (D.list decoder)
+        |> required "queue" (D.list (updateQueueItemDecoder decoder))
 
 
-protocolUpdateDecoder : D.Decoder ProtocolUpdate
-protocolUpdateDecoder =
-    D.succeed ProtocolUpdate
-        |> required "message" D.string
-        |> required "specificationURL" D.string
-        |> required "specificationHash" D.string
-        |> required "specificationAuxiliaryData" D.string
+updateQueueItemDecoder : D.Decoder a -> D.Decoder (UpdateQueueItem a)
+updateQueueItemDecoder decoder =
+    D.succeed UpdateQueueItem
+        |> required "effectiveTime" (D.map (\seconds -> Time.millisToPosix (seconds * 1000)) D.int)
+        |> required "update" decoder
 
 
 
