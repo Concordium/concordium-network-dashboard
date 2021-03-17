@@ -187,6 +187,9 @@ viewTransactionStatus theme data =
         Api.InvalidTransactionHash ->
             el [ centerX, padding 10, Font.color theme.palette.warning ] <| text "Invalid transaction hash"
 
+        Api.TransactionNotFound ->
+            el [ centerX, padding 10, Font.color theme.palette.warning ] <| text "Transaction not found"
+
         Api.Status transactionStatus ->
             case transactionStatus of
                 Api.Received ->
