@@ -159,12 +159,13 @@ type TransactionStatus
 
 {-| The response from getting the transaction status.
 
-Since the middleware will either return the transaction status or a string
-with the error as the body.
+The middleware will return the transaction status if found and null if not found,
+errors are returned as strings.
 
 -}
 type TransactionStatusResponse
     = Status TransactionStatus
+    | TransactionNotFound
     | InvalidTransactionHash
 
 
@@ -210,4 +211,5 @@ transactionStatusResponseDecoder =
                     else
                         D.fail "Unknown transaction status response"
                 )
+        , D.null TransactionNotFound
         ]
