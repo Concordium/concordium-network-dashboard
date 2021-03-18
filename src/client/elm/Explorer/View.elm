@@ -1790,7 +1790,7 @@ viewEventUpdateEnueuedDetails ctx event =
             paragraph [] [ text "Update the Foundation account to be ", viewAddress ctx <| T.AddressAccount foundationAccount ]
 
         AuthorizationPayload authorization ->
-            paragraph [] [ text "Update the chain update authorization." ]
+            paragraph [] [ text "Update the chain-update authorization." ]
 
         ProtocolUpdatePayload protocolUpdate ->
             paragraph []

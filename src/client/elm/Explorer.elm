@@ -20,7 +20,7 @@ type alias DisplayDetailBlockSummary =
 {-| State used by the view when displaying the block summary
 -}
 type alias BlockSummaryDisplayState =
-    { -- A mapping from an index of a transaction to a set of indecies of events
+    { -- A mapping from an index of a transaction to a set of indices of events
       -- in that transaction, with details currently open.
       transactionWithDetailsOpen : Dict Int (Set Int)
 
