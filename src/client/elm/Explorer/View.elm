@@ -1782,7 +1782,7 @@ viewEventUpdateEnueuedDetails ctx event =
 
         MicroGtuPerEuroPayload microGtuPerEnergy ->
             row [ width fill ]
-                [ text "Update the amount of μGTU per energy to "
+                [ text "Update the amount of μGTU per Euro to "
                 , viewRelation ctx microGtuPerEnergy
                 ]
 
