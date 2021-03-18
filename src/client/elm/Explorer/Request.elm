@@ -6,7 +6,7 @@ import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
 import Task
 import Time exposing (Posix)
-import Transaction.Event exposing (GasRewards, MintDistribution, Relation, TransactionFeeDistribution, gasRewardsDecoder, mintDistributionDecoder, relationDecoder, transactionFeeDistributionDecoder)
+import Transaction.Event exposing (..)
 import Transaction.Summary exposing (..)
 import Types as T
 
@@ -60,6 +60,8 @@ blockSummaryDecoder =
 
 type alias Updates =
     { chainParameters : ChainParameters
+    , authorizations : Authorizations
+    , updateQueues : UpdateQueues
     }
 
 
@@ -81,10 +83,37 @@ type alias RewardParameters =
     }
 
 
+type alias UpdateQueues =
+    { mintDistribution : UpdateQueue MintDistribution
+    , transactionFeeDistribution : UpdateQueue TransactionFeeDistribution
+    , authorization : UpdateQueue Authorizations
+    , microGTUPerEuro : UpdateQueue Relation
+    , protocol : UpdateQueue ProtocolUpdate
+    , gasRewards : UpdateQueue GasRewards
+    , foundationAccount : UpdateQueue T.AccountAddress
+    , electionDifficulty : UpdateQueue Float
+    , euroPerEnergy : UpdateQueue Relation
+    }
+
+
+type alias UpdateQueue a =
+    { nextSequenceNumber : Int
+    , queue : List (UpdateQueueItem a)
+    }
+
+
+type alias UpdateQueueItem a =
+    { effectiveTime : Posix
+    , update : a
+    }
+
+
 updatesDecoder : D.Decoder Updates
 updatesDecoder =
     D.succeed Updates
         |> required "chainParameters" chainParametersDecoder
+        |> required "authorizations" authorizationsDecoder
+        |> required "updateQueues" updateQueuesDecoder
 
 
 chainParametersDecoder : D.Decoder ChainParameters
@@ -105,6 +134,34 @@ rewardParametersDecoder =
         |> required "mintDistribution" mintDistributionDecoder
         |> required "transactionFeeDistribution" transactionFeeDistributionDecoder
         |> required "gASRewards" gasRewardsDecoder
+
+
+updateQueuesDecoder : D.Decoder UpdateQueues
+updateQueuesDecoder =
+    D.succeed UpdateQueues
+        |> required "mintDistribution" (updateQueueDecoder mintDistributionDecoder)
+        |> required "transactionFeeDistribution" (updateQueueDecoder transactionFeeDistributionDecoder)
+        |> required "authorization" (updateQueueDecoder authorizationsDecoder)
+        |> required "microGTUPerEuro" (updateQueueDecoder relationDecoder)
+        |> required "protocol" (updateQueueDecoder protocolUpdateDecoder)
+        |> required "gasRewards" (updateQueueDecoder gasRewardsDecoder)
+        |> required "foundationAccount" (updateQueueDecoder T.accountAddressDecoder)
+        |> required "electionDifficulty" (updateQueueDecoder D.float)
+        |> required "euroPerEnergy" (updateQueueDecoder relationDecoder)
+
+
+updateQueueDecoder : D.Decoder a -> D.Decoder (UpdateQueue a)
+updateQueueDecoder decoder =
+    D.succeed UpdateQueue
+        |> required "nextSequenceNumber" D.int
+        |> required "queue" (D.list (updateQueueItemDecoder decoder))
+
+
+updateQueueItemDecoder : D.Decoder a -> D.Decoder (UpdateQueueItem a)
+updateQueueItemDecoder decoder =
+    D.succeed UpdateQueueItem
+        |> required "effectiveTime" (D.map (\seconds -> Time.millisToPosix (seconds * 1000)) D.int)
+        |> required "update" decoder
 
 
 

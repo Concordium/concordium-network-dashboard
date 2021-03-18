@@ -1,6 +1,7 @@
 module Explorer.View exposing (..)
 
 import Api exposing (BlockInfo)
+import Browser exposing (UrlRequest)
 import Context exposing (Theme)
 import Dict exposing (Dict)
 import Element exposing (..)
@@ -8,7 +9,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
-import Explorer exposing (Model)
+import Explorer exposing (DisplayDetailBlockSummary, DisplayMsg(..), Model)
 import Explorer.Request exposing (..)
 import Html
 import Html.Attributes exposing (style)
@@ -29,7 +30,8 @@ import Widgets exposing (arrowRight, remoteDataView)
 type Msg
     = CopyToClipboard String
     | BlockClicked String
-    | ToggleDetails Int Int
+    | Display DisplayMsg
+    | UrlClicked UrlRequest
 
 
 type alias SummaryItem msg =
@@ -69,48 +71,73 @@ finalizationRewardAccountLower =
 
 
 view : Theme a -> Model -> Element Msg
-view ctx model =
+view theme model =
     column [ spacing 40, width fill ]
-        [ viewContainer ctx
-            (remoteDataView ctx.palette
+        [ viewContainer theme
+            (remoteDataView theme.palette
                 (\blockInfo ->
-                    let
-                        summaries =
-                            remoteDataView ctx.palette
-                                (\{ blockSummary, detailsDisplayed } ->
-                                    let
-                                        transactionSummaries =
-                                            blockSummary.transactionSummaries
-                                                |> List.concatMap (viewTransactionSummary ctx)
-
-                                        specialEvents =
-                                            blockSummary.specialEvents
-                                                |> List.map (viewSpecialEvent ctx blockSummary.updates.chainParameters.rewardParameters)
-
-                                        finalizations =
-                                            viewFinalizationData ctx blockSummary.finalizationData
-
-                                        summaryItems : List (SummaryItem Msg)
-                                        summaryItems =
-                                            transactionSummaries :: specialEvents ++ [ finalizations ]
-                                    in
-                                    if List.isEmpty summaryItems then
-                                        column [ width fill ] [ text "This block has no transactions in it." ]
-
-                                    else
-                                        column [ width fill ] <| viewSummaryItems ctx summaryItems detailsDisplayed ToggleDetails
-                                )
-                                model.blockSummary
-                    in
                     column
                         [ width fill ]
-                        [ viewHeader ctx blockInfo
-                        , viewContentHeadline ctx
-                        , summaries
+                        [ viewHeader theme blockInfo
+                        , remoteDataView theme.palette (viewBlockSummary theme) model.blockSummary
                         ]
                 )
                 model.blockInfo
             )
+        ]
+
+
+viewBlockSummary : Theme a -> DisplayDetailBlockSummary -> Element Msg
+viewBlockSummary theme { blockSummary, state } =
+    let
+        transactionSummaries =
+            blockSummary.transactionSummaries
+                |> List.map (viewTransactionSummary theme)
+
+        specialEvents =
+            blockSummary.specialEvents
+                |> List.map (viewSpecialEvent theme blockSummary.updates.chainParameters.rewardParameters)
+
+        finalizations =
+            viewFinalizationData theme blockSummary.finalizationData
+
+        section =
+            column [ width fill, padding 20 ]
+    in
+    column [ width fill ]
+        [ section <|
+            titleWithSubtitle theme "Transactions" "Transactions included in this block"
+                :: (if List.isEmpty transactionSummaries then
+                        [ column [ width fill, padding 20 ] [ el [ centerX, Font.color theme.palette.fg2 ] <| text "No transactions in this block." ] ]
+
+                    else
+                        [ row [ width fill, padding 10, spacing 15 ] <|
+                            transactionRowCells
+                                { tipe = none -- blockSummaryContentHeader theme "TYPE"
+                                , sender = el [ centerX ] <| blockSummaryContentHeader theme "SENDER"
+                                , event = blockSummaryContentHeader theme "EVENTS"
+                                , cost = el [ centerX ] <| blockSummaryContentHeader theme "COST"
+                                , txHash = blockSummaryContentHeader theme "TX HASH"
+                                }
+                        , column [ width fill ] <| viewSummaryItems theme transactionSummaries state.transactionWithDetailsOpen (\t e -> Display <| Explorer.ToggleTransactionDetails t e)
+                        ]
+                   )
+        , section
+            [ titleWithSubtitle theme "Tokenomics" "Distribution of transaction fees and minted tokens for this block"
+            , row [ width fill, padding 10, spacing 15 ] <|
+                transactionRowCells
+                    { tipe = none
+                    , sender = none
+                    , event = blockSummaryContentHeader theme "EVENTS"
+                    , cost = none
+                    , txHash = none
+                    }
+            , column [ width fill, spacing 5 ] <| viewSummaryItem theme (List.concat specialEvents ++ finalizations) state.specialEventWithDetailsOpen (Display << ToggleSpecialEventDetails)
+            ]
+        , section
+            [ titleWithSubtitle theme "Updates" "Updates queued at the time of this block"
+            , viewUpdates theme blockSummary.updates
+            ]
         ]
 
 
@@ -140,49 +167,40 @@ viewSummaryItem theme item itemDetailsDisplayed onEventClick =
                     (Set.member eventIndex itemDetailsDisplayed)
                     (onEventClick eventIndex)
             )
-        |> List.concat
 
 
-viewSummaryItemEvent : Theme a -> SummaryItemEvent msg -> Bool -> msg -> List (Element msg)
+viewSummaryItemEvent : Theme a -> SummaryItemEvent msg -> Bool -> msg -> Element msg
 viewSummaryItemEvent theme event displayDetails onContentClick =
     case event.details of
         Just details ->
-            [ el
-                ([ width fill
-                 , onClick onContentClick
-                 , pointer
-                 , htmlAttribute <| style "transition" "border 200ms ease-in"
-                 ]
-                    ++ (if displayDetails then
-                            [ Background.color <| Palette.lightish theme.palette.bg2
-                            , Border.color (Palette.lightish theme.palette.bg2)
-                            ]
+            column [ width fill ]
+                [ el
+                    ([ width fill
+                     , onClick onContentClick
+                     , pointer
+                     ]
+                        ++ buttonAttrs theme
+                        ++ (if displayDetails then
+                                [ Background.color theme.palette.bg3
+                                , Border.roundEach { bottomLeft = 0, bottomRight = 0, topLeft = 10, topRight = 10 }
+                                ]
 
-                        else
-                            []
-                       )
-                )
-                event.content
-            , el
-                ([ width fill
-                 , Background.color <| Palette.veryLight theme.palette.bg2
-                 , htmlAttribute <| style "transition" "max-height 200ms ease-in"
-                 ]
-                    ++ (if displayDetails then
-                            [ htmlAttribute <| style "max-height" "1000px"
-                            ]
-
-                        else
-                            [ htmlAttribute <| style "max-height" "0"
-                            , htmlAttribute <| style "overflow-y" "hidden"
-                            ]
-                       )
-                )
-                details
-            ]
+                            else
+                                []
+                           )
+                    )
+                    event.content
+                , el
+                    ([ width fill
+                     , Background.color <| Palette.veryLight theme.palette.bg2
+                     ]
+                        ++ collapsed (not displayDetails)
+                    )
+                    details
+                ]
 
         Nothing ->
-            [ event.content ]
+            event.content
 
 
 viewContainer : Theme a -> Element msg -> Element msg
@@ -368,8 +386,8 @@ bottomBorder ctx =
     ]
 
 
-viewContentCells : { tipe : Element msg, sender : Element msg, event : Element msg, cost : Element msg, txHash : Element msg } -> List (Element msg)
-viewContentCells content =
+transactionRowCells : { tipe : Element msg, sender : Element msg, event : Element msg, cost : Element msg, txHash : Element msg } -> List (Element msg)
+transactionRowCells content =
     [ el [ width (shrink |> minimum 30) ] content.tipe
     , el [ width fill ] content.event
     , el [ width (shrink |> minimum 95) ] content.sender
@@ -378,30 +396,34 @@ viewContentCells content =
     ]
 
 
-viewItemRow : Theme a -> List (Attribute msg) -> List (Element msg) -> Element msg
-viewItemRow ctx attrs children =
-    row
-        ([ width fill
-         , height (px 46)
-         , paddingXY 10 0
-         , spacing 15
-         , mouseOver [ Background.color <| Palette.lightish ctx.palette.bg2 ]
-         ]
-            ++ bottomBorder ctx
-            ++ attrs
-        )
-        children
+contentRowAttrs : List (Attribute msg)
+contentRowAttrs =
+    [ width fill
+    , height (minimum 46 <| shrink)
+    , paddingXY 10 0
+    , spacing 15
+    ]
+
+
+buttonAttrs : Theme a -> List (Attribute msg)
+buttonAttrs theme =
+    [ Border.rounded 10
+    , Border.width 2
+    , Border.color theme.palette.bg3
+    , Background.color <| Palette.lightish theme.palette.bg2
+    , mouseOver [ Background.color theme.palette.bg3 ]
+    ]
 
 
 viewContentHeadline : Theme a -> Element msg
 viewContentHeadline theme =
-    viewItemRow theme [ height (px 26), mouseOver [] ] <|
-        viewContentCells
-            { tipe = el [ Font.color theme.palette.fg1 ] <| text ""
-            , sender = el [ Font.color theme.palette.fg1, centerX ] <| text "SENDER"
-            , event = el [ Font.color theme.palette.fg1 ] <| text "EVENTS"
-            , cost = el [ Font.color theme.palette.fg1, centerX ] <| text "COST"
-            , txHash = el [ Font.color theme.palette.fg1 ] <| text "TX HASH"
+    row [ width fill, padding 10, spacing 15 ] <|
+        transactionRowCells
+            { tipe = none
+            , sender = el [ centerX ] <| blockSummaryContentHeader theme "SENDER"
+            , event = blockSummaryContentHeader theme "EVENTS"
+            , cost = el [ centerX ] <| blockSummaryContentHeader theme "COST"
+            , txHash = blockSummaryContentHeader theme "TX HASH"
             }
 
 
@@ -448,8 +470,8 @@ viewTransactionSummary ctx txSummary =
                     viewTransactionEvent ctx event
             in
             { content =
-                viewItemRow ctx [] <|
-                    viewContentCells
+                row contentRowAttrs <|
+                    transactionRowCells
                         { tipe = icon
                         , sender = senderView event
                         , event = row [] item.content
@@ -474,8 +496,8 @@ viewTransactionSummary ctx txSummary =
                     viewTransactionEvent ctx event
             in
             { content =
-                viewItemRow ctx [] <|
-                    viewContentCells
+                row contentRowAttrs <|
+                    transactionRowCells
                         { tipe = none
                         , sender = none
                         , event =
@@ -503,8 +525,8 @@ viewTransactionSummary ctx txSummary =
                     rejectionToItem ctx rejectReason
             in
             [ { content =
-                    viewItemRow ctx [] <|
-                        viewContentCells
+                    row contentRowAttrs <|
+                        transactionRowCells
                             { tipe = icon
                             , sender = Maybe.withDefault none <| Maybe.map (viewAddress ctx << T.AddressAccount) txSummary.sender
                             , event = paragraph [ Font.color ctx.palette.failure, width fill ] <| (text <| typeDecription.short ++ " failed: ") :: item.content
@@ -788,6 +810,88 @@ rejectionToItem ctx reason =
             { content = [ text "Request to make change to the baker while the baker is in the cooldown period" ]
             , details = Nothing
             }
+
+
+viewUpdates : Theme a -> Updates -> Element Msg
+viewUpdates theme updates =
+    let
+        allQueuedUpdates =
+            listUpdatePayloads updates.updateQueues
+                |> List.sortBy (.effectiveTime >> Time.posixToMillis)
+
+        updateRow left right =
+            row [ width fill ] [ el [ width (fill |> maximum 250) ] left, el [ width fill ] right ]
+
+        viewUpdate : EventUpdateEnqueued -> Element Msg
+        viewUpdate update =
+            updateRow
+                (el
+                    [ Font.color theme.palette.fg1 ]
+                 <|
+                    text <|
+                        TimeHelpers.formatTime Time.utc <|
+                            update.effectiveTime
+                )
+                (viewEventUpdateEnueuedDetails theme update)
+    in
+    if List.isEmpty allQueuedUpdates then
+        column [ width fill, padding 20 ] [ el [ centerX, Font.color theme.palette.fg2 ] <| text "No updates queued at the time of this block." ]
+
+    else
+        column [ width fill, padding 10, spacing 15 ]
+            [ updateRow (blockSummaryContentHeader theme "EFFECTIVE TIME") (blockSummaryContentHeader theme "UPDATE")
+            , column [ width fill, spacing 10 ] <| List.map viewUpdate allQueuedUpdates
+            ]
+
+
+blockSummaryContentHeader : Theme a -> String -> Element msg
+blockSummaryContentHeader theme title =
+    el [ Font.color theme.palette.fg2, Font.size 12 ] <| text title
+
+
+titleWithSubtitle : Theme a -> String -> String -> Element msg
+titleWithSubtitle theme title subtitle =
+    el [ paddingEach { left = 0, right = 0, top = 0, bottom = 4 }, width fill ] <|
+        row
+            [ width fill
+            , paddingEach { left = 0, right = 0, top = 0, bottom = 8 }
+            , Border.widthEach { bottom = 1, left = 0, right = 0, top = 0 }
+            , Border.color theme.palette.fg3
+            , spacing 15
+            ]
+            [ el
+                [ Font.color theme.palette.fg1
+                , Font.size 17
+                ]
+              <|
+                text title
+            , el [ Font.color theme.palette.fg2, Font.size 13 ] <| text subtitle
+            ]
+
+
+{-| Collect all the queued updates into one list
+-}
+listUpdatePayloads : UpdateQueues -> List EventUpdateEnqueued
+listUpdatePayloads queues =
+    let
+        mapUpdate f q =
+            List.map
+                (\i ->
+                    { effectiveTime = i.effectiveTime
+                    , payload = f i.update
+                    }
+                )
+                q.queue
+    in
+    mapUpdate AuthorizationPayload queues.authorization
+        ++ mapUpdate TransactionFeeDistributionPayload queues.transactionFeeDistribution
+        ++ mapUpdate MicroGtuPerEuroPayload queues.microGTUPerEuro
+        ++ mapUpdate ProtocolUpdatePayload queues.protocol
+        ++ mapUpdate GasRewardsPayload queues.gasRewards
+        ++ mapUpdate FoundationAccountPayload queues.foundationAccount
+        ++ mapUpdate ElectionDifficultyPayload queues.electionDifficulty
+        ++ mapUpdate EuroPerEnergyPayload queues.euroPerEnergy
+        ++ mapUpdate MintDistributionPayload queues.mintDistribution
 
 
 asPercentage : Float -> String
@@ -1105,8 +1209,8 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                     }
     in
     [ { content =
-            viewItemRow ctx [] <|
-                viewContentCells
+            row contentRowAttrs <|
+                transactionRowCells
                     { tipe = el [ stringTooltipAbove ctx item.tooltip ] (html <| item.icon)
                     , sender = el [ Font.color ctx.palette.fg1 ] <| none --text "Chain"
                     , event = item.content
@@ -1145,32 +1249,10 @@ viewFinalizationData ctx finalizationData =
             let
                 totalWeight =
                     data.finalizers |> List.map .weight |> List.sum
-
-                tableColumn attrs index value =
-                    el
-                        ([ padding 5, Font.center ]
-                            ++ attrs
-                            ++ (if isEven index then
-                                    [ Background.color <| Palette.lightish ctx.palette.bg2 ]
-
-                                else
-                                    []
-                               )
-                        )
-                    <|
-                        Element.text value
-
-                valueColumn index value =
-                    tableColumn [] index value
-
-                headerColumn value =
-                    tableColumn [ Font.bold ] -1 value
             in
             [ { content =
-                    viewItemRow ctx
-                        []
-                    <|
-                        viewContentCells
+                    row contentRowAttrs <|
+                        transactionRowCells
                             { tipe = el [ stringTooltipAbove ctx "Finalization event", Font.color ctx.palette.c2 ] <| html <| Icons.block_finalized 20
                             , sender = el [ Font.color ctx.palette.fg1 ] <| none --text "Chain"
                             , event = row [] [ text <| "Finalized ", el [] <| text <| String.left 8 data.blockPointer ]
@@ -1601,7 +1683,8 @@ viewTransactionEvent ctx txEvent =
                 ]
             , details =
                 Just <|
-                    viewEventUpdateEnueuedDetails ctx event
+                    el [ padding 20 ] <|
+                        viewEventUpdateEnueuedDetails ctx event
             }
 
 
@@ -1668,32 +1751,41 @@ viewEventUpdateEnueuedDetails ctx event =
                 ]
 
         ElectionDifficultyPayload difficulty ->
-            paragraph [ padding 20 ] [ text "Update the election difficulty to ", text <| asPercentage difficulty ]
+            paragraph [] [ text "Update the election difficulty to ", text <| asPercentage difficulty ]
 
         EuroPerEnergyPayload euroPerEnergy ->
-            row []
-                [ paragraph [ padding 20 ] [ text "Update the Euro per energy to " ]
+            row [ width fill ]
+                [ text "Update the Euro per energy to "
                 , viewRelation ctx euroPerEnergy
                 ]
 
-        MicroGtuPerEnergyPayload microGtuPerEnergy ->
-            row []
-                [ paragraph [ padding 20 ] [ text "Update the amount of μGTU per energy to " ]
+        MicroGtuPerEuroPayload microGtuPerEnergy ->
+            row [ width fill ]
+                [ text "Update the amount of μGTU per Euro to "
                 , viewRelation ctx microGtuPerEnergy
                 ]
 
         FoundationAccountPayload foundationAccount ->
-            paragraph [ padding 20 ] [ text "Update the Foundation account to be ", viewAddress ctx <| T.AddressAccount foundationAccount ]
+            paragraph [] [ text "Update the Foundation account to be ", viewAddress ctx <| T.AddressAccount foundationAccount ]
 
         AuthorizationPayload authorization ->
-            paragraph [ padding 20 ] [ text "Update the chain update authorization." ]
+            paragraph [] [ text "Update the chain-update authorization." ]
+
+        ProtocolUpdatePayload protocolUpdate ->
+            paragraph []
+                [ text <| "Update the protocol: " ++ protocolUpdate.message ++ " "
+                , link [ onClick <| UrlClicked <| Browser.External protocolUpdate.specificationURL ]
+                    { url = protocolUpdate.specificationURL
+                    , label = el [ Font.underline ] <| text "specification"
+                    }
+                ]
 
 
 {-| Display a relation as a fraction
 -}
 viewRelation : Theme a -> Relation -> Element msg
 viewRelation ctx relation =
-    column [ spacing 5 ]
+    column [ spacing 3 ]
         [ el [ centerX ] <| text <| String.fromInt relation.numerator
         , el [ width fill, Border.widthEach { top = 0, left = 0, right = 0, bottom = 1 }, Border.color ctx.palette.fg2 ] none
         , el [ centerX ] <| text <| String.fromInt relation.denominator
@@ -1752,27 +1844,18 @@ viewBaker ctx bakerId addr =
         ]
 
 
-{-| Show the text 'details' and, on hover, show the String provided.
+{-| A list of attributes for animating a collapsible view
 -}
-viewDetailsTextWithOnHover : Theme a -> String -> Element Msg
-viewDetailsTextWithOnHover ctx details =
-    el
-        [ Font.color (ctx.palette.c2 |> withAlphaEl 0.6)
-        , stringTooltipAbove ctx details
-        ]
-    <|
-        text "details"
+collapsed : Bool -> List (Attribute msg)
+collapsed isCollapsed =
+    List.map htmlAttribute <|
+        style "transition" "max-height 200ms ease-in"
+            :: (if isCollapsed then
+                    [ style "max-height" "0"
+                    , style "overflow-y" "hidden"
+                    ]
 
-
-{-| Show each account amount on a new line in the format: "<amount> → <acc>".
--}
-showAccountAmounts : T.AccountAmounts -> String
-showAccountAmounts accAmnt =
-    let
-        accountAmountToString ( accAddr, amount ) =
-            T.amountToString amount ++ " → " ++ accAddr
-    in
-    accAmnt
-        |> Dict.toList
-        |> List.map accountAmountToString
-        |> String.join "\n"
+                else
+                    [ style "max-height" "1000px"
+                    ]
+               )
