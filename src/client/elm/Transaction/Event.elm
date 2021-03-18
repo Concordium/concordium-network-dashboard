@@ -197,9 +197,10 @@ type UpdatePayload
     | GasRewardsPayload GasRewards
     | ElectionDifficultyPayload Float
     | EuroPerEnergyPayload Relation
-    | MicroGtuPerEnergyPayload Relation
+    | MicroGtuPerEuroPayload Relation
     | FoundationAccountPayload T.AccountAddress
-    | AuthorizationPayload Authorization
+    | AuthorizationPayload Authorizations
+    | ProtocolUpdatePayload ProtocolUpdate
 
 
 type alias MintDistribution =
@@ -223,34 +224,46 @@ type alias GasRewards =
     }
 
 
+type alias Authorizations =
+    { mintDistribution : Authorization
+    , transactionFeeDistribution : Authorization
+    , authorization : Authorization
+    , microGTUPerEuro : Authorization
+    , euroPerEnergy : Authorization
+    , electionDifficulty : Authorization
+    , foundationAccount : Authorization
+    , protocol : Authorization
+    , paramGASRewards : Authorization
+    , emergency : Authorization
+    , keys : List AuthorizationKey
+    }
+
+
 type alias Authorization =
-    {}
+    { threshold : Int
+    , authorizedKeys : List KeyIndex
+    }
+
+
+type alias KeyIndex =
+    Int
+
+
+type alias AuthorizationKey =
+    { verifyKey : String
+    , schemeId : String
+    }
+
+
+type alias ProtocolUpdate =
+    { message : String
+    , specificationURL : String
+    , specificationHash : String
+    , specificationAuxiliaryData : String
+    }
 
 
 
--- type alias Authorization =
---     { keys : List AuthorizationKey
---     , emergency : AuthorizationAccess
---     , authorization : AuthorizationAccess
---     , protocol : AuthorizationAccess
---     , electionDifficulty : AuthorizationAccess
---     , euroPerEnergy : AuthorizationAccess
---     , microGTUPerEuro : AuthorizationAccess
---     , foundationAccount : AuthorizationAccess
---     , mintDistribution : AuthorizationAccess
---     , transactionFeeDistribution : AuthorizationAccess
---     , paramGASRewards : AuthorizationAccess
---     }
--- type alias KeyIndex =
---     Int
--- type alias AuthorizationKey =
---     { schemeId : String
---     , verifyKey : String
---     }
--- type alias AuthorizationAccess =
---     { authorizedKeys : List KeyIndex
---     , threshold : Int
---     }
 -- Errors
 
 
@@ -289,13 +302,16 @@ updatePayloadDecoder =
                         relationDecoder |> D.map EuroPerEnergyPayload
 
                     "microGTUPerEuro" ->
-                        relationDecoder |> D.map MicroGtuPerEnergyPayload
+                        relationDecoder |> D.map MicroGtuPerEuroPayload
 
                     "foundationAccount" ->
                         T.accountAddressDecoder |> D.map FoundationAccountPayload
 
                     "authorization" ->
-                        authorizationDecoder |> D.map AuthorizationPayload
+                        authorizationsDecoder |> D.map AuthorizationPayload
+
+                    "protocol" ->
+                        protocolUpdateDecoder |> D.map ProtocolUpdatePayload
 
                     _ ->
                         D.fail "Unknown update type"
@@ -327,9 +343,43 @@ gasRewardsDecoder =
         |> required "finalizationProof" D.float
 
 
-authorizationDecoder : D.Decoder Authorization
-authorizationDecoder =
+authorizationsDecoder : D.Decoder Authorizations
+authorizationsDecoder =
+    D.succeed Authorizations
+        |> required "mintDistribution" authorizationDecorder
+        |> required "transactionFeeDistribution" authorizationDecorder
+        |> required "authorization" authorizationDecorder
+        |> required "microGTUPerEuro" authorizationDecorder
+        |> required "euroPerEnergy" authorizationDecorder
+        |> required "electionDifficulty" authorizationDecorder
+        |> required "foundationAccount" authorizationDecorder
+        |> required "protocol" authorizationDecorder
+        |> required "paramGASRewards" authorizationDecorder
+        |> required "emergency" authorizationDecorder
+        |> required "keys" (D.list authorizationKeyDecorder)
+
+
+authorizationDecorder : D.Decoder Authorization
+authorizationDecorder =
     D.succeed Authorization
+        |> required "threshold" D.int
+        |> required "authorizedKeys" (D.list D.int)
+
+
+authorizationKeyDecorder : D.Decoder AuthorizationKey
+authorizationKeyDecorder =
+    D.succeed AuthorizationKey
+        |> required "verifyKey" D.string
+        |> required "schemeId" D.string
+
+
+protocolUpdateDecoder : D.Decoder ProtocolUpdate
+protocolUpdateDecoder =
+    D.succeed ProtocolUpdate
+        |> required "message" D.string
+        |> required "specificationURL" D.string
+        |> required "specificationHash" D.string
+        |> required "specificationAuxiliaryData" D.string
 
 
 transactionEventsDecoder : D.Decoder TransactionEvent

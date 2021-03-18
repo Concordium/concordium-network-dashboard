@@ -24,3 +24,10 @@ type alias Theme a =
         | palette : Palette Color
         , colorMode : Palette.ColorMode
     }
+
+
+{-| Strip out every field except the theme related ones
+-}
+extractTheme : Theme a -> Theme {}
+extractTheme ctx =
+    { palette = ctx.palette, colorMode = ctx.colorMode }
