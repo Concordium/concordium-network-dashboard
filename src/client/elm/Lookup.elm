@@ -59,7 +59,7 @@ update msg model =
 
         SearchForTransaction txHash ->
             ( { model | transactionStatusResult = RemoteData.Loading }
-            , Nav.pushUrl model.navigationKey <| Route.toString <| Route.LookupTransaction txHash
+            , Nav.pushUrl model.navigationKey <| Route.toString <| Route.Lookup (Just txHash)
             )
 
         ReceivedTransactionStatus result ->
