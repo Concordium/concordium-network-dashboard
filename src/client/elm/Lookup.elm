@@ -157,7 +157,7 @@ viewTransactionStatusWebData theme remoteData =
             Widgets.loader theme.palette.fg3
 
         RemoteData.Failure error ->
-            el [ Font.color theme.palette.danger ] (paragraph [] [ text <| "Error: " ++ Widgets.errorToString error ])
+            el [ Font.color theme.palette.danger, centerX ] (paragraph [] [ text <| "Error: " ++ Widgets.errorToString error ])
 
         RemoteData.Success data ->
             viewTransactionStatus theme data
