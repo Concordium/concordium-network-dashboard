@@ -7,7 +7,7 @@ import Browser.Navigation as Nav exposing (Key)
 import Chain
 import Clipboard
 import Config exposing (Config)
-import Context exposing (Context)
+import Context exposing (Theme, extractTheme)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -28,7 +28,7 @@ import Network.Node
 import Network.NodesTable
 import Palette exposing (ColorMode(..), Palette)
 import Process
-import Route exposing (Route(..))
+import Route exposing (Route)
 import Storage
 import Task
 import Time
@@ -346,17 +346,17 @@ chainWidthFromWidth width =
 onRouteInit : Route -> Model -> ( Model, Cmd Msg )
 onRouteInit page model =
     case page of
-        ChainInit ->
+        Route.Chain Nothing ->
             ( model
             , Api.getConsensusStatus model.explorerModel.config (ExplorerMsg << Explorer.ReceivedConsensusStatus)
             )
 
-        ChainSelected hash ->
+        Route.Chain (Just hash) ->
             ( { model | chainModel = Chain.selectBlock model.chainModel hash }
             , Api.getBlockInfo model.explorerModel.config hash (ExplorerMsg << Explorer.ReceivedBlockInfo)
             )
 
-        LookupTransaction txHash ->
+        Route.Lookup (Just txHash) ->
             let
                 lookupModel =
                     model.lookupModel
@@ -386,44 +386,44 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Concordium Dashboard"
     , body =
-        [ theme model.palette <|
+        [ themeLayout model.palette <|
             column
                 [ width fill
                 , Background.color model.palette.bg1
                 , clipX
                 , paddingEach { bottom = 60, left = 0, right = 0, top = 0 }
                 ]
-                [ viewHeader model
+                [ viewTopNavigation (extractTheme model) model.currentRoute
                 , case model.currentRoute of
-                    Network ->
+                    Route.Network ->
                         Element.map NetworkMsg <| Network.NodesTable.view model model.networkModel
 
-                    NodeView _ ->
+                    Route.NodeView _ ->
                         Element.map NetworkMsg <| Network.Node.view model model.networkModel
 
-                    ChainInit ->
-                        viewChain model
+                    Route.Chain _ ->
+                        viewChainPage model
 
-                    ChainSelected _ ->
-                        viewChain model
-
-                    Lookup ->
-                        viewLookup model
-
-                    LookupTransaction _ ->
-                        viewLookup model
+                    Route.Lookup _ ->
+                        viewLookupPage model
                 ]
         ]
     }
 
 
-viewHeader : Context a -> Element Msg
-viewHeader ctx =
+viewTopNavigation : Theme a -> Route -> Element Msg
+viewTopNavigation ctx currentRoute =
     let
-        linkstyle =
-            [ mouseOver [ Font.color ctx.palette.fg1 ] ]
+        linkstyle active =
+            [ mouseOver [ Font.color ctx.palette.fg1 ]
+            , if active then
+                Font.color ctx.palette.fg1
+
+              else
+                Font.color ctx.palette.fg2
+            ]
     in
-    row [ width fill, height (px 70), paddingXY 30 0 ]
+    row [ width fill, paddingXY 30 20 ]
         [ link []
             { url = "/"
             , label =
@@ -432,16 +432,16 @@ viewHeader ctx =
                     , el [] (html <| Logo.concordiumText 110 (Palette.uiToColor ctx.palette.fg1))
                     ]
             }
-        , row [ alignRight, spacing 20, Font.color ctx.palette.fg2 ]
-            [ link linkstyle { url = Route.toString Network, label = text "Network" }
-            , link linkstyle { url = Route.toString ChainInit, label = text "Chain" }
-            , link linkstyle { url = Route.toString Lookup, label = text "Lookup" }
+        , row [ alignRight, spacing 20 ]
+            [ link (linkstyle <| Route.isNetwork currentRoute) { url = Route.toString Route.Network, label = text "Network" }
+            , link (linkstyle <| Route.isChain currentRoute) { url = Route.toString <| Route.Chain Nothing, label = text "Chain" }
+            , link (linkstyle <| Route.isLookup currentRoute) { url = Route.toString <| Route.Lookup Nothing, label = text "Lookup" }
             , viewColorModeToggle ctx
             ]
         ]
 
 
-viewColorModeToggle : Context a -> Element Msg
+viewColorModeToggle : Theme a -> Element Msg
 viewColorModeToggle ctx =
     let
         icon =
@@ -459,11 +459,14 @@ viewColorModeToggle ctx =
         icon
 
 
-viewChain : Model -> Element Msg
-viewChain model =
+viewChainPage : Model -> Element Msg
+viewChainPage model =
     let
         showDevTools =
             not <| Config.isProduction model.config
+
+        theme =
+            extractTheme model
     in
     Widgets.content <|
         column [ width fill, height fill, spacing 20 ]
@@ -476,16 +479,16 @@ viewChain model =
                 , Border.rounded 6
                 , Border.width 1
                 ]
-                (Element.map ChainMsg <| Chain.view model model.chainModel showDevTools)
+                (Element.map ChainMsg <| Chain.view theme model.chainModel showDevTools)
             , row [ viewCopiedToast model, centerX ]
                 [ Element.map translateMsg <|
-                    Explorer.View.view model model.explorerModel
+                    Explorer.View.view theme model.explorerModel
                 ]
             ]
 
 
-viewLookup : Model -> Element Msg
-viewLookup model =
+viewLookupPage : Model -> Element Msg
+viewLookupPage model =
     Widgets.content <|
         column [ width fill, height fill, spacing 20 ]
             [ viewSummaryWidgets model model.networkModel.nodes
@@ -544,8 +547,8 @@ translateMsg msg =
             ExplorerMsg <| Explorer.TransactionPaging pagingMsg
 
 
-theme : Palette Color -> Element msg -> Html.Html msg
-theme palette elements =
+themeLayout : Palette Color -> Element msg -> Html.Html msg
+themeLayout palette elements =
     layoutWith
         { options =
             [ focusStyle
