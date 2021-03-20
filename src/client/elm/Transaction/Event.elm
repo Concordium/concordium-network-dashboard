@@ -210,6 +210,7 @@ type UpdatePayload
     | FoundationAccountPayload T.AccountAddress
     | AuthorizationPayload Authorizations
     | ProtocolUpdatePayload ProtocolUpdate
+    | BakerStakeThresholdPayload T.Amount
 
 
 type alias MintDistribution =
@@ -244,6 +245,7 @@ type alias Authorizations =
     , protocol : Authorization
     , paramGASRewards : Authorization
     , emergency : Authorization
+    , bakerStakeThreshold : Authorization
     , keys : List AuthorizationKey
     }
 
@@ -322,6 +324,9 @@ updatePayloadDecoder =
                     "protocol" ->
                         protocolUpdateDecoder |> D.map ProtocolUpdatePayload
 
+                    "bakerStakeThreshold" ->
+                        T.decodeAmount |> D.map BakerStakeThresholdPayload
+
                     _ ->
                         D.fail "Unknown update type"
     in
@@ -365,6 +370,7 @@ authorizationsDecoder =
         |> required "protocol" authorizationDecorder
         |> required "paramGASRewards" authorizationDecorder
         |> required "emergency" authorizationDecorder
+        |> required "bakerStakeThreshold" authorizationDecorder
         |> required "keys" (D.list authorizationKeyDecorder)
 
 

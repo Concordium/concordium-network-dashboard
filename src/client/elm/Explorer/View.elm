@@ -619,7 +619,7 @@ typeDescriptionAccountTransactionType accountTransactionType =
             { icon = html <| Icons.baking_bread 20, short = "Update baker keys" }
 
         UpdateCredentialKeys ->
-            { icon = html <| Icons.account_key_deployed 18, short = "Update account keys" }
+            { icon = html <| Icons.account_key_deployed 18, short = "Update credential keys" }
 
         EncryptedAmountTransfer ->
             { icon = html <| Icons.shield 20, short = "Shielded transfer" }
@@ -938,6 +938,7 @@ listUpdatePayloads queues =
         ++ mapUpdate ElectionDifficultyPayload queues.electionDifficulty
         ++ mapUpdate EuroPerEnergyPayload queues.euroPerEnergy
         ++ mapUpdate MintDistributionPayload queues.mintDistribution
+        ++ mapUpdate BakerStakeThresholdPayload queues.bakerStakeThreshold
 
 
 asPercentage : Float -> String
@@ -1830,6 +1831,9 @@ viewEventUpdateEnueuedDetails ctx event =
                     , label = el [ Font.underline ] <| text "specification"
                     }
                 ]
+
+        BakerStakeThresholdPayload threshold ->
+            paragraph [] [ text <| "Update the minimum staked amount for becoming a baker to " ++ T.amountToString threshold ]
 
 
 {-| Display a relation as a fraction
