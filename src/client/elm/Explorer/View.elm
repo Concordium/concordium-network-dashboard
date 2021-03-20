@@ -618,14 +618,8 @@ typeDescriptionAccountTransactionType accountTransactionType =
         UpdateBakerKeys ->
             { icon = html <| Icons.baking_bread 20, short = "Update baker keys" }
 
-        UpdateAccountKeys ->
+        UpdateCredentialKeys ->
             { icon = html <| Icons.account_key_deployed 18, short = "Update account keys" }
-
-        AddAccountKeys ->
-            { icon = html <| Icons.account_key_deployed 18, short = "Add account keys" }
-
-        RemoveAccountKeys ->
-            { icon = html <| Icons.account_key_deployed 18, short = "Remove account keys" }
 
         EncryptedAmountTransfer ->
             { icon = html <| Icons.shield 20, short = "Shielded transfer" }
@@ -638,6 +632,9 @@ typeDescriptionAccountTransactionType accountTransactionType =
 
         TransferWithSchedule ->
             { icon = html <| Icons.transaction 18, short = "Transfer with schedule" }
+
+        UpdateCredentials ->
+            { icon = html <| Icons.account_key_deployed 18, short = "Remove account keys" }
 
         Malformed ->
             { icon = el [ paddingXY 6 0 ] <| text "?", short = "Serialization" }
@@ -1512,32 +1509,6 @@ viewTransactionEvent ctx txEvent =
             , details = Nothing
             }
 
-        -- Account Keys
-        TransactionEventAccountKeysUpdated ->
-            -- TODO: Change icon
-            { content =
-                [ text "Updated account keys" ]
-            , details = Nothing
-            }
-
-        TransactionEventAccountKeysAdded ->
-            -- TODO: Change icon
-            { content = [ text "Added account keys" ]
-            , details = Nothing
-            }
-
-        TransactionEventAccountKeysRemoved ->
-            -- TODO: Change icon
-            { content = [ text "Removed account keys" ]
-            , details = Nothing
-            }
-
-        TransactionEventAccountKeysSignThresholdUpdated ->
-            -- TODO: Change icon
-            { content = [ text "Updated signing threshold" ]
-            , details = Nothing
-            }
-
         -- Baking
         TransactionEventBakerAdded event ->
             { content =
@@ -1608,6 +1579,37 @@ viewTransactionEvent ctx txEvent =
                     ]
                 ]
             , details = Nothing
+            }
+
+        TransactionEventCredentialKeysUpdated event ->
+            { content =
+                [ row []
+                    [ text <| "Updated credientials and threshold keys of " ++ event.credId
+                    ]
+                ]
+            , details = Nothing
+            }
+
+        TransactionEventCredentialsUpdated event ->
+            { content =
+                [ row []
+                    [ text "Updated credientials of "
+                    , viewAddress ctx (T.AddressAccount event.account)
+                    ]
+                ]
+            , details =
+                Just <|
+                    column [ width fill ]
+                        [ viewDetailRow
+                            [ paragraph [] [ text "New credentials" ] ]
+                            [ column [ spacing 5 ] <| List.map text event.newCredIds ]
+                        , viewDetailRow
+                            [ paragraph [] [ text "Removed credentials" ] ]
+                            [ column [ spacing 5 ] <| List.map text event.removedCredIds ]
+                        , viewDetailRow
+                            [ paragraph [] [ text "New threshold" ] ]
+                            [ text <| String.fromInt event.newThreshold ]
+                        ]
             }
 
         -- Contracts

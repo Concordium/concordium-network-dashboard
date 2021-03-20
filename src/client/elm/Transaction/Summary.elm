@@ -31,7 +31,7 @@ type TransactionSummaryType
 {-| Reason for transaction rejected
 
 Must be in sync with the constructor names of `Payload` found in
-<https://gitlab.com/Concordium/consensus/globalstate-types/-/blob/master/src/Concordium/Types/Execution.hs#L198>
+<https://gitlab.com/Concordium/concordium-base/-/blob/master/haskell-src/Concordium/Types/Execution.hs>
 
 Also contains a `Malformed` constructor to represent Nothing.
 
@@ -46,13 +46,12 @@ type AccountTransactionType
     | UpdateBakerStake
     | UpdateBakerRestakeEarnings
     | UpdateBakerKeys
-    | UpdateAccountKeys
-    | AddAccountKeys
-    | RemoveAccountKeys
+    | UpdateCredentialKeys
     | EncryptedAmountTransfer
     | TransferToEncrypted
     | TransferToPublic
     | TransferWithSchedule
+    | UpdateCredentials
     | Malformed
 
 
@@ -211,14 +210,8 @@ accountTransactionTypeDecoder =
                 "updateBakerKeys" ->
                     D.succeed UpdateBakerKeys
 
-                "updateAccountKeys" ->
-                    D.succeed UpdateAccountKeys
-
-                "addAccountKeys" ->
-                    D.succeed AddAccountKeys
-
-                "removeAccountKeys" ->
-                    D.succeed RemoveAccountKeys
+                "updateCredentialKeys" ->
+                    D.succeed UpdateCredentialKeys
 
                 "encryptedAmountTransfer" ->
                     D.succeed EncryptedAmountTransfer
@@ -231,6 +224,9 @@ accountTransactionTypeDecoder =
 
                 "transferWithSchedule" ->
                     D.succeed TransferWithSchedule
+
+                "UpdateCredentials" ->
+                    D.succeed UpdateCredentials
 
                 _ ->
                     D.fail <| "Unknown AccountTransaction type: " ++ tipe

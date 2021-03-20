@@ -21,12 +21,8 @@ type TransactionEvent
       -- Accounts
     | TransactionEventAccountCreated EventAccountCreated
     | TransactionEventCredentialDeployed EventCredentialDeployed
-      -- Account Keys
-    | TransactionEventAccountKeysUpdated
-    | TransactionEventAccountKeysAdded
-    | TransactionEventAccountKeysRemoved
-    | TransactionEventAccountKeysSignThresholdUpdated
-      -- Baking
+    | TransactionEventCredentialKeysUpdated EventCredentialKeysUpdated
+    | TransactionEventCredentialsUpdated EventCredentialsUpdated
     | TransactionEventBakerAdded EventBakerAdded
     | TransactionEventBakerRemoved EventBakerRemoved
     | TransactionEventBakerStakeIncreased EventBakerStakeIncreased
@@ -100,6 +96,19 @@ type alias EventAccountCreated =
 type alias EventCredentialDeployed =
     { regid : String
     , account : String
+    }
+
+
+type alias EventCredentialKeysUpdated =
+    { credId : String
+    }
+
+
+type alias EventCredentialsUpdated =
+    { account : T.AccountAddress
+    , newCredIds : List String
+    , removedCredIds : List String
+    , newThreshold : Int
     }
 
 
@@ -436,18 +445,18 @@ transactionEventsDecoder =
                         |> required "account" T.accountAddressDecoder
                         |> D.map TransactionEventCredentialDeployed
 
-                -- Account Keys
-                "AccountKeysUpdated" ->
-                    D.succeed TransactionEventAccountKeysUpdated
+                "CredentialKeysUpdated" ->
+                    D.succeed EventCredentialKeysUpdated
+                        |> required "credId" D.string
+                        |> D.map TransactionEventCredentialKeysUpdated
 
-                "AccountKeysAdded" ->
-                    D.succeed TransactionEventAccountKeysAdded
-
-                "AccountKeysRemoved" ->
-                    D.succeed TransactionEventAccountKeysRemoved
-
-                "AccountKeysSignThresholdUpdated" ->
-                    D.succeed TransactionEventAccountKeysSignThresholdUpdated
+                "CredentialsUpdated" ->
+                    D.succeed EventCredentialsUpdated
+                        |> required "account" T.accountAddressDecoder
+                        |> required "newCredIds" (D.list D.string)
+                        |> required "removedCredIds" (D.list D.string)
+                        |> required "newThreshold" D.int
+                        |> D.map TransactionEventCredentialsUpdated
 
                 -- Baking
                 "BakerAdded" ->
