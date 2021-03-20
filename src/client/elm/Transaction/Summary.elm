@@ -113,7 +113,8 @@ type RejectReason
       -- possible. The data are the from address and the amount to transfer.
     | SerializationFailure -- ^Serialization of the body failed.
     | OutOfEnergy -- ^We ran of out energy to process this transaction.
-    | Rejected -- ^Rejected due to contract logic.
+    | RejectedInit RejectReasonRejectedInit -- ^Rejected due to contract logic in init function of a contract.
+    | RejectedReceive RejectReasonRejectedReceive
     | NonExistentRewardAccount T.AccountAddress -- ^Reward account desired by the baker does not exist.
     | InvalidProof -- ^Proof that the baker owns relevant private keys is not valid.
     | AlreadyABaker T.BakerId -- ^Tried to add baker for an account that already has a baker
@@ -121,12 +122,14 @@ type RejectReason
     | InsufficientBalanceForBakerStake -- ^The amount on the account was insufficient to cover the proposed stake
     | BakerInCooldown -- ^The change could not be made because the baker is in cooldown for another change
     | DuplicateAggregationKey T.BakerAggregationVerifyKey -- ^A baker with the given aggregation key already exists
-      -- |Encountered index to which no account key belongs when removing or updating keys
-    | NonExistentAccountKey
+      -- |Encountered credential ID that does not exist
+    | NonExistentCredentialID
       -- |Attempted to add an account key to a key index already in use
     | KeyIndexAlreadyInUse
-      -- |When the account key threshold is updated, it must not exceed the amount of existing keys
-    | InvalidAccountKeySignThreshold
+      -- |When the account threshold is updated, it must not exceed the amount of existing keys
+    | InvalidAccountThreshold
+      -- |When the credential key threshold is updated, it must not exceed the amount of existing keys
+    | InvalidCredentialKeySignThreshold
       -- |Proof for an encrypted amount transfer did not validate.
     | InvalidEncryptedAmountTransferProof
       -- |Proof for a secret to public transfer did not validate.
@@ -143,6 +146,29 @@ type RejectReason
     | FirstScheduledReleaseExpired
       -- | Account tried to transfer with schedule to itself, that's not allowed.
     | ScheduledSelfTransfer T.AccountAddress
+      -- | At least one of the credentials was either malformed or its proof was incorrect.
+    | InvalidCredentials
+      -- | Some of the credential IDs already exist or are duplicated in the transaction.
+    | DuplicateCredIDs (List String)
+      -- | A credential id that was to be removed is not part of the account.
+    | NonExistentCredIDs (List String)
+      -- | Attemp to remove the first credential
+    | RemoveFirstCredential
+      -- | The credential holder of the keys to be updated did not sign the transaction
+    | CredentialHolderDidNotSign
+
+
+type alias RejectReasonRejectedInit =
+    { rejectReason : Int
+    }
+
+
+type alias RejectReasonRejectedReceive =
+    { rejectReason : Int
+    , contractAddress : T.ContractAddress
+    , receiveName : T.ReceiveName
+    , parameter : String
+    }
 
 
 decodeTransactionResult : D.Decoder TransactionResult
@@ -368,8 +394,18 @@ rejectReasonDecoder =
                 "OutOfEnergy" ->
                     D.succeed OutOfEnergy
 
-                "Rejected" ->
-                    D.succeed Rejected
+                "RejectedInit" ->
+                    D.succeed RejectReasonRejectedInit
+                        |> required "rejectReason" D.int
+                        |> D.map RejectedInit
+
+                "RejectedReceive" ->
+                    D.succeed RejectReasonRejectedReceive
+                        |> required "rejectReason" D.int
+                        |> required "contractAddress" T.contractAddressDecoder
+                        |> required "receiveName" T.contractReceiveNameDecoder
+                        |> required "parameter" D.string
+                        |> D.map RejectedReceive
 
                 "NonExistentRewardAccount" ->
                     D.map NonExistentRewardAccount <|
@@ -396,14 +432,17 @@ rejectReasonDecoder =
                     D.map DuplicateAggregationKey <|
                         D.field "contents" D.string
 
-                "NonExistentAccountKey" ->
-                    D.succeed NonExistentAccountKey
+                "NonExistentCredentialID" ->
+                    D.succeed NonExistentCredentialID
 
                 "KeyIndexAlreadyInUse" ->
                     D.succeed KeyIndexAlreadyInUse
 
-                "InvalidAccountKeySignThreshold" ->
-                    D.succeed InvalidAccountKeySignThreshold
+                "InvalidAccountThreshold" ->
+                    D.succeed InvalidAccountThreshold
+
+                "InvalidCredentialKeySignThreshold" ->
+                    D.succeed InvalidCredentialKeySignThreshold
 
                 "InvalidEncryptedAmountTransferProof" ->
                     D.succeed InvalidEncryptedAmountTransferProof
@@ -430,6 +469,23 @@ rejectReasonDecoder =
                 "ScheduledSelfTransfer" ->
                     D.map ScheduledSelfTransfer <|
                         D.field "contents" T.accountAddressDecoder
+
+                "DuplicateCredIDs" ->
+                    D.map DuplicateCredIDs <|
+                        D.field "contents" (D.list D.string)
+
+                "NonExistentCredIDs" ->
+                    D.map NonExistentCredIDs <|
+                        D.field "contents" (D.list D.string)
+
+                "InvalidCredentials" ->
+                    D.succeed InvalidCredentials
+
+                "RemoveFirstCredential" ->
+                    D.succeed RemoveFirstCredential
+
+                "CredentialHolderDidNotSign" ->
+                    D.succeed CredentialHolderDidNotSign
 
                 _ ->
                     D.fail <| "Unknown RejectReason: " ++ tag
