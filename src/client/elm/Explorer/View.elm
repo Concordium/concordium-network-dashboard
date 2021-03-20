@@ -827,6 +827,11 @@ rejectionToItem ctx reason =
             , details = Nothing
             }
 
+        StakeUnderMinimumThresholdForBaking ->
+            { content = [ text "The amount provided is under the threshold required for becoming a baker" ]
+            , details = Nothing
+            }
+
         BakerInCooldown ->
             { content = [ text "Request to make change to the baker while the baker is in the cooldown period" ]
             , details = Nothing
