@@ -93,6 +93,7 @@ type alias UpdateQueues =
     , foundationAccount : UpdateQueue T.AccountAddress
     , electionDifficulty : UpdateQueue Float
     , euroPerEnergy : UpdateQueue Relation
+    , bakerStakeThreshold : UpdateQueue T.Amount
     }
 
 
@@ -148,6 +149,7 @@ updateQueuesDecoder =
         |> required "foundationAccount" (updateQueueDecoder T.accountAddressDecoder)
         |> required "electionDifficulty" (updateQueueDecoder D.float)
         |> required "euroPerEnergy" (updateQueueDecoder relationDecoder)
+        |> required "bakerStakeThreshold" (updateQueueDecoder T.decodeAmount)
 
 
 updateQueueDecoder : D.Decoder a -> D.Decoder (UpdateQueue a)
