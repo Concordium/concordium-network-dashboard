@@ -554,7 +554,7 @@ viewTransactionSummary ctx txSummary =
                                     , el [ alignRight, Font.color ctx.palette.failure ] (html <| Icons.status_failure 20)
                                     ]
                             }
-              , details = Nothing
+              , details = item.details
               }
             ]
 
@@ -710,8 +710,15 @@ rejectionToItem ctx reason =
             , details = Nothing
             }
 
-        Rejected ->
-            { content = [ text "Rejected by contract logic" ]
+        RejectedInit reject ->
+            -- TODO: Extend with more information, such as the module reference and contract name
+            { content = [ text <| "Rejected by contract logic with reason " ++ String.fromInt reject.rejectReason ]
+            , details = Nothing
+            }
+
+        RejectedReceive reject ->
+            -- TODO: Extend with more information, such as the contract name, method name and address
+            { content = [ text <| "Rejected by contract logic with reason " ++ String.fromInt reject.rejectReason ]
             , details = Nothing
             }
 
@@ -745,8 +752,8 @@ rejectionToItem ctx reason =
             , details = Nothing
             }
 
-        NonExistentAccountKey ->
-            { content = [ text "Encountered index to which no account key belongs when removing or updating keys" ]
+        NonExistentCredentialID ->
+            { content = [ text "Encountered credential ID that does not exist on the account" ]
             , details = Nothing
             }
 
@@ -755,8 +762,13 @@ rejectionToItem ctx reason =
             , details = Nothing
             }
 
-        InvalidAccountKeySignThreshold ->
-            { content = [ text "The requested sign threshold would exceed the number of keys on the account" ]
+        InvalidAccountThreshold ->
+            { content = [ text "The account threshold would exceed the number of credentials" ]
+            , details = Nothing
+            }
+
+        InvalidCredentialKeySignThreshold ->
+            { content = [ text "The signature threshold would exceed the number of keys of the credential" ]
             , details = Nothing
             }
 
@@ -817,6 +829,31 @@ rejectionToItem ctx reason =
 
         BakerInCooldown ->
             { content = [ text "Request to make change to the baker while the baker is in the cooldown period" ]
+            , details = Nothing
+            }
+
+        InvalidCredentials ->
+            { content = [ text "One or more of the credentials is not valid" ]
+            , details = Nothing
+            }
+
+        DuplicateCredIDs creds ->
+            { content = [ text <| "Credential registration ids: " ++ String.join ", " creds ++ " are duplicate" ]
+            , details = Nothing
+            }
+
+        NonExistentCredIDs creds ->
+            { content = [ text <| "Credential registration ids: " ++ String.join ", " creds ++ " do not exist" ]
+            , details = Nothing
+            }
+
+        RemoveFirstCredential ->
+            { content = [ text "First credential of the account cannot be removed" ]
+            , details = Nothing
+            }
+
+        CredentialHolderDidNotSign ->
+            { content = [ text "Credential holder did not sign the credential key update" ]
             , details = Nothing
             }
 
