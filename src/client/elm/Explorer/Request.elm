@@ -73,6 +73,7 @@ type alias ChainParameters =
     , bakerCooldownEpochs : Int
     , electionDifficulty : Float
     , euroPerEnergy : Relation
+    , minimumThresholdForBaking : T.Amount
     }
 
 
@@ -127,6 +128,7 @@ chainParametersDecoder =
         |> required "bakerCooldownEpochs" D.int
         |> required "electionDifficulty" D.float
         |> required "euroPerEnergy" relationDecoder
+        |> required "minimumThresholdForBaking" T.decodeAmount
 
 
 rewardParametersDecoder : D.Decoder RewardParameters
