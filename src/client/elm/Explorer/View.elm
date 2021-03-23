@@ -14,6 +14,8 @@ import Explorer.Request exposing (..)
 import Html
 import Html.Attributes exposing (style)
 import Icons exposing (..)
+import List
+import Paging
 import Palette exposing (withAlphaEl)
 import Set exposing (Set)
 import String exposing (toLower)
@@ -32,6 +34,7 @@ type Msg
     | BlockClicked String
     | Display DisplayMsg
     | UrlClicked UrlRequest
+    | TransactionPaging Paging.Msg
 
 
 type alias SummaryItem msg =
@@ -94,6 +97,9 @@ viewBlockSummary theme { blockSummary, state } =
             blockSummary.transactionSummaries
                 |> List.map (viewTransactionSummary theme)
 
+        transactionPaging =
+            Paging.paging state.transactionPagingModel transactionSummaries
+
         specialEvents =
             blockSummary.specialEvents
                 |> List.map (viewSpecialEvent theme blockSummary.updates.chainParameters.rewardParameters)
@@ -119,8 +125,14 @@ viewBlockSummary theme { blockSummary, state } =
                                 , cost = el [ centerX ] <| blockSummaryContentHeader theme "COST"
                                 , txHash = blockSummaryContentHeader theme "TX HASH"
                                 }
-                        , column [ width fill ] <| viewSummaryItems theme transactionSummaries state.transactionWithDetailsOpen (\t e -> Display <| Explorer.ToggleTransactionDetails t e)
+                        , column [ width fill, spacing 5 ] <| viewSummaryItems theme transactionPaging.visibleItems state.transactionWithDetailsOpen (\t e -> Display <| Explorer.ToggleTransactionDetails t e)
                         ]
+                            ++ (if List.length transactionPaging.visibleItems < List.length transactionSummaries then
+                                    [ el [ centerX, padding 15 ] <| Element.map TransactionPaging transactionPaging.pager ]
+
+                                else
+                                    []
+                               )
                    )
         , section
             [ titleWithSubtitle theme "Tokenomics" "Distribution of transaction fees and minted tokens for this block"

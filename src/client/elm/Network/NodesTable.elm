@@ -10,6 +10,7 @@ import Html.Attributes as HtmlAttr
 import Icons exposing (..)
 import Iso8601
 import Network exposing (Host, Model, Msg(..), NetworkNode, SortBy(..), SortMode(..), viewSummaryWidgets)
+import Paging
 import Palette exposing (Palette, darkish)
 import Round
 import Svg.Attributes exposing (visibility)
@@ -41,43 +42,17 @@ view ctx model =
             , remoteDataView ctx.palette
                 (\nodes ->
                     let
-                        nodesFrom =
-                            model.nodePage * nodesPerPage
-
                         listNodes =
                             nodes
-                                |> Dict.toList
-                                |> List.map Tuple.second
+                                |> Dict.values
                                 |> sortNodesMode model.sortMode
 
-                        visibleNodes =
-                            listNodes
-                                |> List.drop nodesFrom
-                                |> List.take nodesPerPage
-
-                        nodesTo =
-                            nodesFrom + List.length visibleNodes
-
-                        totalPages =
-                            ceiling (toFloat (List.length listNodes) / toFloat nodesPerPage) - 1
+                        nodesPaging =
+                            Paging.paging model.nodesPagingModel listNodes
                     in
                     column [ spacing 10, width fill ]
-                        [ nodesTable ctx model.sortMode visibleNodes
-                        , row [ centerX ]
-                            [ el
-                                [ onClick PreviousNodePage
-                                , pointer
-                                , visible (model.nodePage > 0)
-                                ]
-                                (text "Prev ")
-                            , text <| String.fromInt (nodesFrom + 1) ++ " - " ++ String.fromInt nodesTo
-                            , el
-                                [ onClick NextNodePage
-                                , pointer
-                                , visible (model.nodePage < totalPages)
-                                ]
-                                (text " Next")
-                            ]
+                        [ nodesTable ctx model.sortMode nodesPaging.visibleItems
+                        , el [ centerX ] <| Element.map NodesPaging nodesPaging.pager
                         ]
                 )
                 model.nodes
@@ -306,7 +281,7 @@ sortNodesBy sortBy listNodes =
             List.sortBy .nodeName listNodes
 
         SortBaker ->
-            List.sortBy (.consensusBakerId >> Maybe.withDefault (1/0)) listNodes
+            List.sortBy (.consensusBakerId >> Maybe.withDefault (1 / 0)) listNodes
 
         SortUptime ->
             List.sortBy .uptime listNodes
