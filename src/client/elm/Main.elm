@@ -540,6 +540,9 @@ translateMsg msg =
         Explorer.View.UrlClicked link ->
             UrlClicked link
 
+        Explorer.View.TransactionPaging pagingMsg ->
+            ExplorerMsg <| Explorer.TransactionPaging pagingMsg
+
 
 theme : Palette Color -> Element msg -> Html.Html msg
 theme palette elements =

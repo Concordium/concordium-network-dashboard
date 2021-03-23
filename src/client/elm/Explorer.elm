@@ -4,6 +4,7 @@ import Api exposing (ApiResult)
 import Dict exposing (Dict)
 import Explorer.Request exposing (..)
 import Helpers exposing (toggleSetMember)
+import Paging
 import RemoteData exposing (..)
 import Set exposing (Set)
 import Types as T
@@ -20,9 +21,12 @@ type alias DisplayDetailBlockSummary =
 {-| State used by the view when displaying the block summary
 -}
 type alias BlockSummaryDisplayState =
-    { -- A mapping from an index of a transaction to a set of indices of events
-      -- in that transaction, with details currently open.
-      transactionWithDetailsOpen : Dict Int (Set Int)
+    { -- Used for paging of transactions and represents the index of the current page
+      transactionPagingModel : Paging.Model
+
+    -- A mapping from an index of a transaction to a set of indices of events
+    -- in that transaction, with details currently open.
+    , transactionWithDetailsOpen : Dict Int (Set Int)
 
     -- A set of indicies of events with details open.
     , specialEventWithDetailsOpen : Set Int
@@ -31,7 +35,8 @@ type alias BlockSummaryDisplayState =
 
 initialBlockSummaryDisplayState : BlockSummaryDisplayState
 initialBlockSummaryDisplayState =
-    { transactionWithDetailsOpen = Dict.empty
+    { transactionPagingModel = Paging.init 10
+    , transactionWithDetailsOpen = Dict.empty
     , specialEventWithDetailsOpen = Set.empty
     }
 
@@ -49,6 +54,7 @@ type Msg
     | ReceivedBlockInfo (ApiResult Api.BlockInfo)
     | ReceivedBlockSummary (ApiResult BlockSummary)
     | Display DisplayMsg
+    | TransactionPaging Paging.Msg
 
 
 {-| Messages for manipulating the display state
@@ -115,6 +121,28 @@ update msg model =
                             )
             in
             ( { model | blockSummary = nextBlockSummary }, Cmd.none )
+
+        TransactionPaging pagingMsg ->
+            ( { model
+                | blockSummary =
+                    model.blockSummary
+                        |> RemoteData.map
+                            (\data ->
+                                let
+                                    { state } =
+                                        data
+
+                                    newState =
+                                        { state
+                                            | transactionPagingModel = Paging.update pagingMsg state.transactionPagingModel
+                                            , transactionWithDetailsOpen = Dict.empty
+                                        }
+                                in
+                                { data | state = newState }
+                            )
+              }
+            , Cmd.none
+            )
 
 
 updateDisplayState : DisplayMsg -> BlockSummaryDisplayState -> BlockSummaryDisplayState
