@@ -5,7 +5,7 @@ import Chain.Flatten exposing (..)
 import Chain.Grid as Grid exposing (GridSpec)
 import Color exposing (Color)
 import Color.Manipulate exposing (fadeOut)
-import Context exposing (..)
+import Context exposing (Theme)
 import CubicSpline2d
 import Geometry.Svg as Svg
 import Maybe.Extra as Maybe
@@ -42,8 +42,8 @@ viewDimensions gridSpec vwidth vheight =
             ((+) (gridSpec.outerPadding * 2))
 
 
-viewChain : Context a -> ViewSettings msg -> DrawableChain -> Svg msg
-viewChain ctx { gridSpec, maxWidth, lastFinalized, nodes, onBlockClick, selectedBlock } chain =
+viewChain : Theme a -> ViewSettings msg -> DrawableChain -> Svg msg
+viewChain theme { gridSpec, maxWidth, lastFinalized, nodes, onBlockClick, selectedBlock } chain =
     let
         ( viewWidth, viewHeight ) =
             viewDimensions gridSpec (Grid.maxCells maxWidth gridSpec) chain.height
@@ -58,12 +58,12 @@ viewChain ctx { gridSpec, maxWidth, lastFinalized, nodes, onBlockClick, selected
             viewHeight
         ]
         (List.map viewConnector chain.connectors
-            ++ List.map (viewBlock ctx onBlockClick selectedBlock) chain.blocks
+            ++ List.map (viewBlock theme onBlockClick selectedBlock) chain.blocks
         )
 
 
 viewBlock :
-    Context a
+    Theme a
     -> Maybe (String -> msg)
     -> Maybe String
     -> DrawableBlock
@@ -107,7 +107,7 @@ viewBlock ctx clickMsg selectedBlock ({ hash, rect, color, fractionNodesAt } as 
     )
 
 
-viewNodeFractionBar : Context a -> DrawableBlock -> Svg msg
+viewNodeFractionBar : Theme a -> DrawableBlock -> Svg msg
 viewNodeFractionBar ctx block =
     let
         fullWidth =
