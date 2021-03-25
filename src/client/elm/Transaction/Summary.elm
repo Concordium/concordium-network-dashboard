@@ -52,6 +52,7 @@ type AccountTransactionType
     | TransferToPublic
     | TransferWithSchedule
     | UpdateCredentials
+    | RegisterData
     | Malformed
 
 
@@ -252,8 +253,11 @@ accountTransactionTypeDecoder =
                 "transferWithSchedule" ->
                     D.succeed TransferWithSchedule
 
-                "UpdateCredentials" ->
+                "updateCredentials" ->
                     D.succeed UpdateCredentials
+
+                "registerData" ->
+                    D.succeed RegisterData
 
                 _ ->
                     D.fail <| "Unknown AccountTransaction type: " ++ tipe

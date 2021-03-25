@@ -636,6 +636,9 @@ typeDescriptionAccountTransactionType accountTransactionType =
         UpdateCredentials ->
             { icon = html <| Icons.account_key_deployed 18, short = "Remove account keys" }
 
+        RegisterData ->
+            { icon = html <| Icons.smart_contract 20, short = "Register data" }
+
         Malformed ->
             { icon = el [ paddingXY 6 0 ] <| text "?", short = "Serialization" }
 
@@ -1742,6 +1745,20 @@ viewTransactionEvent ctx txEvent =
                 Just <|
                     el [ padding 20 ] <|
                         viewEventUpdateEnueuedDetails ctx event
+            }
+
+        TransactionEventDataRegistered event ->
+            { content =
+                [ text <| "Data registered on chain"
+                ]
+            , details =
+                Just <|
+                    column [ width fill ]
+                        [ viewDetailRow
+                            [ paragraph [] [ text "Hex representation of the registered data:" ] ]
+                            [ paragraph [] [ text event.data ]
+                            ]
+                        ]
             }
 
 
