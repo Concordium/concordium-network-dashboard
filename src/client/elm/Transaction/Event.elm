@@ -35,6 +35,7 @@ type TransactionEvent
     | TransactionEventContractUpdated EventContractUpdated
       -- Core
     | TransactionEventUpdateEnqueued EventUpdateEnqueued
+    | TransactionEventDataRegistered EventDataRegistered
 
 
 
@@ -187,6 +188,11 @@ type alias EventContractUpdated =
     , message : String
     , receiveName : T.ReceiveName
     , events : List T.ContractEvent
+    }
+
+
+type alias EventDataRegistered =
+    { data : String
     }
 
 
@@ -543,6 +549,11 @@ transactionEventsDecoder =
                         |> required "effectiveTime" (D.map (\seconds -> Time.millisToPosix (seconds * 1000)) D.int)
                         |> required "payload" updatePayloadDecoder
                         |> D.map TransactionEventUpdateEnqueued
+
+                "DataRegistered" ->
+                    D.succeed EventDataRegistered
+                        |> required "data" D.string
+                        |> D.map TransactionEventDataRegistered
 
                 -- Errors
                 _ ->
