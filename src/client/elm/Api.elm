@@ -159,8 +159,8 @@ type TransactionStatus
 
 {-| The response from getting the transaction status.
 
-The middleware will return the transaction status if found and null if not found,
-errors are returned as strings.
+The middleware will return the transaction status if found and null if not found.
+Errors are returned as strings.
 
 -}
 type TransactionStatusResponse
