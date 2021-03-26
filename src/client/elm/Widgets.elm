@@ -129,6 +129,9 @@ errorToString error =
         Http.BadStatus 500 ->
             "The server had a problem, try again later"
 
+        Http.BadStatus 504 ->
+            "Server gateway timeout, try again later"
+
         Http.BadStatus 400 ->
             "Verify your information and try again"
 
