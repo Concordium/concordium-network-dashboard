@@ -157,7 +157,7 @@ viewTransactionStatusWebData theme remoteData =
             Widgets.loader theme.palette.fg3
 
         RemoteData.Failure error ->
-            el [ Font.color theme.palette.danger ] (paragraph [] [ text <| "Error: " ++ Widgets.errorToString error ])
+            el [ Font.color theme.palette.danger, centerX ] (paragraph [] [ text <| "Error: " ++ Widgets.errorToString error ])
 
         RemoteData.Success data ->
             viewTransactionStatus theme data
@@ -186,6 +186,9 @@ viewTransactionStatus theme data =
     case data.transactionStatusResponse of
         Api.InvalidTransactionHash ->
             el [ centerX, padding 10, Font.color theme.palette.warning ] <| text "Invalid transaction hash"
+
+        Api.TransactionNotFound ->
+            el [ centerX, padding 10, Font.color theme.palette.warning ] <| text "Transaction not found"
 
         Api.Status transactionStatus ->
             case transactionStatus of
