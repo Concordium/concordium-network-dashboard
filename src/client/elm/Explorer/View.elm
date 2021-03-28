@@ -634,7 +634,7 @@ typeDescriptionAccountTransactionType accountTransactionType =
             { icon = html <| Icons.transaction 18, short = "Transfer with schedule" }
 
         UpdateCredentials ->
-            { icon = html <| Icons.account_key_deployed 18, short = "Remove account keys" }
+            { icon = html <| Icons.account_key_deployed 18, short = "Update account credentials" }
 
         RegisterData ->
             { icon = html <| Icons.smart_contract 20, short = "Register data" }
@@ -715,7 +715,7 @@ rejectionToItem ctx reason =
 
         RejectedInit reject ->
             -- TODO: Extend with more information, such as the module reference and contract name
-            { content = [ text <| "Rejected by contract logic with reason " ++ String.fromInt reject.rejectReason ]
+            { content = [ text <| "Contract refused to initialize with reason " ++ String.fromInt reject.rejectReason ]
             , details = Nothing
             }
 
@@ -1630,7 +1630,7 @@ viewTransactionEvent ctx txEvent =
         TransactionEventCredentialKeysUpdated event ->
             { content =
                 [ row []
-                    [ text <| "Updated credientials and threshold keys of " ++ event.credId
+                    [ text <| "Updated keys and threshold of credential " ++ event.credId
                     ]
                 ]
             , details = Nothing
@@ -1639,7 +1639,7 @@ viewTransactionEvent ctx txEvent =
         TransactionEventCredentialsUpdated event ->
             { content =
                 [ row []
-                    [ text "Updated credientials of "
+                    [ text "Updated credentials of "
                     , viewAddress ctx (T.AddressAccount event.account)
                     ]
                 ]
