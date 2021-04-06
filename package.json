@@ -41,9 +41,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git@gitlab.com:Concordium/dashboard.git"
+    "url": "git@github.com:Concordium/concordium-network-dashboard.git"
   },
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "Concordium",
   "jest": {
     "roots": [
