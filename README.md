@@ -1,5 +1,7 @@
 # Concordium Dashboard
 
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](https://github.com/Concordium/.github/blob/main/.github/CODE_OF_CONDUCT.md)
+
 Network and Chain Dashboard for displaying stats, summaries, and visualizations of the blockchain network and state.
 
 - Network: A table view of nodes which are participating in the data collection.
