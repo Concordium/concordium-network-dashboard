@@ -65,8 +65,16 @@ type CredentialType
 <https://github.com/Concordium/concordium-base/blob/main/haskell-src/Concordium/Types/Updates.hs>
 -}
 type UpdateType
-    = UpdateAuthorization
-      -- ^Update the access structures that authorize updates
+    = UpdateRootKeysWithRootKeys
+      -- ^Update the root keys using the root keys
+    | UpdateLevel1KeysWithRootKeys
+      -- ^Update the level 1 keys using the root keys
+    | UpdateLevel2KeysWithRootKeys
+      -- ^Update the level 2 keys using the root keys
+    | UpdateLevel1KeysWithLevel1Keys
+      -- ^Update the level 1 keys using the level 1 keys
+    | UpdateLevel2KeysWithLevel1Keys
+      -- ^Update the level 2 keys using the level 1 keys
     | UpdateProtocol
       -- ^Update the chain protocol
     | UpdateElectionDifficulty
@@ -271,8 +279,20 @@ updateTypeDecoder =
         |> D.andThen
             (\str ->
                 case str of
-                    "updateAuthorization" ->
-                        D.succeed UpdateAuthorization
+                    "updateRootKeysWithRootKeys" ->
+                        D.succeed UpdateRootKeysWithRootKeys
+
+                    "updateLevel1KeysWithRootKeys" ->
+                        D.succeed UpdateLevel1KeysWithRootKeys
+
+                    "updateLevel2KeysWithRootKeys" ->
+                        D.succeed UpdateLevel2KeysWithRootKeys
+
+                    "updateLevel1KeysWithLevel1Keys" ->
+                        D.succeed UpdateLevel1KeysWithLevel1Keys
+
+                    "updateLevel2KeysWithLevel1Keys" ->
+                        D.succeed UpdateLevel2KeysWithLevel1Keys
 
                     "updateProtocol" ->
                         D.succeed UpdateProtocol

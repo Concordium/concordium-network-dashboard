@@ -214,7 +214,9 @@ type UpdatePayload
     | EuroPerEnergyPayload Relation
     | MicroGtuPerEuroPayload Relation
     | FoundationAccountPayload T.AccountAddress
-    | AuthorizationPayload Authorizations
+    | RootKeysUpdatePayload HigherLevelKeys
+    | Level1KeysUpdatePayload HigherLevelKeys
+    | Level2KeysUpdatePayload Authorizations
     | ProtocolUpdatePayload ProtocolUpdate
     | BakerStakeThresholdPayload T.Amount
 
@@ -240,10 +242,22 @@ type alias GasRewards =
     }
 
 
+type alias UpdateKeysCollection =
+    { rootKeys : HigherLevelKeys
+    , level1Keys : HigherLevelKeys
+    , level2Keys : Authorizations
+    }
+
+
+type alias HigherLevelKeys =
+    { threshold : Int
+    , keys : List AuthorizationKey
+    }
+
+
 type alias Authorizations =
     { mintDistribution : Authorization
     , transactionFeeDistribution : Authorization
-    , authorization : Authorization
     , microGTUPerEuro : Authorization
     , euroPerEnergy : Authorization
     , electionDifficulty : Authorization
@@ -324,8 +338,11 @@ updatePayloadDecoder =
                     "foundationAccount" ->
                         T.accountAddressDecoder |> D.map FoundationAccountPayload
 
-                    "authorization" ->
-                        authorizationsDecoder |> D.map AuthorizationPayload
+                    "root" ->
+                        keyUpdateDecoder
+
+                    "level1" ->
+                        keyUpdateDecoder
 
                     "protocol" ->
                         protocolUpdateDecoder |> D.map ProtocolUpdatePayload
@@ -363,32 +380,69 @@ gasRewardsDecoder =
         |> required "finalizationProof" D.float
 
 
+updateKeysCollectionDecoder : D.Decoder UpdateKeysCollection
+updateKeysCollectionDecoder =
+    D.succeed UpdateKeysCollection
+        |> required "rootKeys" higherLevelKeysDecoder
+        |> required "level1Keys" higherLevelKeysDecoder
+        |> required "level2Keys" authorizationsDecoder
+
+
 authorizationsDecoder : D.Decoder Authorizations
 authorizationsDecoder =
     D.succeed Authorizations
-        |> required "mintDistribution" authorizationDecorder
-        |> required "transactionFeeDistribution" authorizationDecorder
-        |> required "authorization" authorizationDecorder
-        |> required "microGTUPerEuro" authorizationDecorder
-        |> required "euroPerEnergy" authorizationDecorder
-        |> required "electionDifficulty" authorizationDecorder
-        |> required "foundationAccount" authorizationDecorder
-        |> required "protocol" authorizationDecorder
-        |> required "paramGASRewards" authorizationDecorder
-        |> required "emergency" authorizationDecorder
-        |> required "bakerStakeThreshold" authorizationDecorder
-        |> required "keys" (D.list authorizationKeyDecorder)
+        |> required "mintDistribution" authorizationDecoder
+        |> required "transactionFeeDistribution" authorizationDecoder
+        |> required "microGTUPerEuro" authorizationDecoder
+        |> required "euroPerEnergy" authorizationDecoder
+        |> required "electionDifficulty" authorizationDecoder
+        |> required "foundationAccount" authorizationDecoder
+        |> required "protocol" authorizationDecoder
+        |> required "paramGASRewards" authorizationDecoder
+        |> required "emergency" authorizationDecoder
+        |> required "bakerStakeThreshold" authorizationDecoder
+        |> required "keys" (D.list authorizationKeyDecoder)
 
 
-authorizationDecorder : D.Decoder Authorization
-authorizationDecorder =
+higherLevelKeysDecoder : D.Decoder HigherLevelKeys
+higherLevelKeysDecoder =
+    D.succeed HigherLevelKeys
+        |> required "threshold" D.int
+        |> required "keys" (D.list authorizationKeyDecoder)
+
+
+keyUpdateDecoder : D.Decoder UpdatePayload
+keyUpdateDecoder =
+    let
+        decode keyType =
+            case keyType of
+                "rootKeysUpdate" ->
+                    D.succeed RootKeysUpdatePayload
+                        |> required "updatePayload" higherLevelKeysDecoder
+
+                "level1KeysUpdate" ->
+                    D.succeed Level1KeysUpdatePayload
+                        |> required "updatePayload" higherLevelKeysDecoder
+
+                "level2KeysUpdate" ->
+                    D.succeed Level2KeysUpdatePayload
+                        |> required "updatePayload" authorizationsDecoder
+
+                _ ->
+                    D.fail <| "Unknown key update type: " ++ keyType
+    in
+    D.field "typeOfUpdate" D.string |> D.andThen decode
+
+
+authorizationDecoder : D.Decoder Authorization
+authorizationDecoder =
     D.succeed Authorization
         |> required "threshold" D.int
         |> required "authorizedKeys" (D.list D.int)
 
 
-authorizationKeyDecorder : D.Decoder AuthorizationKey
-authorizationKeyDecorder =
+authorizationKeyDecoder : D.Decoder AuthorizationKey
+authorizationKeyDecoder =
     D.succeed AuthorizationKey
         |> required "verifyKey" D.string
         |> required "schemeId" D.string
