@@ -21,12 +21,8 @@ type TransactionEvent
       -- Accounts
     | TransactionEventAccountCreated EventAccountCreated
     | TransactionEventCredentialDeployed EventCredentialDeployed
-      -- Account Keys
-    | TransactionEventAccountKeysUpdated
-    | TransactionEventAccountKeysAdded
-    | TransactionEventAccountKeysRemoved
-    | TransactionEventAccountKeysSignThresholdUpdated
-      -- Baking
+    | TransactionEventCredentialKeysUpdated EventCredentialKeysUpdated
+    | TransactionEventCredentialsUpdated EventCredentialsUpdated
     | TransactionEventBakerAdded EventBakerAdded
     | TransactionEventBakerRemoved EventBakerRemoved
     | TransactionEventBakerStakeIncreased EventBakerStakeIncreased
@@ -39,6 +35,7 @@ type TransactionEvent
     | TransactionEventContractUpdated EventContractUpdated
       -- Core
     | TransactionEventUpdateEnqueued EventUpdateEnqueued
+    | TransactionEventDataRegistered EventDataRegistered
 
 
 
@@ -100,6 +97,19 @@ type alias EventAccountCreated =
 type alias EventCredentialDeployed =
     { regid : String
     , account : String
+    }
+
+
+type alias EventCredentialKeysUpdated =
+    { credId : String
+    }
+
+
+type alias EventCredentialsUpdated =
+    { account : T.AccountAddress
+    , newCredIds : List String
+    , removedCredIds : List String
+    , newThreshold : Int
     }
 
 
@@ -181,6 +191,11 @@ type alias EventContractUpdated =
     }
 
 
+type alias EventDataRegistered =
+    { data : String
+    }
+
+
 
 -- Core
 
@@ -199,8 +214,11 @@ type UpdatePayload
     | EuroPerEnergyPayload Relation
     | MicroGtuPerEuroPayload Relation
     | FoundationAccountPayload T.AccountAddress
-    | AuthorizationPayload Authorizations
+    | RootKeysUpdatePayload HigherLevelKeys
+    | Level1KeysUpdatePayload HigherLevelKeys
+    | Level2KeysUpdatePayload Authorizations
     | ProtocolUpdatePayload ProtocolUpdate
+    | BakerStakeThresholdPayload T.Amount
 
 
 type alias MintDistribution =
@@ -224,10 +242,22 @@ type alias GasRewards =
     }
 
 
+type alias UpdateKeysCollection =
+    { rootKeys : HigherLevelKeys
+    , level1Keys : HigherLevelKeys
+    , level2Keys : Authorizations
+    }
+
+
+type alias HigherLevelKeys =
+    { threshold : Int
+    , keys : List AuthorizationKey
+    }
+
+
 type alias Authorizations =
     { mintDistribution : Authorization
     , transactionFeeDistribution : Authorization
-    , authorization : Authorization
     , microGTUPerEuro : Authorization
     , euroPerEnergy : Authorization
     , electionDifficulty : Authorization
@@ -235,6 +265,7 @@ type alias Authorizations =
     , protocol : Authorization
     , paramGASRewards : Authorization
     , emergency : Authorization
+    , bakerStakeThreshold : Authorization
     , keys : List AuthorizationKey
     }
 
@@ -307,11 +338,17 @@ updatePayloadDecoder =
                     "foundationAccount" ->
                         T.accountAddressDecoder |> D.map FoundationAccountPayload
 
-                    "authorization" ->
-                        authorizationsDecoder |> D.map AuthorizationPayload
+                    "root" ->
+                        keyUpdateDecoder
+
+                    "level1" ->
+                        keyUpdateDecoder
 
                     "protocol" ->
                         protocolUpdateDecoder |> D.map ProtocolUpdatePayload
+
+                    "bakerStakeThreshold" ->
+                        T.decodeAmount |> D.map BakerStakeThresholdPayload
 
                     _ ->
                         D.fail "Unknown update type"
@@ -343,31 +380,69 @@ gasRewardsDecoder =
         |> required "finalizationProof" D.float
 
 
+updateKeysCollectionDecoder : D.Decoder UpdateKeysCollection
+updateKeysCollectionDecoder =
+    D.succeed UpdateKeysCollection
+        |> required "rootKeys" higherLevelKeysDecoder
+        |> required "level1Keys" higherLevelKeysDecoder
+        |> required "level2Keys" authorizationsDecoder
+
+
 authorizationsDecoder : D.Decoder Authorizations
 authorizationsDecoder =
     D.succeed Authorizations
-        |> required "mintDistribution" authorizationDecorder
-        |> required "transactionFeeDistribution" authorizationDecorder
-        |> required "authorization" authorizationDecorder
-        |> required "microGTUPerEuro" authorizationDecorder
-        |> required "euroPerEnergy" authorizationDecorder
-        |> required "electionDifficulty" authorizationDecorder
-        |> required "foundationAccount" authorizationDecorder
-        |> required "protocol" authorizationDecorder
-        |> required "paramGASRewards" authorizationDecorder
-        |> required "emergency" authorizationDecorder
-        |> required "keys" (D.list authorizationKeyDecorder)
+        |> required "mintDistribution" authorizationDecoder
+        |> required "transactionFeeDistribution" authorizationDecoder
+        |> required "microGTUPerEuro" authorizationDecoder
+        |> required "euroPerEnergy" authorizationDecoder
+        |> required "electionDifficulty" authorizationDecoder
+        |> required "foundationAccount" authorizationDecoder
+        |> required "protocol" authorizationDecoder
+        |> required "paramGASRewards" authorizationDecoder
+        |> required "emergency" authorizationDecoder
+        |> required "bakerStakeThreshold" authorizationDecoder
+        |> required "keys" (D.list authorizationKeyDecoder)
 
 
-authorizationDecorder : D.Decoder Authorization
-authorizationDecorder =
+higherLevelKeysDecoder : D.Decoder HigherLevelKeys
+higherLevelKeysDecoder =
+    D.succeed HigherLevelKeys
+        |> required "threshold" D.int
+        |> required "keys" (D.list authorizationKeyDecoder)
+
+
+keyUpdateDecoder : D.Decoder UpdatePayload
+keyUpdateDecoder =
+    let
+        decode keyType =
+            case keyType of
+                "rootKeysUpdate" ->
+                    D.succeed RootKeysUpdatePayload
+                        |> required "updatePayload" higherLevelKeysDecoder
+
+                "level1KeysUpdate" ->
+                    D.succeed Level1KeysUpdatePayload
+                        |> required "updatePayload" higherLevelKeysDecoder
+
+                "level2KeysUpdate" ->
+                    D.succeed Level2KeysUpdatePayload
+                        |> required "updatePayload" authorizationsDecoder
+
+                _ ->
+                    D.fail <| "Unknown key update type: " ++ keyType
+    in
+    D.field "typeOfUpdate" D.string |> D.andThen decode
+
+
+authorizationDecoder : D.Decoder Authorization
+authorizationDecoder =
     D.succeed Authorization
         |> required "threshold" D.int
         |> required "authorizedKeys" (D.list D.int)
 
 
-authorizationKeyDecorder : D.Decoder AuthorizationKey
-authorizationKeyDecorder =
+authorizationKeyDecoder : D.Decoder AuthorizationKey
+authorizationKeyDecoder =
     D.succeed AuthorizationKey
         |> required "verifyKey" D.string
         |> required "schemeId" D.string
@@ -436,18 +511,18 @@ transactionEventsDecoder =
                         |> required "account" T.accountAddressDecoder
                         |> D.map TransactionEventCredentialDeployed
 
-                -- Account Keys
-                "AccountKeysUpdated" ->
-                    D.succeed TransactionEventAccountKeysUpdated
+                "CredentialKeysUpdated" ->
+                    D.succeed EventCredentialKeysUpdated
+                        |> required "credId" D.string
+                        |> D.map TransactionEventCredentialKeysUpdated
 
-                "AccountKeysAdded" ->
-                    D.succeed TransactionEventAccountKeysAdded
-
-                "AccountKeysRemoved" ->
-                    D.succeed TransactionEventAccountKeysRemoved
-
-                "AccountKeysSignThresholdUpdated" ->
-                    D.succeed TransactionEventAccountKeysSignThresholdUpdated
+                "CredentialsUpdated" ->
+                    D.succeed EventCredentialsUpdated
+                        |> required "account" T.accountAddressDecoder
+                        |> required "newCredIds" (D.list D.string)
+                        |> required "removedCredIds" (D.list D.string)
+                        |> required "newThreshold" D.int
+                        |> D.map TransactionEventCredentialsUpdated
 
                 -- Baking
                 "BakerAdded" ->
@@ -528,6 +603,11 @@ transactionEventsDecoder =
                         |> required "effectiveTime" (D.map (\seconds -> Time.millisToPosix (seconds * 1000)) D.int)
                         |> required "payload" updatePayloadDecoder
                         |> D.map TransactionEventUpdateEnqueued
+
+                "DataRegistered" ->
+                    D.succeed EventDataRegistered
+                        |> required "data" D.string
+                        |> D.map TransactionEventDataRegistered
 
                 -- Errors
                 _ ->

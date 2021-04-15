@@ -554,7 +554,7 @@ viewTransactionSummary ctx txSummary =
                                     , el [ alignRight, Font.color ctx.palette.failure ] (html <| Icons.status_failure 20)
                                     ]
                             }
-              , details = Nothing
+              , details = item.details
               }
             ]
 
@@ -618,14 +618,8 @@ typeDescriptionAccountTransactionType accountTransactionType =
         UpdateBakerKeys ->
             { icon = html <| Icons.baking_bread 20, short = "Update baker keys" }
 
-        UpdateAccountKeys ->
-            { icon = html <| Icons.account_key_deployed 18, short = "Update account keys" }
-
-        AddAccountKeys ->
-            { icon = html <| Icons.account_key_deployed 18, short = "Add account keys" }
-
-        RemoveAccountKeys ->
-            { icon = html <| Icons.account_key_deployed 18, short = "Remove account keys" }
+        UpdateCredentialKeys ->
+            { icon = html <| Icons.account_key_deployed 18, short = "Update credential keys" }
 
         EncryptedAmountTransfer ->
             { icon = html <| Icons.shield 20, short = "Shielded transfer" }
@@ -638,6 +632,12 @@ typeDescriptionAccountTransactionType accountTransactionType =
 
         TransferWithSchedule ->
             { icon = html <| Icons.transaction 18, short = "Transfer with schedule" }
+
+        UpdateCredentials ->
+            { icon = html <| Icons.account_key_deployed 18, short = "Update account credentials" }
+
+        RegisterData ->
+            { icon = html <| Icons.smart_contract 20, short = "Register data" }
 
         Malformed ->
             { icon = el [ paddingXY 6 0 ] <| text "?", short = "Serialization" }
@@ -713,8 +713,15 @@ rejectionToItem ctx reason =
             , details = Nothing
             }
 
-        Rejected ->
-            { content = [ text "Rejected by contract logic" ]
+        RejectedInit reject ->
+            -- TODO: Extend with more information, such as the module reference and contract name
+            { content = [ text <| "Contract refused to initialize with reason " ++ String.fromInt reject.rejectReason ]
+            , details = Nothing
+            }
+
+        RejectedReceive reject ->
+            -- TODO: Extend with more information, such as the contract name, method name and address
+            { content = [ text <| "Rejected by contract logic with reason " ++ String.fromInt reject.rejectReason ]
             , details = Nothing
             }
 
@@ -748,8 +755,8 @@ rejectionToItem ctx reason =
             , details = Nothing
             }
 
-        NonExistentAccountKey ->
-            { content = [ text "Encountered index to which no account key belongs when removing or updating keys" ]
+        NonExistentCredentialID ->
+            { content = [ text "Encountered credential ID that does not exist on the account" ]
             , details = Nothing
             }
 
@@ -758,8 +765,13 @@ rejectionToItem ctx reason =
             , details = Nothing
             }
 
-        InvalidAccountKeySignThreshold ->
-            { content = [ text "The requested sign threshold would exceed the number of keys on the account" ]
+        InvalidAccountThreshold ->
+            { content = [ text "The account threshold would exceed the number of credentials" ]
+            , details = Nothing
+            }
+
+        InvalidCredentialKeySignThreshold ->
+            { content = [ text "The signature threshold would exceed the number of keys of the credential" ]
             , details = Nothing
             }
 
@@ -818,8 +830,38 @@ rejectionToItem ctx reason =
             , details = Nothing
             }
 
+        StakeUnderMinimumThresholdForBaking ->
+            { content = [ text "The amount provided is under the threshold required for becoming a baker" ]
+            , details = Nothing
+            }
+
         BakerInCooldown ->
             { content = [ text "Request to make change to the baker while the baker is in the cooldown period" ]
+            , details = Nothing
+            }
+
+        InvalidCredentials ->
+            { content = [ text "One or more of the credentials is not valid" ]
+            , details = Nothing
+            }
+
+        DuplicateCredIDs creds ->
+            { content = [ text <| "Credential registration ids: " ++ String.join ", " creds ++ " are duplicate" ]
+            , details = Nothing
+            }
+
+        NonExistentCredIDs creds ->
+            { content = [ text <| "Credential registration ids: " ++ String.join ", " creds ++ " do not exist" ]
+            , details = Nothing
+            }
+
+        RemoveFirstCredential ->
+            { content = [ text "First credential of the account cannot be removed" ]
+            , details = Nothing
+            }
+
+        CredentialHolderDidNotSign ->
+            { content = [ text "Credential holder did not sign the credential key update" ]
             , details = Nothing
             }
 
@@ -895,7 +937,9 @@ listUpdatePayloads queues =
                 )
                 q.queue
     in
-    mapUpdate AuthorizationPayload queues.authorization
+    mapUpdate RootKeysUpdatePayload queues.rootKeys
+        ++ mapUpdate Level1KeysUpdatePayload queues.level1Keys
+        ++ mapUpdate Level2KeysUpdatePayload queues.level2Keys
         ++ mapUpdate TransactionFeeDistributionPayload queues.transactionFeeDistribution
         ++ mapUpdate MicroGtuPerEuroPayload queues.microGTUPerEuro
         ++ mapUpdate ProtocolUpdatePayload queues.protocol
@@ -904,6 +948,7 @@ listUpdatePayloads queues =
         ++ mapUpdate ElectionDifficultyPayload queues.electionDifficulty
         ++ mapUpdate EuroPerEnergyPayload queues.euroPerEnergy
         ++ mapUpdate MintDistributionPayload queues.mintDistribution
+        ++ mapUpdate BakerStakeThresholdPayload queues.bakerStakeThreshold
 
 
 asPercentage : Float -> String
@@ -1512,32 +1557,6 @@ viewTransactionEvent ctx txEvent =
             , details = Nothing
             }
 
-        -- Account Keys
-        TransactionEventAccountKeysUpdated ->
-            -- TODO: Change icon
-            { content =
-                [ text "Updated account keys" ]
-            , details = Nothing
-            }
-
-        TransactionEventAccountKeysAdded ->
-            -- TODO: Change icon
-            { content = [ text "Added account keys" ]
-            , details = Nothing
-            }
-
-        TransactionEventAccountKeysRemoved ->
-            -- TODO: Change icon
-            { content = [ text "Removed account keys" ]
-            , details = Nothing
-            }
-
-        TransactionEventAccountKeysSignThresholdUpdated ->
-            -- TODO: Change icon
-            { content = [ text "Updated signing threshold" ]
-            , details = Nothing
-            }
-
         -- Baking
         TransactionEventBakerAdded event ->
             { content =
@@ -1608,6 +1627,37 @@ viewTransactionEvent ctx txEvent =
                     ]
                 ]
             , details = Nothing
+            }
+
+        TransactionEventCredentialKeysUpdated event ->
+            { content =
+                [ row []
+                    [ text <| "Updated keys and threshold of credential " ++ event.credId
+                    ]
+                ]
+            , details = Nothing
+            }
+
+        TransactionEventCredentialsUpdated event ->
+            { content =
+                [ row []
+                    [ text "Updated credentials of "
+                    , viewAddress ctx (T.AddressAccount event.account)
+                    ]
+                ]
+            , details =
+                Just <|
+                    column [ width fill ]
+                        [ viewDetailRow
+                            [ paragraph [] [ text "New credentials" ] ]
+                            [ column [ spacing 5 ] <| List.map text event.newCredIds ]
+                        , viewDetailRow
+                            [ paragraph [] [ text "Removed credentials" ] ]
+                            [ column [ spacing 5 ] <| List.map text event.removedCredIds ]
+                        , viewDetailRow
+                            [ paragraph [] [ text "New threshold" ] ]
+                            [ text <| String.fromInt event.newThreshold ]
+                        ]
             }
 
         -- Contracts
@@ -1699,6 +1749,20 @@ viewTransactionEvent ctx txEvent =
                         viewEventUpdateEnueuedDetails ctx event
             }
 
+        TransactionEventDataRegistered event ->
+            { content =
+                [ text <| "Data registered on chain"
+                ]
+            , details =
+                Just <|
+                    column [ width fill ]
+                        [ viewDetailRow
+                            [ paragraph [] [ text "Hex representation of the registered data:" ] ]
+                            [ paragraph [] [ text event.data ]
+                            ]
+                        ]
+            }
+
 
 viewEventUpdateEnueuedDetails : Theme a -> EventUpdateEnqueued -> Element Msg
 viewEventUpdateEnueuedDetails ctx event =
@@ -1780,8 +1844,14 @@ viewEventUpdateEnueuedDetails ctx event =
         FoundationAccountPayload foundationAccount ->
             paragraph [] [ text "Update the Foundation account to be ", viewAddress ctx <| T.AddressAccount foundationAccount ]
 
-        AuthorizationPayload authorization ->
-            paragraph [] [ text "Update the chain-update authorization." ]
+        RootKeysUpdatePayload _ ->
+            paragraph [] [ text "Update the chain-update root keys." ]
+
+        Level1KeysUpdatePayload _ ->
+            paragraph [] [ text "Update the chain-update level 1 keys." ]
+
+        Level2KeysUpdatePayload _ ->
+            paragraph [] [ text "Update the chain-update level 2 keys." ]
 
         ProtocolUpdatePayload protocolUpdate ->
             paragraph []
@@ -1791,6 +1861,9 @@ viewEventUpdateEnueuedDetails ctx event =
                     , label = el [ Font.underline ] <| text "specification"
                     }
                 ]
+
+        BakerStakeThresholdPayload threshold ->
+            paragraph [] [ text <| "Update the minimum staked amount for becoming a baker to " ++ T.amountToString threshold ]
 
 
 {-| Display a relation as a fraction
