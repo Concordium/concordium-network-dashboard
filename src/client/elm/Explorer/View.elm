@@ -937,7 +937,9 @@ listUpdatePayloads queues =
                 )
                 q.queue
     in
-    mapUpdate AuthorizationPayload queues.authorization
+    mapUpdate RootKeysUpdatePayload queues.rootKeys
+        ++ mapUpdate Level1KeysUpdatePayload queues.level1Keys
+        ++ mapUpdate Level2KeysUpdatePayload queues.level2Keys
         ++ mapUpdate TransactionFeeDistributionPayload queues.transactionFeeDistribution
         ++ mapUpdate MicroGtuPerEuroPayload queues.microGTUPerEuro
         ++ mapUpdate ProtocolUpdatePayload queues.protocol
@@ -1842,8 +1844,14 @@ viewEventUpdateEnueuedDetails ctx event =
         FoundationAccountPayload foundationAccount ->
             paragraph [] [ text "Update the Foundation account to be ", viewAddress ctx <| T.AddressAccount foundationAccount ]
 
-        AuthorizationPayload authorization ->
-            paragraph [] [ text "Update the chain-update authorization." ]
+        RootKeysUpdatePayload _ ->
+            paragraph [] [ text "Update the chain-update root keys." ]
+
+        Level1KeysUpdatePayload _ ->
+            paragraph [] [ text "Update the chain-update level 1 keys." ]
+
+        Level2KeysUpdatePayload _ ->
+            paragraph [] [ text "Update the chain-update level 2 keys." ]
 
         ProtocolUpdatePayload protocolUpdate ->
             paragraph []

@@ -60,7 +60,7 @@ blockSummaryDecoder =
 
 type alias Updates =
     { chainParameters : ChainParameters
-    , authorizations : Authorizations
+    , keyCollection : UpdateKeysCollection
     , updateQueues : UpdateQueues
     }
 
@@ -87,7 +87,9 @@ type alias RewardParameters =
 type alias UpdateQueues =
     { mintDistribution : UpdateQueue MintDistribution
     , transactionFeeDistribution : UpdateQueue TransactionFeeDistribution
-    , authorization : UpdateQueue Authorizations
+    , rootKeys : UpdateQueue HigherLevelKeys
+    , level1Keys : UpdateQueue HigherLevelKeys
+    , level2Keys : UpdateQueue Authorizations
     , microGTUPerEuro : UpdateQueue Relation
     , protocol : UpdateQueue ProtocolUpdate
     , gasRewards : UpdateQueue GasRewards
@@ -114,7 +116,7 @@ updatesDecoder : D.Decoder Updates
 updatesDecoder =
     D.succeed Updates
         |> required "chainParameters" chainParametersDecoder
-        |> required "authorizations" authorizationsDecoder
+        |> required "keys" updateKeysCollectionDecoder
         |> required "updateQueues" updateQueuesDecoder
 
 
@@ -144,7 +146,9 @@ updateQueuesDecoder =
     D.succeed UpdateQueues
         |> required "mintDistribution" (updateQueueDecoder mintDistributionDecoder)
         |> required "transactionFeeDistribution" (updateQueueDecoder transactionFeeDistributionDecoder)
-        |> required "authorization" (updateQueueDecoder authorizationsDecoder)
+        |> required "rootKeys" (updateQueueDecoder higherLevelKeysDecoder)
+        |> required "level1Keys" (updateQueueDecoder higherLevelKeysDecoder)
+        |> required "level2Keys" (updateQueueDecoder authorizationsDecoder)
         |> required "microGTUPerEuro" (updateQueueDecoder relationDecoder)
         |> required "protocol" (updateQueueDecoder protocolUpdateDecoder)
         |> required "gasRewards" (updateQueueDecoder gasRewardsDecoder)
