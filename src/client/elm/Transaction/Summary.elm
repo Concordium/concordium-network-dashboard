@@ -19,7 +19,7 @@ type alias TransactionSummary =
 {-| Type of block transaction summary
 
 Must be in sync with `TransactionSummaryType` found in
-<https://gitlab.com/Concordium/consensus/globalstate-types/-/blob/master/src/Concordium/Types/Execution.hs#L596>
+<https://github.com/Concordium/concordium-base/blob/main/haskell-src/Concordium/Types/Execution.hs>
 
 -}
 type TransactionSummaryType
@@ -31,7 +31,7 @@ type TransactionSummaryType
 {-| Reason for transaction rejected
 
 Must be in sync with the constructor names of `Payload` found in
-<https://gitlab.com/Concordium/concordium-base/-/blob/master/haskell-src/Concordium/Types/Execution.hs>
+<https://github.com/Concordium/concordium-base/blob/main/haskell-src/Concordium/Types/Execution.hs>
 
 Also contains a `Malformed` constructor to represent Nothing.
 
@@ -62,7 +62,7 @@ type CredentialType
 
 
 {-| Must be in sync with `UpdateType` found in
-<https://gitlab.com/Concordium/consensus/globalstate-types/-/blob/master/src/Concordium/Types/Updates.hs#L375>
+<https://github.com/Concordium/concordium-base/blob/main/haskell-src/Concordium/Types/Updates.hs>
 -}
 type UpdateType
     = UpdateAuthorization
@@ -92,7 +92,7 @@ type TransactionResult
 {-| Reason for transaction rejected
 
 Must be in sync with `RejectReason` found in
-<https://gitlab.com/Concordium/consensus/globalstate-types/-/blob/master/src/Concordium/Types/Execution.hs#L499>
+<https://github.com/Concordium/concordium-base/blob/main/haskell-src/Concordium/Types/Execution.hs>
 
 -}
 type RejectReason
