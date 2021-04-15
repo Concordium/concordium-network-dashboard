@@ -60,7 +60,7 @@ blockSummaryDecoder =
 
 type alias Updates =
     { chainParameters : ChainParameters
-    , authorizations : Authorizations
+    , keyCollection : UpdateKeysCollection
     , updateQueues : UpdateQueues
     }
 
@@ -73,6 +73,7 @@ type alias ChainParameters =
     , bakerCooldownEpochs : Int
     , electionDifficulty : Float
     , euroPerEnergy : Relation
+    , minimumThresholdForBaking : T.Amount
     }
 
 
@@ -86,13 +87,16 @@ type alias RewardParameters =
 type alias UpdateQueues =
     { mintDistribution : UpdateQueue MintDistribution
     , transactionFeeDistribution : UpdateQueue TransactionFeeDistribution
-    , authorization : UpdateQueue Authorizations
+    , rootKeys : UpdateQueue HigherLevelKeys
+    , level1Keys : UpdateQueue HigherLevelKeys
+    , level2Keys : UpdateQueue Authorizations
     , microGTUPerEuro : UpdateQueue Relation
     , protocol : UpdateQueue ProtocolUpdate
     , gasRewards : UpdateQueue GasRewards
     , foundationAccount : UpdateQueue T.AccountAddress
     , electionDifficulty : UpdateQueue Float
     , euroPerEnergy : UpdateQueue Relation
+    , bakerStakeThreshold : UpdateQueue T.Amount
     }
 
 
@@ -112,7 +116,7 @@ updatesDecoder : D.Decoder Updates
 updatesDecoder =
     D.succeed Updates
         |> required "chainParameters" chainParametersDecoder
-        |> required "authorizations" authorizationsDecoder
+        |> required "keys" updateKeysCollectionDecoder
         |> required "updateQueues" updateQueuesDecoder
 
 
@@ -126,6 +130,7 @@ chainParametersDecoder =
         |> required "bakerCooldownEpochs" D.int
         |> required "electionDifficulty" D.float
         |> required "euroPerEnergy" relationDecoder
+        |> required "minimumThresholdForBaking" T.decodeAmount
 
 
 rewardParametersDecoder : D.Decoder RewardParameters
@@ -141,13 +146,16 @@ updateQueuesDecoder =
     D.succeed UpdateQueues
         |> required "mintDistribution" (updateQueueDecoder mintDistributionDecoder)
         |> required "transactionFeeDistribution" (updateQueueDecoder transactionFeeDistributionDecoder)
-        |> required "authorization" (updateQueueDecoder authorizationsDecoder)
+        |> required "rootKeys" (updateQueueDecoder higherLevelKeysDecoder)
+        |> required "level1Keys" (updateQueueDecoder higherLevelKeysDecoder)
+        |> required "level2Keys" (updateQueueDecoder authorizationsDecoder)
         |> required "microGTUPerEuro" (updateQueueDecoder relationDecoder)
         |> required "protocol" (updateQueueDecoder protocolUpdateDecoder)
         |> required "gasRewards" (updateQueueDecoder gasRewardsDecoder)
         |> required "foundationAccount" (updateQueueDecoder T.accountAddressDecoder)
         |> required "electionDifficulty" (updateQueueDecoder D.float)
         |> required "euroPerEnergy" (updateQueueDecoder relationDecoder)
+        |> required "bakerStakeThreshold" (updateQueueDecoder T.decodeAmount)
 
 
 updateQueueDecoder : D.Decoder a -> D.Decoder (UpdateQueue a)
