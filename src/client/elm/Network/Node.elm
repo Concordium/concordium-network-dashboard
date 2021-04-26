@@ -92,6 +92,8 @@ viewSelectedNode ctx node model =
     column [ Font.color ctx.palette.success ]
         statRows
 
+eventsWidth : Html.Attribute msg
+eventsWidth = Html.Attributes.width 200
 
 forceWrapTextElement : String -> Element msg
 forceWrapTextElement t =
@@ -99,7 +101,7 @@ forceWrapTextElement t =
         Html.div
             [ style "overflow-wrap" "break-word"
             , style "white-space" "normal"
-            , Html.Attributes.width 200
+            , eventsWidth
             ]
             [ Html.text t
             ]
