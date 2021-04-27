@@ -219,6 +219,8 @@ type UpdatePayload
     | Level2KeysUpdatePayload Authorizations
     | ProtocolUpdatePayload ProtocolUpdate
     | BakerStakeThresholdPayload T.Amount
+    | UpdateAddAnonymityRevokerPayload AnonymityRevokerInfo
+    | UpdateAddIdentityProviderPayload IdentityProviderInfo
 
 
 type alias MintDistribution =
@@ -294,6 +296,29 @@ type alias ProtocolUpdate =
     }
 
 
+type alias Description =
+    { name: String
+    , url: String
+    , description: String }
+
+
+type alias ArIdentity =
+    Int
+
+
+type alias AnonymityRevokerInfo =
+    { arIdentity: ArIdentity
+    , arDescription: Description }
+
+
+type alias IpIdentity =
+    Int
+
+
+type alias IdentityProviderInfo =
+    { ipIdentity: IpIdentity
+    , ipDescription: Description }
+
 
 -- Errors
 
@@ -350,6 +375,12 @@ updatePayloadDecoder =
                     "bakerStakeThreshold" ->
                         T.decodeAmount |> D.map BakerStakeThresholdPayload
 
+                    "addAnonymityRevoker" ->
+                        arDecoder |> D.map UpdateAddAnonymityRevokerPayload
+
+                    "addIdentityProvider" ->
+                        ipDecoder |> D.map UpdateAddIdentityProviderPayload
+
                     _ ->
                         D.fail "Unknown update type"
     in
@@ -378,6 +409,28 @@ gasRewardsDecoder =
         |> required "accountCreation" D.float
         |> required "baker" D.float
         |> required "finalizationProof" D.float
+
+
+arDecoder : D.Decoder AnonymityRevokerInfo
+arDecoder =
+    D.succeed AnonymityRevokerInfo
+        |> required "arIdentity" D.int
+        |> required "arDescription" descriptionDecoder
+
+
+descriptionDecoder : D.Decoder Description
+descriptionDecoder =
+    D.succeed Description
+        |> required "name" D.string
+        |> required "url" D.string
+        |> required "description" D.string
+
+
+ipDecoder : D.Decoder IdentityProviderInfo
+ipDecoder =
+    D.succeed IdentityProviderInfo
+        |> required "ipIdentity" D.int
+        |> required "ipDescription" descriptionDecoder
 
 
 updateKeysCollectionDecoder : D.Decoder UpdateKeysCollection

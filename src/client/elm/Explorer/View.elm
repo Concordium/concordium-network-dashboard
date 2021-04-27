@@ -949,6 +949,8 @@ listUpdatePayloads queues =
         ++ mapUpdate EuroPerEnergyPayload queues.euroPerEnergy
         ++ mapUpdate MintDistributionPayload queues.mintDistribution
         ++ mapUpdate BakerStakeThresholdPayload queues.bakerStakeThreshold
+        ++ mapUpdate UpdateAddAnonymityRevokerPayload queues.anonymityRevoker
+        ++ mapUpdate UpdateAddIdentityProviderPayload queues.identityProvider
 
 
 asPercentage : Float -> String
@@ -1864,6 +1866,26 @@ viewEventUpdateEnqueuedDetails ctx event =
 
         BakerStakeThresholdPayload threshold ->
             paragraph [] [ text <| "Update the minimum staked amount for becoming a baker to " ++ T.amountToString threshold ]
+
+        UpdateAddAnonymityRevokerPayload anonymityRevokerInfo ->
+            paragraph [] [ text <| "Add a new anonymity revoker. " ++ displayAnonymityRevoker anonymityRevokerInfo]
+
+        UpdateAddIdentityProviderPayload identityProviderInfo ->
+            paragraph [] [ text <| "Add a new identity provider\n" ++ displayIdentityProvider identityProviderInfo]
+
+
+displayAnonymityRevoker : AnonymityRevokerInfo -> String
+displayAnonymityRevoker arInfo = "Name: " ++ arInfo.arDescription.name
+    ++ ". Identity: " ++ String.fromInt arInfo.arIdentity
+    ++ ". Description: " ++ arInfo.arDescription.description
+    ++ ". URL: " ++ arInfo.arDescription.url
+
+
+displayIdentityProvider : IdentityProviderInfo -> String
+displayIdentityProvider ipInfo = "Name: " ++ ipInfo.ipDescription.name
+    ++ ". Identity: " ++ String.fromInt ipInfo.ipIdentity
+    ++ ". Description: " ++ ipInfo.ipDescription.description
+    ++ ". URL: " ++ ipInfo.ipDescription.url
 
 
 {-| Display a relation as a fraction

@@ -90,6 +90,10 @@ type UpdateType
     | UpdateTransactionFeeDistribution
       -- ^Update the distribution of transaction fees
     | UpdateGASRewards
+    | UpdateAddAnonymityRevoker
+      -- ^Add a new anonymity revoker
+    | UpdateAddIdentityProvider
+      -- ^Add a new identity provider
 
 
 type TransactionResult
@@ -317,6 +321,12 @@ updateTypeDecoder =
 
                     "updateGASRewards" ->
                         D.succeed UpdateGASRewards
+
+                    "updateAddAnonymityRevoker" ->
+                        D.succeed UpdateAddAnonymityRevoker
+
+                    "updateAddIdentityProvider" ->
+                        D.succeed UpdateAddIdentityProvider
 
                     _ ->
                         D.fail <| "Unknown UpdateType type: " ++ str
