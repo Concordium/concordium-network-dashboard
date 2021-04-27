@@ -886,7 +886,7 @@ viewUpdates theme updates =
                         TimeHelpers.formatTime Time.utc <|
                             update.effectiveTime
                 )
-                (viewEventUpdateEnueuedDetails theme update)
+                (viewEventUpdateEnqueuedDetails theme update)
     in
     if List.isEmpty allQueuedUpdates then
         column [ width fill, padding 20 ] [ el [ centerX, Font.color theme.palette.fg2 ] <| text "No updates queued at the time of this block." ]
@@ -1746,7 +1746,7 @@ viewTransactionEvent ctx txEvent =
             , details =
                 Just <|
                     el [ padding 20 ] <|
-                        viewEventUpdateEnueuedDetails ctx event
+                        viewEventUpdateEnqueuedDetails ctx event
             }
 
         TransactionEventDataRegistered event ->
@@ -1764,8 +1764,8 @@ viewTransactionEvent ctx txEvent =
             }
 
 
-viewEventUpdateEnueuedDetails : Theme a -> EventUpdateEnqueued -> Element Msg
-viewEventUpdateEnueuedDetails ctx event =
+viewEventUpdateEnqueuedDetails : Theme a -> EventUpdateEnqueued -> Element Msg
+viewEventUpdateEnqueuedDetails ctx event =
     case event.payload of
         MintDistributionPayload mintDistribution ->
             let
