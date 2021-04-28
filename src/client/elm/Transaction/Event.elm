@@ -299,25 +299,27 @@ type alias ProtocolUpdate =
 type alias Description =
     { name: String
     , url: String
-    , description: String }
+    , description: String
+    }
 
 
-type alias ArIdentity =
+-- Identification number of an anonymity revoker or identity provider
+type alias ArIpIdentity =
     Int
 
 
-type alias AnonymityRevokerInfo =
-    { arIdentity: ArIdentity
-    , arDescription: Description }
+-- Information about anonymity revokers or identity providers
+type alias ArIpInfo =
+    { identity: ArIpIdentity
+    , description: Description
+    }
+
+-- Data for an anonymity revoker
+type AnonymityRevokerInfo = ArInfo ArIpInfo
 
 
-type alias IpIdentity =
-    Int
-
-
-type alias IdentityProviderInfo =
-    { ipIdentity: IpIdentity
-    , ipDescription: Description }
+-- Data for an identity provider
+type IdentityProviderInfo = IpInfo ArIpInfo
 
 
 -- Errors
@@ -413,9 +415,10 @@ gasRewardsDecoder =
 
 arDecoder : D.Decoder AnonymityRevokerInfo
 arDecoder =
-    D.succeed AnonymityRevokerInfo
-        |> required "arIdentity" D.int
-        |> required "arDescription" descriptionDecoder
+    let arIp = D.succeed ArIpInfo
+                |> required "arIdentity" D.int
+                |> required "arDescription" descriptionDecoder
+    in D.map ArInfo arIp
 
 
 descriptionDecoder : D.Decoder Description
@@ -428,9 +431,10 @@ descriptionDecoder =
 
 ipDecoder : D.Decoder IdentityProviderInfo
 ipDecoder =
-    D.succeed IdentityProviderInfo
-        |> required "ipIdentity" D.int
-        |> required "ipDescription" descriptionDecoder
+    let arIp = D.succeed ArIpInfo
+                |> required "ipIdentity" D.int
+                |> required "ipDescription" descriptionDecoder
+    in D.map IpInfo arIp
 
 
 updateKeysCollectionDecoder : D.Decoder UpdateKeysCollection

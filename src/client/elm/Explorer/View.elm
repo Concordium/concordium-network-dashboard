@@ -1867,25 +1867,25 @@ viewEventUpdateEnqueuedDetails ctx event =
         BakerStakeThresholdPayload threshold ->
             paragraph [] [ text <| "Update the minimum staked amount for becoming a baker to " ++ T.amountToString threshold ]
 
-        UpdateAddAnonymityRevokerPayload anonymityRevokerInfo ->
-            paragraph [] [ text <| "Add a new anonymity revoker. " ++ displayAnonymityRevoker anonymityRevokerInfo]
+        UpdateAddAnonymityRevokerPayload (ArInfo anonymityRevokerInfo) ->
+            paragraph [] <| text ("Add a new anonymity revoker. ") :: displayArIp anonymityRevokerInfo
 
-        UpdateAddIdentityProviderPayload identityProviderInfo ->
-            paragraph [] [ text <| "Add a new identity provider\n" ++ displayIdentityProvider identityProviderInfo]
-
-
-displayAnonymityRevoker : AnonymityRevokerInfo -> String
-displayAnonymityRevoker arInfo = "Name: " ++ arInfo.arDescription.name
-    ++ ". Identity: " ++ String.fromInt arInfo.arIdentity
-    ++ ". Description: " ++ arInfo.arDescription.description
-    ++ ". URL: " ++ arInfo.arDescription.url
+        UpdateAddIdentityProviderPayload (IpInfo identityProviderInfo) ->
+            paragraph [] <| text ("Add a new identity provider. ") :: displayArIp identityProviderInfo
 
 
-displayIdentityProvider : IdentityProviderInfo -> String
-displayIdentityProvider ipInfo = "Name: " ++ ipInfo.ipDescription.name
-    ++ ". Identity: " ++ String.fromInt ipInfo.ipIdentity
-    ++ ". Description: " ++ ipInfo.ipDescription.description
-    ++ ". URL: " ++ ipInfo.ipDescription.url
+displayArIp : ArIpInfo -> List (Element Msg)
+displayArIp info =
+    let descr = info.description
+    in [ text <| "Name: " ++ descr.name
+                 ++ ". Identity: " ++ String.fromInt info.identity
+                 ++ ". Description: " ++ descr.description
+                 ++ ". "
+       , link [ onClick <| UrlClicked <| Browser.External descr.url ]
+              { url = descr.url
+              , label = el [ Font.underline ] <| text descr.url
+              }
+       ]
 
 
 {-| Display a relation as a fraction
