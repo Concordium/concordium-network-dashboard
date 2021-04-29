@@ -219,8 +219,8 @@ type UpdatePayload
     | Level2KeysUpdatePayload Authorizations
     | ProtocolUpdatePayload ProtocolUpdate
     | BakerStakeThresholdPayload T.Amount
-    | UpdateAddAnonymityRevokerPayload AnonymityRevokerInfo
-    | UpdateAddIdentityProviderPayload IdentityProviderInfo
+    | AddAnonymityRevokerPayload AnonymityRevokerInfo
+    | AddIdentityProviderPayload IdentityProviderInfo
 
 
 type alias MintDistribution =
@@ -303,22 +303,26 @@ type alias Description =
     }
 
 
--- Identification number of an anonymity revoker or identity provider
+{-| Identification number of an anonymity revoker or identity provider
+-}
 type alias ArIpIdentity =
     Int
 
 
--- Information about anonymity revokers or identity providers
+{-| Information about anonymity revokers or identity providers
+-}
 type alias ArIpInfo =
     { identity: ArIpIdentity
     , description: Description
     }
 
--- Data for an anonymity revoker
+{-| Data for an anonymity revoker
+-}
 type AnonymityRevokerInfo = ArInfo ArIpInfo
 
 
--- Data for an identity provider
+{-| Data for an identity provider
+-}
 type IdentityProviderInfo = IpInfo ArIpInfo
 
 
@@ -378,10 +382,10 @@ updatePayloadDecoder =
                         T.decodeAmount |> D.map BakerStakeThresholdPayload
 
                     "addAnonymityRevoker" ->
-                        arDecoder |> D.map UpdateAddAnonymityRevokerPayload
+                        arDecoder |> D.map AddAnonymityRevokerPayload
 
                     "addIdentityProvider" ->
-                        ipDecoder |> D.map UpdateAddIdentityProviderPayload
+                        ipDecoder |> D.map AddIdentityProviderPayload
 
                     _ ->
                         D.fail "Unknown update type"

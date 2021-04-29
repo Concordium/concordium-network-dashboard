@@ -949,8 +949,8 @@ listUpdatePayloads queues =
         ++ mapUpdate EuroPerEnergyPayload queues.euroPerEnergy
         ++ mapUpdate MintDistributionPayload queues.mintDistribution
         ++ mapUpdate BakerStakeThresholdPayload queues.bakerStakeThreshold
-        ++ mapUpdate UpdateAddAnonymityRevokerPayload queues.anonymityRevoker
-        ++ mapUpdate UpdateAddIdentityProviderPayload queues.identityProvider
+        ++ mapUpdate AddAnonymityRevokerPayload queues.anonymityRevoker
+        ++ mapUpdate AddIdentityProviderPayload queues.identityProvider
 
 
 asPercentage : Float -> String
@@ -1867,10 +1867,10 @@ viewEventUpdateEnqueuedDetails ctx event =
         BakerStakeThresholdPayload threshold ->
             paragraph [] [ text <| "Update the minimum staked amount for becoming a baker to " ++ T.amountToString threshold ]
 
-        UpdateAddAnonymityRevokerPayload (ArInfo anonymityRevokerInfo) ->
+        AddAnonymityRevokerPayload (ArInfo anonymityRevokerInfo) ->
             paragraph [] <| text ("Add a new anonymity revoker. ") :: displayArIp anonymityRevokerInfo
 
-        UpdateAddIdentityProviderPayload (IpInfo identityProviderInfo) ->
+        AddIdentityProviderPayload (IpInfo identityProviderInfo) ->
             paragraph [] <| text ("Add a new identity provider. ") :: displayArIp identityProviderInfo
 
 
