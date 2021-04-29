@@ -699,7 +699,7 @@ rejectionToItem ctx reason =
             }
 
         AmountTooLarge account amount ->
-            { content = [ text "The sending account ", viewAddress ctx <| account, text " has insufficient funds" ]
+            { content = [ text "The sending account ", viewAddress ctx <| account, text " has insufficient (nonstaked) funds" ]
             , details = Nothing
             }
 
