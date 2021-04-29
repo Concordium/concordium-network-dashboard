@@ -17,6 +17,7 @@ import Icons exposing (..)
 import List
 import Paging
 import Palette exposing (withAlphaEl)
+import Regex exposing (..)
 import Set exposing (Set)
 import String exposing (toLower)
 import Svg exposing (Svg)
@@ -26,7 +27,7 @@ import Tooltip exposing (..)
 import Transaction.Event exposing (..)
 import Transaction.Summary exposing (..)
 import Types as T
-import Widgets exposing (arrowRight, remoteDataView)
+import Widgets exposing (remoteDataView)
 
 
 type Msg
@@ -1877,15 +1878,43 @@ viewEventUpdateEnqueuedDetails ctx event =
 displayArIp : ArIpInfo -> List (Element Msg)
 displayArIp info =
     let descr = info.description
-    in [ text <| "Name: " ++ descr.name
-                 ++ ". Identity: " ++ String.fromInt info.identity
-                 ++ ". Description: " ++ descr.description
-                 ++ ". "
-       , link [ onClick <| UrlClicked <| Browser.External descr.url ]
-              { url = descr.url
-              , label = el [ Font.underline ] <| text descr.url
-              }
-       ]
+    in displayName descr.name
+    :: displayIdentity info.identity
+    :: displayDescription descr.description
+    :: displayWebsite descr.url
+
+
+displayName: String -> Element Msg
+displayName = displayStr "Name"
+
+
+displayIdentity: Int -> Element Msg
+displayIdentity = displayStr "Identity" << String.fromInt
+
+
+displayDescription: String -> Element Msg
+displayDescription = displayStr "Description"
+
+
+{- Format a nonempty string with its corresponding attribute. This is used to display information on update
+   transactions.
+-}
+displayStr: String -> String -> Element Msg
+displayStr attrName str = let elem s = text <| attrName ++ ": " ++ s ++ ". "
+                          in case Regex.fromString "[\\. ]*$" of -- to remove trailing spaces and periods
+                               Nothing -> elem (String.trim str)
+                               Just regex -> elem <| Regex.replace regex (\_ -> "") str
+
+
+displayWebsite : String -> List (Element Msg)
+displayWebsite url = if String.trim url == ""
+                     then []
+                     else [ text "Website: "
+                          , link [ onClick <| UrlClicked <| Browser.External url ]
+                                 { url = url
+                                 , label = el [ Font.underline ] <| text url
+                                 }
+                          ]
 
 
 {-| Display a relation as a fraction
