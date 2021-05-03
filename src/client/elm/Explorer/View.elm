@@ -1903,7 +1903,8 @@ displayStr: String -> String -> Element Msg
 displayStr attrName str = let elem s = text <| attrName ++ ": " ++ s ++ ". "
                           in case Regex.fromString "[\\. ]*$" of -- to remove trailing spaces and periods
                                Nothing -> elem (String.trim str)
-                               Just regex -> elem <| Regex.replace regex (\_ -> "") str
+                               Just regex -> let trimmed = Regex.replace regex (\_ -> "") str
+                                             in if trimmed == "" then text "" else elem trimmed
 
 
 displayWebsite : String -> List (Element Msg)
