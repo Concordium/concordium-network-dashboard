@@ -15,6 +15,7 @@ import Html
 import Html.Attributes exposing (style)
 import Icons exposing (..)
 import List
+import Network.Node exposing (eventsWidth)
 import Paging
 import Palette exposing (withAlphaEl)
 import Set exposing (Set)
@@ -26,7 +27,7 @@ import Tooltip exposing (..)
 import Transaction.Event exposing (..)
 import Transaction.Summary exposing (..)
 import Types as T
-import Widgets exposing (arrowRight, remoteDataView)
+import Widgets exposing (remoteDataView)
 
 
 type Msg
@@ -1441,20 +1442,22 @@ isEven : Int -> Bool
 isEven n =
     modBy 2 n == 0
 
+wrapAttributes : List (Attribute msg)
+wrapAttributes = width fill :: List.map htmlAttribute [ style "word-break" "break-word", eventsWidth ]
+
+eventElem es = [ paragraph wrapAttributes es ]
 
 viewTransactionEvent : Theme a -> TransactionEvent -> TransactionEventItem Msg
 viewTransactionEvent ctx txEvent =
     case txEvent of
         -- Transfers
         TransactionEventTransferred event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ text <| "Transferred " ++ T.amountToString event.amount ++ " from "
                     , viewAddress ctx event.from
                     , text " to "
                     , viewAddress ctx event.to
                     ]
-                ]
             , details = Nothing
             }
 
@@ -1465,12 +1468,10 @@ viewTransactionEvent ctx txEvent =
                         |> List.map Tuple.second
                         |> T.sumAmounts
             in
-            { content =
-                [ row []
+            { content = eventElem
                     [ text <| "Transferred with schedule to "
                     , viewAddress ctx (T.AddressAccount event.to)
                     ]
-                ]
             , details =
                 Just <|
                     column [ width fill ]
@@ -1494,117 +1495,94 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventEncryptedSelfAmountAdded event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ text <| T.amountToString event.amount ++ " was shielded on "
                     , viewAddress ctx (T.AddressAccount event.account)
                     ]
-                ]
             , details = Nothing
             }
 
         TransactionEventAmountAddedByDecryption event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ text <| T.amountToString event.amount ++ " was unshielded on "
                     , viewAddress ctx (T.AddressAccount event.account)
                     ]
-                ]
             , details = Nothing
             }
 
         -- Encrypted transfers
         TransactionEventNewEncryptedAmount event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ viewAddress ctx (T.AddressAccount event.account)
                     , text " received an encrypted amount."
                     ]
-                ]
             , details = Nothing
             }
 
         TransactionEventEncryptedAmountsRemoved event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ viewAddress ctx (T.AddressAccount event.account)
                     , text " transferred an encrypted amount."
                     ]
-                ]
             , details = Nothing
             }
 
         -- Accounts
         TransactionEventAccountCreated event ->
-            { content =
-                [ row
-                    []
+            { content = eventElem
                     [ text <| "Created account "
                     , viewAddress ctx (T.AddressAccount event.account)
                     ]
-                ]
             , details = Nothing
             }
 
         TransactionEventCredentialDeployed event ->
-            { content =
-                [ row
-                    []
+            { content = eventElem
                     [ text <| "Deployed credentials "
                     , viewAddress ctx (T.AddressAccount event.account)
                     ]
-                ]
             , details = Nothing
             }
 
         -- Baking
         TransactionEventBakerAdded event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ text <| "Added baker "
                     , viewBaker ctx event.bakerId event.account
                     ]
-                ]
             , details = Nothing
             }
 
         TransactionEventBakerRemoved event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ text <| "Removed baker "
                     , viewBaker ctx event.bakerId event.account
                     ]
-                ]
             , details = Nothing
             }
 
         TransactionEventBakerStakeIncreased event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ text <| "Increased stake of "
                     , viewBaker ctx event.bakerId event.account
                     , text " to "
                     , text <| T.amountToString event.newStake
                     ]
-                ]
             , details = Nothing
             }
 
         TransactionEventBakerStakeDecreased event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ text <| "Decreased stake of "
                     , viewBaker ctx event.bakerId event.account
                     , text " to "
                     , text <| T.amountToString event.newStake
                     ]
-                ]
             , details = Nothing
             }
 
         TransactionEventBakerSetRestakeEarnings event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ text <|
                         if event.restakeEarnings then
                             "Enable"
@@ -1615,36 +1593,29 @@ viewTransactionEvent ctx txEvent =
                         " restake earnings of "
                     , viewBaker ctx event.bakerId event.account
                     ]
-                ]
             , details = Nothing
             }
 
         TransactionEventBakerKeysUpdated event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ text <| "Updated baker keys of "
                     , viewBaker ctx event.bakerId event.account
                     ]
-                ]
             , details = Nothing
             }
 
         TransactionEventCredentialKeysUpdated event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ text <| "Updated keys and threshold of credential " ++ event.credId
                     ]
-                ]
             , details = Nothing
             }
 
         TransactionEventCredentialsUpdated event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ text "Updated credentials of "
                     , viewAddress ctx (T.AddressAccount event.account)
                     ]
-                ]
             , details =
                 Just <|
                     column [ width fill ]
@@ -1662,8 +1633,7 @@ viewTransactionEvent ctx txEvent =
 
         -- Contracts
         TransactionEventModuleDeployed event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ text <| "Deployed module with reference "
                     , el
                         [ stringTooltipAboveWithCopy ctx event.contents
@@ -1674,18 +1644,15 @@ viewTransactionEvent ctx txEvent =
                         text <|
                             String.left 8 event.contents
                     ]
-                ]
             , details = Nothing
             }
 
         TransactionEventContractInitialized event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ text <| "Instantiated contract '" ++ event.contractName ++ "' with address: "
                     , viewAsAddressContract ctx event.address
                     , text <| " from module: " ++ String.left 8 event.ref
                     ]
-                ]
             , details =
                 Just <|
                     column [ width fill ]
@@ -1710,12 +1677,10 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventContractUpdated event ->
-            { content =
-                [ row []
+            { content = eventElem
                     [ text <| "Updated contract instance at address: "
                     , viewAsAddressContract ctx event.address
                     ]
-                ]
             , details =
                 Just <|
                     column [ width fill ]
@@ -1740,7 +1705,7 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventUpdateEnqueued event ->
-            { content =
+            { content = eventElem
                 [ text <| "Update enqueued to take effect " ++ TimeHelpers.formatTime Time.utc event.effectiveTime
                 ]
             , details =
@@ -1750,7 +1715,7 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventDataRegistered event ->
-            { content =
+            { content = eventElem
                 [ text <| "Data registered on chain"
                 ]
             , details =

@@ -65,7 +65,7 @@ module.exports = {
         use: [
           {
             loader: "elm-webpack-loader",
-            options: config.isProduction ? { optimize: true } : { debug: true, forceWatch: true }
+            options: config.isProduction ? { optimize: true } : { debug: true }
           }
         ]
       }
