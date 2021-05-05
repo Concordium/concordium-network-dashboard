@@ -701,7 +701,14 @@ rejectionToItem ctx reason =
             }
 
         AmountTooLarge account amount ->
-            { content = [ text "The sending account ", viewAddress ctx <| account, text " has insufficient funds" ]
+            { content = let url = "https://developers.concordium.com/en/testnet4/testnet/references/manage-accounts.html#account-balances"
+                        in [ text "The sending account ", viewAddress ctx <| account, text " has insufficient funds. Note: only funds that are not staked or locked can be transferred (see "
+                           , link [ onClick <| UrlClicked <| Browser.External url ]
+                                                           { url = url
+                                                           , label = el [ Font.underline ] <| text "account balances"
+                                                           }
+                           , text " documentation)."
+                           ]
             , details = Nothing
             }
 
