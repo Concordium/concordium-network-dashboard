@@ -305,14 +305,14 @@ type alias Description =
 
 {-| Identification number of an anonymity revoker or identity provider
 -}
-type alias ArIpIdentity =
-    Int
-
+type Identity
+    = ArIdentity Int
+    | IpIdentity Int
 
 {-| Information about anonymity revokers or identity providers
 -}
 type alias ArIpInfo =
-    { identity: ArIpIdentity
+    { identity: Identity
     , description: Description
     }
 
@@ -420,9 +420,13 @@ gasRewardsDecoder =
 arDecoder : D.Decoder AnonymityRevokerInfo
 arDecoder =
     let arIp = D.succeed ArIpInfo
-                |> required "arIdentity" D.int
+                |> required "arIdentity" arIdentityDecoder
                 |> required "arDescription" descriptionDecoder
     in D.map ArInfo arIp
+
+
+arIdentityDecoder : D.Decoder Identity
+arIdentityDecoder = D.map ArIdentity D.int
 
 
 descriptionDecoder : D.Decoder Description
@@ -436,9 +440,13 @@ descriptionDecoder =
 ipDecoder : D.Decoder IdentityProviderInfo
 ipDecoder =
     let arIp = D.succeed ArIpInfo
-                |> required "ipIdentity" D.int
+                |> required "ipIdentity" ipIdentityDecoder
                 |> required "ipDescription" descriptionDecoder
     in D.map IpInfo arIp
+
+
+ipIdentityDecoder : D.Decoder Identity
+ipIdentityDecoder = D.map IpIdentity D.int
 
 
 updateKeysCollectionDecoder : D.Decoder UpdateKeysCollection

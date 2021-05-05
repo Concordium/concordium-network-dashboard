@@ -1888,8 +1888,11 @@ displayName: String -> Element Msg
 displayName = displayStr "Name"
 
 
-displayIdentity: Int -> Element Msg
-displayIdentity = displayStr "Identity" << String.fromInt
+displayIdentity: Identity -> Element Msg
+displayIdentity id = let i = case id of
+                             ArIdentity ar -> ar
+                             IpIdentity ip -> ip
+                     in displayStr "Identity" <| String.fromInt i
 
 
 displayDescription: String -> Element Msg
