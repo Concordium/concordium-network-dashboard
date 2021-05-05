@@ -219,6 +219,8 @@ type UpdatePayload
     | Level2KeysUpdatePayload Authorizations
     | ProtocolUpdatePayload ProtocolUpdate
     | BakerStakeThresholdPayload T.Amount
+    | AddAnonymityRevokerPayload AnonymityRevokerInfo
+    | AddIdentityProviderPayload IdentityProviderInfo
 
 
 type alias MintDistribution =
@@ -294,6 +296,35 @@ type alias ProtocolUpdate =
     }
 
 
+type alias Description =
+    { name: String
+    , url: String
+    , description: String
+    }
+
+
+{-| Identification number of an anonymity revoker or identity provider
+-}
+type Identity
+    = ArIdentity Int
+    | IpIdentity Int
+
+{-| Information about anonymity revokers or identity providers
+-}
+type alias ArIpInfo =
+    { identity: Identity
+    , description: Description
+    }
+
+{-| Data for an anonymity revoker
+-}
+type AnonymityRevokerInfo = ArInfo ArIpInfo
+
+
+{-| Data for an identity provider
+-}
+type IdentityProviderInfo = IpInfo ArIpInfo
+
 
 -- Errors
 
@@ -350,6 +381,12 @@ updatePayloadDecoder =
                     "bakerStakeThreshold" ->
                         T.decodeAmount |> D.map BakerStakeThresholdPayload
 
+                    "addAnonymityRevoker" ->
+                        arDecoder |> D.map AddAnonymityRevokerPayload
+
+                    "addIdentityProvider" ->
+                        ipDecoder |> D.map AddIdentityProviderPayload
+
                     _ ->
                         D.fail "Unknown update type"
     in
@@ -378,6 +415,38 @@ gasRewardsDecoder =
         |> required "accountCreation" D.float
         |> required "baker" D.float
         |> required "finalizationProof" D.float
+
+
+arDecoder : D.Decoder AnonymityRevokerInfo
+arDecoder =
+    let arIp = D.succeed ArIpInfo
+                |> required "arIdentity" arIdentityDecoder
+                |> required "arDescription" descriptionDecoder
+    in D.map ArInfo arIp
+
+
+arIdentityDecoder : D.Decoder Identity
+arIdentityDecoder = D.map ArIdentity D.int
+
+
+descriptionDecoder : D.Decoder Description
+descriptionDecoder =
+    D.succeed Description
+        |> required "name" D.string
+        |> required "url" D.string
+        |> required "description" D.string
+
+
+ipDecoder : D.Decoder IdentityProviderInfo
+ipDecoder =
+    let arIp = D.succeed ArIpInfo
+                |> required "ipIdentity" ipIdentityDecoder
+                |> required "ipDescription" descriptionDecoder
+    in D.map IpInfo arIp
+
+
+ipIdentityDecoder : D.Decoder Identity
+ipIdentityDecoder = D.map IpIdentity D.int
 
 
 updateKeysCollectionDecoder : D.Decoder UpdateKeysCollection

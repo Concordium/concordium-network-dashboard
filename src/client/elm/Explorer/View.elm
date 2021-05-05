@@ -18,6 +18,7 @@ import List
 import Network.Node exposing (eventsWidth)
 import Paging
 import Palette exposing (withAlphaEl)
+import Regex exposing (..)
 import Set exposing (Set)
 import String exposing (toLower)
 import Svg exposing (Svg)
@@ -887,7 +888,7 @@ viewUpdates theme updates =
                         TimeHelpers.formatTime Time.utc <|
                             update.effectiveTime
                 )
-                (viewEventUpdateEnueuedDetails theme update)
+                (viewEventUpdateEnqueuedDetails theme update)
     in
     if List.isEmpty allQueuedUpdates then
         column [ width fill, padding 20 ] [ el [ centerX, Font.color theme.palette.fg2 ] <| text "No updates queued at the time of this block." ]
@@ -950,6 +951,8 @@ listUpdatePayloads queues =
         ++ mapUpdate EuroPerEnergyPayload queues.euroPerEnergy
         ++ mapUpdate MintDistributionPayload queues.mintDistribution
         ++ mapUpdate BakerStakeThresholdPayload queues.bakerStakeThreshold
+        ++ mapUpdate AddAnonymityRevokerPayload queues.anonymityRevoker
+        ++ mapUpdate AddIdentityProviderPayload queues.identityProvider
 
 
 asPercentage : Float -> String
@@ -1711,7 +1714,7 @@ viewTransactionEvent ctx txEvent =
             , details =
                 Just <|
                     el [ padding 20 ] <|
-                        viewEventUpdateEnueuedDetails ctx event
+                        viewEventUpdateEnqueuedDetails ctx event
             }
 
         TransactionEventDataRegistered event ->
@@ -1729,8 +1732,8 @@ viewTransactionEvent ctx txEvent =
             }
 
 
-viewEventUpdateEnueuedDetails : Theme a -> EventUpdateEnqueued -> Element Msg
-viewEventUpdateEnueuedDetails ctx event =
+viewEventUpdateEnqueuedDetails : Theme a -> EventUpdateEnqueued -> Element Msg
+viewEventUpdateEnqueuedDetails ctx event =
     case event.payload of
         MintDistributionPayload mintDistribution ->
             let
@@ -1829,6 +1832,58 @@ viewEventUpdateEnueuedDetails ctx event =
 
         BakerStakeThresholdPayload threshold ->
             paragraph [] [ text <| "Update the minimum staked amount for becoming a baker to " ++ T.amountToString threshold ]
+
+        AddAnonymityRevokerPayload (ArInfo anonymityRevokerInfo) ->
+            paragraph [] <| text ("Add a new anonymity revoker. ") :: displayArIp anonymityRevokerInfo
+
+        AddIdentityProviderPayload (IpInfo identityProviderInfo) ->
+            paragraph [] <| text ("Add a new identity provider. ") :: displayArIp identityProviderInfo
+
+
+displayArIp : ArIpInfo -> List (Element Msg)
+displayArIp info =
+    let descr = info.description
+    in displayName descr.name
+    :: displayIdentity info.identity
+    :: displayDescription descr.description
+    :: displayWebsite descr.url
+
+
+displayName: String -> Element Msg
+displayName = displayStr "Name"
+
+
+displayIdentity: Identity -> Element Msg
+displayIdentity id = let i = case id of
+                             ArIdentity ar -> ar
+                             IpIdentity ip -> ip
+                     in displayStr "Identity" <| String.fromInt i
+
+
+displayDescription: String -> Element Msg
+displayDescription = displayStr "Description"
+
+
+{- Format a nonempty string with its corresponding attribute. This is used to display information on update
+   transactions.
+-}
+displayStr: String -> String -> Element Msg
+displayStr attrName str = let elem s = text <| attrName ++ ": " ++ s ++ ". "
+                          in case Regex.fromString "[\\. ]*$" of -- to remove trailing spaces and periods
+                               Nothing -> elem (String.trim str)
+                               Just regex -> let trimmed = Regex.replace regex (\_ -> "") str
+                                             in if trimmed == "" then text "" else elem trimmed
+
+
+displayWebsite : String -> List (Element Msg)
+displayWebsite url = if String.trim url == ""
+                     then []
+                     else [ text "Website: "
+                          , link [ onClick <| UrlClicked <| Browser.External url ]
+                                 { url = url
+                                 , label = el [ Font.underline ] <| text url
+                                 }
+                          ]
 
 
 {-| Display a relation as a fraction

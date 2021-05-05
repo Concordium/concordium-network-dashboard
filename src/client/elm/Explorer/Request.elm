@@ -97,6 +97,8 @@ type alias UpdateQueues =
     , electionDifficulty : UpdateQueue Float
     , euroPerEnergy : UpdateQueue Relation
     , bakerStakeThreshold : UpdateQueue T.Amount
+    , anonymityRevoker: UpdateQueue AnonymityRevokerInfo
+    , identityProvider: UpdateQueue IdentityProviderInfo
     }
 
 
@@ -156,7 +158,8 @@ updateQueuesDecoder =
         |> required "electionDifficulty" (updateQueueDecoder D.float)
         |> required "euroPerEnergy" (updateQueueDecoder relationDecoder)
         |> required "bakerStakeThreshold" (updateQueueDecoder T.decodeAmount)
-
+        |> required "addAnonymityRevoker" (updateQueueDecoder arDecoder)
+        |> required "addIdentityProvider" (updateQueueDecoder ipDecoder)
 
 updateQueueDecoder : D.Decoder a -> D.Decoder (UpdateQueue a)
 updateQueueDecoder decoder =
