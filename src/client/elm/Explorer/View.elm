@@ -874,6 +874,21 @@ rejectionToItem ctx reason =
             , details = Nothing
             }
 
+        NotAllowedMultipleCredentials ->
+            { content = [ text "Account is not allowed to have multiple credentials because it has non-zero encrypted balance ]
+            , details = Nothing
+            }
+
+        NotAllowedToReceiveEncrypted ->
+            { content = [ text "Account is not allowed to receive encrypted transfers because it has multiple credentials" ]
+            , details = Nothing
+            }
+
+        NotAllowedToHandleEncrypted ->
+            { content = [ text "Account is not allowed to handle encrypted transfers because it has multiple credentials" ]
+            , details = Nothing
+            }
+
 
 viewUpdates : Theme a -> Updates -> Element Msg
 viewUpdates theme updates =

@@ -90,6 +90,8 @@ type UpdateType
     | UpdateTransactionFeeDistribution
       -- ^Update the distribution of transaction fees
     | UpdateGASRewards
+    | UpdateBakerStakeThreshold
+      -- ^Update the minimum stake that a baker needs to have to be able to bake
     | UpdateAddAnonymityRevoker
       -- ^Add a new anonymity revoker
     | UpdateAddIdentityProvider
@@ -170,6 +172,12 @@ type RejectReason
     | RemoveFirstCredential
       -- | The credential holder of the keys to be updated did not sign the transaction
     | CredentialHolderDidNotSign
+    -- |Account is not allowed to have multiple credentials because it contains a non-zero encrypted transfer.
+    | NotAllowedMultipleCredentials
+      -- |The account is not allowed to receive encrypted transfers because it has multiple credentials.
+    | NotAllowedToReceiveEncrypted
+      -- |The account is not allowed to send encrypted transfers (or transfer from/to public to/from encrypted)
+    | NotAllowedToHandleEncrypted
 
 
 type alias RejectReasonRejectedInit =
@@ -321,6 +329,9 @@ updateTypeDecoder =
 
                     "updateGASRewards" ->
                         D.succeed UpdateGASRewards
+
+                    "updateBakerStakeThreshold" ->
+                        D.succeed UpdateBakerStakeThreshold
 
                     "updateAddAnonymityRevoker" ->
                         D.succeed UpdateAddAnonymityRevoker
@@ -524,6 +535,15 @@ rejectReasonDecoder =
 
                 "CredentialHolderDidNotSign" ->
                     D.succeed CredentialHolderDidNotSign
+
+                "NotAllowedMultipleCredentials" ->
+                    D.succeed NotAllowedMultipleCredentials
+
+                "NotAllowedToReceiveEncrypted" ->
+                    D.succeed NotAllowedToReceiveEncrypted
+
+                "NotAllowedToHandleEncrypted" ->
+                    D.succeed NotAllowedToHandleEncrypted
 
                 _ ->
                     D.fail <| "Unknown RejectReason: " ++ tag
