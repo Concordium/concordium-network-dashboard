@@ -868,7 +868,7 @@ rejectionToItem ctx reason =
             }
 
         NotAllowedMultipleCredentials ->
-            { content = [ text "Account is not allowed to have multiple credentials because it contains a non-zero encrypted transfer" ]
+            { content = [ text "Account is not allowed to have multiple credentials because it has non-zero encrypted balance ]
             , details = Nothing
             }
 
@@ -878,7 +878,7 @@ rejectionToItem ctx reason =
             }
 
         NotAllowedToHandleEncrypted ->
-            { content = [ text "Account is not allowed to handle encrypted transfers" ]
+            { content = [ text "Account is not allowed to handle encrypted transfers because it has multiple credentials" ]
             , details = Nothing
             }
 
