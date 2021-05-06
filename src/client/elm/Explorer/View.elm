@@ -15,7 +15,6 @@ import Html
 import Html.Attributes exposing (style)
 import Icons exposing (..)
 import List
-import Network.Node exposing (eventsWidth)
 import Paging
 import Palette exposing (withAlphaEl)
 import Regex exposing (..)
@@ -1478,10 +1477,14 @@ isEven : Int -> Bool
 isEven n =
     modBy 2 n == 0
 
-wrapAttributes : List (Attribute msg)
-wrapAttributes = width fill :: List.map htmlAttribute [ style "word-break" "break-word", eventsWidth ]
 
+wrapAttributes : List (Attribute msg)
+wrapAttributes = width fill :: List.map htmlAttribute [ style "word-break" "break-word" ]
+
+
+eventElem : List (Element msg) -> List (Element msg)
 eventElem es = [ paragraph wrapAttributes es ]
+
 
 viewTransactionEvent : Theme a -> TransactionEvent -> TransactionEventItem Msg
 viewTransactionEvent ctx txEvent =
