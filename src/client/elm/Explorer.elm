@@ -4,6 +4,7 @@ import Api exposing (ApiResult)
 import Dict exposing (Dict)
 import Explorer.Request exposing (..)
 import Helpers exposing (toggleSetMember)
+import Http exposing (Error(..))
 import Paging
 import RemoteData exposing (..)
 import Set exposing (Set)
@@ -51,7 +52,7 @@ type alias Model =
 
 type Msg
     = ReceivedConsensusStatus (ApiResult Api.ConsensusStatus)
-    | ReceivedBlockInfo (ApiResult Api.BlockInfo)
+    | ReceivedBlockResponse (ApiResult Api.BlockResponse)
     | ReceivedBlockSummary (ApiResult BlockSummary)
     | Display DisplayMsg
     | TransactionPaging Paging.Msg
@@ -80,15 +81,15 @@ update msg model =
             case res of
                 Ok consensusStatus ->
                     ( { model | blockInfo = Loading }
-                    , Api.getBlockInfo model.config consensusStatus.bestBlock ReceivedBlockInfo
+                    , Api.getBlockInfo model.config consensusStatus.bestBlock ReceivedBlockResponse
                     )
 
                 Err err ->
                     ( model, Cmd.none )
 
-        ReceivedBlockInfo blockInfoRes ->
+        ReceivedBlockResponse blockInfoRes ->
             case blockInfoRes of
-                Ok blockInfo ->
+                Ok (Api.Block blockInfo) ->
                     ( { model
                         | blockInfo = Success blockInfo
                         , blockSummary = Loading
@@ -96,7 +97,17 @@ update msg model =
                     , getBlockSummary model.config blockInfo.blockHash ReceivedBlockSummary
                     )
 
-                Err err ->
+                Ok Api.BlockNotFound ->
+                    let blockStr = case model.blockHash of
+                                        Just hash -> "Block with hash " ++ hash
+                                        Nothing -> "Block with given hash"
+                    in ( { model
+                           | blockInfo = Failure <| BadBody <| blockStr ++ " does not exist on the chain."
+                         }
+                       , Cmd.none
+                       )
+
+                _ ->
                     ( model, Cmd.none )
 
         ReceivedBlockSummary blockSummaryResult ->
