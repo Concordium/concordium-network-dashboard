@@ -875,7 +875,7 @@ rejectionToItem ctx reason =
             }
 
         NotAllowedMultipleCredentials ->
-            { content = [ text "Account is not allowed to have multiple credentials because it has non-zero encrypted balance ]
+            { content = [ text "Account is not allowed to have multiple credentials because it has non-zero encrypted balance" ]
             , details = Nothing
             }
 
