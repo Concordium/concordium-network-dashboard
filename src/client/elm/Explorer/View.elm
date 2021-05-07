@@ -2,6 +2,7 @@ module Explorer.View exposing (..)
 
 import Api exposing (BlockInfo)
 import Browser exposing (UrlRequest)
+import Config exposing (accountBalancesDocUrl)
 import Context exposing (Theme)
 import Dict exposing (Dict)
 import Element exposing (..)
@@ -701,15 +702,11 @@ rejectionToItem ctx reason =
 
         AmountTooLarge account amount ->
             { content =
-                let
-                    url =
-                        "https://developers.concordium.com/en/testnet4/testnet/references/manage-accounts.html#account-balances"
-                in
                 [ text "The sending account "
                 , viewAddress ctx <| account
                 , text " has insufficient funds. Note: only funds that are not staked or locked can be transferred (see "
-                , link [ onClick <| UrlClicked <| Browser.External url ]
-                    { url = url
+                , link [ onClick <| UrlClicked <| Browser.External accountBalancesDocUrl ]
+                    { url = accountBalancesDocUrl
                     , label = el [ Font.underline ] <| text "account balances"
                     }
                 , text " documentation)."
@@ -2038,10 +2035,11 @@ viewBaker ctx bakerId addr =
 
 
 viewCredId : String -> Element Msg
-viewCredId cred = row []
-                      [ html <| Icons.account_key_deployed 18
-                      , text <| String.left 8 cred
-                      ]
+viewCredId cred =
+    row []
+        [ html <| Icons.account_key_deployed 18
+        , text <| String.left 8 cred
+        ]
 
 
 {-| A list of attributes for animating a collapsible view

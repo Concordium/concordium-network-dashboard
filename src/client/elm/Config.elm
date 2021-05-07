@@ -1,4 +1,4 @@
-module Config exposing (Config, Environment, defaultConfig, isProduction, parseEnv)
+module Config exposing (Config, Environment, accountBalancesDocUrl, defaultConfig, isProduction, parseEnv)
 
 
 type alias Config =
@@ -17,6 +17,7 @@ type DevelopmentTarget
     = Local
     | Staging
     | Testnet
+    | Mainnet
 
 
 devTarget : DevelopmentTarget
@@ -80,3 +81,23 @@ developmentUrl mode localUrl =
 
         Testnet ->
             "https://dashboard.testnet.concordium.com"
+
+        Mainnet ->
+            -- TODO (MRA) make sure that this is the right URL
+            "https://dashboard.mainnet.concordium.com"
+
+
+documentationUrl : String
+documentationUrl =
+    case devTarget of
+        Mainnet ->
+            -- TODO (MRA) adjust this URL
+            "https://developers.concordium.com/en/mainnet/TODO"
+
+        _ ->
+            "https://developers.concordium.com/en/testnet4/testnet/"
+
+
+accountBalancesDocUrl : String
+accountBalancesDocUrl =
+    documentationUrl ++ "references/manage-accounts.html#account-balances"
