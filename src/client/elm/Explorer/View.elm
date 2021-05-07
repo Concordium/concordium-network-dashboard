@@ -15,7 +15,6 @@ import Html
 import Html.Attributes exposing (style)
 import Icons exposing (..)
 import List
-import Network.Node exposing (eventsWidth)
 import Paging
 import Palette exposing (withAlphaEl)
 import Regex exposing (..)
@@ -1652,9 +1651,16 @@ viewTransactionEvent ctx txEvent =
         TransactionEventCredentialKeysUpdated event ->
             { content =
                 eventElem
-                    [ text <| "Updated keys and threshold of credential " ++ event.credId
+                    [ text <| "Updated keys and threshold of credential "
+                    , viewCredId event.credId
                     ]
-            , details = Nothing
+            , details =
+                Just <|
+                    column [ width fill ]
+                        [ viewDetailRow
+                            [ text "Updated credential" ]
+                            [ text event.credId ]
+                        ]
             }
 
         TransactionEventCredentialsUpdated event ->
@@ -2029,6 +2035,13 @@ viewBaker ctx bakerId addr =
         [ viewAddress ctx <| T.AddressAccount addr
         , text <| "(Baker: " ++ String.fromInt bakerId ++ ")"
         ]
+
+
+viewCredId : String -> Element Msg
+viewCredId cred = row []
+                      [ html <| Icons.account_key_deployed 18
+                      , text <| String.left 8 cred
+                      ]
 
 
 {-| A list of attributes for animating a collapsible view
