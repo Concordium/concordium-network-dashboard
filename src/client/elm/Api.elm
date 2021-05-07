@@ -10,7 +10,7 @@ import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
 import Time exposing (Posix)
 import Transaction.Summary as TxSummary
-import Types as T exposing (BlockHash)
+import Types as T
 
 
 type alias Config =
@@ -119,7 +119,7 @@ type alias BlockInfo =
 
 type BlockResponse
     = Block BlockInfo
-    | BlockNotFound BlockHash
+    | BlockNotFound T.BlockHash
 
 
 blockResponseDecoder : String -> D.Decoder BlockResponse
