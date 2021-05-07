@@ -1906,7 +1906,7 @@ displayArIp info =
 
 displayName : String -> Element Msg
 displayName =
-    displayStr "Name"
+    displayUpdateInfo "Name"
 
 
 displayIdentity : Identity -> Element Msg
@@ -1920,22 +1920,26 @@ displayIdentity id =
                 IpIdentity ip ->
                     ip
     in
-    displayStr "Identity" <| String.fromInt i
+    displayUpdateInfo "Identity" <| String.fromInt i
 
 
 displayDescription : String -> Element Msg
 displayDescription =
-    displayStr "Description"
+    displayUpdateInfo "Description"
 
 
+{-| Format a nonempty string with its corresponding attribute. This is used to display information on update
+transactions.
 
-{- Format a nonempty string with its corresponding attribute. This is used to display information on update
-   transactions.
+    displayUpdateInfo "Description" "Very important description" == "Description: Very important description."
+
+    displayUpdateInfo "Description" "Very important description. " == "Description: Very important description."
+
+    displayUpdateInfo "Description" "Very important description..." == "Description: Very important description."
+
 -}
-
-
-displayStr : String -> String -> Element Msg
-displayStr attrName str =
+displayUpdateInfo : String -> String -> Element Msg
+displayUpdateInfo attrName str =
     let
         elem s =
             text <| attrName ++ ": " ++ s ++ ". "
