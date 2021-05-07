@@ -97,15 +97,12 @@ update msg model =
                     , getBlockSummary model.config blockInfo.blockHash ReceivedBlockSummary
                     )
 
-                Ok Api.BlockNotFound ->
-                    let blockStr = case model.blockHash of
-                                        Just hash -> "Block with hash " ++ hash
-                                        Nothing -> "Block with given hash"
-                    in ( { model
-                           | blockInfo = Failure <| BadBody <| blockStr ++ " does not exist on the chain."
-                         }
-                       , Cmd.none
-                       )
+                Ok (Api.BlockNotFound hash) ->
+                    ( { model
+                        | blockInfo = Failure <| BadBody <| "Block with hash '" ++ hash ++ "' does not exist on the chain."
+                      }
+                    , Cmd.none
+                    )
 
                 _ ->
                     ( model, Cmd.none )

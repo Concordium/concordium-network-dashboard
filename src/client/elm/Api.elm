@@ -10,7 +10,7 @@ import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
 import Time exposing (Posix)
 import Transaction.Summary as TxSummary
-import Types as T
+import Types as T exposing (BlockHash)
 
 
 type alias Config =
@@ -97,7 +97,7 @@ consensusStatusDecoder =
 
 getBlockInfo : Config -> T.BlockHash -> (ApiResult BlockResponse -> msg) -> Cmd msg
 getBlockInfo cfg blockhash msg =
-    getMiddleware cfg ("/v1/blockInfo/" ++ blockhash) blockResponseDecoder msg
+    getMiddleware cfg ("/v1/blockInfo/" ++ blockhash) (blockResponseDecoder blockhash) msg
 
 
 type alias BlockInfo =
@@ -119,14 +119,14 @@ type alias BlockInfo =
 
 type BlockResponse
     = Block BlockInfo
-    | BlockNotFound
+    | BlockNotFound BlockHash
 
 
-blockResponseDecoder : D.Decoder BlockResponse
-blockResponseDecoder =
+blockResponseDecoder : String -> D.Decoder BlockResponse
+blockResponseDecoder hash =
     D.oneOf
         [ D.map Block blockInfoDecoder
-        , D.null BlockNotFound
+        , D.null <| BlockNotFound hash
         ]
 
 
