@@ -1474,13 +1474,8 @@ isEven n =
     modBy 2 n == 0
 
 
-wrapAttributes : List (Attribute msg)
-wrapAttributes =
-    width fill :: List.map htmlAttribute [ style "word-break" "break-word", eventsWidth ]
-
-
 eventElem es =
-    [ paragraph [ width fill ] es ]
+    [ wrappedRow [ width fill ] es ]
 
 
 viewTransactionEvent : Theme a -> TransactionEvent -> TransactionEventItem Msg
