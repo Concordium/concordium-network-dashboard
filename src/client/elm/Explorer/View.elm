@@ -701,14 +701,20 @@ rejectionToItem ctx reason =
             }
 
         AmountTooLarge account amount ->
-            { content = let url = "https://developers.concordium.com/en/testnet4/testnet/references/manage-accounts.html#account-balances"
-                        in [ text "The sending account ", viewAddress ctx <| account, text " has insufficient funds. Note: only funds that are not staked or locked can be transferred (see "
-                           , link [ onClick <| UrlClicked <| Browser.External url ]
-                                                           { url = url
-                                                           , label = el [ Font.underline ] <| text "account balances"
-                                                           }
-                           , text " documentation)."
-                           ]
+            { content =
+                let
+                    url =
+                        "https://developers.concordium.com/en/testnet4/testnet/references/manage-accounts.html#account-balances"
+                in
+                [ text "The sending account "
+                , viewAddress ctx <| account
+                , text " has insufficient funds. Note: only funds that are not staked or locked can be transferred (see "
+                , link [ onClick <| UrlClicked <| Browser.External url ]
+                    { url = url
+                    , label = el [ Font.underline ] <| text "account balances"
+                    }
+                , text " documentation)."
+                ]
             , details = Nothing
             }
 
@@ -1467,17 +1473,23 @@ isEven : Int -> Bool
 isEven n =
     modBy 2 n == 0
 
-wrapAttributes : List (Attribute msg)
-wrapAttributes = width fill :: List.map htmlAttribute [ style "word-break" "break-word", eventsWidth ]
 
-eventElem es = [ paragraph wrapAttributes es ]
+wrapAttributes : List (Attribute msg)
+wrapAttributes =
+    width fill :: List.map htmlAttribute [ style "word-break" "break-word", eventsWidth ]
+
+
+eventElem es =
+    [ paragraph [ width fill ] es ]
+
 
 viewTransactionEvent : Theme a -> TransactionEvent -> TransactionEventItem Msg
 viewTransactionEvent ctx txEvent =
     case txEvent of
         -- Transfers
         TransactionEventTransferred event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Transferred " ++ T.amountToString event.amount ++ " from "
                     , viewAddress ctx event.from
                     , text " to "
@@ -1493,7 +1505,8 @@ viewTransactionEvent ctx txEvent =
                         |> List.map Tuple.second
                         |> T.sumAmounts
             in
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Transferred with schedule to "
                     , viewAddress ctx (T.AddressAccount event.to)
                     ]
@@ -1520,7 +1533,8 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventEncryptedSelfAmountAdded event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| T.amountToString event.amount ++ " was shielded on "
                     , viewAddress ctx (T.AddressAccount event.account)
                     ]
@@ -1528,7 +1542,8 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventAmountAddedByDecryption event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| T.amountToString event.amount ++ " was unshielded on "
                     , viewAddress ctx (T.AddressAccount event.account)
                     ]
@@ -1537,7 +1552,8 @@ viewTransactionEvent ctx txEvent =
 
         -- Encrypted transfers
         TransactionEventNewEncryptedAmount event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ viewAddress ctx (T.AddressAccount event.account)
                     , text " received an encrypted amount."
                     ]
@@ -1545,7 +1561,8 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventEncryptedAmountsRemoved event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ viewAddress ctx (T.AddressAccount event.account)
                     , text " transferred an encrypted amount."
                     ]
@@ -1554,7 +1571,8 @@ viewTransactionEvent ctx txEvent =
 
         -- Accounts
         TransactionEventAccountCreated event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Created account "
                     , viewAddress ctx (T.AddressAccount event.account)
                     ]
@@ -1562,7 +1580,8 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventCredentialDeployed event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Deployed credentials "
                     , viewAddress ctx (T.AddressAccount event.account)
                     ]
@@ -1571,7 +1590,8 @@ viewTransactionEvent ctx txEvent =
 
         -- Baking
         TransactionEventBakerAdded event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Added baker "
                     , viewBaker ctx event.bakerId event.account
                     ]
@@ -1579,7 +1599,8 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventBakerRemoved event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Removed baker "
                     , viewBaker ctx event.bakerId event.account
                     ]
@@ -1587,7 +1608,8 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventBakerStakeIncreased event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Increased stake of "
                     , viewBaker ctx event.bakerId event.account
                     , text " to "
@@ -1597,7 +1619,8 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventBakerStakeDecreased event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Decreased stake of "
                     , viewBaker ctx event.bakerId event.account
                     , text " to "
@@ -1607,7 +1630,8 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventBakerSetRestakeEarnings event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <|
                         if event.restakeEarnings then
                             "Enable"
@@ -1622,7 +1646,8 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventBakerKeysUpdated event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Updated baker keys of "
                     , viewBaker ctx event.bakerId event.account
                     ]
@@ -1630,14 +1655,16 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventCredentialKeysUpdated event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Updated keys and threshold of credential " ++ event.credId
                     ]
             , details = Nothing
             }
 
         TransactionEventCredentialsUpdated event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text "Updated credentials of "
                     , viewAddress ctx (T.AddressAccount event.account)
                     ]
@@ -1658,7 +1685,8 @@ viewTransactionEvent ctx txEvent =
 
         -- Contracts
         TransactionEventModuleDeployed event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Deployed module with reference "
                     , el
                         [ stringTooltipAboveWithCopy ctx event.contents
@@ -1673,7 +1701,8 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventContractInitialized event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Instantiated contract '" ++ event.contractName ++ "' with address: "
                     , viewAsAddressContract ctx event.address
                     , text <| " from module: " ++ String.left 8 event.ref
@@ -1702,7 +1731,8 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventContractUpdated event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Updated contract instance at address: "
                     , viewAsAddressContract ctx event.address
                     ]
@@ -1730,9 +1760,10 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventUpdateEnqueued event ->
-            { content = eventElem
-                [ text <| "Update enqueued to take effect " ++ TimeHelpers.formatTime Time.utc event.effectiveTime
-                ]
+            { content =
+                eventElem
+                    [ text <| "Update enqueued to take effect " ++ TimeHelpers.formatTime Time.utc event.effectiveTime
+                    ]
             , details =
                 Just <|
                     el [ padding 20 ] <|
@@ -1740,9 +1771,10 @@ viewTransactionEvent ctx txEvent =
             }
 
         TransactionEventDataRegistered event ->
-            { content = eventElem
-                [ text <| "Data registered on chain"
-                ]
+            { content =
+                eventElem
+                    [ text <| "Data registered on chain"
+                    ]
             , details =
                 Just <|
                     column [ width fill ]
@@ -1856,56 +1888,89 @@ viewEventUpdateEnqueuedDetails ctx event =
             paragraph [] [ text <| "Update the minimum staked amount for becoming a baker to " ++ T.amountToString threshold ]
 
         AddAnonymityRevokerPayload (ArInfo anonymityRevokerInfo) ->
-            paragraph [] <| text ("Add a new anonymity revoker. ") :: displayArIp anonymityRevokerInfo
+            paragraph [] <| text "Add a new anonymity revoker. " :: displayArIp anonymityRevokerInfo
 
         AddIdentityProviderPayload (IpInfo identityProviderInfo) ->
-            paragraph [] <| text ("Add a new identity provider. ") :: displayArIp identityProviderInfo
+            paragraph [] <| text "Add a new identity provider. " :: displayArIp identityProviderInfo
 
 
 displayArIp : ArIpInfo -> List (Element Msg)
 displayArIp info =
-    let descr = info.description
-    in displayName descr.name
-    :: displayIdentity info.identity
-    :: displayDescription descr.description
-    :: displayWebsite descr.url
+    let
+        descr =
+            info.description
+    in
+    displayName descr.name
+        :: displayIdentity info.identity
+        :: displayDescription descr.description
+        :: displayWebsite descr.url
 
 
-displayName: String -> Element Msg
-displayName = displayStr "Name"
+displayName : String -> Element Msg
+displayName =
+    displayStr "Name"
 
 
-displayIdentity: Identity -> Element Msg
-displayIdentity id = let i = case id of
-                             ArIdentity ar -> ar
-                             IpIdentity ip -> ip
-                     in displayStr "Identity" <| String.fromInt i
+displayIdentity : Identity -> Element Msg
+displayIdentity id =
+    let
+        i =
+            case id of
+                ArIdentity ar ->
+                    ar
+
+                IpIdentity ip ->
+                    ip
+    in
+    displayStr "Identity" <| String.fromInt i
 
 
-displayDescription: String -> Element Msg
-displayDescription = displayStr "Description"
+displayDescription : String -> Element Msg
+displayDescription =
+    displayStr "Description"
+
 
 
 {- Format a nonempty string with its corresponding attribute. This is used to display information on update
    transactions.
 -}
-displayStr: String -> String -> Element Msg
-displayStr attrName str = let elem s = text <| attrName ++ ": " ++ s ++ ". "
-                          in case Regex.fromString "[\\. ]*$" of -- to remove trailing spaces and periods
-                               Nothing -> elem (String.trim str)
-                               Just regex -> let trimmed = Regex.replace regex (\_ -> "") str
-                                             in if trimmed == "" then text "" else elem trimmed
+
+
+displayStr : String -> String -> Element Msg
+displayStr attrName str =
+    let
+        elem s =
+            text <| attrName ++ ": " ++ s ++ ". "
+    in
+    case Regex.fromString "[\\. ]*$" of
+        -- to remove trailing spaces and periods
+        Nothing ->
+            elem (String.trim str)
+
+        Just regex ->
+            let
+                trimmed =
+                    Regex.replace regex (\_ -> "") str
+            in
+            if trimmed == "" then
+                text ""
+
+            else
+                elem trimmed
 
 
 displayWebsite : String -> List (Element Msg)
-displayWebsite url = if String.trim url == ""
-                     then []
-                     else [ text "Website: "
-                          , link [ onClick <| UrlClicked <| Browser.External url ]
-                                 { url = url
-                                 , label = el [ Font.underline ] <| text url
-                                 }
-                          ]
+displayWebsite url =
+    if String.trim url == "" then
+        []
+
+    else
+        [ text "Website: "
+        , link [ onClick <| UrlClicked <| Browser.External url ]
+            { url = url
+            , label = el [ Font.underline ] <| text url
+            }
+        ]
 
 
 {-| Display a relation as a fraction
