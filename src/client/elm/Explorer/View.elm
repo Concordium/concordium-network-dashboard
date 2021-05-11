@@ -15,7 +15,6 @@ import Html
 import Html.Attributes exposing (style)
 import Icons exposing (..)
 import List
-import Network.Node exposing (eventsWidth)
 import Paging
 import Palette exposing (withAlphaEl)
 import Regex exposing (..)
@@ -99,6 +98,17 @@ viewBlockSummary theme { blockSummary, state } =
             blockSummary.transactionSummaries
                 |> List.map (viewTransactionSummary theme)
 
+        transactionNum = List.length transactionSummaries
+
+        transactionPlural = if transactionNum == 1 then " transaction" else " transactions"
+
+        transactionNumStr =  if List.isEmpty transactionSummaries
+                             then ""
+                             else " (" ++ (String.fromInt transactionNum) ++ transactionPlural ++ ")"
+
+        transactionSummariesDescription =
+            "Transactions included in this block" ++ transactionNumStr
+
         transactionPaging =
             Paging.paging state.transactionPagingModel transactionSummaries
 
@@ -114,7 +124,7 @@ viewBlockSummary theme { blockSummary, state } =
     in
     column [ width fill ]
         [ section <|
-            titleWithSubtitle theme "Transactions" "Transactions included in this block"
+            titleWithSubtitle theme "Transactions" transactionSummariesDescription
                 :: (if List.isEmpty transactionSummaries then
                         [ column [ width fill, padding 20 ] [ el [ centerX, Font.color theme.palette.fg2 ] <| text "No transactions in this block." ] ]
 
@@ -1467,10 +1477,14 @@ isEven : Int -> Bool
 isEven n =
     modBy 2 n == 0
 
-wrapAttributes : List (Attribute msg)
-wrapAttributes = width fill :: List.map htmlAttribute [ style "word-break" "break-word", eventsWidth ]
 
+wrapAttributes : List (Attribute msg)
+wrapAttributes = width fill :: List.map htmlAttribute [ style "word-break" "break-word" ]
+
+
+eventElem : List (Element msg) -> List (Element msg)
 eventElem es = [ paragraph wrapAttributes es ]
+
 
 viewTransactionEvent : Theme a -> TransactionEvent -> TransactionEventItem Msg
 viewTransactionEvent ctx txEvent =

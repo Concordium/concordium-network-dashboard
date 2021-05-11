@@ -261,7 +261,7 @@ update msg model =
                                             Api.getBlockInfo
                                                 model.explorerModel.config
                                                 hash
-                                                (ExplorerMsg << Explorer.ReceivedBlockInfo)
+                                                (ExplorerMsg << Explorer.ReceivedBlockResponse)
                                         )
                                     |> Maybe.withDefault Cmd.none
 
@@ -353,7 +353,7 @@ onRouteInit page model =
 
         Route.Chain (Just hash) ->
             ( { model | chainModel = Chain.selectBlock model.chainModel hash }
-            , Api.getBlockInfo model.explorerModel.config hash (ExplorerMsg << Explorer.ReceivedBlockInfo)
+            , Api.getBlockInfo model.explorerModel.config hash (ExplorerMsg << Explorer.ReceivedBlockResponse)
             )
 
         Route.Lookup (Just txHash) ->

@@ -17,7 +17,7 @@ formatTime zone posix =
         ++ ":"
         ++ (String.padLeft 2 '0' <| String.fromInt <| Time.toSecond zone posix)
         ++ "."
-        ++ (String.padLeft 3 '0' <| String.fromInt <| Time.toMillis zone posix)
+        ++ (String.padLeft 2 '0' <| String.left 2 <| String.fromInt <| Time.toMillis zone posix)
         -- @TODO use the timezone lookup in future
         ++ " UTC"
 
