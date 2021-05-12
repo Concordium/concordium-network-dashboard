@@ -1649,7 +1649,7 @@ viewTransactionEvent ctx txEvent =
             { content =
                 eventElem
                     [ text <| "Updated keys and threshold of credential "
-                    , viewCredId event.credId
+                    , viewCredId ctx event.credId
                     ]
             , details =
                 Just <|
@@ -2038,9 +2038,14 @@ viewBaker ctx bakerId addr =
         ]
 
 
-viewCredId : String -> Element Msg
-viewCredId cred =
-    row []
+viewCredId : Theme a -> String -> Element Msg
+viewCredId ctx cred =
+    row
+        [ spacing 4
+        , stringTooltipAboveWithCopy ctx cred
+        , pointer
+        , onClick (CopyToClipboard cred)
+        ]
         [ html <| Icons.account_key_deployed 18
         , text <| String.left 8 cred
         ]
