@@ -95,9 +95,9 @@ consensusStatusDecoder =
 -- BlockInfo
 
 
-getBlockInfo : Config -> T.BlockHash -> (ApiResult BlockInfo -> msg) -> Cmd msg
+getBlockInfo : Config -> T.BlockHash -> (ApiResult BlockResponse -> msg) -> Cmd msg
 getBlockInfo cfg blockhash msg =
-    getMiddleware cfg ("/v1/blockInfo/" ++ blockhash) blockInfoDecoder msg
+    getMiddleware cfg ("/v1/blockInfo/" ++ blockhash) (blockResponseDecoder blockhash) msg
 
 
 type alias BlockInfo =
@@ -115,6 +115,19 @@ type alias BlockInfo =
     , blockHeight : Int
     , blockBaker : Int
     }
+
+
+type BlockResponse
+    = Block BlockInfo
+    | BlockNotFound T.BlockHash
+
+
+blockResponseDecoder : String -> D.Decoder BlockResponse
+blockResponseDecoder hash =
+    D.oneOf
+        [ D.map Block blockInfoDecoder
+        , D.null <| BlockNotFound hash
+        ]
 
 
 blockInfoDecoder : D.Decoder BlockInfo

@@ -99,6 +99,26 @@ viewBlockSummary theme { blockSummary, state } =
             blockSummary.transactionSummaries
                 |> List.map (viewTransactionSummary theme)
 
+        transactionNum =
+            List.length transactionSummaries
+
+        transactionPlural =
+            if transactionNum == 1 then
+                " transaction"
+
+            else
+                " transactions"
+
+        transactionNumStr =
+            if List.isEmpty transactionSummaries then
+                ""
+
+            else
+                " (" ++ String.fromInt transactionNum ++ transactionPlural ++ ")"
+
+        transactionSummariesDescription =
+            "Transactions included in this block" ++ transactionNumStr
+
         transactionPaging =
             Paging.paging state.transactionPagingModel transactionSummaries
 
@@ -114,7 +134,7 @@ viewBlockSummary theme { blockSummary, state } =
     in
     column [ width fill ]
         [ section <|
-            titleWithSubtitle theme "Transactions" "Transactions included in this block"
+            titleWithSubtitle theme "Transactions" transactionSummariesDescription
                 :: (if List.isEmpty transactionSummaries then
                         [ column [ width fill, padding 20 ] [ el [ centerX, Font.color theme.palette.fg2 ] <| text "No transactions in this block." ] ]
 
@@ -1470,6 +1490,12 @@ isEven n =
     modBy 2 n == 0
 
 
+wrapAttributes : List (Attribute msg)
+wrapAttributes =
+    width fill :: List.map htmlAttribute [ style "word-break" "break-word" ]
+
+
+eventElem : List (Element msg) -> List (Element msg)
 eventElem es =
     [ wrappedRow [ width fill ] es ]
 
