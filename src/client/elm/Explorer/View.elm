@@ -990,7 +990,7 @@ listUpdatePayloads queues =
         ++ mapUpdate MicroGtuPerEuroPayload queues.microGTUPerEuro
         ++ mapUpdate ProtocolUpdatePayload queues.protocol
         ++ mapUpdate GasRewardsPayload queues.gasRewards
-        ++ mapUpdate FoundationAccountPayload queues.foundationAccount
+        ++ mapUpdate (\i -> FoundationAccountPayload (Index i)) queues.foundationAccount
         ++ mapUpdate ElectionDifficultyPayload queues.electionDifficulty
         ++ mapUpdate EuroPerEnergyPayload queues.euroPerEnergy
         ++ mapUpdate MintDistributionPayload queues.mintDistribution
@@ -1888,7 +1888,7 @@ viewEventUpdateEnqueuedDetails ctx event =
                 ]
 
         FoundationAccountPayload foundationAccount ->
-            paragraph [] [ text <| "Update the Foundation account to be acount with index " ++ String.fromInt foundationAccount ]
+            paragraph [] [ text "Update the Foundation account to ", viewFoundationAccount ctx foundationAccount ]
 
         RootKeysUpdatePayload _ ->
             paragraph [] [ text "Update the chain-update root keys." ]
@@ -1916,6 +1916,16 @@ viewEventUpdateEnqueuedDetails ctx event =
 
         AddIdentityProviderPayload (IpInfo identityProviderInfo) ->
             paragraph [] <| text "Add a new identity provider. " :: displayArIp identityProviderInfo
+
+
+viewFoundationAccount : Theme a -> FoundationAccountRepresentation -> Element Msg
+viewFoundationAccount ctx repr =
+    case repr of
+        Index index ->
+            text <| "index " ++ String.fromInt index
+
+        Address foundationAccount ->
+            viewAddress ctx <| T.AddressAccount foundationAccount
 
 
 displayArIp : ArIpInfo -> List (Element Msg)

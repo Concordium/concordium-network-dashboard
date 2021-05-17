@@ -206,6 +206,11 @@ type alias EventUpdateEnqueued =
     }
 
 
+type FoundationAccountRepresentation
+    = Index Int
+    | Address T.AccountAddress
+
+
 type UpdatePayload
     = MintDistributionPayload MintDistribution
     | TransactionFeeDistributionPayload TransactionFeeDistribution
@@ -213,7 +218,7 @@ type UpdatePayload
     | ElectionDifficultyPayload Float
     | EuroPerEnergyPayload Relation
     | MicroGtuPerEuroPayload Relation
-    | FoundationAccountPayload Int
+    | FoundationAccountPayload FoundationAccountRepresentation
     | RootKeysUpdatePayload HigherLevelKeys
     | Level1KeysUpdatePayload HigherLevelKeys
     | Level2KeysUpdatePayload Authorizations
@@ -372,7 +377,7 @@ updatePayloadDecoder =
                         relationDecoder |> D.map MicroGtuPerEuroPayload
 
                     "foundationAccount" ->
-                        D.int |> D.map FoundationAccountPayload
+                        foundationAccountRepresentationDecoder |> D.map FoundationAccountPayload
 
                     "root" ->
                         keyUpdateDecoder
@@ -396,6 +401,14 @@ updatePayloadDecoder =
                         D.fail "Unknown update type"
     in
     D.field "updateType" D.string |> D.andThen decode
+
+
+foundationAccountRepresentationDecoder : D.Decoder FoundationAccountRepresentation
+foundationAccountRepresentationDecoder =
+    D.oneOf
+        [ D.map Address T.accountAddressDecoder
+        , D.map Index D.int
+        ]
 
 
 mintDistributionDecoder : D.Decoder MintDistribution
