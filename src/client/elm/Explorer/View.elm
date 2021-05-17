@@ -1888,7 +1888,7 @@ viewEventUpdateEnqueuedDetails ctx event =
                 ]
 
         FoundationAccountPayload foundationAccount ->
-            paragraph [] [ text "Update the Foundation account to be ", viewAddress ctx <| T.AddressAccount foundationAccount ]
+            paragraph [] [ text <| "Update the Foundation account to be acount with index " ++ String.fromInt foundationAccount ]
 
         RootKeysUpdatePayload _ ->
             paragraph [] [ text "Update the chain-update root keys." ]
