@@ -1877,13 +1877,13 @@ viewEventUpdateEnqueuedDetails ctx event =
 
         EuroPerEnergyPayload euroPerEnergy ->
             row [ width fill ]
-                [ text "Update the Euro per energy to "
+                [ text "Update the Euro to NRG (energy) conversion rate to "
                 , viewRelation ctx euroPerEnergy
                 ]
 
         MicroGtuPerEuroPayload microGtuPerEnergy ->
             row [ width fill ]
-                [ text "Update the amount of μGTU per Euro to "
+                [ text "Update the μGTU to Euro conversion rate to "
                 , viewRelation ctx microGtuPerEnergy
                 ]
 
@@ -2005,11 +2005,7 @@ displayWebsite url =
 -}
 viewRelation : Theme a -> Relation -> Element msg
 viewRelation ctx relation =
-    column [ spacing 3 ]
-        [ el [ centerX ] <| text <| String.fromInt relation.numerator
-        , el [ width fill, Border.widthEach { top = 0, left = 0, right = 0, bottom = 1 }, Border.color ctx.palette.fg2 ] none
-        , el [ centerX ] <| text <| String.fromInt relation.denominator
-        ]
+    text <| String.fromInt relation.numerator ++ ":" ++ String.fromInt relation.denominator
 
 
 viewAsAddressContract : Theme a -> T.ContractAddress -> Element Msg
