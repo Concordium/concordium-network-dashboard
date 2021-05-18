@@ -206,6 +206,11 @@ type alias EventUpdateEnqueued =
     }
 
 
+type FoundationAccountRepresentation
+    = Index Int
+    | Address T.AccountAddress
+
+
 type UpdatePayload
     = MintDistributionPayload MintDistribution
     | TransactionFeeDistributionPayload TransactionFeeDistribution
@@ -213,7 +218,7 @@ type UpdatePayload
     | ElectionDifficultyPayload Float
     | EuroPerEnergyPayload Relation
     | MicroGtuPerEuroPayload Relation
-    | FoundationAccountPayload T.AccountAddress
+    | FoundationAccountPayload FoundationAccountRepresentation
     | RootKeysUpdatePayload HigherLevelKeys
     | Level1KeysUpdatePayload HigherLevelKeys
     | Level2KeysUpdatePayload Authorizations
@@ -297,9 +302,9 @@ type alias ProtocolUpdate =
 
 
 type alias Description =
-    { name: String
-    , url: String
-    , description: String
+    { name : String
+    , url : String
+    , description : String
     }
 
 
@@ -309,21 +314,26 @@ type Identity
     = ArIdentity Int
     | IpIdentity Int
 
+
 {-| Information about anonymity revokers or identity providers
 -}
 type alias ArIpInfo =
-    { identity: Identity
-    , description: Description
+    { identity : Identity
+    , description : Description
     }
+
 
 {-| Data for an anonymity revoker
 -}
-type AnonymityRevokerInfo = ArInfo ArIpInfo
+type AnonymityRevokerInfo
+    = ArInfo ArIpInfo
 
 
 {-| Data for an identity provider
 -}
-type IdentityProviderInfo = IpInfo ArIpInfo
+type IdentityProviderInfo
+    = IpInfo ArIpInfo
+
 
 
 -- Errors
@@ -367,7 +377,7 @@ updatePayloadDecoder =
                         relationDecoder |> D.map MicroGtuPerEuroPayload
 
                     "foundationAccount" ->
-                        T.accountAddressDecoder |> D.map FoundationAccountPayload
+                        foundationAccountRepresentationDecoder |> D.map FoundationAccountPayload
 
                     "root" ->
                         keyUpdateDecoder
@@ -391,6 +401,14 @@ updatePayloadDecoder =
                         D.fail "Unknown update type"
     in
     D.field "updateType" D.string |> D.andThen decode
+
+
+foundationAccountRepresentationDecoder : D.Decoder FoundationAccountRepresentation
+foundationAccountRepresentationDecoder =
+    D.oneOf
+        [ D.map Address T.accountAddressDecoder
+        , D.map Index D.int
+        ]
 
 
 mintDistributionDecoder : D.Decoder MintDistribution
@@ -419,14 +437,18 @@ gasRewardsDecoder =
 
 arDecoder : D.Decoder AnonymityRevokerInfo
 arDecoder =
-    let arIp = D.succeed ArIpInfo
+    let
+        arIp =
+            D.succeed ArIpInfo
                 |> required "arIdentity" arIdentityDecoder
                 |> required "arDescription" descriptionDecoder
-    in D.map ArInfo arIp
+    in
+    D.map ArInfo arIp
 
 
 arIdentityDecoder : D.Decoder Identity
-arIdentityDecoder = D.map ArIdentity D.int
+arIdentityDecoder =
+    D.map ArIdentity D.int
 
 
 descriptionDecoder : D.Decoder Description
@@ -439,14 +461,18 @@ descriptionDecoder =
 
 ipDecoder : D.Decoder IdentityProviderInfo
 ipDecoder =
-    let arIp = D.succeed ArIpInfo
+    let
+        arIp =
+            D.succeed ArIpInfo
                 |> required "ipIdentity" ipIdentityDecoder
                 |> required "ipDescription" descriptionDecoder
-    in D.map IpInfo arIp
+    in
+    D.map IpInfo arIp
 
 
 ipIdentityDecoder : D.Decoder Identity
-ipIdentityDecoder = D.map IpIdentity D.int
+ipIdentityDecoder =
+    D.map IpIdentity D.int
 
 
 updateKeysCollectionDecoder : D.Decoder UpdateKeysCollection

@@ -93,12 +93,12 @@ type alias UpdateQueues =
     , microGTUPerEuro : UpdateQueue Relation
     , protocol : UpdateQueue ProtocolUpdate
     , gasRewards : UpdateQueue GasRewards
-    , foundationAccount : UpdateQueue T.AccountAddress
+    , foundationAccount : UpdateQueue Int
     , electionDifficulty : UpdateQueue Float
     , euroPerEnergy : UpdateQueue Relation
     , bakerStakeThreshold : UpdateQueue T.Amount
-    , anonymityRevoker: UpdateQueue AnonymityRevokerInfo
-    , identityProvider: UpdateQueue IdentityProviderInfo
+    , anonymityRevoker : UpdateQueue AnonymityRevokerInfo
+    , identityProvider : UpdateQueue IdentityProviderInfo
     }
 
 
@@ -154,12 +154,13 @@ updateQueuesDecoder =
         |> required "microGTUPerEuro" (updateQueueDecoder relationDecoder)
         |> required "protocol" (updateQueueDecoder protocolUpdateDecoder)
         |> required "gasRewards" (updateQueueDecoder gasRewardsDecoder)
-        |> required "foundationAccount" (updateQueueDecoder T.accountAddressDecoder)
+        |> required "foundationAccount" (updateQueueDecoder D.int)
         |> required "electionDifficulty" (updateQueueDecoder D.float)
         |> required "euroPerEnergy" (updateQueueDecoder relationDecoder)
         |> required "bakerStakeThreshold" (updateQueueDecoder T.decodeAmount)
         |> required "addAnonymityRevoker" (updateQueueDecoder arDecoder)
         |> required "addIdentityProvider" (updateQueueDecoder ipDecoder)
+
 
 updateQueueDecoder : D.Decoder a -> D.Decoder (UpdateQueue a)
 updateQueueDecoder decoder =

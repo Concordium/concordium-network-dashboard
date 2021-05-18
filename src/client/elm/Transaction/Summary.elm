@@ -95,7 +95,10 @@ type UpdateType
     | UpdateAddAnonymityRevoker
       -- ^Add a new anonymity revoker
     | UpdateAddIdentityProvider
-      -- ^Add a new identity provider
+
+
+
+-- ^Add a new identity provider
 
 
 type TransactionResult
@@ -172,7 +175,7 @@ type RejectReason
     | RemoveFirstCredential
       -- | The credential holder of the keys to be updated did not sign the transaction
     | CredentialHolderDidNotSign
-    -- |Account is not allowed to have multiple credentials because it contains a non-zero encrypted transfer.
+      -- |Account is not allowed to have multiple credentials because it contains a non-zero encrypted transfer.
     | NotAllowedMultipleCredentials
       -- |The account is not allowed to receive encrypted transfers because it has multiple credentials.
     | NotAllowedToReceiveEncrypted
