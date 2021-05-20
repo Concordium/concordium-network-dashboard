@@ -36,9 +36,14 @@ import Url exposing (Url)
 import Widgets
 
 
+type alias Version =
+    String
+
+
 type alias Flags =
     { window : { width : Int, height : Int }
     , isProduction : Bool
+    , version : Version
     }
 
 
@@ -62,6 +67,7 @@ type alias Model =
     , time : Time.Posix
     , config : Config
     , window : { width : Int, height : Int }
+    , version : Version
     , palette : Palette Element.Color
     , colorMode : ColorMode
     , currentRoute : Route
@@ -120,6 +126,7 @@ init flags url key =
                 { key = key
                 , time = Time.millisToPosix 0
                 , config = cfg
+                , version = flags.version
                 , window = flags.window
                 , palette = Palette.defaultDark
                 , colorMode = Dark
@@ -393,7 +400,7 @@ view model =
                 , clipX
                 , paddingEach { bottom = 60, left = 0, right = 0, top = 0 }
                 ]
-                [ viewTopNavigation (extractTheme model) model.currentRoute
+                [ viewTopNavigation (extractTheme model) model.version model.currentRoute
                 , case model.currentRoute of
                     Route.Network ->
                         Element.map NetworkMsg <| Network.NodesTable.view model model.networkModel
@@ -411,8 +418,8 @@ view model =
     }
 
 
-viewTopNavigation : Theme a -> Route -> Element Msg
-viewTopNavigation ctx currentRoute =
+viewTopNavigation : Theme a -> Version -> Route -> Element Msg
+viewTopNavigation ctx version currentRoute =
     let
         linkstyle active =
             [ mouseOver [ Font.color ctx.palette.fg1 ]
@@ -430,6 +437,7 @@ viewTopNavigation ctx currentRoute =
                 row [ spacing 12 ]
                     [ el [] (html <| Logo.concordiumLogo 24 (Palette.uiToColor ctx.palette.fg1))
                     , el [] (html <| Logo.concordiumText 110 (Palette.uiToColor ctx.palette.fg1))
+                    , el [ Font.color ctx.palette.fg3 ] <| text version
                     ]
             }
         , row [ alignRight, spacing 20 ]

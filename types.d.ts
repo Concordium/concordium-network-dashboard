@@ -1,2 +1,1 @@
-declare var require: (path: string) => any;
-declare var module: any;
+declare const __VERSION__: string;
