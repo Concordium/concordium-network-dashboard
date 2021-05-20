@@ -1,9 +1,12 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const OpenBrowserPlugin = require('open-browser-webpack-plugin');
+const webpack = require('webpack');
 
 const config = require('./src/server/config');
 const nodeModulesPath = path.resolve(__dirname, 'node_modules');
+
+const packageJson = require('./package.json');
 
 const plugins = [
   new HtmlWebpackPlugin({
@@ -14,12 +17,13 @@ const plugins = [
         isProduction: config.isProduction,
     },
   }),
+  new webpack.DefinePlugin({
+    __VERSION__: JSON.stringify(packageJson.version),
+  }),
 ];
 
 if (!config.isProduction) {
-  plugins.push(
-    new OpenBrowserPlugin({ url: `http://localhost:${config.serverPort}` }),
-  );
+  plugins.push(new OpenBrowserPlugin({ url: `http://localhost:${config.serverPort}` }));
 }
 
 module.exports = {
@@ -46,7 +50,8 @@ module.exports = {
     },
   },
   devServer: {
-    port: 8090
+    port: 8090,
+    hot: true,
   },
   module: {
     rules: [
