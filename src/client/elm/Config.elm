@@ -77,27 +77,20 @@ developmentUrl mode localUrl =
             localUrl
 
         Staging ->
-            "https://dashboard.eu.staging.concordium.com"
+            "https://dashboard.eu.staging.concordium.software"
 
         Testnet ->
-            "https://dashboard.testnet.concordium.com"
+            "https://dashboard.testnet.concordium.software"
 
         Mainnet ->
-            -- TODO (MRA) make sure that this is the right URL
-            "https://dashboard.mainnet.concordium.com"
-
-
-documentationUrl : String
-documentationUrl =
-    case devTarget of
-        Mainnet ->
-            -- TODO (MRA) adjust this URL
-            "https://developers.concordium.com/en/mainnet/TODO"
-
-        _ ->
-            "https://developers.concordium.com/en/testnet4/testnet/"
+            "https://dashboard.mainnet.concordium.software"
 
 
 accountBalancesDocUrl : String
 accountBalancesDocUrl =
-    documentationUrl ++ "references/manage-accounts.html#account-balances"
+    case devTarget of
+        Mainnet ->
+            "https://developer.concordium.software/en/mainnet/net/references/manage-accounts.html#account-balances"
+
+        _ ->
+            "https://developer.concordium.software/en/testnet4/testnet/references/manage-accounts.html#account-balances"
