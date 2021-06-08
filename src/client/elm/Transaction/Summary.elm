@@ -65,16 +65,12 @@ type CredentialType
 <https://github.com/Concordium/concordium-base/blob/main/haskell-src/Concordium/Types/Updates.hs>
 -}
 type UpdateType
-    = UpdateRootKeysWithRootKeys
-      -- ^Update the root keys using the root keys
-    | UpdateLevel1KeysWithRootKeys
-      -- ^Update the level 1 keys using the root keys
-    | UpdateLevel2KeysWithRootKeys
-      -- ^Update the level 2 keys using the root keys
-    | UpdateLevel1KeysWithLevel1Keys
-      -- ^Update the level 1 keys using the level 1 keys
-    | UpdateLevel2KeysWithLevel1Keys
-      -- ^Update the level 2 keys using the level 1 keys
+    = UpdateRootKeys
+      -- ^Update the root keys
+    | UpdateLevel1Keys
+      -- ^Update the level 1 keys
+    | UpdateLevel2Keys
+      -- ^Update the level 2 keys
     | UpdateProtocol
       -- ^Update the chain protocol
     | UpdateElectionDifficulty
@@ -90,15 +86,12 @@ type UpdateType
     | UpdateTransactionFeeDistribution
       -- ^Update the distribution of transaction fees
     | UpdateGASRewards
+      -- ^Update the GAS rewards
     | UpdateBakerStakeThreshold
       -- ^Update the minimum stake that a baker needs to have to be able to bake
     | UpdateAddAnonymityRevoker
       -- ^Add a new anonymity revoker
-    | UpdateAddIdentityProvider
-
-
-
--- ^Add a new identity provider
+    | UpdateAddIdentityProvider -- ^Add a new identity provider
 
 
 type TransactionResult
@@ -294,20 +287,14 @@ updateTypeDecoder =
         |> D.andThen
             (\str ->
                 case str of
-                    "updateRootKeysWithRootKeys" ->
-                        D.succeed UpdateRootKeysWithRootKeys
+                    "updateRootKeys" ->
+                        D.succeed UpdateRootKeys
 
-                    "updateLevel1KeysWithRootKeys" ->
-                        D.succeed UpdateLevel1KeysWithRootKeys
+                    "updateLevel1Keys" ->
+                        D.succeed UpdateLevel1Keys
 
-                    "updateLevel2KeysWithRootKeys" ->
-                        D.succeed UpdateLevel2KeysWithRootKeys
-
-                    "updateLevel1KeysWithLevel1Keys" ->
-                        D.succeed UpdateLevel1KeysWithLevel1Keys
-
-                    "updateLevel2KeysWithLevel1Keys" ->
-                        D.succeed UpdateLevel2KeysWithLevel1Keys
+                    "updateLevel2Keys" ->
+                        D.succeed UpdateLevel2Keys
 
                     "updateProtocol" ->
                         D.succeed UpdateProtocol
