@@ -1,7 +1,7 @@
 {
   "name": "concordium-dashboard",
   "version": "1.0.1",
-  "description": "Concordium Network Dashboard POC",
+  "description": "Concordium Network Dashboard",
   "main": "dashboard-backend.js",
   "engines": {
     "node": ">=12"
