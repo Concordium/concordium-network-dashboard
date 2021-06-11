@@ -1456,15 +1456,24 @@ viewTable ctx table =
                     }
                 )
                 table.columns
+
+        --| This allows the tooltips for SC's to overflow the container, while adding scrollbars for scheduled transfers
+        overflowBehavior =
+            if List.length table.data > 10 then
+                [ scrollbars ]
+
+            else
+                []
     in
     Element.indexedTable
-        [ Background.color ctx.palette.bg2
-        , Border.width 1
-        , Border.color ctx.palette.bg2
-        , Border.rounded 5
-        , htmlAttribute <| style "overflow-y" "auto"
-        , htmlAttribute <| style "max-height" "800px"
-        ]
+        ([ Background.color ctx.palette.bg2
+         , Border.width 1
+         , Border.color ctx.palette.bg2
+         , Border.rounded 5
+         , htmlAttribute <| style "max-height" "800px"
+         ]
+            ++ overflowBehavior
+        )
         { data = table.data, columns = columns }
 
 
@@ -1738,7 +1747,7 @@ viewTransactionEvent ctx txEvent =
                             [ paragraph [] [ text "Contract instance was initialized" ] ]
                             [ viewKeyValue ctx
                                 [ ( "Module", el [ stringTooltipAboveWithCopy ctx "", pointer, onClick (CopyToClipboard event.ref) ] <| text event.ref )
-                                , ( "Contract address", viewAddress ctx <| T.AddressContract event.address )
+                                , ( "Contract address", viewAsAddressContract ctx event.address )
                                 , ( "Contract", text <| event.contractName )
                                 , ( "Amount", text <| T.amountToString event.amount )
                                 ]
@@ -1766,7 +1775,7 @@ viewTransactionEvent ctx txEvent =
                         [ viewDetailRow
                             [ paragraph [] [ text "Contract instance was updated" ] ]
                             [ viewKeyValue ctx
-                                [ ( "Contract address", viewAddress ctx <| T.AddressContract event.address )
+                                [ ( "Contract address", viewAsAddressContract ctx event.address )
                                 , ( "Contract", text event.receiveName.contractName )
                                 , ( "Function", text event.receiveName.functionName )
                                 , ( "Amount", text <| T.amountToString event.amount )
