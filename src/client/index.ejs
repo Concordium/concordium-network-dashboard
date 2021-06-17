@@ -18,6 +18,16 @@
       loadApp(<%= isProduction %>)
     })
   </script>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=<%= analyticsId %>"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+    gtag('consent', 'default', { ad_storage: 'denied', analytics_storage: 'denied' });
+  </script>
 </head>
 
 <body>

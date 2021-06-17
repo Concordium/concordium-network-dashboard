@@ -7,6 +7,7 @@ const config = require('./src/server/config');
 const nodeModulesPath = path.resolve(__dirname, 'node_modules');
 
 const packageJson = require('./package.json');
+const analyticsId = "G-TE81YY48VB"
 
 const plugins = [
   new HtmlWebpackPlugin({
@@ -15,10 +16,12 @@ const plugins = [
     templateParameters: {
         title: 'Concordium Dashboard',
         isProduction: config.isProduction,
+        analyticsId
     },
   }),
   new webpack.DefinePlugin({
     __VERSION__: JSON.stringify(packageJson.version),
+    __ANALYTICS_ID__: JSON.stringify(analyticsId),
   }),
 ];
 

@@ -1,4 +1,4 @@
-module Config exposing (Config, Environment, accountBalancesDocUrl, defaultConfig, isProduction, parseEnv)
+module Config exposing (Config, Environment, accountBalancesDocUrl, cookiePrivacyUrl, defaultConfig, isProduction, parseEnv)
 
 
 type alias Config =
@@ -94,3 +94,10 @@ accountBalancesDocUrl =
 
         _ ->
             "https://developer.concordium.software/en/testnet4/testnet/references/manage-accounts.html#account-balances"
+
+
+{-| Pointing to an external privacy policy used by the cookie consent banner
+-}
+cookiePrivacyUrl : String
+cookiePrivacyUrl =
+    "https://concordium.com/privacy-policy/"

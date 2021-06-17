@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - Expose package.json version in UI
+- Google Analytics and a cookie consent banner
 
 ### Changed
 
