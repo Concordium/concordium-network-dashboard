@@ -414,25 +414,30 @@ view model =
                        )
                 )
             <|
-                column
-                    [ width fill
-                    , clipX
-                    , paddingEach { bottom = 60, left = 0, right = 0, top = 0 }
+                el
+                    [ scrollbarY
+                    , width fill
                     ]
-                    [ viewTopNavigation (extractTheme model) model.version model.currentRoute
-                    , case model.currentRoute of
-                        Route.Network ->
-                            Element.map NetworkMsg <| Network.NodesTable.view model model.networkModel
+                <|
+                    column
+                        [ width fill
+                        , clipX
+                        , paddingEach { bottom = 60, left = 0, right = 0, top = 0 }
+                        ]
+                        [ viewTopNavigation (extractTheme model) model.version model.currentRoute
+                        , case model.currentRoute of
+                            Route.Network ->
+                                Element.map NetworkMsg <| Network.NodesTable.view model model.networkModel
 
-                        Route.NodeView _ ->
-                            Element.map NetworkMsg <| Network.Node.view model model.networkModel
+                            Route.NodeView _ ->
+                                Element.map NetworkMsg <| Network.Node.view model model.networkModel
 
-                        Route.Chain _ ->
-                            viewChainPage model
+                            Route.Chain _ ->
+                                viewChainPage model
 
-                        Route.Lookup _ ->
-                            viewLookupPage model
-                    ]
+                            Route.Lookup _ ->
+                                viewLookupPage model
+                        ]
         ]
     }
 
