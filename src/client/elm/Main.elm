@@ -402,10 +402,17 @@ view model =
     { title = "Concordium Dashboard"
     , body =
         [ themeLayout model.palette <|
-            column
-                [ width fill
-                , height fill
-                ]
+            el
+                ([ width fill
+                 , height fill
+                 ]
+                    ++ (if model.showCookieConsentBanner then
+                            [ inFront <| cookieConsentBanner (extractTheme model) ]
+
+                        else
+                            []
+                       )
+                )
             <|
                 column
                     [ width fill
@@ -426,12 +433,6 @@ view model =
                         Route.Lookup _ ->
                             viewLookupPage model
                     ]
-                    :: (if model.showCookieConsentBanner then
-                            [ cookieConsentBanner (extractTheme model) ]
-
-                        else
-                            []
-                       )
         ]
     }
 
