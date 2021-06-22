@@ -1,12 +1,13 @@
 module Main exposing (..)
 
+import Analytics as Analytics
 import Api
 import Browser exposing (..)
 import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
 import Clipboard
-import Config exposing (Config)
+import Config exposing (Config, cookiePrivacyUrl)
 import Context exposing (Theme, extractTheme)
 import Element exposing (..)
 import Element.Background as Background
@@ -44,6 +45,7 @@ type alias Flags =
     { window : { width : Int, height : Int }
     , isProduction : Bool
     , version : Version
+    , showCookieConsentBanner : Bool
     }
 
 
@@ -68,6 +70,7 @@ type alias Model =
     , config : Config
     , window : { width : Int, height : Int }
     , version : Version
+    , showCookieConsentBanner : Bool
     , palette : Palette Element.Color
     , colorMode : ColorMode
     , currentRoute : Route
@@ -88,6 +91,7 @@ type Msg
     | ShowToast String Float
     | HideToast Int
     | StorageDocReceived D.Value
+    | SetCookieConsent Bool
       --
     | NetworkMsg Network.Msg
     | ChainMsg Chain.Msg
@@ -127,6 +131,7 @@ init flags url key =
                 , time = Time.millisToPosix 0
                 , config = cfg
                 , version = flags.version
+                , showCookieConsentBanner = flags.showCookieConsentBanner
                 , window = flags.window
                 , palette = Palette.defaultDark
                 , colorMode = Dark
@@ -173,7 +178,7 @@ update msg model =
                 ( initModel, initCmds ) =
                     onRouteInit route model
             in
-            ( { initModel | currentRoute = route }, initCmds )
+            ( { initModel | currentRoute = route }, Cmd.batch [ initCmds, Analytics.setPageConfig <| Route.toString route ] )
 
         WindowResized width height ->
             ( { model | window = { width = width, height = height } }
@@ -245,6 +250,9 @@ update msg model =
 
                 Err err ->
                     ( model, Cmd.none )
+
+        SetCookieConsent allowed ->
+            ( { model | showCookieConsentBanner = False }, Analytics.setCookieConsent allowed )
 
         NetworkMsg networkMsg ->
             let
@@ -394,26 +402,42 @@ view model =
     { title = "Concordium Dashboard"
     , body =
         [ themeLayout model.palette <|
-            column
-                [ width fill
-                , Background.color model.palette.bg1
-                , clipX
-                , paddingEach { bottom = 60, left = 0, right = 0, top = 0 }
-                ]
-                [ viewTopNavigation (extractTheme model) model.version model.currentRoute
-                , case model.currentRoute of
-                    Route.Network ->
-                        Element.map NetworkMsg <| Network.NodesTable.view model model.networkModel
+            el
+                ([ width fill
+                 , height fill
+                 ]
+                    ++ (if model.showCookieConsentBanner then
+                            [ inFront <| cookieConsentBanner (extractTheme model) ]
 
-                    Route.NodeView _ ->
-                        Element.map NetworkMsg <| Network.Node.view model model.networkModel
+                        else
+                            []
+                       )
+                )
+            <|
+                el
+                    [ scrollbarY
+                    , width fill
+                    ]
+                <|
+                    column
+                        [ width fill
+                        , clipX
+                        , paddingEach { bottom = 60, left = 0, right = 0, top = 0 }
+                        ]
+                        [ viewTopNavigation (extractTheme model) model.version model.currentRoute
+                        , case model.currentRoute of
+                            Route.Network ->
+                                Element.map NetworkMsg <| Network.NodesTable.view model model.networkModel
 
-                    Route.Chain _ ->
-                        viewChainPage model
+                            Route.NodeView _ ->
+                                Element.map NetworkMsg <| Network.Node.view model model.networkModel
 
-                    Route.Lookup _ ->
-                        viewLookupPage model
-                ]
+                            Route.Chain _ ->
+                                viewChainPage model
+
+                            Route.Lookup _ ->
+                                viewLookupPage model
+                        ]
         ]
     }
 
@@ -447,6 +471,32 @@ viewTopNavigation ctx version currentRoute =
             , viewColorModeToggle ctx
             ]
         ]
+
+
+cookieConsentBanner : Theme a -> Element Msg
+cookieConsentBanner theme =
+    column
+        [ padding 20
+        , alignBottom
+        , width fill
+        , spacing 10
+        , Background.color theme.palette.bg3
+        ]
+        [ paragraph [] [ text "We use cookies to ensure that we give you the best experience on our website, but only if you grant us the permission" ]
+        , row [ spacing 10 ]
+            [ el (buttonAttributes theme ++ [ onClick <| SetCookieConsent True ]) <| text "Allow"
+            , el (buttonAttributes theme ++ [ onClick <| SetCookieConsent False ]) <| text "Disallow"
+            , link [ onClick <| UrlClicked <| Browser.External cookiePrivacyUrl ]
+                { url = cookiePrivacyUrl
+                , label = el [ Font.underline ] <| text "Privacy policy"
+                }
+            ]
+        ]
+
+
+buttonAttributes : Theme a -> List (Attribute msg)
+buttonAttributes theme =
+    [ padding 10, Border.color theme.palette.fg3, Border.width 1, Border.rounded 5, pointer, mouseOver [ Background.color theme.palette.bg2 ] ]
 
 
 viewColorModeToggle : Theme a -> Element Msg
