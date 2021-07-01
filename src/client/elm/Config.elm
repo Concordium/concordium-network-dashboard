@@ -42,41 +42,6 @@ parseEnv isProd =
 defaultConfig : Environment -> Config
 defaultConfig env =
     { environment = env
-    , collectorUrl = defaultCollectorUrl env
-    , middlewareUrl = defaultMiddlewareUrl env
+    , collectorUrl = "http://54.154.159.60:8080"
+    , middlewareUrl = "http://54.154.159.60:8081"
     }
-
-
-defaultCollectorUrl : Environment -> String
-defaultCollectorUrl env =
-    case env of
-        Development target ->
-            developmentUrl target "http://127.0.0.1:12000"
-
-        -- Once deployed the routing for both collector and middleware is through the same URL
-        Production ->
-            ""
-
-
-defaultMiddlewareUrl : Environment -> String
-defaultMiddlewareUrl env =
-    case env of
-        Development target ->
-            developmentUrl target "http://localhost:8081"
-
-        -- Once deployed the routing for both collector and middleware is through the same URL
-        Production ->
-            ""
-
-
-developmentUrl : DevelopmentTarget -> String -> String
-developmentUrl mode localUrl =
-    case mode of
-        Local ->
-            localUrl
-
-        Staging ->
-            "https://dashboard.eu.staging.concordium.com"
-
-        Testnet ->
-            "https://dashboard.testnet.concordium.com"
