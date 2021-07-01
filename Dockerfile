@@ -8,12 +8,13 @@ ENV NPM_CONFIG_PREFIX=/home/node/.npm-global
 
 WORKDIR /home/node/app
 
-COPY dist dist
+#COPY dist dist
 # Possibly temporary, see proto/readme.md
-COPY proto proto
-COPY package.json package.json
-COPY package-lock.json package-lock.json
-COPY dashboard-backend.js dashboard-backend.js
+#COPY proto proto
+#COPY package.json package.json
+#COPY package-lock.json package-lock.json
+#COPY dashboard-backend.js dashboard-backend.js
+COPY . .
 
 RUN npm install concurrently
 RUN npm install
