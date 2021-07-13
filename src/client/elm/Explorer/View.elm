@@ -1164,9 +1164,9 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                 []
                             , viewDetailRow
                                 [ paragraph []
-                                    [ text "The amount depends on the number of slots since the last block, as each slot adds "
+                                    [ text "The amount depends on the number of slots since the last block, as the total supply of GTU is increased by a factor of 1 + "
                                     , text <| String.fromFloat rewardParameters.mintDistribution.mintPerSlot
-                                    , text " of GTU."
+                                    , text " in every slot."
                                     ]
                                 ]
                                 [ el [ centerX ] <| viewSpecialAccount ctx ctx.palette.fg1 "Minted this block" mintTotal
