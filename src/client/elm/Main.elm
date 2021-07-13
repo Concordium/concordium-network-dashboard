@@ -1,24 +1,26 @@
 module Main exposing (..)
 
+import Analytics as Analytics
+import Api
 import Browser exposing (..)
 import Browser.Events
 import Browser.Navigation as Nav exposing (Key)
 import Chain
 import Clipboard
-import Config exposing (Config)
-import Context exposing (Context)
+import Config exposing (Config, cookiePrivacyUrl)
+import Context exposing (Theme, extractTheme)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
 import Explorer
-import Explorer.Request
 import Explorer.View
 import Html exposing (Html)
 import Html.Attributes exposing (style)
 import Json.Decode as D
 import Json.Encode as E
+import Lookup
 import Material.Icons.Sharp as Icon
 import Material.Icons.Types exposing (Coloring(..))
 import Network exposing (viewSummaryWidgets)
@@ -27,7 +29,7 @@ import Network.Node
 import Network.NodesTable
 import Palette exposing (ColorMode(..), Palette)
 import Process
-import Route exposing (Route(..))
+import Route exposing (Route)
 import Storage
 import Task
 import Time
@@ -35,9 +37,15 @@ import Url exposing (Url)
 import Widgets
 
 
+type alias Version =
+    String
+
+
 type alias Flags =
     { window : { width : Int, height : Int }
     , isProduction : Bool
+    , version : Version
+    , showCookieConsentBanner : Bool
     }
 
 
@@ -61,6 +69,8 @@ type alias Model =
     , time : Time.Posix
     , config : Config
     , window : { width : Int, height : Int }
+    , version : Version
+    , showCookieConsentBanner : Bool
     , palette : Palette Element.Color
     , colorMode : ColorMode
     , currentRoute : Route
@@ -68,6 +78,7 @@ type alias Model =
     , chainModel : Chain.Model
     , explorerModel : Explorer.Model
     , toastModel : ToastModel
+    , lookupModel : Lookup.Model
     }
 
 
@@ -80,11 +91,13 @@ type Msg
     | ShowToast String Float
     | HideToast Int
     | StorageDocReceived D.Value
+    | SetCookieConsent Bool
       --
     | NetworkMsg Network.Msg
     | ChainMsg Chain.Msg
     | ToggleDarkMode
     | ExplorerMsg Explorer.Msg
+    | LookupMsg Lookup.Msg
 
 
 main : Program Flags Model Msg
@@ -117,6 +130,8 @@ init flags url key =
                 { key = key
                 , time = Time.millisToPosix 0
                 , config = cfg
+                , version = flags.version
+                , showCookieConsentBanner = flags.showCookieConsentBanner
                 , window = flags.window
                 , palette = Palette.defaultDark
                 , colorMode = Dark
@@ -125,6 +140,7 @@ init flags url key =
                 , chainModel = chainInit
                 , explorerModel = Explorer.init { middlewareUrl = cfg.middlewareUrl }
                 , toastModel = { visible = False, contents = "", showCount = 0 }
+                , lookupModel = Lookup.init key
                 }
     in
     ( initModel
@@ -162,7 +178,7 @@ update msg model =
                 ( initModel, initCmds ) =
                     onRouteInit route model
             in
-            ( { initModel | currentRoute = route }, initCmds )
+            ( { initModel | currentRoute = route }, Cmd.batch [ initCmds, Analytics.setPageConfig <| Route.toString route ] )
 
         WindowResized width height ->
             ( { model | window = { width = width, height = height } }
@@ -235,6 +251,9 @@ update msg model =
                 Err err ->
                     ( model, Cmd.none )
 
+        SetCookieConsent allowed ->
+            ( { model | showCookieConsentBanner = False }, Analytics.setCookieConsent allowed )
+
         NetworkMsg networkMsg ->
             let
                 ( newNetworkModel, newNetworkCmd ) =
@@ -254,10 +273,10 @@ update msg model =
                                 chainModel.selectedBlock
                                     |> Maybe.map
                                         (\hash ->
-                                            Explorer.Request.getBlockInfo
+                                            Api.getBlockInfo
                                                 model.explorerModel.config
                                                 hash
-                                                (ExplorerMsg << Explorer.ReceivedBlockInfo)
+                                                (ExplorerMsg << Explorer.ReceivedBlockResponse)
                                         )
                                     |> Maybe.withDefault Cmd.none
 
@@ -312,6 +331,18 @@ update msg model =
             in
             ( { model | explorerModel = newExplorerModel, chainModel = chainModel }, Cmd.map ExplorerMsg newExplorerCmd )
 
+        LookupMsg lookupMsg ->
+            case lookupMsg of
+                Lookup.CopyToClipboard str ->
+                    update (CopyToClipboard str) model
+
+                _ ->
+                    let
+                        ( newLookupModel, cmd ) =
+                            Lookup.update lookupMsg model.lookupModel
+                    in
+                    ( { model | lookupModel = newLookupModel }, Cmd.map LookupMsg cmd )
+
 
 rebuildChain : ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
 rebuildChain ( model, cmd ) =
@@ -330,15 +361,22 @@ chainWidthFromWidth width =
 onRouteInit : Route -> Model -> ( Model, Cmd Msg )
 onRouteInit page model =
     case page of
-        ChainInit ->
+        Route.Chain Nothing ->
             ( model
-            , Explorer.Request.getConsensusStatus model.explorerModel.config (ExplorerMsg << Explorer.ReceivedConsensusStatus)
+            , Api.getConsensusStatus model.explorerModel.config (ExplorerMsg << Explorer.ReceivedConsensusStatus)
             )
 
-        ChainSelected hash ->
+        Route.Chain (Just hash) ->
             ( { model | chainModel = Chain.selectBlock model.chainModel hash }
-            , Explorer.Request.getBlockInfo model.explorerModel.config hash (ExplorerMsg << Explorer.ReceivedBlockInfo)
+            , Api.getBlockInfo model.explorerModel.config hash (ExplorerMsg << Explorer.ReceivedBlockResponse)
             )
+
+        Route.Lookup (Just txHash) ->
+            let
+                lookupModel =
+                    model.lookupModel
+            in
+            ( { model | lookupModel = { lookupModel | searchTextValue = txHash } }, Api.getTransactionStatus model.explorerModel.config txHash (LookupMsg << Lookup.ReceivedTransactionStatus) )
 
         _ ->
             ( model, Cmd.none )
@@ -363,55 +401,105 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Concordium Dashboard"
     , body =
-        [ theme model.palette <|
-            column
-                [ width fill
-                , Background.color model.palette.bg1
-                , clipX
-                , paddingEach { bottom = 60, left = 0, right = 0, top = 0 }
-                ]
-                [ viewHeader model
-                , case model.currentRoute of
-                    Network ->
-                        Element.map NetworkMsg <| Network.NodesTable.view model model.networkModel
+        [ themeLayout model.palette <|
+            el
+                ([ width fill
+                 , height fill
+                 ]
+                    ++ (if model.showCookieConsentBanner then
+                            [ inFront <| cookieConsentBanner (extractTheme model) ]
 
-                    NodeView nodeName ->
-                        Element.map NetworkMsg <| Network.Node.view model model.networkModel
+                        else
+                            []
+                       )
+                )
+            <|
+                el
+                    [ scrollbarY
+                    , width fill
+                    ]
+                <|
+                    column
+                        [ width fill
+                        , clipX
+                        , paddingEach { bottom = 60, left = 0, right = 0, top = 0 }
+                        ]
+                        [ viewTopNavigation (extractTheme model) model.version model.currentRoute
+                        , case model.currentRoute of
+                            Route.Network ->
+                                Element.map NetworkMsg <| Network.NodesTable.view model model.networkModel
 
-                    ChainInit ->
-                        viewChain model
+                            Route.NodeView _ ->
+                                Element.map NetworkMsg <| Network.Node.view model model.networkModel
 
-                    ChainSelected hash ->
-                        viewChain model
-                ]
+                            Route.Chain _ ->
+                                viewChainPage model
+
+                            Route.Lookup _ ->
+                                viewLookupPage model
+                        ]
         ]
     }
 
 
-viewHeader : Context a -> Element Msg
-viewHeader ctx =
+viewTopNavigation : Theme a -> Version -> Route -> Element Msg
+viewTopNavigation ctx version currentRoute =
     let
-        linkstyle =
-            [ mouseOver [ Font.color ctx.palette.fg1 ] ]
+        linkstyle active =
+            [ mouseOver [ Font.color ctx.palette.fg1 ]
+            , if active then
+                Font.color ctx.palette.fg1
+
+              else
+                Font.color ctx.palette.fg2
+            ]
     in
-    row [ width fill, height (px 70), paddingXY 30 0 ]
+    row [ width fill, paddingXY 30 20 ]
         [ link []
             { url = "/"
             , label =
                 row [ spacing 12 ]
                     [ el [] (html <| Logo.concordiumLogo 24 (Palette.uiToColor ctx.palette.fg1))
                     , el [] (html <| Logo.concordiumText 110 (Palette.uiToColor ctx.palette.fg1))
+                    , el [ Font.color ctx.palette.fg3 ] <| text version
                     ]
             }
-        , row [ alignRight, spacing 20, Font.color ctx.palette.fg2 ]
-            [ link linkstyle { url = Route.toString Network, label = text "Network" }
-            , link linkstyle { url = Route.toString ChainInit, label = text "Chain" }
+        , row [ alignRight, spacing 20 ]
+            [ link (linkstyle <| Route.isNetwork currentRoute) { url = Route.toString Route.Network, label = text "Network" }
+            , link (linkstyle <| Route.isChain currentRoute) { url = Route.toString <| Route.Chain Nothing, label = text "Chain" }
+            , link (linkstyle <| Route.isLookup currentRoute) { url = Route.toString <| Route.Lookup Nothing, label = text "Lookup" }
             , viewColorModeToggle ctx
             ]
         ]
 
 
-viewColorModeToggle : Context a -> Element Msg
+cookieConsentBanner : Theme a -> Element Msg
+cookieConsentBanner theme =
+    column
+        [ padding 20
+        , alignBottom
+        , width fill
+        , spacing 10
+        , Background.color theme.palette.bg3
+        ]
+        [ paragraph [] [ text "We use cookies to ensure that we give you the best experience on our website, but only if you grant us the permission" ]
+        , row [ spacing 10 ]
+            [ el (buttonAttributes theme ++ [ onClick <| SetCookieConsent True ]) <| text "Allow"
+            , el (buttonAttributes theme ++ [ onClick <| SetCookieConsent False ]) <| text "Disallow"
+            , link [ onClick <| UrlClicked <| Browser.External cookiePrivacyUrl ]
+                { url = cookiePrivacyUrl
+                , label = el [ Font.underline ] <| text "Privacy policy"
+                }
+            ]
+        ]
+
+
+buttonAttributes : Theme a -> List (Attribute msg)
+buttonAttributes theme =
+    [ padding 10, Border.color theme.palette.fg3, Border.width 1, Border.rounded 5, pointer, mouseOver [ Background.color theme.palette.bg2 ] ]
+
+
+viewColorModeToggle : Theme a -> Element Msg
 viewColorModeToggle ctx =
     let
         icon =
@@ -429,11 +517,14 @@ viewColorModeToggle ctx =
         icon
 
 
-viewChain : Model -> Element Msg
-viewChain model =
+viewChainPage : Model -> Element Msg
+viewChainPage model =
     let
         showDevTools =
             not <| Config.isProduction model.config
+
+        theme =
+            extractTheme model
     in
     Widgets.content <|
         column [ width fill, height fill, spacing 20 ]
@@ -446,11 +537,26 @@ viewChain model =
                 , Border.rounded 6
                 , Border.width 1
                 ]
-                (Element.map ChainMsg <| Chain.view model model.chainModel showDevTools)
+                (Element.map ChainMsg <| Chain.view theme model.chainModel showDevTools)
             , row [ viewCopiedToast model, centerX ]
                 [ Element.map translateMsg <|
-                    Explorer.View.view model model.explorerModel
+                    Explorer.View.view theme model.explorerModel
                 ]
+            ]
+
+
+viewLookupPage : Model -> Element Msg
+viewLookupPage model =
+    Widgets.content <|
+        column [ width fill, height fill, spacing 20 ]
+            [ viewSummaryWidgets model model.networkModel.nodes
+            , row [ viewCopiedToast model, centerX ] []
+            , Element.map LookupMsg <|
+                Lookup.view
+                    { palette = model.palette
+                    , colorMode = model.colorMode
+                    }
+                    model.lookupModel
             ]
 
 
@@ -489,13 +595,27 @@ translateMsg msg =
         Explorer.View.BlockClicked block ->
             ChainMsg (Chain.BlockClicked block)
 
-        Explorer.View.ToggleDetails index ->
-            ExplorerMsg <| Explorer.ToggleDisplayDetails index
+        Explorer.View.Display displayMsg ->
+            ExplorerMsg <| Explorer.Display displayMsg
+
+        Explorer.View.UrlClicked link ->
+            UrlClicked link
+
+        Explorer.View.TransactionPaging pagingMsg ->
+            ExplorerMsg <| Explorer.TransactionPaging pagingMsg
 
 
-theme : Palette Color -> Element msg -> Html.Html msg
-theme palette elements =
-    layout
+themeLayout : Palette Color -> Element msg -> Html.Html msg
+themeLayout palette elements =
+    layoutWith
+        { options =
+            [ focusStyle
+                { borderColor = Just palette.fg1
+                , backgroundColor = Just palette.bg2
+                , shadow = Nothing
+                }
+            ]
+        }
         [ width fill
         , height fill
         , Background.color <| palette.bg1

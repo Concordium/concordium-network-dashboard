@@ -11,10 +11,23 @@ type alias Window =
 
 
 type alias Context a =
+    Theme
+        { a
+            | key : Key
+            , time : Posix
+            , window : Window
+        }
+
+
+type alias Theme a =
     { a
-        | key : Key
-        , time : Posix
-        , window : Window
-        , palette : Palette Color
+        | palette : Palette Color
         , colorMode : Palette.ColorMode
     }
+
+
+{-| Strip out every field except the theme related ones
+-}
+extractTheme : Theme a -> Theme {}
+extractTheme ctx =
+    { palette = ctx.palette, colorMode = ctx.colorMode }

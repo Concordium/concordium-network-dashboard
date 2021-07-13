@@ -1,29 +1,32 @@
-module Route exposing (Route(..), fromUrl, isChain, toString)
+module Route exposing (Route(..), fromUrl, isChain, isLookup, isNetwork, toString)
 
+import Types exposing (BlockHash, TxHash)
 import Url exposing (Url)
-import Url.Parser exposing (..)
+import Url.Parser as Parser exposing ((</>), Parser)
 
 
 type Route
     = Network
     | NodeView String -- Node by nodeId
-    | ChainInit
-    | ChainSelected String
+    | Chain (Maybe BlockHash)
+    | Lookup (Maybe TxHash)
 
 
 parser : Parser (Route -> a) a
 parser =
-    oneOf
-        [ map Network (s "")
-        , map NodeView (s "node" </> string)
-        , map ChainInit (s "chain")
-        , map ChainSelected (s "chain" </> string)
+    Parser.oneOf
+        [ Parser.map Network (Parser.s "")
+        , Parser.map NodeView (Parser.s "node" </> Parser.string)
+        , Parser.map (Chain Nothing) (Parser.s "chain")
+        , Parser.map (Chain << Just) (Parser.s "chain" </> Parser.string)
+        , Parser.map (Lookup Nothing) (Parser.s "lookup")
+        , Parser.map (Lookup << Just) (Parser.s "lookup" </> Parser.string)
         ]
 
 
 fromUrl : Url -> Route
 fromUrl url =
-    case parse parser url of
+    case Parser.parse parser url of
         Just page ->
             page
 
@@ -40,20 +43,43 @@ toString route =
         NodeView nodeId ->
             "/node/" ++ nodeId
 
-        ChainInit ->
+        Chain Nothing ->
             "/chain"
 
-        ChainSelected hash ->
+        Chain (Just hash) ->
             "/chain/" ++ hash
+
+        Lookup Nothing ->
+            "/lookup"
+
+        Lookup (Just txHash) ->
+            "/lookup/" ++ txHash
 
 
 isChain : Route -> Bool
 isChain route =
     case route of
-        ChainInit ->
+        Chain _ ->
             True
 
-        ChainSelected hash ->
+        _ ->
+            False
+
+
+isLookup : Route -> Bool
+isLookup route =
+    case route of
+        Lookup _ ->
+            True
+
+        _ ->
+            False
+
+
+isNetwork : Route -> Bool
+isNetwork route =
+    case route of
+        Network ->
             True
 
         _ ->

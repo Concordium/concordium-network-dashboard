@@ -12,6 +12,7 @@ import Icons
 import Iso8601
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
+import Paging
 import Palette
 import RemoteData exposing (RemoteData(..), WebData)
 import Route exposing (Route(..))
@@ -70,7 +71,7 @@ type alias NetworkNode =
     , packetsSent : Float -- @TODO as above figure out Int
     , packetsReceived : Float -- @TODO as above figure out Int
     , consensusRunning : Bool
-    , bakingCommitteeMember : Bool
+    , bakingCommitteeMember : String
     , consensusBakerId : Maybe Float
     , finalizationCommitteeMember : Bool
     }
@@ -86,7 +87,7 @@ type alias Model =
     , nodes : WebData (Dict Host NetworkNode)
     , sortMode : SortMode
     , selectedNode : WebData (Result String NetworkNode)
-    , nodePage : Int
+    , nodesPagingModel : Paging.Model
     }
 
 
@@ -97,8 +98,7 @@ type Msg
     | SortSet SortBy
     | NodeClicked String
     | TaskPerformed
-    | PreviousNodePage
-    | NextNodePage
+    | NodesPaging Paging.Msg
 
 
 init : Config -> Model
@@ -107,7 +107,7 @@ init cfg =
     , nodes = Loading
     , sortMode = SortNone
     , selectedNode = NotAsked
-    , nodePage = 0
+    , nodesPagingModel = Paging.init 50
     }
 
 
@@ -166,7 +166,7 @@ update msg model currentRoute key =
                             else
                                 SortAsc sortBy
             in
-            ( { model | sortMode = newSortMode, nodePage = 0 }, Cmd.none )
+            ( { model | sortMode = newSortMode, nodesPagingModel = Paging.update Paging.FirstPage model.nodesPagingModel }, Cmd.none )
 
         NodeClicked nodeId ->
             ( selectNode model nodeId
@@ -176,11 +176,8 @@ update msg model currentRoute key =
         TaskPerformed ->
             ( model, Cmd.none )
 
-        PreviousNodePage ->
-            ( { model | nodePage = max 0 (model.nodePage - 1) }, Cmd.none )
-
-        NextNodePage ->
-            ( { model | nodePage = max 0 (model.nodePage + 1) }, Cmd.none )
+        NodesPaging pagingMsg ->
+            ( { model | nodesPagingModel = Paging.update pagingMsg model.nodesPagingModel }, Cmd.none )
 
 
 selectNode : Model -> String -> Model
@@ -222,7 +219,7 @@ nodeSummariesDecoder =
             |> required "packetsSent" D.float
             |> required "packetsReceived" D.float
             |> optional "consensusRunning" D.bool False
-            |> optional "bakingCommitteeMember" D.bool False
+            |> required "bakingCommitteeMember" D.string
             |> required "consensusBakerId" (D.nullable D.float)
             |> optional "finalizationCommitteeMember" D.bool False
         )

@@ -1,36 +1,68 @@
 module Explorer exposing (..)
 
+import Api exposing (ApiResult)
+import Dict exposing (Dict)
 import Explorer.Request exposing (..)
-import Http
+import Helpers exposing (toggleSetMember)
+import Http exposing (Error(..))
+import Paging
 import RemoteData exposing (..)
 import Set exposing (Set)
+import Types as T
 
 
-type alias BlockHash =
-    String
-
-
+{-| Block summary together with state used when displaying.
+-}
 type alias DisplayDetailBlockSummary =
     { blockSummary : BlockSummary
+    , state : BlockSummaryDisplayState
+    }
 
-    -- A set of indexes of transactions with details actively displayed in the view.
-    , detailsDisplayed : Set Int
+
+{-| State used by the view when displaying the block summary
+-}
+type alias BlockSummaryDisplayState =
+    { -- Used for paging of transactions and represents the index of the current page
+      transactionPagingModel : Paging.Model
+
+    -- A mapping from an index of a transaction to a set of indices of events
+    -- in that transaction, with details currently open.
+    , transactionWithDetailsOpen : Dict Int (Set Int)
+
+    -- A set of indicies of events with details open.
+    , specialEventWithDetailsOpen : Set Int
+    }
+
+
+initialBlockSummaryDisplayState : BlockSummaryDisplayState
+initialBlockSummaryDisplayState =
+    { transactionPagingModel = Paging.init 10
+    , transactionWithDetailsOpen = Dict.empty
+    , specialEventWithDetailsOpen = Set.empty
     }
 
 
 type alias Model =
     { config : Config
-    , blockHash : Maybe String
-    , blockInfo : WebData BlockInfo
+    , blockHash : Maybe T.BlockHash
+    , blockInfo : WebData Api.BlockInfo
     , blockSummary : WebData DisplayDetailBlockSummary
     }
 
 
 type Msg
-    = ReceivedConsensusStatus (Result Http.Error ConsensusStatus)
-    | ReceivedBlockInfo (Result Http.Error BlockInfo)
-    | ReceivedBlockSummary (Result Http.Error BlockSummary)
-    | ToggleDisplayDetails Int
+    = ReceivedConsensusStatus (ApiResult Api.ConsensusStatus)
+    | ReceivedBlockResponse (ApiResult Api.BlockResponse)
+    | ReceivedBlockSummary (ApiResult BlockSummary)
+    | Display DisplayMsg
+    | TransactionPaging Paging.Msg
+
+
+{-| Messages for manipulating the display state
+-}
+type DisplayMsg
+    = ToggleTransactionDetails Int Int
+    | ToggleSpecialEventDetails Int
 
 
 init : Config -> Model
@@ -49,15 +81,15 @@ update msg model =
             case res of
                 Ok consensusStatus ->
                     ( { model | blockInfo = Loading }
-                    , getBlockInfo model.config consensusStatus.bestBlock ReceivedBlockInfo
+                    , Api.getBlockInfo model.config consensusStatus.bestBlock ReceivedBlockResponse
                     )
 
                 Err err ->
                     ( model, Cmd.none )
 
-        ReceivedBlockInfo blockInfoRes ->
+        ReceivedBlockResponse blockInfoRes ->
             case blockInfoRes of
-                Ok blockInfo ->
+                Ok (Api.Block blockInfo) ->
                     ( { model
                         | blockInfo = Success blockInfo
                         , blockSummary = Loading
@@ -65,37 +97,75 @@ update msg model =
                     , getBlockSummary model.config blockInfo.blockHash ReceivedBlockSummary
                     )
 
-                Err err ->
+                Ok (Api.BlockNotFound hash) ->
+                    ( { model
+                        | blockInfo = Failure <| BadBody <| "Block with hash '" ++ hash ++ "' does not exist on the chain."
+                      }
+                    , Cmd.none
+                    )
+
+                _ ->
                     ( model, Cmd.none )
 
         ReceivedBlockSummary blockSummaryResult ->
             ( { model
                 | blockSummary =
                     blockSummaryResult
-                        |> Result.map (\blockSummary -> { blockSummary = blockSummary, detailsDisplayed = Set.empty })
+                        |> Result.map (\blockSummary -> { blockSummary = blockSummary, state = initialBlockSummaryDisplayState })
                         |> RemoteData.fromResult
               }
             , Cmd.none
             )
 
-        ToggleDisplayDetails index ->
+        Display displayMsg ->
             let
                 nextBlockSummary =
                     model.blockSummary
                         |> RemoteData.map
                             (\displayDetailBlockSummary ->
                                 { displayDetailBlockSummary
-                                    | detailsDisplayed =
-                                        let
-                                            detailsDisplayed =
-                                                displayDetailBlockSummary.detailsDisplayed
-                                        in
-                                        if Set.member index detailsDisplayed then
-                                            Set.remove index detailsDisplayed
-
-                                        else
-                                            Set.insert index detailsDisplayed
+                                    | state = updateDisplayState displayMsg displayDetailBlockSummary.state
                                 }
                             )
             in
             ( { model | blockSummary = nextBlockSummary }, Cmd.none )
+
+        TransactionPaging pagingMsg ->
+            ( { model
+                | blockSummary =
+                    model.blockSummary
+                        |> RemoteData.map
+                            (\data ->
+                                let
+                                    { state } =
+                                        data
+
+                                    newState =
+                                        { state
+                                            | transactionPagingModel = Paging.update pagingMsg state.transactionPagingModel
+                                            , transactionWithDetailsOpen = Dict.empty
+                                        }
+                                in
+                                { data | state = newState }
+                            )
+              }
+            , Cmd.none
+            )
+
+
+updateDisplayState : DisplayMsg -> BlockSummaryDisplayState -> BlockSummaryDisplayState
+updateDisplayState msg state =
+    case msg of
+        ToggleTransactionDetails transactionIndex eventIndex ->
+            { state
+                | transactionWithDetailsOpen =
+                    Dict.update
+                        transactionIndex
+                        (Maybe.withDefault Set.empty >> toggleSetMember eventIndex >> Just)
+                        state.transactionWithDetailsOpen
+            }
+
+        ToggleSpecialEventDetails eventIndex ->
+            { state
+                | specialEventWithDetailsOpen = toggleSetMember eventIndex state.specialEventWithDetailsOpen
+            }

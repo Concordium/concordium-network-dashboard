@@ -1,5 +1,6 @@
 module Types exposing (..)
 
+import BigInt exposing (BigInt)
 import Dict
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (required, resolve)
@@ -156,43 +157,42 @@ decodeEnergy =
     D.int |> D.map Energy
 
 
-{-| Amount of tokens; represented in GTU as a "floating point" string.
-Representing the number as a string avoids rounding errors.
-The field 'hasRoundingError' is true if the amount was decoded from an int larger than the largest "safe value"
-(2^53-1; see <https://package.elm-lang.org/packages/elm/core/latest/Basics#Int>).
+{-| Amount of tokens; represented in GTU as microGTU using BigInt.
 -}
 type Amount
-    = Gtu
-        { value : String
-        , hasRoundingError : Bool
-        }
+    = MicroGtu BigInt
 
 
+{-| Display an amount as GTU with 6 decimals appended with the unit
+-}
 amountToString : Amount -> String
-amountToString amount =
-    (case amount of
-        Gtu { value, hasRoundingError } ->
-            if hasRoundingError then
-                "~" ++ value
+amountToString (MicroGtu bigInt) =
+    let
+        padded =
+            bigInt
+                |> BigInt.toString
+                |> String.padLeft (fracPartLength + 1) '0'
 
-            else
-                value
-    )
-        ++ " GTU"
+        amountString =
+            String.dropRight fracPartLength padded ++ "." ++ String.right fracPartLength padded
+    in
+    amountString ++ " GTU"
 
 
-{-| Decode amount in μGTU from an integer which is optionally represented as a string.
-The integer format is legacy and will be phased out (TODO CB-271).
+{-| Decode amount in μGTU which is represented as a string only containing a number of microGTU.
 -}
 decodeAmount : D.Decoder Amount
 decodeAmount =
-    D.oneOf
-        [ -- String format: allows us to do custom parsing.
-          D.string |> D.map amountFromString
+    D.string
+        |> D.andThen
+            (\str ->
+                case amountFromString str of
+                    Just amount ->
+                        D.succeed amount
 
-        -- Legacy format: passing amount as int. Might have rounding errors.
-        , D.int |> D.map amountFromInt
-        ]
+                    Nothing ->
+                        D.fail <| "Invalid amount '" ++ str ++ "'"
+            )
 
 
 fracPartLength : Int
@@ -200,34 +200,58 @@ fracPartLength =
     6
 
 
-amountFromString : String -> Amount
+{-| Convert a string into an Amount, the string should only contain a number
+representing the amount of microGTU.
+-}
+amountFromString : String -> Maybe Amount
 amountFromString str =
-    let
-        left =
-            str
-                |> String.dropRight fracPartLength
-
-        right =
-            str
-                |> String.dropLeft (String.length left)
-                |> String.padLeft fracPartLength '0'
-    in
-    Gtu
-        { value =
-            if String.isEmpty left then
-                "0." ++ right
-
-            else
-                left ++ "." ++ right
-        , hasRoundingError = False
-        }
+    BigInt.fromIntString str
+        |> Maybe.map MicroGtu
 
 
+{-| Convert an Int into an Amount, the int should represent the amount of microGTU.
+-}
 amountFromInt : Int -> Amount
-amountFromInt value =
-    case amountFromString (String.fromInt value) of
-        Gtu v ->
-            Gtu { v | hasRoundingError = value >= 2 ^ 53 }
+amountFromInt =
+    BigInt.fromInt >> MicroGtu
+
+
+{-| Scale an amount with a float, only considers the first 5 decimals of the float
+-}
+scaleAmount : Float -> Amount -> Amount
+scaleAmount s (MicroGtu bigInt) =
+    let
+        granularity =
+            100000
+    in
+    MicroGtu <|
+        BigInt.div (BigInt.mul bigInt <| BigInt.fromInt <| round <| s * granularity) (BigInt.fromInt granularity)
+
+
+{-| Convert amount to Int.
+Unsafe if the amount is larger than 2^53-1.
+-}
+amountToInt : Amount -> Int
+amountToInt (MicroGtu bigInt) =
+    BigInt.toString bigInt
+        |> String.toInt
+        |> Maybe.withDefault 0
+
+
+{-| Divides two amounts a and b as (a / b).
+Unsafe: Since it is converting the amounts to a JS number, the result is imprecise
+if any of the amounts are larger than 2^53 - 1
+-}
+unsafeAmountDivide : Amount -> Amount -> Float
+unsafeAmountDivide numerator denominator =
+    let
+        num =
+            toFloat <| amountToInt numerator
+
+        den =
+            toFloat <| amountToInt denominator
+    in
+    num / den
 
 
 roundTo : Int -> Float -> Float
@@ -248,36 +272,87 @@ floorTo decimals n =
     (n * p |> floor |> toFloat) / p
 
 
-amountFromFloat : Float -> Amount
-amountFromFloat f =
-    Gtu { value = String.fromFloat <| roundTo 6 f, hasRoundingError = True }
+addAmounts : Amount -> Amount -> Amount
+addAmounts (MicroGtu left) (MicroGtu right) =
+    MicroGtu <| BigInt.add left right
 
 
-amountToFloat : Amount -> Maybe Float
-amountToFloat (Gtu amount) =
-    String.toFloat amount.value
-
-
-addAmounts : Amount -> Amount -> Maybe Amount
-addAmounts left right =
-    Maybe.map2 (\l r -> amountFromFloat <| l + r) (amountToFloat left) (amountToFloat right)
+subAmounts : Amount -> Amount -> Amount
+subAmounts (MicroGtu left) (MicroGtu right) =
+    MicroGtu <| BigInt.sub left right
 
 
 zeroAmount : Amount
 zeroAmount =
-    Gtu { value = "0.0", hasRoundingError = False }
+    amountFromInt 0
 
 
-unsafeAmountToFloat : Amount -> Float
-unsafeAmountToFloat amount =
-    Maybe.withDefault 0 <| amountToFloat amount
+sumAmounts : List Amount -> Amount
+sumAmounts amounts =
+    List.foldl addAmounts zeroAmount amounts
 
 
-unsafeAddAmounts : Amount -> Amount -> Amount
-unsafeAddAmounts left right =
-    Maybe.withDefault zeroAmount (addAmounts left right)
+type alias ModuleRef =
+    String
 
 
-unsafeSumAmounts : List Amount -> Amount
-unsafeSumAmounts amounts =
-    List.foldl unsafeAddAmounts zeroAmount amounts
+{-| The init function name on-chain is the contract name prefixed with "init\_",
+so we strip this during decoding.
+-}
+type alias InitName =
+    String
+
+
+contractInitNameDecoder : D.Decoder InitName
+contractInitNameDecoder =
+    D.string
+        |> D.andThen
+            (\str ->
+                if String.startsWith "init_" str then
+                    D.succeed <| String.dropLeft 5 str
+
+                else
+                    D.fail "Invalid init function name"
+            )
+
+
+{-| The receive function name on-chain is the contract name appended with "."
+and then a name for the specific function.
+We split these during decoding.
+-}
+type alias ReceiveName =
+    { contractName : String, functionName : String }
+
+
+contractReceiveNameDecoder : D.Decoder ReceiveName
+contractReceiveNameDecoder =
+    D.string
+        |> D.andThen
+            (\str ->
+                let
+                    parts =
+                        String.split "." str
+                in
+                case ( List.head parts, List.tail parts ) of
+                    ( Just contractName, Just functionNameParts ) ->
+                        D.succeed <| { contractName = contractName, functionName = String.join "." functionNameParts }
+
+                    _ ->
+                        D.fail "Invalid receive function name"
+            )
+
+
+type alias BakerId =
+    Int
+
+
+type alias BakerAggregationVerifyKey =
+    String
+
+
+type alias BlockHash =
+    String
+
+
+type alias TxHash =
+    String

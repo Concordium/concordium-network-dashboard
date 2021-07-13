@@ -1,4 +1,4 @@
-module Config exposing (Config, Environment, defaultConfig, isProduction, parseEnv)
+module Config exposing (Config, Environment, accountBalancesDocUrl, cookiePrivacyUrl, defaultConfig, isProduction, parseEnv)
 
 
 type alias Config =
@@ -17,6 +17,7 @@ type DevelopmentTarget
     = Local
     | Staging
     | Testnet
+    | Mainnet
 
 
 devTarget : DevelopmentTarget
@@ -80,3 +81,23 @@ developmentUrl mode localUrl =
 
         Testnet ->
             "https://dashboard.testnet.concordium.com"
+
+        Mainnet ->
+            "https://dashboard.mainnet.concordium.software"
+
+
+accountBalancesDocUrl : String
+accountBalancesDocUrl =
+    case devTarget of
+        Mainnet ->
+            "https://developer.concordium.software/en/mainnet/net/references/manage-accounts.html#account-balances"
+
+        _ ->
+            "https://developer.concordium.software/en/testnet4/testnet/references/manage-accounts.html#account-balances"
+
+
+{-| Pointing to an external privacy policy used by the cookie consent banner
+-}
+cookiePrivacyUrl : String
+cookiePrivacyUrl =
+    "https://concordium.com/privacy-policy/"

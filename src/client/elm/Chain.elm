@@ -31,7 +31,7 @@ import Json.Decode as Decode
 import List.Extra as List
 import Maybe
 import RemoteData exposing (..)
-import Route exposing (Route(..))
+import Route exposing (Route)
 import Set
 import Task
 import Time exposing (..)
@@ -205,7 +205,7 @@ update ctx msg model =
             )
 
         BlockClicked hash ->
-            ( model, Nav.pushUrl ctx.key (Route.toString <| ChainSelected hash) )
+            ( model, Nav.pushUrl ctx.key (Route.toString <| Route.Chain (Just hash)) )
 
         MaxWidthChanged maxWidth ->
             let
@@ -426,8 +426,8 @@ subscriptions model =
 -- View
 
 
-view : Context a -> Model -> Bool -> Element Msg
-view ctx model showDevTools =
+view : Theme a -> Model -> Bool -> Element Msg
+view theme model showDevTools =
     case model.lastFinalized of
         Just lastFinalized ->
             let
@@ -459,7 +459,7 @@ view ctx model showDevTools =
                     , spacing (round gridSpec.gutterHeight)
                     , clip
                     ]
-                    (html <| View.viewChain ctx vcontext currentDrawableChain)
+                    (html <| View.viewChain theme vcontext currentDrawableChain)
                 ]
 
         Nothing ->

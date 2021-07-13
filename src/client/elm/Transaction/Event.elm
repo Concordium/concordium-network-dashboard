@@ -21,12 +21,8 @@ type TransactionEvent
       -- Accounts
     | TransactionEventAccountCreated EventAccountCreated
     | TransactionEventCredentialDeployed EventCredentialDeployed
-      -- Account Keys
-    | TransactionEventAccountKeysUpdated
-    | TransactionEventAccountKeysAdded
-    | TransactionEventAccountKeysRemoved
-    | TransactionEventAccountKeysSignThresholdUpdated
-      -- Baking
+    | TransactionEventCredentialKeysUpdated EventCredentialKeysUpdated
+    | TransactionEventCredentialsUpdated EventCredentialsUpdated
     | TransactionEventBakerAdded EventBakerAdded
     | TransactionEventBakerRemoved EventBakerRemoved
     | TransactionEventBakerStakeIncreased EventBakerStakeIncreased
@@ -39,8 +35,7 @@ type TransactionEvent
     | TransactionEventContractUpdated EventContractUpdated
       -- Core
     | TransactionEventUpdateEnqueued EventUpdateEnqueued
-      -- Errors
-    | TransactionEventRejected EventRejected
+    | TransactionEventDataRegistered EventDataRegistered
 
 
 
@@ -102,6 +97,19 @@ type alias EventAccountCreated =
 type alias EventCredentialDeployed =
     { regid : String
     , account : String
+    }
+
+
+type alias EventCredentialKeysUpdated =
+    { credId : String
+    }
+
+
+type alias EventCredentialsUpdated =
+    { account : T.AccountAddress
+    , newCredIds : List String
+    , removedCredIds : List String
+    , newThreshold : Int
     }
 
 
@@ -168,6 +176,7 @@ type alias EventContractInitialized =
     { ref : String
     , address : T.ContractAddress
     , amount : T.Amount
+    , contractName : String
     , events : List T.ContractEvent
     }
 
@@ -177,7 +186,13 @@ type alias EventContractUpdated =
     , instigator : T.Address
     , amount : T.Amount
     , message : String
+    , receiveName : T.ReceiveName
     , events : List T.ContractEvent
+    }
+
+
+type alias EventDataRegistered =
+    { data : String
     }
 
 
@@ -191,15 +206,26 @@ type alias EventUpdateEnqueued =
     }
 
 
+type FoundationAccountRepresentation
+    = Index Int
+    | Address T.AccountAddress
+
+
 type UpdatePayload
     = MintDistributionPayload MintDistribution
     | TransactionFeeDistributionPayload TransactionFeeDistribution
     | GasRewardsPayload GasRewards
     | ElectionDifficultyPayload Float
-    | EuroPerEnergyPayload Float
-    | MicroGtuPerEnergyPayload Int
-    | FoundationAccountPayload T.AccountAddress
-    | AuthorizationPayload Authorization
+    | EuroPerEnergyPayload Relation
+    | MicroGtuPerEuroPayload Relation
+    | FoundationAccountPayload FoundationAccountRepresentation
+    | RootKeysUpdatePayload HigherLevelKeys
+    | Level1KeysUpdatePayload HigherLevelKeys
+    | Level2KeysUpdatePayload Authorizations
+    | ProtocolUpdatePayload ProtocolUpdate
+    | BakerStakeThresholdPayload T.Amount
+    | AddAnonymityRevokerPayload AnonymityRevokerInfo
+    | AddIdentityProviderPayload IdentityProviderInfo
 
 
 type alias MintDistribution =
@@ -223,34 +249,107 @@ type alias GasRewards =
     }
 
 
+type alias UpdateKeysCollection =
+    { rootKeys : HigherLevelKeys
+    , level1Keys : HigherLevelKeys
+    , level2Keys : Authorizations
+    }
+
+
+type alias HigherLevelKeys =
+    { threshold : Int
+    , keys : List AuthorizationKey
+    }
+
+
+type alias Authorizations =
+    { mintDistribution : Authorization
+    , transactionFeeDistribution : Authorization
+    , microGTUPerEuro : Authorization
+    , euroPerEnergy : Authorization
+    , electionDifficulty : Authorization
+    , foundationAccount : Authorization
+    , protocol : Authorization
+    , paramGASRewards : Authorization
+    , emergency : Authorization
+    , bakerStakeThreshold : Authorization
+    , keys : List AuthorizationKey
+    }
+
+
 type alias Authorization =
-    {}
+    { threshold : Int
+    , authorizedKeys : List KeyIndex
+    }
+
+
+type alias KeyIndex =
+    Int
+
+
+type alias AuthorizationKey =
+    { verifyKey : String
+    , schemeId : String
+    }
+
+
+type alias ProtocolUpdate =
+    { message : String
+    , specificationURL : String
+    , specificationHash : String
+    , specificationAuxiliaryData : String
+    }
+
+
+type alias Description =
+    { name : String
+    , url : String
+    , description : String
+    }
+
+
+{-| Identification number of an anonymity revoker or identity provider
+-}
+type Identity
+    = ArIdentity Int
+    | IpIdentity Int
+
+
+{-| Information about anonymity revokers or identity providers
+-}
+type alias ArIpInfo =
+    { identity : Identity
+    , description : Description
+    }
+
+
+{-| Data for an anonymity revoker
+-}
+type AnonymityRevokerInfo
+    = ArInfo ArIpInfo
+
+
+{-| Data for an identity provider
+-}
+type IdentityProviderInfo
+    = IpInfo ArIpInfo
 
 
 
--- type alias Authorization =
---     { keys : List AuthorizationKey
---     , emergency : AuthorizationAccess
---     , authorization : AuthorizationAccess
---     , protocol : AuthorizationAccess
---     , electionDifficulty : AuthorizationAccess
---     , euroPerEnergy : AuthorizationAccess
---     , microGTUPerEuro : AuthorizationAccess
---     , foundationAccount : AuthorizationAccess
---     , mintDistribution : AuthorizationAccess
---     , transactionFeeDistribution : AuthorizationAccess
---     , paramGASRewards : AuthorizationAccess
---     }
--- type alias KeyIndex =
---     Int
--- type alias AuthorizationKey =
---     { schemeId : String
---     , verifyKey : String
---     }
--- type alias AuthorizationAccess =
---     { authorizedKeys : List KeyIndex
---     , threshold : Int
---     }
+-- Errors
+
+
+type alias Relation =
+    { denominator : Int
+    , numerator : Int
+    }
+
+
+relationDecoder : D.Decoder Relation
+relationDecoder =
+    D.succeed Relation
+        |> required "denominator" D.int
+        |> required "numerator" D.int
 
 
 updatePayloadDecoder : D.Decoder UpdatePayload
@@ -272,21 +371,44 @@ updatePayloadDecoder =
                         D.float |> D.map ElectionDifficultyPayload
 
                     "euroPerEnergy" ->
-                        D.float |> D.map EuroPerEnergyPayload
+                        relationDecoder |> D.map EuroPerEnergyPayload
 
                     "microGTUPerEuro" ->
-                        D.int |> D.map MicroGtuPerEnergyPayload
+                        relationDecoder |> D.map MicroGtuPerEuroPayload
 
                     "foundationAccount" ->
-                        T.accountAddressDecoder |> D.map FoundationAccountPayload
+                        foundationAccountRepresentationDecoder |> D.map FoundationAccountPayload
 
-                    "authorization" ->
-                        authorizationDecoder |> D.map AuthorizationPayload
+                    "root" ->
+                        keyUpdateDecoder
+
+                    "level1" ->
+                        keyUpdateDecoder
+
+                    "protocol" ->
+                        protocolUpdateDecoder |> D.map ProtocolUpdatePayload
+
+                    "bakerStakeThreshold" ->
+                        T.decodeAmount |> D.map BakerStakeThresholdPayload
+
+                    "addAnonymityRevoker" ->
+                        arDecoder |> D.map AddAnonymityRevokerPayload
+
+                    "addIdentityProvider" ->
+                        ipDecoder |> D.map AddIdentityProviderPayload
 
                     _ ->
                         D.fail "Unknown update type"
     in
     D.field "updateType" D.string |> D.andThen decode
+
+
+foundationAccountRepresentationDecoder : D.Decoder FoundationAccountRepresentation
+foundationAccountRepresentationDecoder =
+    D.oneOf
+        [ D.map Address T.accountAddressDecoder
+        , D.map Index D.int
+        ]
 
 
 mintDistributionDecoder : D.Decoder MintDistribution
@@ -313,21 +435,121 @@ gasRewardsDecoder =
         |> required "finalizationProof" D.float
 
 
+arDecoder : D.Decoder AnonymityRevokerInfo
+arDecoder =
+    let
+        arIp =
+            D.succeed ArIpInfo
+                |> required "arIdentity" arIdentityDecoder
+                |> required "arDescription" descriptionDecoder
+    in
+    D.map ArInfo arIp
+
+
+arIdentityDecoder : D.Decoder Identity
+arIdentityDecoder =
+    D.map ArIdentity D.int
+
+
+descriptionDecoder : D.Decoder Description
+descriptionDecoder =
+    D.succeed Description
+        |> required "name" D.string
+        |> required "url" D.string
+        |> required "description" D.string
+
+
+ipDecoder : D.Decoder IdentityProviderInfo
+ipDecoder =
+    let
+        arIp =
+            D.succeed ArIpInfo
+                |> required "ipIdentity" ipIdentityDecoder
+                |> required "ipDescription" descriptionDecoder
+    in
+    D.map IpInfo arIp
+
+
+ipIdentityDecoder : D.Decoder Identity
+ipIdentityDecoder =
+    D.map IpIdentity D.int
+
+
+updateKeysCollectionDecoder : D.Decoder UpdateKeysCollection
+updateKeysCollectionDecoder =
+    D.succeed UpdateKeysCollection
+        |> required "rootKeys" higherLevelKeysDecoder
+        |> required "level1Keys" higherLevelKeysDecoder
+        |> required "level2Keys" authorizationsDecoder
+
+
+authorizationsDecoder : D.Decoder Authorizations
+authorizationsDecoder =
+    D.succeed Authorizations
+        |> required "mintDistribution" authorizationDecoder
+        |> required "transactionFeeDistribution" authorizationDecoder
+        |> required "microGTUPerEuro" authorizationDecoder
+        |> required "euroPerEnergy" authorizationDecoder
+        |> required "electionDifficulty" authorizationDecoder
+        |> required "foundationAccount" authorizationDecoder
+        |> required "protocol" authorizationDecoder
+        |> required "paramGASRewards" authorizationDecoder
+        |> required "emergency" authorizationDecoder
+        |> required "bakerStakeThreshold" authorizationDecoder
+        |> required "keys" (D.list authorizationKeyDecoder)
+
+
+higherLevelKeysDecoder : D.Decoder HigherLevelKeys
+higherLevelKeysDecoder =
+    D.succeed HigherLevelKeys
+        |> required "threshold" D.int
+        |> required "keys" (D.list authorizationKeyDecoder)
+
+
+keyUpdateDecoder : D.Decoder UpdatePayload
+keyUpdateDecoder =
+    let
+        decode keyType =
+            case keyType of
+                "rootKeysUpdate" ->
+                    D.succeed RootKeysUpdatePayload
+                        |> required "updatePayload" higherLevelKeysDecoder
+
+                "level1KeysUpdate" ->
+                    D.succeed Level1KeysUpdatePayload
+                        |> required "updatePayload" higherLevelKeysDecoder
+
+                "level2KeysUpdate" ->
+                    D.succeed Level2KeysUpdatePayload
+                        |> required "updatePayload" authorizationsDecoder
+
+                _ ->
+                    D.fail <| "Unknown key update type: " ++ keyType
+    in
+    D.field "typeOfUpdate" D.string |> D.andThen decode
+
+
 authorizationDecoder : D.Decoder Authorization
 authorizationDecoder =
     D.succeed Authorization
+        |> required "threshold" D.int
+        |> required "authorizedKeys" (D.list D.int)
 
 
+authorizationKeyDecoder : D.Decoder AuthorizationKey
+authorizationKeyDecoder =
+    D.succeed AuthorizationKey
+        |> required "verifyKey" D.string
+        |> required "schemeId" D.string
 
--- Errors
 
-
-type alias EventRejected =
-    -- @TODO swap to camel case
-    { transactionType : String
-    , reason : String
-    , hash : String
-    }
+protocolUpdateDecoder : D.Decoder ProtocolUpdate
+protocolUpdateDecoder =
+    D.succeed ProtocolUpdate
+        |> required "message" D.string
+        |> required "specificationURL" D.string
+        |> required "specificationHash" D.string
+        |> required "specificationAuxiliaryData" D.string
 
 
 transactionEventsDecoder : D.Decoder TransactionEvent
@@ -384,18 +606,18 @@ transactionEventsDecoder =
                         |> required "account" T.accountAddressDecoder
                         |> D.map TransactionEventCredentialDeployed
 
-                -- Account Keys
-                "AccountKeysUpdated" ->
-                    D.succeed TransactionEventAccountKeysUpdated
+                "CredentialKeysUpdated" ->
+                    D.succeed EventCredentialKeysUpdated
+                        |> required "credId" D.string
+                        |> D.map TransactionEventCredentialKeysUpdated
 
-                "AccountKeysAdded" ->
-                    D.succeed TransactionEventAccountKeysAdded
-
-                "AccountKeysRemoved" ->
-                    D.succeed TransactionEventAccountKeysRemoved
-
-                "AccountKeysSignThresholdUpdated" ->
-                    D.succeed TransactionEventAccountKeysSignThresholdUpdated
+                "CredentialsUpdated" ->
+                    D.succeed EventCredentialsUpdated
+                        |> required "account" T.accountAddressDecoder
+                        |> required "newCredIds" (D.list D.string)
+                        |> required "removedCredIds" (D.list D.string)
+                        |> required "newThreshold" D.int
+                        |> D.map TransactionEventCredentialsUpdated
 
                 -- Baking
                 "BakerAdded" ->
@@ -456,6 +678,7 @@ transactionEventsDecoder =
                         |> required "ref" D.string
                         |> required "address" T.contractAddressDecoder
                         |> required "amount" T.decodeAmount
+                        |> required "initName" T.contractInitNameDecoder
                         |> required "events" (D.list T.contractEventDecoder)
                         |> D.map TransactionEventContractInitialized
 
@@ -465,6 +688,7 @@ transactionEventsDecoder =
                         |> required "instigator" T.addressDecoder
                         |> required "amount" T.decodeAmount
                         |> required "message" D.string
+                        |> required "receiveName" T.contractReceiveNameDecoder
                         |> required "events" (D.list T.contractEventDecoder)
                         |> D.map TransactionEventContractUpdated
 
@@ -475,12 +699,13 @@ transactionEventsDecoder =
                         |> required "payload" updatePayloadDecoder
                         |> D.map TransactionEventUpdateEnqueued
 
+                "DataRegistered" ->
+                    D.succeed EventDataRegistered
+                        |> required "data" D.string
+                        |> D.map TransactionEventDataRegistered
+
                 -- Errors
                 _ ->
-                    D.succeed EventRejected
-                        |> required "transactionType" D.string
-                        |> required "reason" D.string
-                        |> required "hash" D.string
-                        |> D.map TransactionEventRejected
+                    D.fail <| "Unknown event tag: " ++ tag
     in
     D.field "tag" D.string |> D.andThen decode

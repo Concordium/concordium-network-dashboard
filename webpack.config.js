@@ -1,9 +1,13 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const OpenBrowserPlugin = require('open-browser-webpack-plugin');
+const webpack = require('webpack');
 
 const config = require('./src/server/config');
 const nodeModulesPath = path.resolve(__dirname, 'node_modules');
+
+const packageJson = require('./package.json');
+const analyticsId = "G-TE81YY48VB"
 
 const plugins = [
   new HtmlWebpackPlugin({
@@ -12,14 +16,17 @@ const plugins = [
     templateParameters: {
         title: 'Concordium Dashboard',
         isProduction: config.isProduction,
+        analyticsId
     },
+  }),
+  new webpack.DefinePlugin({
+    __VERSION__: JSON.stringify(packageJson.version),
+    __ANALYTICS_ID__: JSON.stringify(analyticsId),
   }),
 ];
 
 if (!config.isProduction) {
-  plugins.push(
-    new OpenBrowserPlugin({ url: `http://localhost:${config.serverPort}` }),
-  );
+  plugins.push(new OpenBrowserPlugin({ url: `http://localhost:${config.serverPort}` }));
 }
 
 module.exports = {
@@ -46,7 +53,8 @@ module.exports = {
     },
   },
   devServer: {
-    port: 8090
+    port: 8090,
+    hot: true,
   },
   module: {
     rules: [
@@ -65,7 +73,7 @@ module.exports = {
         use: [
           {
             loader: "elm-webpack-loader",
-            options: config.isProduction ? { optimize: true } : { debug: true, forceWatch: true }
+            options: config.isProduction ? { optimize: true } : { debug: true }
           }
         ]
       }

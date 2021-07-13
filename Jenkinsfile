@@ -1,5 +1,11 @@
 pipeline {
     agent any
+
+    environment {
+        image_repo = '192549843005.dkr.ecr.eu-west-1.amazonaws.com/concordium/network-dashboard'
+        image_name = "${image_repo}:${image_tag}"
+    }
+
     stages {
         stage('ecr-login') {
             steps {
@@ -8,9 +14,10 @@ pipeline {
         }
         stage('build') {
             steps {
-                sshagent (credentials: ['6a7625a8-34f4-4c39-b0be-ed5b49aabc16']) {
-                    sh './build-for-k8s.sh'
-                }
+                sh '''\
+                  docker build -t "${image_name}" -f k8s.Dockerfile .
+                  docker push "${image_name}"
+                '''
             }
         }
     }
