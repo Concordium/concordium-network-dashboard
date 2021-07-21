@@ -7,7 +7,7 @@ import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode
-import RemoteData exposing (WebData)
+import RemoteData exposing (WebData, update)
 import Tree exposing (Tree(..), singleton, tree)
 
 
@@ -187,6 +187,7 @@ nodes that report them as their best block and their positioning for drawing.
 annotate : List Node -> Int -> Tree ProtoBlock -> Tree Block
 annotate nodes lastFinalizedHeight sourceTree =
     annotateChain nodes lastFinalizedHeight sourceTree
+        |> updateDiscardedStatus Nothing
 
 
 annotateChain : List Node -> Int -> Tree ProtoBlock -> Tree Block
@@ -233,15 +234,15 @@ annotateChildren label children =
                     List.sortBy subtreeWeighting children
 
                 positionedChildren =
-                    calculateYandUpdateStatus sortedChildren
+                    calculateY sortedChildren
             in
             tree
                 label
                 positionedChildren
 
 
-calculateYandUpdateStatus : List (Tree Block) -> List (Tree Block)
-calculateYandUpdateStatus children =
+calculateY : List (Tree Block) -> List (Tree Block)
+calculateY children =
     children
         |> List.foldl
             (\child placedChildren ->
@@ -262,25 +263,42 @@ calculateYandUpdateStatus children =
                                 )
                             |> Maybe.withDefault 0
 
-                    -- get the current branches root status
-                    childStatus =
-                        child |> Tree.label |> .status
-
                     -- update all blocks in the child branch
-                    updateLabel rootStatus label =
-                        { label
-                            | y = label.y + previousMaxY
-                            , status =
-                                if statusWithY (label.y + previousMaxY) rootStatus == Discarded then
-                                    Discarded
-
-                                else
-                                    label.status
-                        }
+                    updateLabel label =
+                        { label | y = label.y + previousMaxY }
                 in
-                Tree.map (updateLabel childStatus) child :: placedChildren
+                Tree.map updateLabel child :: placedChildren
             )
             []
+
+
+{-| Recurses through a tree, marking branches that start from a finalized block as discarded
+-}
+updateDiscardedStatus : Maybe Block -> Tree Block -> Tree Block
+updateDiscardedStatus maybeParent tree =
+    let
+        update parent label =
+            { label
+                | status =
+                    if label.y > 0 && (parent.status == Finalized || parent.status == Discarded) then
+                        Discarded
+
+                    else
+                        label.status
+            }
+
+        updatedLabel =
+            case maybeParent of
+                Just parent ->
+                    Tree.label tree |> update parent
+
+                Nothing ->
+                    Tree.label tree
+
+        updatedChildren =
+            Tree.children tree |> List.map (updateDiscardedStatus (Just updatedLabel))
+    in
+    Tree.tree updatedLabel updatedChildren
 
 
 {-| Calculates a weighting for sorting subtrees that prioritizes the tree containing
@@ -321,12 +339,3 @@ statusFromX lastFinalizedHeight x =
 
         GT ->
             Candidate
-
-
-statusWithY : Int -> BlockStatus -> BlockStatus
-statusWithY y status =
-    if y > 0 && (status == Finalized || status == LastFinalized) then
-        Discarded
-
-    else
-        status
