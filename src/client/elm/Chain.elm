@@ -353,7 +353,7 @@ updateChain ctx nodes model =
                         first =
                             Tree.label annotatedTree
                     in
-                    ( first.hash, first.x )
+                    ( first.hash, first.blockHeight )
 
                 newDrawableChain =
                     Flatten.flattenTree ctx gridSpec lastFinalizedHeight 2 annotatedTree
@@ -384,7 +384,7 @@ updateChain ctx nodes model =
                 , initialBlockHeight =
                     Just
                         (Maybe.withDefault
-                            (Tree.label annotatedTree |> .x)
+                            (Tree.label annotatedTree |> .blockHeight)
                             model.initialBlockHeight
                         )
                 , gridSpec = Just gridSpec

@@ -34,8 +34,8 @@ type alias Block =
     , nodesAt : List String
     , fractionNodesAt : Float
     , status : BlockStatus
-    , x : Int
-    , y : Int
+    , blockHeight : Int
+    , branchPosition : Int
     }
 
 
@@ -216,9 +216,9 @@ annotateBlock nodes lastFinalizedHeight ( height, hash ) =
     { hash = hash
     , nodesAt = nodesAt
     , fractionNodesAt = fractionNodesAt
-    , status = statusFromX lastFinalizedHeight height
-    , x = height
-    , y = 0
+    , status = statusFromHeight lastFinalizedHeight height
+    , blockHeight = height
+    , branchPosition = 0
     }
 
 
@@ -234,7 +234,7 @@ annotateChildren label children =
                     List.sortBy subtreeWeighting children
 
                 positionedChildren =
-                    calculateY sortedChildren
+                    calculateBranchPosition sortedChildren
             in
             tree
                 label
@@ -245,23 +245,23 @@ annotateChildren label children =
 on the layout of the previous branch. By taking the length of the current branch into account,
 branches are packed more space-efficiently than with the naive approach.
 -}
-calculateY : List (Tree Block) -> List (Tree Block)
-calculateY children =
+calculateBranchPosition : List (Tree Block) -> List (Tree Block)
+calculateBranchPosition children =
     children
         |> List.foldl
             (\child placedChildren ->
                 let
                     -- calculate the length of the current branch
                     maxX =
-                        child |> Tree.map .x |> Tree.foldl max 1
+                        child |> Tree.map .blockHeight |> Tree.foldl max 1
 
                     -- calculate the heighest vertical position of the previous branches up to maxX
                     previousMaxY =
                         List.head placedChildren
                             |> Maybe.map
                                 (Tree.flatten
-                                    >> List.filter (\label -> label.x <= maxX)
-                                    >> List.map .y
+                                    >> List.filter (\label -> label.blockHeight <= maxX)
+                                    >> List.map .branchPosition
                                     >> List.foldl max 0
                                     >> (+) 1
                                 )
@@ -269,7 +269,7 @@ calculateY children =
 
                     -- update all blocks in the child branch
                     updateLabel label =
-                        { label | y = label.y + previousMaxY }
+                        { label | branchPosition = label.branchPosition + previousMaxY }
                 in
                 Tree.map updateLabel child :: placedChildren
             )
@@ -284,7 +284,7 @@ updateDiscardedStatus maybeParent tree =
         update parent label =
             { label
                 | status =
-                    if label.y > 0 && (parent.status == Finalized || parent.status == Discarded) then
+                    if label.branchPosition > 0 && (parent.status == Finalized || parent.status == Discarded) then
                         Discarded
 
                     else
@@ -332,9 +332,9 @@ subtreeWeighting tree =
 {-| Calculate the initial status of a block based on its height and the height of the last finalized block
 This does not take into account discarded blocks, which are marked as such after the Y position is calculated
 -}
-statusFromX : Int -> Int -> BlockStatus
-statusFromX lastFinalizedHeight x =
-    case compare x lastFinalizedHeight of
+statusFromHeight : Int -> Int -> BlockStatus
+statusFromHeight lastFinalizedHeight height =
+    case compare height lastFinalizedHeight of
         LT ->
             Finalized
 

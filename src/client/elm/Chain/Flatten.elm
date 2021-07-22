@@ -56,7 +56,7 @@ drawableBlock : Context a -> GridSpec -> Block -> DrawableBlock
 drawableBlock ctx gridSpec block =
     { hash = block.hash
     , color = blockColor ctx.palette block.status
-    , rect = Grid.cell gridSpec block.x block.y
+    , rect = Grid.cell gridSpec block.blockHeight block.branchPosition
     , fractionNodesAt = block.fractionNodesAt
     }
 
@@ -65,10 +65,10 @@ drawableConnector : Context a -> GridSpec -> Block -> Block -> DrawableConnector
 drawableConnector ctx gridSpec blockA blockB =
     let
         block1Rect =
-            Grid.cell gridSpec blockA.x blockA.y
+            Grid.cell gridSpec blockA.blockHeight blockA.branchPosition
 
         block2Rect =
-            Grid.cell gridSpec blockB.x blockB.y
+            Grid.cell gridSpec blockB.blockHeight blockB.branchPosition
     in
     { id = String.left 4 blockA.hash ++ String.left 4 blockB.hash
     , start = Rectangle2d.interpolate block1Rect 1 0.5
@@ -127,16 +127,16 @@ flattenTree ctx gridSpec lastFinalizedBlockHeight maxNumVertical chain =
             chain |> Tree.flatten |> List.map (drawableBlock ctx gridSpec)
 
         firstBlockHeight =
-            Tree.label chain |> .x
+            Tree.label chain |> .blockHeight
 
         lastBlockHeight =
-            (chain |> Tree.flatten |> List.map .x |> List.maximum |> Maybe.withDefault 1) + 1
+            (chain |> Tree.flatten |> List.map .blockHeight |> List.maximum |> Maybe.withDefault 1) + 1
 
         width =
             lastBlockHeight - firstBlockHeight
 
         height =
-            (chain |> Tree.flatten |> List.map .y |> List.maximum |> Maybe.withDefault 1) + 1
+            (chain |> Tree.flatten |> List.map .branchPosition |> List.maximum |> Maybe.withDefault 1) + 1
 
         collapsedX =
             firstBlockHeight - lastFinalizedBlockHeight
