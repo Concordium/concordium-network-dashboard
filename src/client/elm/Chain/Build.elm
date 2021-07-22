@@ -241,17 +241,21 @@ annotateChildren label children =
                 positionedChildren
 
 
+{-| Folds through a list of child branches, assigning each branch a vertical position based
+on the layout of the previous branch. By taking the length of the current branch into account,
+branches are packed more space-efficiently than with the naive approach.
+-}
 calculateY : List (Tree Block) -> List (Tree Block)
 calculateY children =
     children
         |> List.foldl
             (\child placedChildren ->
                 let
-                    -- calculate the length of the branch
+                    -- calculate the length of the current branch
                     maxX =
                         child |> Tree.map .x |> Tree.foldl max 1
 
-                    -- calculate the heighest y position of the previous branches up to maxX
+                    -- calculate the heighest vertical position of the previous branches up to maxX
                     previousMaxY =
                         List.head placedChildren
                             |> Maybe.map
