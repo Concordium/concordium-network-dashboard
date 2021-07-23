@@ -187,7 +187,7 @@ nodes that report them as their best block and their positioning for drawing.
 annotate : List Node -> Int -> Tree ProtoBlock -> Tree Block
 annotate nodes lastFinalizedHeight sourceTree =
     annotateChain nodes lastFinalizedHeight sourceTree
-        |> updateDiscardedStatus Nothing
+        |> updateDiscardedStatus
 
 
 annotateChain : List Node -> Int -> Tree ProtoBlock -> Tree Block
@@ -252,15 +252,15 @@ calculateBranchPosition children =
             (\child placedChildren ->
                 let
                     -- calculate the length of the current branch
-                    maxX =
+                    maxHeight =
                         child |> Tree.map .blockHeight |> Tree.foldl max 1
 
-                    -- calculate the heighest vertical position of the previous branches up to maxX
-                    previousMaxY =
+                    -- calculate the heighest vertical position of the previous branches up to maxHeight
+                    previousMaxBranchPosition =
                         List.head placedChildren
                             |> Maybe.map
                                 (Tree.flatten
-                                    >> List.filter (\label -> label.blockHeight <= maxX)
+                                    >> List.filter (\label -> label.blockHeight <= maxHeight)
                                     >> List.map .branchPosition
                                     >> List.foldl max 0
                                     >> (+) 1
@@ -269,19 +269,29 @@ calculateBranchPosition children =
 
                     -- update all blocks in the child branch
                     updateLabel label =
-                        { label | branchPosition = label.branchPosition + previousMaxY }
+                        { label | branchPosition = label.branchPosition + previousMaxBranchPosition }
                 in
                 Tree.map updateLabel child :: placedChildren
             )
             []
 
 
-{-| Recurses through a tree, marking branches that start from a finalized block as discarded
+{-| Called on the root element, this recurses through a tree, marking branches that start from a finalized block as discarded.
 -}
-updateDiscardedStatus : Maybe Block -> Tree Block -> Tree Block
-updateDiscardedStatus maybeParent tree =
+updateDiscardedStatus : Tree Block -> Tree Block
+updateDiscardedStatus tree =
+    Tree.mapChildren (List.map (updateDiscardedStatusWithParent (Tree.label tree))) tree
+
+
+{-| Helper function for doing the recursion in updateDiscardedStatus
+-}
+updateDiscardedStatusWithParent : Block -> Tree Block -> Tree Block
+updateDiscardedStatusWithParent parent tree =
     let
-        update parent label =
+        label =
+            Tree.label tree
+
+        updatedLabel =
             { label
                 | status =
                     if label.branchPosition > 0 && (parent.status == Finalized || parent.status == Discarded) then
@@ -291,16 +301,8 @@ updateDiscardedStatus maybeParent tree =
                         label.status
             }
 
-        updatedLabel =
-            case maybeParent of
-                Just parent ->
-                    Tree.label tree |> update parent
-
-                Nothing ->
-                    Tree.label tree
-
         updatedChildren =
-            Tree.children tree |> List.map (updateDiscardedStatus (Just updatedLabel))
+            Tree.children tree |> List.map (updateDiscardedStatusWithParent updatedLabel)
     in
     Tree.tree updatedLabel updatedChildren
 
