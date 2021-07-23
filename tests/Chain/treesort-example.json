@@ -1,0 +1,126 @@
+[
+    [
+        {
+            "nodeName": "Node1",
+            "nodeId": "1",
+            "bestBlock": "d1",
+            "bestBlockHeight": 4,
+            "finalizedBlock": "a1",
+            "finalizedBlockHeight": 0,
+            "finalizedBlockParent": "p",
+            "ancestorsSinceBestBlock": [
+                "d1",
+                "c1",
+                "b1"
+            ]
+        },
+        {
+            "nodeName": "Node1b",
+            "nodeId": "1b",
+            "bestBlock": "d1",
+            "bestBlockHeight": 4,
+            "finalizedBlock": "a1",
+            "finalizedBlockHeight": 1,
+            "finalizedBlockParent": "p",
+            "ancestorsSinceBestBlock": [
+                "d1",
+                "c1",
+                "b1"
+            ]
+        },
+        {
+            "nodeName": "Node2",
+            "nodeId": "2",
+            "bestBlock": "b2",
+            "bestBlockHeight": 2,
+            "finalizedBlock": "a1",
+            "finalizedBlockHeight": 1,
+            "finalizedBlockParent": "p",
+            "ancestorsSinceBestBlock": [
+                "b2"
+            ]
+        },
+        {
+            "nodeName": "Node3",
+            "nodeId": "3",
+            "bestBlock": "c3",
+            "bestBlockHeight": 3,
+            "finalizedBlock": "a1",
+            "finalizedBlockHeight": 1,
+            "finalizedBlockParent": "p",
+            "ancestorsSinceBestBlock": [
+                "c3",
+                "b2"
+            ]
+        },
+        {
+            "nodeName": "Node4",
+            "nodeId": "4",
+            "bestBlock": "d4",
+            "bestBlockHeight": 4,
+            "finalizedBlock": "a1",
+            "finalizedBlockHeight": 1,
+            "finalizedBlockParent": "p",
+            "ancestorsSinceBestBlock": [
+                "d4",
+                "c3",
+                "b2"
+            ]
+        }
+    ],
+    [
+        {
+            "nodeName": "Node1",
+            "nodeId": "1",
+            "bestBlock": "d1",
+            "bestBlockHeight": 4,
+            "finalizedBlock": "a1",
+            "finalizedBlockHeight": 1,
+            "finalizedBlockParent": "p",
+            "ancestorsSinceBestBlock": [
+                "d1",
+                "c1",
+                "b1"
+            ]
+        },
+        {
+            "nodeName": "Node2",
+            "nodeId": "2",
+            "bestBlock": "b2",
+            "bestBlockHeight": 2,
+            "finalizedBlock": "a1",
+            "finalizedBlockHeight": 1,
+            "finalizedBlockParent": "p",
+            "ancestorsSinceBestBlock": [
+                "b2"
+            ]
+        },
+        {
+            "nodeName": "Node3",
+            "nodeId": "3",
+            "bestBlock": "c3",
+            "bestBlockHeight": 3,
+            "finalizedBlock": "a1",
+            "finalizedBlockHeight": 1,
+            "finalizedBlockParent": "p",
+            "ancestorsSinceBestBlock": [
+                "c3",
+                "b2"
+            ]
+        },
+        {
+            "nodeName": "Node4",
+            "nodeId": "4",
+            "bestBlock": "d4",
+            "bestBlockHeight": 4,
+            "finalizedBlock": "a1",
+            "finalizedBlockHeight": 1,
+            "finalizedBlockParent": "p",
+            "ancestorsSinceBestBlock": [
+                "d4",
+                "c3",
+                "b2"
+            ]
+        }
+    ]
+]

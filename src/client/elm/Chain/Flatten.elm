@@ -5,11 +5,12 @@ import Chain.Grid as Grid exposing (GridSpec)
 import Color exposing (Color)
 import Context exposing (Context)
 import Element
+import Icons exposing (lastBlock)
 import Palette exposing (Palette)
 import Pixels exposing (Pixels(..))
 import Point2d exposing (Point2d)
 import Rectangle2d exposing (Rectangle2d)
-import Tree exposing (Tree(..))
+import Tree exposing (Tree(..), children)
 import Tree.Zipper as Zipper exposing (Zipper)
 
 
@@ -51,35 +52,28 @@ type alias DrawableBlockSummaryX =
     }
 
 
-drawableBlock : Context a -> GridSpec -> Int -> Block -> DrawableBlock
-drawableBlock ctx gridSpec y block =
+drawableBlock : Context a -> GridSpec -> Block -> DrawableBlock
+drawableBlock ctx gridSpec block =
     { hash = block.hash
     , color = blockColor ctx.palette block.status
-    , rect = Grid.cell gridSpec block.blockHeight y
+    , rect = Grid.cell gridSpec block.blockHeight block.branchPosition
     , fractionNodesAt = block.fractionNodesAt
     }
 
 
-drawableConnector :
-    GridSpec
-    -> Block
-    -> Block
-    -> Int
-    -> Int
-    -> Color
-    -> DrawableConnector
-drawableConnector gridSpec blockA blockB yA yB color =
+drawableConnector : Context a -> GridSpec -> Block -> Block -> DrawableConnector
+drawableConnector ctx gridSpec blockA blockB =
     let
         block1Rect =
-            Grid.cell gridSpec blockA.blockHeight yA
+            Grid.cell gridSpec blockA.blockHeight blockA.branchPosition
 
         block2Rect =
-            Grid.cell gridSpec blockB.blockHeight yB
+            Grid.cell gridSpec blockB.blockHeight blockB.branchPosition
     in
     { id = String.left 4 blockA.hash ++ String.left 4 blockB.hash
     , start = Rectangle2d.interpolate block1Rect 1 0.5
     , end = Rectangle2d.interpolate block2Rect 0 0.5
-    , color = color
+    , color = blockColor ctx.palette blockB.status
     }
 
 
@@ -90,39 +84,6 @@ mergeDrawables chainA chainB =
     , width = max chainA.width chainB.width
     , height = max chainA.height chainB.height
     , viewBoxOffsetX = chainB.viewBoxOffsetX
-    , numCollapsedBlocksX = 0
-    , numCollapsedBlocksY = 0
-    }
-
-
-addDrawables :
-    Context a
-    -> GridSpec
-    -> Maybe ( Int, Int )
-    -> Maybe Block
-    -> ( Int, Int )
-    -> Block
-    -> DrawableChain
-    -> DrawableChain
-addDrawables ctx gridSpec maybeParent maybeParentBlock ( x, y ) block chain =
-    { blocks = drawableBlock ctx gridSpec y block :: chain.blocks
-    , connectors =
-        case ( maybeParent, maybeParentBlock ) of
-            ( Just ( xp, yp ), Just parent ) ->
-                drawableConnector
-                    gridSpec
-                    parent
-                    block
-                    yp
-                    y
-                    (blockColor ctx.palette block.status)
-                    :: chain.connectors
-
-            _ ->
-                chain.connectors
-    , width = max (x + 1) chain.width
-    , height = max (y + 1) chain.height
-    , viewBoxOffsetX = chain.viewBoxOffsetX
     , numCollapsedBlocksX = 0
     , numCollapsedBlocksY = 0
     }
@@ -140,6 +101,9 @@ blockColor palette status =
 
             Candidate ->
                 palette.c1
+
+            Discarded ->
+                palette.deactivated
 
 
 emptyDrawableChain : DrawableChain
@@ -159,14 +123,20 @@ emptyDrawableChain =
 flattenTree : Context a -> GridSpec -> Int -> Int -> Tree Block -> DrawableChain
 flattenTree ctx gridSpec lastFinalizedBlockHeight maxNumVertical chain =
     let
-        { blocks, connectors, width, height } =
-            flattenDepthFirst ctx (Zipper.fromTree chain) gridSpec Nothing Nothing ( 0, 0 )
+        flattenedBlocks =
+            chain |> Tree.flatten |> List.map (drawableBlock ctx gridSpec)
 
         firstBlockHeight =
             Tree.label chain |> .blockHeight
 
         lastBlockHeight =
-            firstBlockHeight + width
+            (chain |> Tree.flatten |> List.map .blockHeight |> List.maximum |> Maybe.withDefault 1) + 1
+
+        width =
+            lastBlockHeight - firstBlockHeight
+
+        height =
+            (chain |> Tree.flatten |> List.map .branchPosition |> List.maximum |> Maybe.withDefault 1) + 1
 
         collapsedX =
             firstBlockHeight - lastFinalizedBlockHeight
@@ -179,8 +149,8 @@ flattenTree ctx gridSpec lastFinalizedBlockHeight maxNumVertical chain =
                 |> Point2d.toPixels
                 |> .x
     in
-    { blocks = blocks
-    , connectors = connectors
+    { blocks = flattenedBlocks
+    , connectors = flattenConnectors ctx gridSpec chain
     , width = width
     , height = height
     , viewBoxOffsetX = offsetX
@@ -189,37 +159,17 @@ flattenTree ctx gridSpec lastFinalizedBlockHeight maxNumVertical chain =
     }
 
 
-{-| Convert zipper (representing a subtree) into a DrawableChain which contains all geometric components (including coordinates) to be rendered.
--}
-flattenDepthFirst :
-    Context a
-    -> Zipper Block
-    -> GridSpec
-    -> Maybe ( Int, Int )
-    -> Maybe Block
-    -> ( Int, Int )
-    -> DrawableChain
-flattenDepthFirst ctx zipper gridSpec parentCoords parentBlock ( x, y ) =
-    let
-        block =
-            Zipper.label zipper
+flattenConnectors : Context a -> GridSpec -> Tree Block -> List DrawableConnector
+flattenConnectors ctx gridSpec tree =
+    case Tree.children tree of
+        [] ->
+            []
 
-        current =
-            Just ( x, y )
-    in
-    (case ( Zipper.firstChild zipper, Zipper.nextSibling zipper ) of
-        ( Just child, Just sibling ) ->
-            mergeDrawables
-                (flattenDepthFirst ctx child gridSpec current (Just block) ( x + 1, y ))
-                (flattenDepthFirst ctx sibling gridSpec parentCoords parentBlock ( x, y + block.forkWidth ))
-
-        ( Just child, Nothing ) ->
-            flattenDepthFirst ctx child gridSpec current (Just block) ( x + 1, y )
-
-        ( Nothing, Just sibling ) ->
-            flattenDepthFirst ctx sibling gridSpec parentCoords parentBlock ( x, y + block.forkWidth )
-
-        ( Nothing, Nothing ) ->
-            emptyDrawableChain
-    )
-        |> addDrawables ctx gridSpec parentCoords parentBlock ( x, y ) block
+        children ->
+            List.map
+                (\child ->
+                    drawableConnector ctx gridSpec (Tree.label tree) (Tree.label child)
+                        :: flattenConnectors ctx gridSpec child
+                )
+                children
+                |> List.concat

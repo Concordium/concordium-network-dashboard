@@ -125,13 +125,17 @@ update ctx msg model =
             ( model, Cmd.none )
 
         GotParentBlockByHeight child (Success parentHash) ->
-            { model
-                | tree =
-                    DictTree.addAll
-                        [ [ ( Tuple.first child - 1, parentHash ), child ] ]
-                        model.tree
-            }
-                |> rebuild ctx
+            if model.replay == Nothing then
+                { model
+                    | tree =
+                        DictTree.addAll
+                            [ [ ( Tuple.first child - 1, parentHash ), child ] ]
+                            model.tree
+                }
+                    |> rebuild ctx
+
+            else
+                ( model, Cmd.none )
 
         GotParentBlockByHeight _ (Failure error) ->
             ( { model | errors = error :: model.errors }, Cmd.none )
@@ -159,7 +163,11 @@ update ctx msg model =
             in
             case result of
                 Ok history ->
-                    ( { model
+                    let
+                        ( replayModel, _ ) =
+                            init model.endpoint model.maxWidth
+                    in
+                    ( { replayModel
                         | replay =
                             Just
                                 { past = []
@@ -462,10 +470,15 @@ viewDebugButtons : Bool -> Element Msg
 viewDebugButtons show =
     case show of
         True ->
-            row [ padding 10, spacing 10 ]
+            row
+                [ padding 10
+                , spacing 10
+                , Background.color <| Element.rgba 0 0 0 0.1
+                , Border.rounded 5
+                ]
                 [ text "Dev tools:"
-                , viewButton (Just SaveHistory) "Save History"
-                , viewButton (Just ReplayHistory) "Replay History"
+                , viewButton (Just SaveHistory) "Save Replay"
+                , viewButton (Just ReplayHistory) "Load Replay"
                 ]
 
         False ->

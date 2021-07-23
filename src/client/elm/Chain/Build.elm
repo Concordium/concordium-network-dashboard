@@ -7,7 +7,7 @@ import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode
-import RemoteData exposing (WebData)
+import RemoteData exposing (WebData, update)
 import Tree exposing (Tree(..), singleton, tree)
 
 
@@ -34,8 +34,8 @@ type alias Block =
     , nodesAt : List String
     , fractionNodesAt : Float
     , status : BlockStatus
-    , forkWidth : Int
     , blockHeight : Int
+    , branchPosition : Int
     }
 
 
@@ -43,6 +43,7 @@ type BlockStatus
     = Finalized
     | LastFinalized
     | Candidate
+    | Discarded
 
 
 
@@ -180,12 +181,13 @@ prepareBlockSequence node =
 -- Annotating the chain to prepare for viewing
 
 
-{-| Convert a tree of "proto blocks" into a tree of blocks which know about their finalization state
-and nodes that report them as their best block.
+{-| Convert a tree of "proto blocks" into a tree of blocks which know about their finalization state,
+nodes that report them as their best block and their positioning for drawing.
 -}
 annotate : List Node -> Int -> Tree ProtoBlock -> Tree Block
 annotate nodes lastFinalizedHeight sourceTree =
     annotateChain nodes lastFinalizedHeight sourceTree
+        |> updateDiscardedStatus
 
 
 annotateChain : List Node -> Int -> Tree ProtoBlock -> Tree Block
@@ -205,14 +207,18 @@ annotateBlock nodes lastFinalizedHeight ( height, hash ) =
                 |> List.map .nodeId
 
         fractionNodesAt =
-            toFloat (List.length nodesAt) / toFloat (List.length nodes)
+            if List.length nodes == 0 then
+                0
+
+            else
+                toFloat (List.length nodesAt) / toFloat (List.length nodes)
     in
     { hash = hash
     , nodesAt = nodesAt
     , fractionNodesAt = fractionNodesAt
     , status = statusFromHeight lastFinalizedHeight height
-    , forkWidth = 1
     , blockHeight = height
+    , branchPosition = 0
     }
 
 
@@ -223,22 +229,114 @@ annotateChildren label children =
             singleton label
 
         _ ->
+            let
+                sortedChildren =
+                    List.sortBy subtreeWeighting children
+
+                positionedChildren =
+                    calculateBranchPosition sortedChildren
+            in
             tree
-                { label
-                    | forkWidth =
-                        children
-                            |> List.map (Tree.label >> .forkWidth)
-                            |> List.sum
-                }
-                (List.sortBy
-                    (Tree.map .fractionNodesAt >> Tree.flatten >> List.sum >> (*) -1)
-                    children
-                )
+                label
+                positionedChildren
 
 
+{-| Folds through a list of child branches, assigning each branch a vertical position based
+on the layout of the previous branch. By taking the length of the current branch into account,
+branches are packed more space-efficiently than with the naive approach.
+-}
+calculateBranchPosition : List (Tree Block) -> List (Tree Block)
+calculateBranchPosition children =
+    children
+        |> List.foldl
+            (\child placedChildren ->
+                let
+                    -- calculate the length of the current branch
+                    maxHeight =
+                        child |> Tree.map .blockHeight |> Tree.foldl max 1
+
+                    -- calculate the heighest vertical position of the previous branches up to maxHeight
+                    previousMaxBranchPosition =
+                        List.head placedChildren
+                            |> Maybe.map
+                                (Tree.flatten
+                                    >> List.filter (\label -> label.blockHeight <= maxHeight)
+                                    >> List.map .branchPosition
+                                    >> List.foldl max 0
+                                    >> (+) 1
+                                )
+                            |> Maybe.withDefault 0
+
+                    -- update all blocks in the child branch
+                    updateLabel label =
+                        { label | branchPosition = label.branchPosition + previousMaxBranchPosition }
+                in
+                Tree.map updateLabel child :: placedChildren
+            )
+            []
+
+
+{-| Called on the root element, this recurses through a tree, marking branches that start from a finalized block as discarded.
+-}
+updateDiscardedStatus : Tree Block -> Tree Block
+updateDiscardedStatus tree =
+    Tree.mapChildren (List.map (updateDiscardedStatusWithParent (Tree.label tree))) tree
+
+
+{-| Helper function for doing the recursion in updateDiscardedStatus
+-}
+updateDiscardedStatusWithParent : Block -> Tree Block -> Tree Block
+updateDiscardedStatusWithParent parent tree =
+    let
+        label =
+            Tree.label tree
+
+        updatedLabel =
+            { label
+                | status =
+                    if label.branchPosition > 0 && (parent.status == Finalized || parent.status == Discarded) then
+                        Discarded
+
+                    else
+                        label.status
+            }
+
+        updatedChildren =
+            Tree.children tree |> List.map (updateDiscardedStatusWithParent updatedLabel)
+    in
+    Tree.tree updatedLabel updatedChildren
+
+
+{-| Calculates a weighting for sorting subtrees that prioritizes the tree containing
+the block that most nodes consider `bestBlock`. If there is a draw, the total weight
+of the subtree is considered.
+-}
+subtreeWeighting : Tree Block -> Float
+subtreeWeighting tree =
+    let
+        weights =
+            tree
+                |> Tree.map .fractionNodesAt
+                |> Tree.flatten
+
+        maxWeight =
+            weights
+                |> List.maximum
+                |> Maybe.withDefault 0
+
+        weight =
+            10 * maxWeight + List.sum weights
+    in
+    -- Negate weight to do descending sort.
+    -weight
+
+
+{-| Calculate the initial status of a block based on its height and the height of the last finalized block
+This does not take into account discarded blocks, which are marked as such after the Y position is calculated
+-}
 statusFromHeight : Int -> Int -> BlockStatus
-statusFromHeight lastFinalizedHeight blockHeight =
-    case compare blockHeight lastFinalizedHeight of
+statusFromHeight lastFinalizedHeight height =
+    case compare height lastFinalizedHeight of
         LT ->
             Finalized
 
