@@ -1,13 +1,13 @@
 FROM node:14 as build
 
-# https://github.com/nodejs/docker-node/blob/master/docs/BestPractices.md
-ENV NODE_ENV="production"
+# See 'https://github.com/nodejs/docker-node/blob/master/docs/BestPractices.md'.
 WORKDIR /home/node/app
 
 COPY package.json yarn.lock ./
-RUN yarn
+RUN yarn install
+
 COPY . .
-RUN yarn build
+RUN NODE_ENV="production" yarn build
 
 FROM nginx:alpine
 COPY --from=build /home/node/app/dist/public /usr/share/nginx/html/

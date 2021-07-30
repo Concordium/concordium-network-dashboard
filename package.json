@@ -17,9 +17,9 @@
     "dev-client:hot": "webpack-dev-server -w --hot",
     "build-server": "tsc -p ./src/server",
     "dev-server": "tsc-watch -p ./src/server --onSuccess \"node dashboard-backend.js\"",
-    "dev": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run dev-server\" \"npm run dev-client\"",
-    "dev:hot": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run dev-server\" \"npm run dev-client:hot\"",
-    "build": "npm run clean && concurrently --prefix \"[{name}]\" --names \"server,client\" -c \"blue,magenta\" \"npm run build-server\" \"npm run build-client\""
+    "dev": "yarn run clean && yarn run dev-server && yarn run dev-client",
+    "dev:hot": "yarn run clean && yarn run dev-server && yarn run dev-client:hot",
+    "build": "yarn run clean && yarn run build-server && yarn run build-client"
   },
   "prettier": {
     "trailingComma": "all",
