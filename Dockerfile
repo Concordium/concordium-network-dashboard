@@ -1,23 +1,15 @@
-FROM node:11
-
-ENV NODE_ENV="production"
+FROM node:14 as build
 
 # https://github.com/nodejs/docker-node/blob/master/docs/BestPractices.md
-ENV NPM_CONFIG_PREFIX=/home/node/.npm-global
-# USER node
-
+ENV NODE_ENV="production"
 WORKDIR /home/node/app
 
-COPY dist dist
-# Possibly temporary, see proto/readme.md
-COPY proto proto
-COPY package.json package.json
-COPY package-lock.json package-lock.json
-COPY dashboard-backend.js dashboard-backend.js
+COPY package.json yarn.lock ./
+RUN yarn
+COPY . .
+RUN yarn build
 
-RUN npm install concurrently
-RUN npm install
-
-ENV PORT=80
+FROM nginx:alpine
+COPY --from=build /home/node/app/dist/public /usr/share/nginx/html/
 EXPOSE 80
-ENTRYPOINT npm run start:prod
+CMD ["nginx", "-g", "daemon off;"]

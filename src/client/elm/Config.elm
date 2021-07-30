@@ -23,7 +23,7 @@ type DevelopmentTarget
 devTarget : DevelopmentTarget
 devTarget =
     -- Tweak me when developing locally to test
-    Staging
+    Local
 
 
 isProduction : Config -> Bool
