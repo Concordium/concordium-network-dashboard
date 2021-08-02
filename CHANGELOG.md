@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file.
 - Google Analytics and a cookie consent banner
 
 ### Changed
+- Update chain visualization:
+  - Move branches around for a more compact tree.
+  - Always have the branch with the most popular best block on top.
+  - Display blocks on discarded branches as greyed out.
 
 ### Fixed
 - Fix overflow issue, making some UI elements to display text vertically
