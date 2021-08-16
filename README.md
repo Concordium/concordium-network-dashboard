@@ -28,11 +28,11 @@ To build and run the app in watch mode with source maps, run
 ```
 npm run dev
 ```
+Then open the app (http://localhost:3001) in a browser. The app refreshes automatically when files are changed.
 
-This opens the app (http://localhost:3001) in a browser and refreshes automatically when files are changed.
 
 Other common build/run targets include:
-  
+
 - `npm test` - Run jest tests (currently fails because there are no tests!).
 - `npm run build` - Build the app in production mode and put it into `./dist`.
 - `npm start` - Start the app (shorthand for `node ./dist/server/server.js`).
