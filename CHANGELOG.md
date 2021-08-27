@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
   - Move branches around for a more compact tree.
   - Always have the branch with the most popular best block on top.
   - Display blocks on discarded branches as greyed out.
+  - Display an info icon with tooltip, explaining what the purple bars mean.
 
 ### Fixed
 - Fix overflow issue, making some UI elements to display text vertically
