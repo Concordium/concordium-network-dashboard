@@ -1,6 +1,5 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const OpenBrowserPlugin = require('open-browser-webpack-plugin');
 const webpack = require('webpack');
 
 const config = require('./src/server/config');
@@ -24,10 +23,6 @@ const plugins = [
     __ANALYTICS_ID__: JSON.stringify(analyticsId),
   }),
 ];
-
-if (!config.isProduction) {
-  plugins.push(new OpenBrowserPlugin({ url: `http://localhost:${config.serverPort}` }));
-}
 
 module.exports = {
   mode: config.isProduction ? 'production' : 'development',
