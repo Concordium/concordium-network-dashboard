@@ -78,6 +78,18 @@ stringTooltipAboveWidget ctx content =
         )
 
 
+stringTooltipAlignedRight : Theme a -> Element Never -> Attribute msg
+stringTooltipAlignedRight ctx content =
+    tooltip above
+        (column []
+            [ column
+                (tooltipStyle ctx ++ [ width (px 250), moveLeft 230 ])
+                [ paragraph [] [ content ] ]
+            , downArrow ctx
+            ]
+        )
+
+
 stringTooltipAboveWithCopy : Theme a -> String -> Attribute msg
 stringTooltipAboveWithCopy ctx content =
     tooltip above

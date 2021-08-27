@@ -29,12 +29,16 @@ import File exposing (File)
 import Http
 import Json.Decode as Decode
 import List.Extra as List
+import Material.Icons.Sharp as MaterialIcons
+import Material.Icons.Types exposing (Coloring(..))
 import Maybe
+import Palette
 import RemoteData exposing (..)
 import Route exposing (Route)
 import Set
 import Task
 import Time exposing (..)
+import Tooltip exposing (stringTooltipAboveWidget, stringTooltipAlignedRight)
 import Transition exposing (..)
 import Tree exposing (Tree)
 
@@ -452,7 +456,12 @@ view theme model showDevTools =
                     , maxWidth = model.maxWidth
                     }
             in
-            column [ width fill, height fill, inFront (viewDebugButtons showDevTools) ]
+            column
+                [ width fill
+                , height fill
+                , inFront (viewDebugButtons showDevTools)
+                , inFront (viewInfoIcon theme "The purple bars represent the proportion of nodes which have the given block as best block.")
+                ]
                 [ el
                     [ centerX
                     , centerY
@@ -464,6 +473,18 @@ view theme model showDevTools =
 
         Nothing ->
             none
+
+
+viewInfoIcon : Theme a -> String -> Element msg
+viewInfoIcon ctx description =
+    el [ padding 17, alignRight ]
+        (el
+            [ padding 3
+            , Font.color (ctx.palette.c3 |> Palette.withAlphaEl 0.3)
+            , stringTooltipAlignedRight ctx (text description)
+            ]
+            (html <| MaterialIcons.info 16 Inherit)
+        )
 
 
 viewDebugButtons : Bool -> Element Msg
