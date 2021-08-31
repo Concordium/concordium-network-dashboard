@@ -53,6 +53,9 @@ type AccountTransactionType
     | TransferWithSchedule
     | UpdateCredentials
     | RegisterData
+    | TransferWithMemo
+    | EncryptedAmountTransferWithMemo
+    | TransferWithScheduleAndMemo
     | Malformed
 
 
@@ -271,6 +274,15 @@ accountTransactionTypeDecoder =
 
                 "updateCredentials" ->
                     D.succeed UpdateCredentials
+
+                "transferWithMemo" ->
+                    D.succeed TransferWithMemo
+
+                "encryptedAmountTransferWithMemo" ->
+                    D.succeed EncryptedAmountTransferWithMemo
+
+                "transferWithScheduleAndMemo" ->
+                    D.succeed TransferWithScheduleAndMemo
 
                 "registerData" ->
                     D.succeed RegisterData

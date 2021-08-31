@@ -1,5 +1,8 @@
 module Transaction.Event exposing (..)
 
+import Bytes as B
+import Cbor.Decode
+import Hex.Convert
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (required)
 import Time exposing (Posix)
@@ -15,6 +18,7 @@ type TransactionEvent
     | TransactionEventTransferredWithSchedule EventTransferredWithSchedule
     | TransactionEventAmountAddedByDecryption EventAmountAddedByDecryption
     | TransactionEventEncryptedSelfAmountAdded EventEncryptedSelfAmountAdded
+    | TransactionEventTransferMemo EventTransferMemo
       -- Encrypted Transfers
     | TransactionEventNewEncryptedAmount EventNewEncryptedAmount
     | TransactionEventEncryptedAmountsRemoved EventEncryptedAmountsRemoved
@@ -67,6 +71,19 @@ type alias EventAmountAddedByDecryption =
 type alias EventEncryptedSelfAmountAdded =
     { account : T.AccountAddress
     , amount : T.Amount
+    }
+
+
+{-| Transaction metadata which is parsed as CBOR, if this fails it fallbacks to Raw
+-}
+type Memo
+    = MemoString String
+    | MemoInt Int
+    | MemoRaw String
+
+
+type alias EventTransferMemo =
+    { memo : Memo
     }
 
 
@@ -552,6 +569,54 @@ protocolUpdateDecoder =
         |> required "specificationAuxiliaryData" D.string
 
 
+decoderFromMaybe : String -> Maybe a -> D.Decoder a
+decoderFromMaybe error m =
+    case m of
+        Just n ->
+            D.succeed n
+
+        Nothing ->
+            D.fail error
+
+
+hexDecoder : D.Decoder B.Bytes
+hexDecoder =
+    D.string |> D.andThen (\str -> decoderFromMaybe "Failed to decode Hex string" (Hex.Convert.toBytes str))
+
+
+cborDecoder : Cbor.Decode.Decoder a -> B.Bytes -> D.Decoder a
+cborDecoder decoder bytes =
+    decoderFromMaybe "Failed to decode Cbor" <| Cbor.Decode.decode decoder bytes
+
+
+memoDecoder : D.Decoder Memo
+memoDecoder =
+    D.oneOf
+        [ hexDecoder
+            |> D.andThen
+                (\memoBytes ->
+                    D.oneOf
+                        [ cborDecoder Cbor.Decode.string memoBytes |> D.map MemoString
+                        , cborDecoder Cbor.Decode.int memoBytes |> D.map MemoInt
+                        ]
+                )
+        , D.string |> D.map MemoRaw
+        ]
+
+
+memoToString : Memo -> String
+memoToString memo =
+    case memo of
+        MemoString str ->
+            "\"" ++ str ++ "\""
+
+        MemoInt int ->
+            String.fromInt int
+
+        MemoRaw raw ->
+            raw
+
+
 transactionEventsDecoder : D.Decoder TransactionEvent
 transactionEventsDecoder =
     let
@@ -582,6 +647,11 @@ transactionEventsDecoder =
                         |> required "account" T.accountAddressDecoder
                         |> required "amount" T.decodeAmount
                         |> D.map TransactionEventEncryptedSelfAmountAdded
+
+                "TransferMemo" ->
+                    D.succeed EventTransferMemo
+                        |> required "memo" memoDecoder
+                        |> D.map TransactionEventTransferMemo
 
                 -- Encrypted Transfers
                 "NewEncryptedAmount" ->
