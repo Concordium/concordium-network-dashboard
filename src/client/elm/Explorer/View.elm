@@ -661,6 +661,15 @@ typeDescriptionAccountTransactionType accountTransactionType =
         RegisterData ->
             { icon = html <| Icons.smart_contract 20, short = "Register data" }
 
+        TransferWithMemo ->
+            { icon = html <| Icons.transaction 18, short = "Transfer with metadata" }
+
+        EncryptedAmountTransferWithMemo ->
+            { icon = html <| Icons.shield 20, short = "Shielded transfer" }
+
+        TransferWithScheduleAndMemo ->
+            { icon = html <| Icons.transaction 18, short = "Transfer with schedule and metadata" }
+
         Malformed ->
             { icon = el [ paddingXY 6 0 ] <| text "?", short = "Serialization" }
 
@@ -1801,6 +1810,14 @@ viewTransactionEvent ctx txEvent =
                 Just <|
                     el [ padding 20 ] <|
                         viewEventUpdateEnqueuedDetails ctx event
+            }
+
+        TransactionEventTransferMemo event ->
+            { content =
+                eventElem
+                    [ text <| "Transfer memo: " ++ memoToString event.memo
+                    ]
+            , details = Nothing
             }
 
         TransactionEventDataRegistered event ->
