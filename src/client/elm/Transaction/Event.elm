@@ -74,7 +74,7 @@ type alias EventEncryptedSelfAmountAdded =
     }
 
 
-{-| Transaction metadata which is parsed as CBOR, if this fails it fallbacks to Raw
+{-| Transaction metadata which is parsed as CBOR, if this fails it fallbacks to the raw hex string.
 -}
 type Memo
     = MemoString String
@@ -569,6 +569,9 @@ protocolUpdateDecoder =
         |> required "specificationAuxiliaryData" D.string
 
 
+{-| Convert Maybe a to a Decoder which fails if the Maybe is Nothing.
+It also takes a string for the message to fail with.
+-}
 decoderFromMaybe : String -> Maybe a -> D.Decoder a
 decoderFromMaybe error m =
     case m of
@@ -579,16 +582,24 @@ decoderFromMaybe error m =
             D.fail error
 
 
+{-| Decode a JSON string encoded in hex to bytes
+-}
 hexDecoder : D.Decoder B.Bytes
 hexDecoder =
     D.string |> D.andThen (\str -> decoderFromMaybe "Failed to decode Hex string" (Hex.Convert.toBytes str))
 
 
+{-| Wrap a CBOR decoder in a JSON Decoder
+-}
 cborDecoder : Cbor.Decode.Decoder a -> B.Bytes -> D.Decoder a
 cborDecoder decoder bytes =
     decoderFromMaybe "Failed to decode Cbor" <| Cbor.Decode.decode decoder bytes
 
 
+{-| Memo bytes are encoded as Hex in a JSON string. We try to decode the hex and
+then try to decode the bytes as a CBOR string or a CBOR int,
+if this fails we fallback to the raw JSON string
+-}
 memoDecoder : D.Decoder Memo
 memoDecoder =
     D.oneOf
@@ -604,6 +615,8 @@ memoDecoder =
         ]
 
 
+{-| Convert memo to a string suited for viewing
+-}
 memoToString : Memo -> String
 memoToString memo =
     case memo of
