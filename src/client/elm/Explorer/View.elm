@@ -1515,7 +1515,7 @@ wrapAttributes =
 
 eventElem : List (Element msg) -> List (Element msg)
 eventElem es =
-    [ wrappedRow [ width fill ] es ]
+    [ paragraph [ width fill ] es ]
 
 
 viewTransactionEvent : Theme a -> TransactionEvent -> TransactionEventItem Msg
