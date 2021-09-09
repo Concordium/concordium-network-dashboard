@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased changes
 
+## [1.0.1] - (2021-09-09)
+
 ### Added
 - Expose package.json version in UI
 - Google Analytics and a cookie consent banner

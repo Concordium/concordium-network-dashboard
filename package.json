@@ -1,6 +1,6 @@
 {
   "name": "concordium-dashboard",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Concordium Network Dashboard",
   "main": "dashboard-backend.js",
   "engines": {
