@@ -77,7 +77,7 @@ developmentUrl mode localUrl =
             localUrl
 
         Staging ->
-            "https://dashboard.eu.staging.concordium.com"
+            "https://dashboard.stagenet.concordium.com"
 
         Testnet ->
             "https://dashboard.testnet.concordium.com"
