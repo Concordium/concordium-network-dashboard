@@ -1056,6 +1056,9 @@ getBlockSummaryResponseStub =
 """
 
 
+{-| This block summary response was used to test that unusally long words
+in the transaction memo of an event are displayed correctly.
+-}
 getBlockSummaryLongMemoStub =
     """    
     {
