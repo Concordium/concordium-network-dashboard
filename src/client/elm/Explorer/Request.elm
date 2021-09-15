@@ -1,7 +1,10 @@
 module Explorer.Request exposing (..)
 
 import Api
+import Dict
+import Explorer.Stubs as Stubs
 import Http exposing (..)
+import Http.Mock as Mock
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (optional, required)
 import Task
@@ -22,14 +25,28 @@ type alias Config =
 
 getBlockSummary : Config -> String -> (Result Error BlockSummary -> msg) -> Cmd msg
 getBlockSummary cfg blockhash msg =
-    -- let
-    --     x =
-    --         Debug.log "calling" "get Block summary!"
-    -- in
     Http.get
         { url = cfg.middlewareUrl ++ "/v1/blockSummary/" ++ blockhash
         , expect = Api.expectJson_ msg blockSummaryDecoder
+
+        -- for testing, uncomment to use a stub instead of the real response
+        --, expect = Mock.expectJson mockBlockSummaryResponse msg blockSummaryDecoder
         }
+
+
+
+{--| for testing, uncomment to use a stub instead of the real response
+mockBlockSummaryResponse =
+    let
+        metadata =
+            { url = "fakeurl.com"
+            , statusCode = 200
+            , statusText = ""
+            , headers = Dict.empty
+            }
+    in
+    Http.GoodStatus_ metadata Stubs.getBlockSummaryLongMemoStub
+--}
 
 
 trigger : msg -> Cmd msg

@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased changes
 
+### Added
+
+### Changed 
+
+### Fixed
+- Fixed text wrapping problem in the block explorer
+
 ## [1.0.1] - (2021-09-09)
 
 ### Added
