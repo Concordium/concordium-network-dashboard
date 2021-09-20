@@ -1263,7 +1263,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                         in
                         column [ width fill, spacing 30 ]
                             [ viewDetailRow
-                                [ paragraph [] [ text "Each block rewards the baker baking it, this reward is paid by the transaction fees and the some fraction of the Gas Account." ] ]
+                                [ paragraph [] [ text "Each block rewards the baker baking it, this reward is paid by the transaction fees and some fraction of the Gas Account." ] ]
                                 []
                             , viewDetailRow
                                 [ paragraph [] [ text "The transaction fees are distributed between the baker reward, a Gas Account and maintainance of the blockchain." ] ]
