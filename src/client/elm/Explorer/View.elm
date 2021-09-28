@@ -2,7 +2,6 @@ module Explorer.View exposing (..)
 
 import Api exposing (BlockInfo)
 import Browser exposing (UrlRequest)
-import Config exposing (accountBalancesDocUrl)
 import Context exposing (Theme)
 import Dict exposing (Dict)
 import Element exposing (..)
@@ -733,12 +732,7 @@ rejectionToItem ctx reason =
             { content =
                 [ text "The sending account "
                 , viewAddress ctx <| account
-                , text " has insufficient funds. Note: only funds that are not staked or locked can be transferred (see "
-                , link [ onClick <| UrlClicked <| Browser.External accountBalancesDocUrl ]
-                    { url = accountBalancesDocUrl
-                    , label = el [ Font.underline ] <| text "account balances"
-                    }
-                , text " documentation)."
+                , text " has insufficient funds. Note: only funds that are not staked or locked can be transferred."
                 ]
             , details = Nothing
             }
@@ -1902,10 +1896,13 @@ viewEventUpdateEnqueuedDetails ctx event =
                 , viewRelation ctx euroPerEnergy
                 ]
 
-        MicroGtuPerEuroPayload microGtuPerEnergy ->
+        MicroGtuPerEuroPayload microGtuPerEuro ->
             row [ width fill ]
-                [ text "Update the μGTU to Euro conversion rate to "
-                , viewRelation ctx microGtuPerEnergy
+                [ text <|
+                    "Update the GTU to Euro conversion rate to "
+                        ++ String.fromInt microGtuPerEuro.denominator
+                        ++ " EUR = "
+                        ++ (T.amountToString <| T.amountFromInt microGtuPerEuro.numerator)
                 ]
 
         FoundationAccountPayload foundationAccount ->
