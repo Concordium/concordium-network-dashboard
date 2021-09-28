@@ -76,14 +76,14 @@ type alias EventEncryptedSelfAmountAdded =
 
 {-| Transaction metadata which is parsed as CBOR, if this fails it fallbacks to the raw hex string.
 -}
-type Memo
-    = MemoString String
-    | MemoInt Int
-    | MemoRaw String
+type ArbitraryBytes
+    = CborString String
+    | CborInt Int
+    | RawHex String
 
 
 type alias EventTransferMemo =
-    { memo : Memo
+    { memo : ArbitraryBytes
     }
 
 
@@ -209,7 +209,7 @@ type alias EventContractUpdated =
 
 
 type alias EventDataRegistered =
-    { data : String
+    { data : ArbitraryBytes
     }
 
 
@@ -596,38 +596,38 @@ cborDecoder decoder bytes =
     decoderFromMaybe "Failed to decode Cbor" <| Cbor.Decode.decode decoder bytes
 
 
-{-| Memo bytes are encoded as Hex in a JSON string. We try to decode the hex and
+{-| Arbitrary bytes are encoded as Hex in a JSON string. We try to decode the hex and
 then try to decode the bytes as a CBOR string or a CBOR int,
 if this fails we fallback to the raw JSON string
 -}
-memoDecoder : D.Decoder Memo
-memoDecoder =
+arbitraryBytesDecoder : D.Decoder ArbitraryBytes
+arbitraryBytesDecoder =
     D.oneOf
         [ hexDecoder
             |> D.andThen
-                (\memoBytes ->
+                (\bytes ->
                     D.oneOf
-                        [ cborDecoder Cbor.Decode.string memoBytes |> D.map MemoString
-                        , cborDecoder Cbor.Decode.int memoBytes |> D.map MemoInt
+                        [ cborDecoder Cbor.Decode.string bytes |> D.map CborString
+                        , cborDecoder Cbor.Decode.int bytes |> D.map CborInt
                         ]
                 )
-        , D.string |> D.map MemoRaw
+        , D.string |> D.map RawHex
         ]
 
 
-{-| Convert memo to a string suited for viewing
+{-| Convert ArbitraryBytes to a string suited for viewing
 -}
-memoToString : Memo -> String
-memoToString memo =
-    case memo of
-        MemoString str ->
-            "\"" ++ str ++ "\""
+arbitraryBytesToString : ArbitraryBytes -> String
+arbitraryBytesToString arbitraryBytes =
+    case arbitraryBytes of
+        CborString str ->
+            "\"" ++ str ++ "\" (CBOR string)"
 
-        MemoInt int ->
-            String.fromInt int
+        CborInt int ->
+            String.fromInt int ++ " (CBOR integer)"
 
-        MemoRaw raw ->
-            raw
+        RawHex raw ->
+            raw ++ " (hex encoded)"
 
 
 transactionEventsDecoder : D.Decoder TransactionEvent
@@ -663,7 +663,7 @@ transactionEventsDecoder =
 
                 "TransferMemo" ->
                     D.succeed EventTransferMemo
-                        |> required "memo" memoDecoder
+                        |> required "memo" arbitraryBytesDecoder
                         |> D.map TransactionEventTransferMemo
 
                 -- Encrypted Transfers
@@ -784,7 +784,7 @@ transactionEventsDecoder =
 
                 "DataRegistered" ->
                     D.succeed EventDataRegistered
-                        |> required "data" D.string
+                        |> required "data" arbitraryBytesDecoder
                         |> D.map TransactionEventDataRegistered
 
                 -- Errors
