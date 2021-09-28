@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 ### Changed 
+- Remove dead link to account documentation.
 
 ### Fixed
 - Fixed text wrapping problem in the block explorer
