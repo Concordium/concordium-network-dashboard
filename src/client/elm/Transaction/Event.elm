@@ -1,7 +1,9 @@
 module Transaction.Event exposing (..)
 
 import Bytes as B
+import Cbor
 import Cbor.Decode
+import Cbor.Encode
 import Hex.Convert
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (required)
@@ -589,11 +591,27 @@ hexDecoder =
     D.string |> D.andThen (\str -> decoderFromMaybe "Failed to decode Hex string" (Hex.Convert.toBytes str))
 
 
-{-| Wrap a CBOR decoder in a JSON Decoder
+{-| Wrap a CBOR decoder in a JSON Decoder.
+It also takes a corresponding CBOR encoder which encodes the bytes again to compare with the input bytes to ensure every byte is consumed.
+This is possibly not the best solution, but the only one to have worked so far.
 -}
-cborDecoder : Cbor.Decode.Decoder a -> B.Bytes -> D.Decoder a
-cborDecoder decoder bytes =
-    decoderFromMaybe "Failed to decode Cbor" <| Cbor.Decode.decode decoder bytes
+cborDecoder : Cbor.Decode.Decoder a -> (a -> Cbor.Encode.Encoder) -> B.Bytes -> D.Decoder a
+cborDecoder decoder encoder bytes =
+    decoderFromMaybe "Failed to decode Cbor" (Cbor.Decode.decode decoder bytes)
+        |> D.andThen
+            (\value ->
+                let
+                    valueBytes =
+                        Cbor.Encode.encode (encoder value)
+                in
+                -- Compare the number of bytes, instead of bytes directly, since Elm uses referential equality
+                -- and referential equality would always result in false in this case.
+                if B.width valueBytes == B.width bytes then
+                    D.succeed value
+
+                else
+                    D.fail "Bytes remaining from decoding CBOR"
+            )
 
 
 {-| Memo bytes are encoded as Hex in a JSON string. We try to decode the hex and
@@ -607,8 +625,8 @@ memoDecoder =
             |> D.andThen
                 (\memoBytes ->
                     D.oneOf
-                        [ cborDecoder Cbor.Decode.string memoBytes |> D.map MemoString
-                        , cborDecoder Cbor.Decode.int memoBytes |> D.map MemoInt
+                        [ cborDecoder Cbor.Decode.string Cbor.Encode.string memoBytes |> D.map MemoString
+                        , cborDecoder Cbor.Decode.int Cbor.Encode.int memoBytes |> D.map MemoInt
                         ]
                 )
         , D.string |> D.map MemoRaw

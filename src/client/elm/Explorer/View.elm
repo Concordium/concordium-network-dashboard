@@ -1896,10 +1896,13 @@ viewEventUpdateEnqueuedDetails ctx event =
                 , viewRelation ctx euroPerEnergy
                 ]
 
-        MicroGtuPerEuroPayload microGtuPerEnergy ->
+        MicroGtuPerEuroPayload microGtuPerEuro ->
             row [ width fill ]
-                [ text "Update the μGTU to Euro conversion rate to "
-                , viewRelation ctx microGtuPerEnergy
+                [ text <|
+                    "Update the GTU to Euro conversion rate to "
+                        ++ String.fromInt microGtuPerEuro.denominator
+                        ++ " EUR = "
+                        ++ (T.amountToString <| T.amountFromInt microGtuPerEuro.numerator)
                 ]
 
         FoundationAccountPayload foundationAccount ->
