@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 ### Changed 
+- Attempt to parse RegisterData bytes as CBOR, similar to memo transactions.
 
 ### Fixed
 - Fixed text wrapping problem in the block explorer

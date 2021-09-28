@@ -74,7 +74,7 @@ type alias EventEncryptedSelfAmountAdded =
     }
 
 
-{-| Transaction metadata which is parsed as CBOR, if this fails it fallbacks to the raw hex string.
+{-| Arbitrary bytes, which could be encoded in CBOR otherwise fallback to a hex string.
 -}
 type ArbitraryBytes
     = CborString String
