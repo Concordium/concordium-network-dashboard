@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 ### Changed 
+- Make GTU per Euro update in block explorer more readable.
 
 ### Fixed
 - Fixed text wrapping problem in the block explorer
