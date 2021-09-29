@@ -11,10 +11,7 @@ Network and Chain Dashboard for displaying stats, summaries, and visualizations 
   consensus that has been reached around a given block.
   Clicking a block displays the contents of the block in the Node Explorer below the visualization.
 
-The app consists of a server written in [TypeScript](https://github.com/Microsoft/TypeScript)
-and a client written in [Elm](https://elm-lang.org/) (and packaged using [webpack](https://webpack.github.io/)).
-The client is compiled into a few HTML and JavaScript files.
-The server is very basic and just registers a router for serving these static files.
+The app is written in [Elm](https://elm-lang.org/) (and packaged using [webpack](https://webpack.github.io/)).
 
 
 ### Install and run
@@ -33,12 +30,10 @@ Then open the app (http://localhost:3001) in a browser. The app refreshes automa
 
 Other common build/run targets include:
 
-- `npm test` - Run jest tests (currently fails because there are no tests!).
 - `npm run build` - Build the app in production mode and put it into `./dist`.
-- `npm start` - Start the app (shorthand for `node ./dist/server/server.js`).
+- `npm run formatcheck` - Checks the elm formatting.
 
 See the `script` section of `package.json` for all targets as well as their definitions.
-
 
 ### Configuration
 
@@ -98,12 +93,12 @@ Note that you need to set a feature flag to build the collector (backend).
 ### Docker build
 
 The Dashboard is deployed on Kubernetes using a dockerized build which is build by `./docker.sh`.
-Builds `dist` locally first before copying into image. 
+Builds `dist` locally first before copying into image.
 
 
 #### Requirements and credits
 
-- Node 12+
+- Node 14+
 
 - The project structure was initially derived from [fullstack-typescript](https://github.com/gilamran/fullstack-typescript),
 replacing React with Elm.
