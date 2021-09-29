@@ -9,7 +9,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Events exposing (onClick)
 import Element.Font as Font
-import Explorer exposing (DisplayDetailBlockSummary, DisplayMsg(..), Model)
+import Explorer exposing (DisplayDetailBlockSummary, DisplayMsg(..), Model, initialTransactionEventPaging)
 import Explorer.Request exposing (..)
 import Html
 import Html.Attributes exposing (style)
@@ -35,7 +35,7 @@ type Msg
     | BlockClicked String
     | Display DisplayMsg
     | UrlClicked UrlRequest
-    | TransactionPaging Paging.Msg
+    | Never
 
 
 type alias SummaryItem msg =
@@ -118,8 +118,11 @@ viewBlockSummary theme { blockSummary, state } =
         transactionSummariesDescription =
             "Transactions included in this block" ++ transactionNumStr
 
-        transactionPaging =
-            Paging.paging state.transactionPagingModel transactionSummaries
+        transactionPagingVisibleItems =
+            Paging.visibleItems state.transactionPagingModel transactionSummaries
+
+        transactionPager =
+            Paging.pager state.transactionPagingModel transactionNum
 
         specialEvents =
             blockSummary.specialEvents
@@ -146,10 +149,10 @@ viewBlockSummary theme { blockSummary, state } =
                                 , cost = el [ centerX ] <| blockSummaryContentHeader theme "COST"
                                 , txHash = blockSummaryContentHeader theme "TX HASH"
                                 }
-                        , column [ width fill, spacing 5 ] <| viewSummaryItems theme transactionPaging.visibleItems state.transactionWithDetailsOpen (\t e -> Display <| Explorer.ToggleTransactionDetails t e)
+                        , column [ width fill, spacing 5 ] <| viewSummaryItems theme transactionPagingVisibleItems state.transactionWithDetailsOpen (\t e -> Display <| Explorer.ToggleTransactionDetails t e) state.transactionEventPagingModel (\i -> Display << TransactionEventPaging i)
                         ]
-                            ++ (if List.length transactionPaging.visibleItems < List.length transactionSummaries then
-                                    [ el [ centerX, padding 15 ] <| Element.map TransactionPaging transactionPaging.pager ]
+                            ++ (if List.length transactionPagingVisibleItems < List.length transactionSummaries then
+                                    [ el [ centerX, padding 15 ] <| Element.map (Display << TransactionPaging) transactionPager ]
 
                                 else
                                     []
@@ -165,7 +168,7 @@ viewBlockSummary theme { blockSummary, state } =
                     , cost = none
                     , txHash = none
                     }
-            , column [ width fill, spacing 5 ] <| viewSummaryItem theme (List.concat specialEvents ++ finalizations) state.specialEventWithDetailsOpen (Display << ToggleSpecialEventDetails)
+            , column [ width fill, spacing 5 ] <| viewSummaryItem theme (List.concat specialEvents ++ finalizations) state.specialEventWithDetailsOpen (Display << ToggleSpecialEventDetails) initialTransactionEventPaging (\_ -> Never)
             ]
         , section
             [ titleWithSubtitle theme "Updates" "Updates queued at the time of this block"
@@ -174,8 +177,8 @@ viewBlockSummary theme { blockSummary, state } =
         ]
 
 
-viewSummaryItems : Theme a -> List (SummaryItem msg) -> Dict Int (Set Int) -> (Int -> Int -> msg) -> List (Element msg)
-viewSummaryItems theme summaryItems detailsDisplayed onEventClick =
+viewSummaryItems : Theme a -> List (SummaryItem msg) -> Dict Int (Set Int) -> (Int -> Int -> msg) -> Dict Int Paging.Model -> (Int -> Paging.Msg -> msg) -> List (Element msg)
+viewSummaryItems theme summaryItems detailsDisplayed onEventClick transactionEventPagingModel onPaging =
     summaryItems
         |> List.indexedMap
             (\itemIndex summaryItem ->
@@ -186,20 +189,33 @@ viewSummaryItems theme summaryItems detailsDisplayed onEventClick =
                         |> Maybe.withDefault Set.empty
                     )
                     (onEventClick itemIndex)
+                    (transactionEventPagingModel
+                        |> Dict.get itemIndex
+                        |> Maybe.withDefault initialTransactionEventPaging
+                    )
+                    (onPaging itemIndex)
             )
         |> List.concat
 
 
-viewSummaryItem : Theme a -> SummaryItem msg -> Set Int -> (Int -> msg) -> List (Element msg)
-viewSummaryItem theme item itemDetailsDisplayed onEventClick =
-    item
-        |> List.indexedMap
-            (\eventIndex summaryItemEvent ->
-                viewSummaryItemEvent theme
-                    summaryItemEvent
-                    (Set.member eventIndex itemDetailsDisplayed)
-                    (onEventClick eventIndex)
-            )
+viewSummaryItem : Theme a -> SummaryItem msg -> Set Int -> (Int -> msg) -> Paging.Model -> (Paging.Msg -> msg) -> List (Element msg)
+viewSummaryItem theme item itemDetailsDisplayed onEventClick eventPaging onPaging =
+    let
+        visibleEvents =
+            Paging.visibleItems eventPaging item
+
+        eventPager =
+            Element.map onPaging <| Paging.pager eventPaging (List.length item)
+    in
+    List.indexedMap
+        (\eventIndex summaryItemEvent ->
+            viewSummaryItemEvent theme
+                summaryItemEvent
+                (Set.member eventIndex itemDetailsDisplayed)
+                (onEventClick eventIndex)
+        )
+        visibleEvents
+        ++ [ el [ centerX ] eventPager ]
 
 
 viewSummaryItemEvent : Theme a -> SummaryItemEvent msg -> Bool -> msg -> Element msg
