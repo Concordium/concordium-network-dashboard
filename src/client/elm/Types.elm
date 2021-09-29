@@ -260,7 +260,11 @@ roundTo decimals n =
         p =
             10 ^ toFloat decimals
     in
-    (n * p |> round |> toFloat) / p
+    if p == 0.0 then
+        0.0
+
+    else
+        (n * p |> round |> toFloat) / p
 
 
 floorTo : Int -> Float -> Float
@@ -269,7 +273,11 @@ floorTo decimals n =
         p =
             10 ^ toFloat decimals
     in
-    (n * p |> floor |> toFloat) / p
+    if p == 0.0 then
+        0.0
+
+    else
+        (n * p |> floor |> toFloat) / p
 
 
 addAmounts : Amount -> Amount -> Amount
