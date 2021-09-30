@@ -10,9 +10,8 @@
   "scripts": {
     "clean": "rm -rf dist",
     "formatcheck": "elm-format src/elm/ --validate",
-    "build": "npm run clean && NODE_ENV=production webpack && cp -rp assets dist",
-    "dev": "webpack-dev-server",
-    "dev:prod": "NODE_ENV=production webpack-dev-server -p"
+    "build": "npm run clean && NODE_ENV=production webpack && cp -rp public/* dist",
+    "dev": "webpack-dev-server"
   },
   "prettier": {
     "trailingComma": "all",
