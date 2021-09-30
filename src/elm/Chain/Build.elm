@@ -92,18 +92,18 @@ decodeHistory =
 -- Requests
 
 
-getNodeInfo : String -> (WebData (List Node) -> msg) -> Cmd msg
-getNodeInfo collectorEndpoint responseMsg =
+getNodeInfo : (WebData (List Node) -> msg) -> Cmd msg
+getNodeInfo responseMsg =
     Http.get
-        { url = collectorEndpoint ++ "/nodesBlocksInfo"
+        { url = "/nodesBlocksInfo"
         , expect = Http.expectJson (RemoteData.fromResult >> responseMsg) (Decode.list decodeNode)
         }
 
 
-getBlockByHeight : String -> Int -> (WebData String -> msg) -> Cmd msg
-getBlockByHeight collectorEndpoint height responseMsg =
+getBlockByHeight : Int -> (WebData String -> msg) -> Cmd msg
+getBlockByHeight height responseMsg =
     Http.get
-        { url = collectorEndpoint ++ "/v1/blocksByHeight/" ++ String.fromInt height
+        { url = "/v1/blocksByHeight/" ++ String.fromInt height
         , expect = Http.expectJson (RemoteData.fromResult >> responseMsg) decodeBlockHash
         }
 

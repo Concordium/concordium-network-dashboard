@@ -11,7 +11,10 @@
     "clean": "rm -rf dist",
     "formatcheck": "elm-format src/elm/ --validate",
     "build": "npm run clean && NODE_ENV=production webpack && cp -rp public/* dist",
-    "dev": "webpack-dev-server"
+    "dev": "webpack-dev-server",
+    "dev:mainnet": "MIDDLEWARE_URL='https://dashboard.mainnet.concordium.software' COLLECTOR_URL='https://dashboard.mainnet.concordium.software' npm run dev",
+    "dev:testnet": "MIDDLEWARE_URL='https://dashboard.testnet.concordium.com' COLLECTOR_URL='https://dashboard.testnet.concordium.com' npm run dev",
+    "dev:stagenet": "MIDDLEWARE_URL='https://dashboard.stagenet.concordium.com' COLLECTOR_URL='https://dashboard.stagenet.concordium.com' npm run dev"
   },
   "prettier": {
     "trailingComma": "all",

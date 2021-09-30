@@ -48,8 +48,7 @@ import Tree exposing (Tree)
 
 
 type alias Model =
-    { endpoint : String
-    , nodes : List (List Node)
+    { nodes : List (List Node)
     , initialBlockHeight : Maybe Int
     , lastFinalized : Maybe ProtoBlock
     , bestBlock : Maybe ProtoBlock
@@ -64,10 +63,9 @@ type alias Model =
     }
 
 
-init : String -> Int -> ( Model, Cmd Msg )
-init collectorEndpoint maxWidth =
-    ( { endpoint = collectorEndpoint
-      , nodes = []
+init : Int -> ( Model, Cmd Msg )
+init maxWidth =
+    ( { nodes = []
       , initialBlockHeight = Nothing
       , lastFinalized = Nothing
       , bestBlock = Nothing
@@ -80,7 +78,7 @@ init collectorEndpoint maxWidth =
       , maxWidth = maxWidth
       , selectedBlock = Nothing
       }
-    , Build.getNodeInfo collectorEndpoint GotNodeInfo
+    , Build.getNodeInfo GotNodeInfo
     )
 
 
@@ -169,7 +167,7 @@ update ctx msg model =
                 Ok history ->
                     let
                         ( replayModel, _ ) =
-                            init model.endpoint model.maxWidth
+                            init model.maxWidth
                     in
                     ( { replayModel
                         | replay =
@@ -189,7 +187,7 @@ update ctx msg model =
             case model.replay of
                 Nothing ->
                     ( model
-                    , Build.getNodeInfo model.endpoint GotNodeInfo
+                    , Build.getNodeInfo GotNodeInfo
                     )
 
                 Just replay ->
@@ -365,7 +363,6 @@ updateChain ctx nodes model =
                 loadAdditionalBlockCmd =
                     if newDrawableChain.width < targetDepth then
                         Build.getBlockByHeight
-                            model.endpoint
                             (firstBlockHeight - 1)
                             (GotParentBlockByHeight ( firstBlockHeight, firstBlockHash ))
 

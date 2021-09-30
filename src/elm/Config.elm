@@ -3,27 +3,12 @@ module Config exposing (Config, Environment, cookiePrivacyUrl, defaultConfig, is
 
 type alias Config =
     { environment : Environment
-    , collectorUrl : String
-    , middlewareUrl : String
     }
 
 
 type Environment
-    = Development DevelopmentTarget
+    = Development
     | Production
-
-
-type DevelopmentTarget
-    = Local
-    | Staging
-    | Testnet
-    | Mainnet
-
-
-devTarget : DevelopmentTarget
-devTarget =
-    -- Tweak me when developing locally to test
-    Testnet
 
 
 isProduction : Config -> Bool
@@ -37,53 +22,13 @@ parseEnv isProd =
         Production
 
     else
-        Development devTarget
+        Development
 
 
 defaultConfig : Environment -> Config
 defaultConfig env =
     { environment = env
-    , collectorUrl = defaultCollectorUrl env
-    , middlewareUrl = defaultMiddlewareUrl env
     }
-
-
-defaultCollectorUrl : Environment -> String
-defaultCollectorUrl env =
-    case env of
-        Development target ->
-            developmentUrl target "http://127.0.0.1:12000"
-
-        -- Once deployed the routing for both collector and middleware is through the same URL
-        Production ->
-            ""
-
-
-defaultMiddlewareUrl : Environment -> String
-defaultMiddlewareUrl env =
-    case env of
-        Development target ->
-            developmentUrl target "http://localhost:8081"
-
-        -- Once deployed the routing for both collector and middleware is through the same URL
-        Production ->
-            ""
-
-
-developmentUrl : DevelopmentTarget -> String -> String
-developmentUrl mode localUrl =
-    case mode of
-        Local ->
-            localUrl
-
-        Staging ->
-            "https://dashboard.stagenet.concordium.com"
-
-        Testnet ->
-            "https://dashboard.testnet.concordium.com"
-
-        Mainnet ->
-            "https://dashboard.mainnet.concordium.software"
 
 
 {-| Pointing to an external privacy policy used by the cookie consent banner
