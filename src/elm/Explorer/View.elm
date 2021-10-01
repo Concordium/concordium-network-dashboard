@@ -786,12 +786,12 @@ rejectionToItem ctx reason =
             }
 
         InvalidInitMethod moduleRef initName ->
-            { content = [ text "No contract '", text initName, text "' found in module ", text moduleRef ]
+            { content = [ text "No contract '", el [ wordBreak ] <| text initName, text "' found in module ", text moduleRef ]
             , details = Nothing
             }
 
         InvalidReceiveMethod moduleRef receiveName ->
-            { content = [ text "No receive function '", text receiveName.functionName, text " of contract '", text receiveName.contractName, text "' found in module ", text moduleRef ]
+            { content = [ text "No receive function '", el [ wordBreak ] <| text receiveName.functionName, text " of contract '", text receiveName.contractName, text "' found in module ", text moduleRef ]
             , details = Nothing
             }
 
@@ -1520,7 +1520,21 @@ isEven n =
 
 eventElem : List (Element msg) -> List (Element msg)
 eventElem es =
-    [ paragraph [ width fill, htmlAttribute <| style "word-break" "break-word" ] es ]
+    [ wrappedRow [ width fill ] es ]
+
+
+{-| Allow text to break words when wrapping around
+-}
+wordBreak : Attribute msg
+wordBreak =
+    htmlAttribute <| style "word-break" "break-word"
+
+
+{-| Disallow text to break words when wrapping around
+-}
+noWordBreak : Attribute msg
+noWordBreak =
+    htmlAttribute <| style "word-break" "normal"
 
 
 viewTransactionEvent : Theme a -> TransactionEvent -> TransactionEventItem Msg
@@ -1750,7 +1764,9 @@ viewTransactionEvent ctx txEvent =
         TransactionEventContractInitialized event ->
             { content =
                 eventElem
-                    [ text <| "Instantiated contract '" ++ event.contractName ++ "' with address: "
+                    [ text <| "Instantiated contract '"
+                    , el [ wordBreak ] <| text event.contractName
+                    , text "' with address: "
                     , viewAsAddressContract ctx event.address
                     , text <| " from module: " ++ String.left 8 event.ref
                     ]
@@ -1772,7 +1788,7 @@ viewTransactionEvent ctx txEvent =
                                 paragraph [ Font.center ] [ text "No events" ]
 
                               else
-                                viewKeyValue ctx <| List.indexedMap (\i e -> ( String.fromInt i, text e )) event.events
+                                viewKeyValue ctx <| List.indexedMap (\i e -> ( String.fromInt i, paragraph [ wordBreak ] [ text e ] )) event.events
                             ]
                         ]
             }
@@ -1801,7 +1817,7 @@ viewTransactionEvent ctx txEvent =
                                 paragraph [ Font.center ] [ text "No events" ]
 
                               else
-                                viewKeyValue ctx <| List.indexedMap (\i e -> ( String.fromInt i, text e )) event.events
+                                viewKeyValue ctx <| List.indexedMap (\i e -> ( String.fromInt i, paragraph [ wordBreak ] [ text e ] )) event.events
                             ]
                         ]
             }
@@ -1820,7 +1836,7 @@ viewTransactionEvent ctx txEvent =
         TransactionEventTransferMemo event ->
             { content =
                 eventElem
-                    [ text <| "Transfer memo: " ++ arbitraryBytesToString event.memo
+                    [ paragraph [ wordBreak ] [ text <| "Transfer memo " ++ arbitraryBytesToString event.memo ]
                     ]
             , details = Nothing
             }
@@ -1835,7 +1851,7 @@ viewTransactionEvent ctx txEvent =
                     column [ width fill ]
                         [ viewDetailRow
                             [ paragraph [] [ text "Hex representation of the registered data:" ] ]
-                            [ paragraph [] [ text <| arbitraryBytesToString event.data ]
+                            [ paragraph [ wordBreak ] [ text <| capitalize <| arbitraryBytesToString event.data ]
                             ]
                         ]
             }
@@ -2066,6 +2082,7 @@ viewAsAddressContract ctx contractAddress =
         [ stringTooltipAboveWithCopy ctx content
         , pointer
         , onClick (CopyToClipboard content)
+        , noWordBreak
         ]
     <|
         viewAddress ctx <|

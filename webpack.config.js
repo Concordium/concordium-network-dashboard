@@ -1,78 +1,62 @@
-const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 
-const config = require('./src/server/config');
-const nodeModulesPath = path.resolve(__dirname, 'node_modules');
-
 const packageJson = require('./package.json');
-const analyticsId = "G-TE81YY48VB"
-
-const plugins = [
-  new HtmlWebpackPlugin({
-    filename: 'index.html',
-    template: './src/client/index.ejs',
-    templateParameters: {
-        title: 'Concordium Dashboard',
-        isProduction: config.isProduction,
-        analyticsId
-    },
-  }),
-  new webpack.DefinePlugin({
-    __VERSION__: JSON.stringify(packageJson.version),
-    __ANALYTICS_ID__: JSON.stringify(analyticsId),
-  }),
-];
+const analyticsId = 'G-TE81YY48VB';
+const isProduction = process.env.NODE_ENV === 'production';
 
 module.exports = {
-  mode: config.isProduction ? 'production' : 'development',
-  devtool: config.isProduction ? '' : 'inline-source-map',
-  entry: ['@babel/polyfill', './src/client/client'],
+  entry: './src/client',
+  mode: isProduction ? 'production' : 'development',
   output: {
-    path: path.join(__dirname, 'dist', 'public'),
-    filename: `[name]-[hash:8]-bundle.js`,
-    publicPath: config.isProduction ? '/' : '/public/',
+    filename: `[name]-[contenthash:8]-bundle.js`,
+    clean: true,
   },
   resolve: {
-    extensions: ['.js', '.ts', '.tsx', '.elm'],
-  },
-  optimization: {
-    splitChunks: {
-      cacheGroups: {
-        commons: {
-          test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all',
-        },
-      },
-    },
-  },
-  devServer: {
-    port: 8090,
-    hot: true,
+    extensions: ['.js', '.ts', '.elm'],
   },
   module: {
     rules: [
       {
         test: /\.tsx?$/,
-        loaders: ['babel-loader'],
-        exclude: [/node_modules/, nodeModulesPath],
+        use: { loader: 'babel-loader' },
+        exclude: /node_modules/,
       },
       {
         test: /.jpe?g$|.gif$|.png$|.svg$|.woff$|.woff2$|.ttf$|.eot$/,
-        use: 'url-loader?limit=10000',
+        type: 'asset/resource',
       },
       {
         test: [/\.elm$/],
-        exclude: [/elm-stuff/, /node_modules/],
-        use: [
-          {
-            loader: "elm-webpack-loader",
-            options: config.isProduction ? { optimize: true } : { debug: true }
-          }
-        ]
-      }
+        exclude: /elm-stuff|node_modules/,
+        use: {
+          loader: 'elm-webpack-loader',
+        },
+      },
     ],
   },
-  plugins
+  plugins: [
+    new CopyPlugin({
+      patterns: [{ from: 'public' }],
+    }),
+    new HtmlWebpackPlugin({
+      template: './src/index.ejs',
+      templateParameters: {
+        title: 'Concordium Dashboard',
+        analyticsId,
+      },
+    }),
+    new webpack.DefinePlugin({
+      __VERSION__: JSON.stringify(packageJson.version),
+      __ANALYTICS_ID__: JSON.stringify(analyticsId),
+      __PRODUCTION__: isProduction.toString(),
+    }),
+  ],
+  devServer: {
+    port: 3001,
+    historyApiFallback: {
+      index: '/index.html',
+    },
+  },
 };

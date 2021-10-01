@@ -5,9 +5,9 @@
     "sourceMap": true,
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true,
-    "outDir": "./dist",
     "lib": ["es2015", "dom"],
+    "strict": true,
     "types": [],
   },
-  "files": ["./types.d.ts", "src/client/client.ts"]
+  "files": ["./types.d.ts", "src/client.ts"]
 }
