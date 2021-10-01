@@ -126,17 +126,23 @@ errorToString error =
         Http.NetworkError ->
             "Unable to reach the server, check your network connection"
 
-        Http.BadStatus 500 ->
-            "The server had a problem, try again later"
+        Http.BadStatus code ->
+            if 400 <= code && code < 500 then
+                "Verify your information and try again"
 
-        Http.BadStatus 504 ->
-            "Server gateway timeout, try again later"
+            else if 500 <= code && code < 600 then
+                case code of
+                    504 ->
+                        "Server gateway timeout, try again later"
 
-        Http.BadStatus 400 ->
-            "Verify your information and try again"
+                    502 ->
+                        "Server bad gateway, try again later"
 
-        Http.BadStatus _ ->
-            "Unknown error"
+                    _ ->
+                        "The server had a problem, try again later"
+
+            else
+                "Failed with error code " ++ String.fromInt code
 
         Http.BadBody errorMessage ->
             errorMessage

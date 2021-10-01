@@ -56,7 +56,7 @@ expectJson_ toMsg decoder =
                             Ok value
 
                         Err err ->
-                            Err (Http.BadBody (String.fromInt metadata.statusCode ++ ": " ++ body))
+                            Err (Http.BadStatus metadata.statusCode)
 
                 Http.GoodStatus_ metadata body ->
                     case D.decodeString decoder body of
@@ -154,7 +154,7 @@ blockInfoDecoder =
 
 getTransactionStatus : Config -> T.TxHash -> (ApiResult TransactionStatusResponse -> msg) -> Cmd msg
 getTransactionStatus cfg txHash msg =
-    getMiddleware cfg ("/v1/transactionStatus/" ++ txHash) transactionStatusResponseDecoder msg
+    getMiddleware { middlewareUrl = "" } ("/v1/transactionStatus/" ++ txHash) transactionStatusResponseDecoder msg
 
 
 {-| The current status of a transaction where:
