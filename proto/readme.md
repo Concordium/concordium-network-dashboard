@@ -1,1 +1,0 @@
-This is manually copied here from https://gitlab.com/Concordium/p2p-client/tree/master/src/proto as it's read in by `grpc` lib, however that file isn't available relatively in the Docker context without cloning the whole `p2p-client` repo, which I wanted to avoid for now.
