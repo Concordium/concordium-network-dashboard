@@ -639,13 +639,13 @@ arbitraryBytesToString : ArbitraryBytes -> String
 arbitraryBytesToString arbitraryBytes =
     case arbitraryBytes of
         CborString str ->
-            "encoded as \"" ++ str ++ "\""
+            "decodes as the string \"" ++ str ++ "\""
 
         CborInt int ->
-            "encoded as " ++ String.fromInt int
+            "decodes as the integer " ++ String.fromInt int
 
         RawHex raw ->
-            "not encoded: " ++ raw
+            "cannot be decoded. The raw data is: " ++ raw
 
 
 transactionEventsDecoder : D.Decoder TransactionEvent
