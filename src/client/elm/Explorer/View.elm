@@ -1820,7 +1820,7 @@ viewTransactionEvent ctx txEvent =
         TransactionEventTransferMemo event ->
             { content =
                 eventElem
-                    [ paragraph [ wordBreak ] [ text <| "Transfer memo: " ++ arbitraryBytesToString event.memo ]
+                    [ paragraph [ wordBreak ] [ text <| "Transfer memo " ++ arbitraryBytesToString event.memo ]
                     ]
             , details = Nothing
             }
@@ -1835,7 +1835,7 @@ viewTransactionEvent ctx txEvent =
                     column [ width fill ]
                         [ viewDetailRow
                             [ paragraph [] [ text "Hex representation of the registered data:" ] ]
-                            [ paragraph [ wordBreak ] [ text <| arbitraryBytesToString event.data ]
+                            [ paragraph [ wordBreak ] [ text <| capitalize <| arbitraryBytesToString event.data ]
                             ]
                         ]
             }
