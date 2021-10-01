@@ -154,7 +154,7 @@ blockInfoDecoder =
 
 getTransactionStatus : Config -> T.TxHash -> (ApiResult TransactionStatusResponse -> msg) -> Cmd msg
 getTransactionStatus cfg txHash msg =
-    getMiddleware { middlewareUrl = "" } ("/v1/transactionStatus/" ++ txHash) transactionStatusResponseDecoder msg
+    getMiddleware cfg ("/v1/transactionStatus/" ++ txHash) transactionStatusResponseDecoder msg
 
 
 {-| The current status of a transaction where:
