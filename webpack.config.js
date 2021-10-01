@@ -1,4 +1,5 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
 
 const packageJson = require('./package.json');
@@ -10,6 +11,7 @@ module.exports = {
   mode: isProduction ? 'production' : 'development',
   output: {
     filename: `[name]-[contenthash:8]-bundle.js`,
+    clean: true,
   },
   resolve: {
     extensions: ['.js', '.ts', '.elm'],
@@ -35,6 +37,9 @@ module.exports = {
     ],
   },
   plugins: [
+    new CopyPlugin({
+      patterns: [{ from: 'public' }],
+    }),
     new HtmlWebpackPlugin({
       template: './src/index.ejs',
       templateParameters: {
