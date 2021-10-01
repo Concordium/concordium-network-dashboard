@@ -11,6 +11,7 @@ module.exports = {
   mode: isProduction ? 'production' : 'development',
   output: {
     filename: `[name]-[contenthash:8]-bundle.js`,
+    publicPath: '/', // Will ensure deep links still fetches resources from the root.
     clean: true,
   },
   resolve: {
@@ -55,8 +56,6 @@ module.exports = {
   ],
   devServer: {
     port: 3001,
-    historyApiFallback: {
-      index: '/index.html',
-    },
+    historyApiFallback: true,
   },
 };
