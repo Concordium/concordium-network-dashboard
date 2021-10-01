@@ -92,8 +92,11 @@ viewSelectedNode ctx node model =
     column [ Font.color ctx.palette.success ]
         statRows
 
+
 eventsWidth : Html.Attribute msg
-eventsWidth = Html.Attributes.width 200
+eventsWidth =
+    Html.Attributes.width 200
+
 
 forceWrapTextElement : String -> Element msg
 forceWrapTextElement t =
@@ -103,8 +106,7 @@ forceWrapTextElement t =
             , style "white-space" "normal"
             , eventsWidth
             ]
-            [ Html.text t
-            ]
+            [ Html.text t ]
 
 
 viewPeerList : Dict Host NetworkNode -> List String -> Element Msg
