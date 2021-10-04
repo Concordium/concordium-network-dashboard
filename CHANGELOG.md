@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - Make GTU per Euro update in block explorer more readable.
 - Remove dead link to account documentation.
 - Attempt to parse RegisterData bytes as CBOR, similar to memo transactions.
+- Show more readable error messages for http error codes.
 
 ### Fixed
 - Fixed text wrapping problem in the block explorer
