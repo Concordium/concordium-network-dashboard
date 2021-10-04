@@ -35,7 +35,7 @@ type Msg
     | BlockClicked String
     | Display DisplayMsg
     | UrlClicked UrlRequest
-    | Never
+    | Nop -- Message triggering no operation.
 
 
 type alias SummaryItem msg =
@@ -168,7 +168,7 @@ viewBlockSummary theme { blockSummary, state } =
                     , cost = none
                     , txHash = none
                     }
-            , column [ width fill, spacing 5 ] <| viewSummaryItem theme (List.concat specialEvents ++ finalizations) state.specialEventWithDetailsOpen (Display << ToggleSpecialEventDetails) initialTransactionEventPaging (\_ -> Never)
+            , column [ width fill, spacing 5 ] <| viewSummaryItem theme (List.concat specialEvents ++ finalizations) state.specialEventWithDetailsOpen (Display << ToggleSpecialEventDetails) initialTransactionEventPaging (\_ -> Nop)
             ]
         , section
             [ titleWithSubtitle theme "Updates" "Updates queued at the time of this block"

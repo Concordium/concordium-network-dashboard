@@ -92,7 +92,7 @@ type Msg
     | HideToast Int
     | StorageDocReceived D.Value
     | SetCookieConsent Bool
-    | Never
+    | Nop -- Message triggering no operation.
       --
     | NetworkMsg Network.Msg
     | ChainMsg Chain.Msg
@@ -344,7 +344,7 @@ update msg model =
                     in
                     ( { model | lookupModel = newLookupModel }, Cmd.map LookupMsg cmd )
 
-        Never ->
+        Nop ->
             ( model, Cmd.none )
 
 
@@ -605,8 +605,8 @@ translateMsg msg =
         Explorer.View.UrlClicked link ->
             UrlClicked link
 
-        Explorer.View.Never ->
-            Never
+        Explorer.View.Nop ->
+            Nop
 
 
 themeLayout : Palette Color -> Element msg -> Html.Html msg
