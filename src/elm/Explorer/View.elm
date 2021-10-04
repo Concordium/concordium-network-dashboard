@@ -74,16 +74,16 @@ finalizationRewardAccountLower =
     toLower finalizationRewardAccountUpper
 
 
-view : Theme a -> Model -> Element Msg
-view theme model =
+view : Theme a -> Time.Zone -> Model -> Element Msg
+view theme timezone model =
     column [ spacing 40, width fill ]
         [ viewContainer theme
             (remoteDataView theme.palette
                 (\blockInfo ->
                     column
                         [ width fill ]
-                        [ viewHeader theme blockInfo
-                        , remoteDataView theme.palette (viewBlockSummary theme) model.blockSummary
+                        [ viewHeader theme timezone blockInfo
+                        , remoteDataView theme.palette (viewBlockSummary theme timezone) model.blockSummary
                         ]
                 )
                 model.blockInfo
@@ -91,12 +91,12 @@ view theme model =
         ]
 
 
-viewBlockSummary : Theme a -> DisplayDetailBlockSummary -> Element Msg
-viewBlockSummary theme { blockSummary, state } =
+viewBlockSummary : Theme a -> Time.Zone -> DisplayDetailBlockSummary -> Element Msg
+viewBlockSummary theme timezone { blockSummary, state } =
     let
         transactionSummaries =
             blockSummary.transactionSummaries
-                |> List.map (viewTransactionSummary theme)
+                |> List.map (viewTransactionSummary theme timezone)
 
         transactionNum =
             List.length transactionSummaries
@@ -172,7 +172,7 @@ viewBlockSummary theme { blockSummary, state } =
             ]
         , section
             [ titleWithSubtitle theme "Updates" "Updates queued at the time of this block"
-            , viewUpdates theme blockSummary.updates
+            , viewUpdates theme timezone blockSummary.updates
             ]
         ]
 
@@ -272,12 +272,13 @@ viewContainer ctx content =
         content
 
 
-viewHeader : Theme a -> BlockInfo -> Element Msg
-viewHeader theme blockInfo =
-    row ([ width fill, spacing 15, paddingXY 6 0 ] ++ bottomBorder theme)
+viewHeader : Theme a -> Time.Zone -> BlockInfo -> Element Msg
+viewHeader theme timezone blockInfo =
+    row ([ width fill, spacing 10, paddingXY 6 0 ] ++ bottomBorder theme)
         [ viewParentLink theme blockInfo
         , viewBlockHash theme blockInfo.blockHash blockInfo.finalized
-        , viewBlockStats theme blockInfo
+        , viewBlockHeight theme blockInfo
+        , viewSlotTime theme timezone blockInfo
         ]
 
 
@@ -367,46 +368,37 @@ blockIcon finalized =
         Icons.block_not_finalized
 
 
-viewBlockStats : Theme a -> BlockInfo -> Element Msg
-viewBlockStats ctx blockInfo =
-    row [ alignRight, spacing 15 ]
-        [ viewBlockHeight ctx blockInfo
-        , viewSlotTime ctx blockInfo
-        ]
-
-
-viewSlotTime : Theme a -> BlockInfo -> Element Msg
-viewSlotTime ctx blockInfo =
+viewSlotTime : Theme a -> Time.Zone -> BlockInfo -> Element Msg
+viewSlotTime ctx timezone blockInfo =
     let
         color =
             blockColor ctx blockInfo.finalized
 
         slotTime =
-            -- @TODO add timezone support?
-            TimeHelpers.formatTime Time.utc blockInfo.blockSlotTime
-
-        -- Formatting.formatTimeBetween blockInfo.blockSlotTime ctx.time
+            TimeHelpers.formatTime timezone blockInfo.blockSlotTime
     in
     row
         [ height fill
-        , spacing 10
+        , spacing 2
         , Font.color color
         , alignRight
         ]
-        [ el [ Font.color (withAlphaEl 0.5 <| color) ]
+        [ el [ Font.color (withAlphaEl 0.8 <| color) ]
             (html <| Icons.time_stopwatch 20)
-        , el
-            [ Font.color color
-            , stringTooltipAbove ctx "Slot time"
+        , row [ spacing 8 ]
+            [ el
+                [ Font.color color
+                , stringTooltipAbove ctx "Slot time"
+                ]
+                (text slotTime)
+            , el
+                [ Font.color (withAlphaEl 0.8 <| color)
+                , stringTooltipAbove ctx "Copy to clipboard"
+                , pointer
+                , onClick (CopyToClipboard slotTime)
+                ]
+                (html <| Icons.copy_to_clipboard 18)
             ]
-            (text slotTime)
-        , el
-            [ Font.color (withAlphaEl 0.5 <| color)
-            , stringTooltipAbove ctx "Copy to clipboard"
-            , pointer
-            , onClick (CopyToClipboard slotTime)
-            ]
-            (html <| Icons.copy_to_clipboard 18)
         ]
 
 
@@ -418,7 +410,7 @@ viewBlockHeight ctx blockInfo =
     in
     row
         [ height fill
-        , spacing 10
+        , spacing 2
         , Font.color color
         , alignRight
         , stringTooltipAbove ctx "Chain length"
@@ -482,8 +474,8 @@ type alias TransactionEventItem msg =
     }
 
 
-viewTransactionSummary : Theme a -> TransactionSummary -> SummaryItem Msg
-viewTransactionSummary ctx txSummary =
+viewTransactionSummary : Theme a -> Time.Zone -> TransactionSummary -> SummaryItem Msg
+viewTransactionSummary ctx timezone txSummary =
     let
         typeDecription =
             typeDescriptionTransactionSummaryType txSummary.tipe
@@ -516,7 +508,7 @@ viewTransactionSummary ctx txSummary =
         viewMainEventItem event =
             let
                 item =
-                    viewTransactionEvent ctx event
+                    viewTransactionEvent ctx timezone event
             in
             { content =
                 row contentRowAttrs <|
@@ -542,7 +534,7 @@ viewTransactionSummary ctx txSummary =
         viewSubEvent event =
             let
                 item =
-                    viewTransactionEvent ctx event
+                    viewTransactionEvent ctx timezone event
             in
             { content =
                 row contentRowAttrs <|
@@ -931,8 +923,8 @@ rejectionToItem ctx reason =
             }
 
 
-viewUpdates : Theme a -> Updates -> Element Msg
-viewUpdates theme updates =
+viewUpdates : Theme a -> Time.Zone -> Updates -> Element Msg
+viewUpdates theme timezone updates =
     let
         allQueuedUpdates =
             listUpdatePayloads updates.updateQueues
@@ -944,13 +936,7 @@ viewUpdates theme updates =
         viewUpdate : EventUpdateEnqueued -> Element Msg
         viewUpdate update =
             updateRow
-                (el
-                    [ Font.color theme.palette.fg1 ]
-                 <|
-                    text <|
-                        TimeHelpers.formatTime Time.utc <|
-                            update.effectiveTime
-                )
+                (el [ Font.color theme.palette.fg1 ] <| text <| TimeHelpers.formatTime timezone update.effectiveTime)
                 (viewEventUpdateEnqueuedDetails theme update)
     in
     if List.isEmpty allQueuedUpdates then
@@ -1537,8 +1523,8 @@ noWordBreak =
     htmlAttribute <| style "word-break" "normal"
 
 
-viewTransactionEvent : Theme a -> TransactionEvent -> TransactionEventItem Msg
-viewTransactionEvent ctx txEvent =
+viewTransactionEvent : Theme a -> Time.Zone -> TransactionEvent -> TransactionEventItem Msg
+viewTransactionEvent ctx timezone txEvent =
     case txEvent of
         -- Transfers
         TransactionEventTransferred event ->
@@ -1574,7 +1560,7 @@ viewTransactionEvent ctx txEvent =
                                 , columns =
                                     [ { header = text "Release date"
                                       , width = fill
-                                      , view = \i ( timestamp, _ ) -> el [ centerX ] <| text <| TimeHelpers.formatTime Time.utc timestamp
+                                      , view = \i ( timestamp, _ ) -> el [ centerX ] <| text <| TimeHelpers.formatTime timezone timestamp
                                       }
                                     , { header = text "Amount"
                                       , width = fill
@@ -1825,7 +1811,7 @@ viewTransactionEvent ctx txEvent =
         TransactionEventUpdateEnqueued event ->
             { content =
                 eventElem
-                    [ text <| "Update enqueued to take effect " ++ TimeHelpers.formatTime Time.utc event.effectiveTime
+                    [ text <| "Update enqueued to take effect " ++ TimeHelpers.formatTime timezone event.effectiveTime
                     ]
             , details =
                 Just <|

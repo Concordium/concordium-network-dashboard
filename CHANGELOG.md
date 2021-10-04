@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 - Remove dead link to account documentation.
 - Attempt to parse RegisterData bytes as CBOR, similar to memo transactions.
 - Show more readable error messages for http error codes.
+- Display dates in local time and with UTC offset.
 
 ### Fixed
 - Fixed text wrapping problem in the block explorer

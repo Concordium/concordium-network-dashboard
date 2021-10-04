@@ -67,6 +67,7 @@ type alias ToastModel =
 type alias Model =
     { key : Key
     , time : Time.Posix
+    , timezone : Time.Zone
     , config : Config
     , window : { width : Int, height : Int }
     , version : Version
@@ -84,6 +85,7 @@ type alias Model =
 
 type Msg
     = CurrentTime Time.Posix
+    | CurrentTimezone Time.Zone
     | UrlClicked UrlRequest
     | UrlChanged Url
     | WindowResized Int Int
@@ -130,6 +132,7 @@ init flags url key =
                 route
                 { key = key
                 , time = Time.millisToPosix 0
+                , timezone = Time.utc
                 , config = cfg
                 , version = flags.version
                 , showCookieConsentBanner = flags.showCookieConsentBanner
@@ -149,6 +152,7 @@ init flags url key =
         [ initCmd
         , Storage.loadAll ()
         , Cmd.map ChainMsg chainCmd
+        , Task.perform CurrentTimezone Time.here
         ]
     )
 
@@ -158,6 +162,9 @@ update msg model =
     case msg of
         CurrentTime time ->
             ( { model | time = time }, Cmd.none )
+
+        CurrentTimezone zone ->
+            ( { model | timezone = zone }, Cmd.none )
 
         UrlClicked urlRequest ->
             case urlRequest of
@@ -544,7 +551,7 @@ viewChainPage model =
                 (Element.map ChainMsg <| Chain.view theme model.chainModel showDevTools)
             , row [ viewCopiedToast model, centerX ]
                 [ Element.map translateMsg <|
-                    Explorer.View.view theme model.explorerModel
+                    Explorer.View.view theme model.timezone model.explorerModel
                 ]
             ]
 
@@ -560,6 +567,7 @@ viewLookupPage model =
                     { palette = model.palette
                     , colorMode = model.colorMode
                     }
+                    model.timezone
                     model.lookupModel
             ]
 
