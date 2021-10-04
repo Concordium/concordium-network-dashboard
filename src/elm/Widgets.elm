@@ -118,25 +118,23 @@ errorToString : Http.Error -> String
 errorToString error =
     case error of
         Http.BadUrl url ->
-            "The URL " ++ url ++ " was invalid"
+            "The URL " ++ url ++ " is invalid."
 
         Http.Timeout ->
-            "Unable to reach the server, try again"
+            "Unable to reach the server. Try again."
 
         Http.NetworkError ->
-            "Unable to reach the server, check your network connection"
+            "Unable to reach the server. Check your network connection."
 
-        Http.BadStatus 500 ->
-            "The server had a problem, try again later"
+        Http.BadStatus code ->
+            if 400 <= code && code < 500 then
+                "Verify your information and try again."
 
-        Http.BadStatus 504 ->
-            "Server gateway timeout, try again later"
+            else if 500 <= code && code < 600 then
+                "Server not reachable. Try again later."
 
-        Http.BadStatus 400 ->
-            "Verify your information and try again"
-
-        Http.BadStatus _ ->
-            "Unknown error"
+            else
+                "Fails with error code " ++ String.fromInt code ++ "."
 
         Http.BadBody errorMessage ->
             errorMessage
