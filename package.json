@@ -11,9 +11,9 @@
     "formatcheck": "elm-format src/elm/ --validate",
     "build": "NODE_ENV=production webpack",
     "dev": "webpack-dev-server",
-    "dev:mainnet": "MIDDLEWARE_URL='https://dashboard.mainnet.concordium.software' COLLECTOR_URL='https://dashboard.mainnet.concordium.software' npm run dev",
-    "dev:testnet": "MIDDLEWARE_URL='https://dashboard.testnet.concordium.com' COLLECTOR_URL='https://dashboard.testnet.concordium.com' npm run dev",
-    "dev:stagenet": "MIDDLEWARE_URL='https://dashboard.stagenet.concordium.com' COLLECTOR_URL='https://dashboard.stagenet.concordium.com' npm run dev"
+    "dev:mainnet": "CONCORDIUM_MIDDLEWARE_URL='https://dashboard.mainnet.concordium.software' CONCORDIUM_COLLECTOR_BACKEND_URL='https://dashboard.mainnet.concordium.software' npm run dev",
+    "dev:testnet": "CONCORDIUM_MIDDLEWARE_URL='https://dashboard.testnet.concordium.com' CONCORDIUM_COLLECTOR_BACKEND_URL='https://dashboard.testnet.concordium.com' npm run dev",
+    "dev:stagenet": "CONCORDIUM_MIDDLEWARE_URL='https://dashboard.stagenet.concordium.com' CONCORDIUM_COLLECTOR_BACKEND_URL='https://dashboard.stagenet.concordium.com' npm run dev"
   },
   "prettier": {
     "trailingComma": "all",

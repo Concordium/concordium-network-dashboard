@@ -5,15 +5,17 @@ const webpack = require('webpack');
 const packageJson = require('./package.json');
 const analyticsId = 'G-TE81YY48VB';
 const isProduction = process.env.NODE_ENV === 'production';
-const middlewareUrl = process.env.MIDDLEWARE_URL;
-const collectorUrl = process.env.COLLECTOR_URL;
+const middlewareUrl = process.env.CONCORDIUM_MIDDLEWARE_URL;
+const collectorUrl = process.env.CONCORDIUM_COLLECTOR_BACKEND_URL;
 
 // Checking if the webpack config is being used by dev server
 const isDevServer = process.argv.some((v) => v.includes('webpack-dev-server'));
 
 // Fail if missing the environment variables required in development
 if (isDevServer && (!middlewareUrl || !collectorUrl)) {
-  throw new Error('Missing environment variables MIDDLEWARE_URL and COLLECTOR_URL for development');
+  throw new Error(
+    'Missing environment variables CONCORDIUM_MIDDLEWARE_URL and CONCORDIUM_COLLECTOR_BACKEND_URL for development',
+  );
 }
 
 module.exports = {
