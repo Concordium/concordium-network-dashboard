@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## Unreleased changes
 
 ### Added
+- Paging for transaction events in block explorer and the transaction lookup page.
 
 ### Changed
 - Make GTU per Euro update in block explorer more readable.

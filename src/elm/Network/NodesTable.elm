@@ -47,12 +47,15 @@ view ctx model =
                                 |> Dict.values
                                 |> sortNodesMode model.sortMode
 
-                        nodesPaging =
-                            Paging.paging model.nodesPagingModel listNodes
+                        nodesVisible =
+                            Paging.visibleItems model.nodesPagingModel listNodes
+
+                        nodesPager =
+                            Paging.pager model.nodesPagingModel (List.length listNodes)
                     in
                     column [ spacing 10, width fill ]
-                        [ nodesTable ctx model.sortMode nodesPaging.visibleItems
-                        , el [ centerX ] <| Element.map NodesPaging nodesPaging.pager
+                        [ nodesTable ctx model.sortMode nodesVisible
+                        , el [ centerX ] <| Element.map NodesPaging nodesPager
                         ]
                 )
                 model.nodes

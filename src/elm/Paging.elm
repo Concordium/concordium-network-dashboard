@@ -43,15 +43,12 @@ update msg model =
             { model | pageIndex = 0 }
 
 
-{-| Takes the paging state and a list of items to filter, and returns the
-filtered items plus the view for navigation.
+{-| Takes the paging state and the length of items to filter, and returns the view for navigation.
+Will hide the navigation if paging is not needed
 -}
-paging : Model -> List a -> { visibleItems : List a, pager : Element Msg }
-paging model items =
+pager : Model -> Int -> Element Msg
+pager model numberOfItems =
     let
-        numberOfItems =
-            List.length items
-
         totalPages =
             numberOfItems // model.pageSize + 1
 
@@ -60,30 +57,40 @@ paging model items =
 
         to =
             min (from + model.pageSize) numberOfItems
-
-        visibleItems =
-            items
-                |> List.drop from
-                |> List.take model.pageSize
-
-        pager =
-            row []
-                [ el
-                    [ onClick PreviousPage
-                    , pointer
-                    , visible (model.pageIndex > 0)
-                    ]
-                    (text "Prev ")
-                , text <| String.fromInt (from + 1) ++ " - " ++ String.fromInt to
-                , el
-                    [ onClick NextPage
-                    , pointer
-                    , visible (model.pageIndex < (totalPages - 1))
-                    ]
-                    (text " Next")
-                ]
     in
-    { pager = pager, visibleItems = visibleItems }
+    if model.pageSize < numberOfItems then
+        row []
+            [ el
+                [ onClick PreviousPage
+                , pointer
+                , visible (model.pageIndex > 0)
+                ]
+                (text "Prev ")
+            , text <| String.fromInt (from + 1) ++ " - " ++ String.fromInt to
+            , el
+                [ onClick NextPage
+                , pointer
+                , visible (model.pageIndex < (totalPages - 1))
+                ]
+                (text " Next")
+            ]
+
+    else
+        Element.none
+
+
+{-| Takes the paging state and a list of items to filter, and returns the
+filtered items.
+-}
+visibleItems : Model -> List a -> List a
+visibleItems model items =
+    let
+        from =
+            model.pageIndex * model.pageSize
+    in
+    items
+        |> List.drop from
+        |> List.take model.pageSize
 
 
 visible : Bool -> Attribute msg

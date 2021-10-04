@@ -12,6 +12,7 @@ import Element.Input as Input
 import Explorer.View exposing (mapSummaryItem, viewBlockHash, viewContainer, viewContentHeadline, viewSummaryItem, viewTransactionSummary)
 import Helpers exposing (..)
 import List
+import Paging
 import RemoteData exposing (WebData)
 import Route exposing (Route)
 import Set exposing (Set)
@@ -24,6 +25,7 @@ type alias DisplayDetailTransactionStatusResponse =
 
     -- A map from index of block to a set of event indexes with details actively displayed in the view.
     , detailsDisplayed : Dict Int (Set Int)
+    , eventPaging : Paging.Model
     }
 
 
@@ -48,6 +50,7 @@ type Msg
     | ReceivedTransactionStatus (ApiResult Api.TransactionStatusResponse)
     | CopyToClipboard String -- Is mapped and handled in Main module
     | ToggleDisplayDetails Int Int
+    | PagingMsg Paging.Msg
     | None
 
 
@@ -67,7 +70,7 @@ update msg model =
                 | transactionStatusResult =
                     RemoteData.fromResult result
                         |> RemoteData.map
-                            (\txStatusResponse -> { transactionStatusResponse = txStatusResponse, detailsDisplayed = Dict.empty })
+                            (\txStatusResponse -> { transactionStatusResponse = txStatusResponse, detailsDisplayed = Dict.empty, eventPaging = Paging.init 10 })
               }
             , Cmd.none
             )
@@ -83,6 +86,19 @@ update msg model =
                                         Dict.update itemIndex
                                             (Maybe.withDefault Set.empty >> toggleSetMember eventIndex >> Just)
                                             displayDetailTransactionStatus.detailsDisplayed
+                                }
+                            )
+            in
+            ( { model | transactionStatusResult = nextTransactionStatusResult }, Cmd.none )
+
+        PagingMsg pagingMsg ->
+            let
+                nextTransactionStatusResult =
+                    model.transactionStatusResult
+                        |> RemoteData.map
+                            (\displayDetailTransactionStatus ->
+                                { displayDetailTransactionStatus
+                                    | eventPaging = Paging.update pagingMsg displayDetailTransactionStatus.eventPaging
                                 }
                             )
             in
@@ -180,7 +196,7 @@ viewTransactionStatus theme data =
                 column [ centerX, spacing 5, width fill ] <|
                     [ el [ centerX ] (Element.map explorerToLookupMsg <| viewBlockHash theme blockHash finalized)
                     , viewContentHeadline theme
-                    , column [ width fill ] <| viewSummaryItem theme item displayedEvents (ToggleDisplayDetails index)
+                    , column [ width fill ] <| viewSummaryItem theme item displayedEvents (ToggleDisplayDetails index) data.eventPaging PagingMsg
                     ]
     in
     case data.transactionStatusResponse of
