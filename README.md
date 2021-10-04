@@ -21,12 +21,12 @@ From the project root, run
 npm install
 ```
 
-The app relies on two backend services; the "Middleware" and the "Collector Backend" more about these below.
+The app relies on two backend services; the "Middleware" and the "Collector Backend", which are described below.
 The development server will proxy some requests to either of these and must be provided with URLs for these through environment variables `MIDDLEWARE_URL` and `COLLECTOR_URL`.
 
 **Local**
 
-To use the development server with local middleware and collector backend run:
+To use the development server with a local middleware and collector backend run:
 ```
 MIDDLEWARE_URL='http://localhost:8081' COLLECTOR_URL='http://localhost:12000' npm run dev
 ```
@@ -119,7 +119,7 @@ Note that you need to set a feature flag to build the collector (backend).
 ### Docker build
 
 The Dashboard is deployed on Kubernetes using a dockerized build.
-The docker file `k8s.Dockerfile` builds `dist` locally first before copying into image.
+The docker file `k8s.Dockerfile` builds `dist` locally first before copying it into an image.
 
 #### Requirements and credits
 
