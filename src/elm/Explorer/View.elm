@@ -3,7 +3,6 @@ module Explorer.View exposing (..)
 import Api exposing (BlockInfo)
 import Browser exposing (UrlRequest)
 import Context exposing (Theme)
-import Css exposing (space)
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
@@ -360,10 +359,7 @@ viewSlotTime ctx timezone blockInfo =
             blockColor ctx blockInfo.finalized
 
         slotTime =
-            -- @TODO add timezone support?
             TimeHelpers.formatTime timezone blockInfo.blockSlotTime
-
-        -- Formatting.formatTimeBetween blockInfo.blockSlotTime ctx.time
     in
     row
         [ height fill
