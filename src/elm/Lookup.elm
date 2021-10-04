@@ -15,6 +15,7 @@ import List
 import RemoteData exposing (WebData)
 import Route exposing (Route)
 import Set exposing (Set)
+import Time
 import Types as T
 import Widgets
 
@@ -92,14 +93,14 @@ update msg model =
             ( model, Cmd.none )
 
 
-view : Theme a -> Model -> Element Msg
-view theme model =
+view : Theme a -> Time.Zone -> Model -> Element Msg
+view theme timezone model =
     column
         [ spacing 40
         , width fill
         ]
         [ viewTransactionSearch theme model
-        , viewTransactionStatusWebData theme model.transactionStatusResult
+        , viewTransactionStatusWebData theme timezone model.transactionStatusResult
         ]
 
 
@@ -147,8 +148,8 @@ viewTransactionSearch theme model =
         ]
 
 
-viewTransactionStatusWebData : Theme a -> WebData DisplayDetailTransactionStatusResponse -> Element Msg
-viewTransactionStatusWebData theme remoteData =
+viewTransactionStatusWebData : Theme a -> Time.Zone -> WebData DisplayDetailTransactionStatusResponse -> Element Msg
+viewTransactionStatusWebData theme timezone remoteData =
     case remoteData of
         RemoteData.NotAsked ->
             Element.none
@@ -160,16 +161,16 @@ viewTransactionStatusWebData theme remoteData =
             el [ Font.color theme.palette.danger, centerX ] (paragraph [] [ text <| "Error: " ++ Widgets.errorToString error ])
 
         RemoteData.Success data ->
-            viewTransactionStatus theme data
+            viewTransactionStatus theme timezone data
 
 
-viewTransactionStatus : Theme a -> DisplayDetailTransactionStatusResponse -> Element Msg
-viewTransactionStatus theme data =
+viewTransactionStatus : Theme a -> Time.Zone -> DisplayDetailTransactionStatusResponse -> Element Msg
+viewTransactionStatus theme timezone data =
     let
         viewTransactionStatusBlock finalized index ( blockHash, txSummary ) =
             let
                 item =
-                    mapSummaryItem explorerToLookupMsg <| viewTransactionSummary theme txSummary
+                    mapSummaryItem explorerToLookupMsg <| viewTransactionSummary theme timezone txSummary
 
                 displayedEvents =
                     data.detailsDisplayed

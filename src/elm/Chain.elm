@@ -480,7 +480,7 @@ viewInfoIcon ctx description =
     el [ padding 17, alignRight ]
         (el
             [ padding 3
-            , Font.color (ctx.palette.c3 |> Palette.withAlphaEl 0.3)
+            , Font.color (ctx.palette.c3 |> Palette.withAlphaEl 0.7)
             , stringTooltipAlignedRight ctx (text description)
             ]
             (html <| MaterialIcons.info 16 Inherit)

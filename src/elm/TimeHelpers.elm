@@ -1,6 +1,7 @@
 module TimeHelpers exposing (..)
 
 import Time
+import Time.Extra exposing (toOffset)
 
 
 formatTime : Time.Zone -> Time.Posix -> String
@@ -19,7 +20,23 @@ formatTime zone posix =
         ++ "."
         ++ (String.padLeft 2 '0' <| String.left 2 <| String.fromInt <| Time.toMillis zone posix)
         -- @TODO use the timezone lookup in future
-        ++ " UTC"
+        ++ formatTimezone zone posix
+
+
+formatTimezone : Time.Zone -> Time.Posix -> String
+formatTimezone zone posix =
+    let
+        offset =
+            toOffset zone posix // 60
+
+        sign =
+            if offset < 0 then
+                "-"
+
+            else
+                "+"
+    in
+    " UTC" ++ sign ++ String.fromInt offset
 
 
 monthToInt : Time.Month -> Int
