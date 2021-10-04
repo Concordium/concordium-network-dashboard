@@ -21,9 +21,41 @@ From the project root, run
 npm install
 ```
 
-To build and run the app in watch mode with source maps, run
+The app relies on two backend services; the "Middleware" and the "Collector Backend", which are described below.
+The development server will proxy some requests to either of these and must be provided with URLs for these through environment variables `CONCORDIUM_MIDDLEWARE_URL` and `CONCORDIUM_COLLECTOR_BACKEND_URL`.
+
+**Local**
+
+To use the development server with a local middleware and collector backend run:
 ```
-npm run dev
+CONCORDIUM_MIDDLEWARE_URL='http://localhost:8081' CONCORDIUM_COLLECTOR_BACKEND_URL='http://localhost:12000' npm run dev
+```
+Then open the app (http://localhost:3001) in a browser. The app refreshes automatically when files are changed.
+
+
+**Mainnet**
+
+To use the development server with the Mainnet middleware and collector backend run:
+```
+npm run dev:mainnet
+```
+Then open the app (http://localhost:3001) in a browser. The app refreshes automatically when files are changed.
+
+**Testnet**
+
+To use the development server with the Testnet middleware and collector backend run:
+```
+npm run dev:testnet
+```
+Then open the app (http://localhost:3001) in a browser. The app refreshes automatically when files are changed.
+
+**Stagenet**
+
+_Stagenet is for internal use and requires VPN to access._
+
+To use the development server with the Stagenet middleware and collector backend run:
+```
+npm run dev:stagenet
 ```
 Then open the app (http://localhost:3001) in a browser. The app refreshes automatically when files are changed.
 
@@ -38,10 +70,6 @@ See the `script` section of `package.json` for all targets as well as their defi
 ### Configuration
 
 The client app may be built in production or development mode (based on the `NODE_ENV` environment variable).
-In production mode (which staging also uses), the collector/middleware backends are assumed to reside on the same 
-domain as the dashboard itself. In development mode, the target backend (local, staging, or production) may be set
-by changing the value of `devTarget` in `src/client/elm/Config.elm`.
-
 
 ### Architecture
 
@@ -92,9 +120,8 @@ Note that you need to set a feature flag to build the collector (backend).
 
 ### Docker build
 
-The Dashboard is deployed on Kubernetes using a dockerized build which is build by `./docker.sh`.
-Builds `dist` locally first before copying into image.
-
+The Dashboard is deployed on Kubernetes using a dockerized build.
+The docker file `k8s.Dockerfile` builds `dist` locally first before copying it into the image.
 
 #### Requirements and credits
 

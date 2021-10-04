@@ -14,19 +14,14 @@ import Transaction.Summary exposing (..)
 import Types as T
 
 
-type alias Config =
-    { middlewareUrl : String
-    }
-
-
 
 -- BlockSummary
 
 
-getBlockSummary : Config -> String -> (Result Error BlockSummary -> msg) -> Cmd msg
-getBlockSummary cfg blockhash msg =
+getBlockSummary : String -> (Result Error BlockSummary -> msg) -> Cmd msg
+getBlockSummary blockhash msg =
     Http.get
-        { url = cfg.middlewareUrl ++ "/v1/blockSummary/" ++ blockhash
+        { url = "/v1/blockSummary/" ++ blockhash
         , expect = Api.expectJson_ msg blockSummaryDecoder
 
         -- for testing, uncomment to use a stub instead of the real response

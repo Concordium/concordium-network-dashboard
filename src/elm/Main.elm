@@ -122,7 +122,7 @@ init flags url key =
             Config.defaultConfig (Config.parseEnv flags.isProduction)
 
         ( chainInit, chainCmd ) =
-            Chain.init cfg.collectorUrl (chainWidthFromWidth flags.window.width)
+            Chain.init (chainWidthFromWidth flags.window.width)
 
         route =
             Route.fromUrl url
@@ -140,9 +140,9 @@ init flags url key =
                 , palette = Palette.defaultDark
                 , colorMode = Dark
                 , currentRoute = route
-                , networkModel = Network.init { collectorUrl = cfg.collectorUrl }
+                , networkModel = Network.init
                 , chainModel = chainInit
-                , explorerModel = Explorer.init { middlewareUrl = cfg.middlewareUrl }
+                , explorerModel = Explorer.init
                 , toastModel = { visible = False, contents = "", showCount = 0 }
                 , lookupModel = Lookup.init key
                 }
@@ -282,7 +282,6 @@ update msg model =
                                     |> Maybe.map
                                         (\hash ->
                                             Api.getBlockInfo
-                                                model.explorerModel.config
                                                 hash
                                                 (ExplorerMsg << Explorer.ReceivedBlockResponse)
                                         )
@@ -374,12 +373,12 @@ onRouteInit page model =
     case page of
         Route.Chain Nothing ->
             ( model
-            , Api.getConsensusStatus model.explorerModel.config (ExplorerMsg << Explorer.ReceivedConsensusStatus)
+            , Api.getConsensusStatus (ExplorerMsg << Explorer.ReceivedConsensusStatus)
             )
 
         Route.Chain (Just hash) ->
             ( { model | chainModel = Chain.selectBlock model.chainModel hash }
-            , Api.getBlockInfo model.explorerModel.config hash (ExplorerMsg << Explorer.ReceivedBlockResponse)
+            , Api.getBlockInfo hash (ExplorerMsg << Explorer.ReceivedBlockResponse)
             )
 
         Route.Lookup (Just txHash) ->
@@ -387,7 +386,7 @@ onRouteInit page model =
                 lookupModel =
                     model.lookupModel
             in
-            ( { model | lookupModel = { lookupModel | searchTextValue = txHash } }, Api.getTransactionStatus model.explorerModel.config txHash (LookupMsg << Lookup.ReceivedTransactionStatus) )
+            ( { model | lookupModel = { lookupModel | searchTextValue = txHash } }, Api.getTransactionStatus txHash (LookupMsg << Lookup.ReceivedTransactionStatus) )
 
         _ ->
             ( model, Cmd.none )

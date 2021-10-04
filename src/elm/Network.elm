@@ -77,14 +77,8 @@ type alias NetworkNode =
     }
 
 
-type alias Config =
-    { collectorUrl : String
-    }
-
-
 type alias Model =
-    { config : Config
-    , nodes : WebData (Dict Host NetworkNode)
+    { nodes : WebData (Dict Host NetworkNode)
     , sortMode : SortMode
     , selectedNode : WebData (Result String NetworkNode)
     , nodesPagingModel : Paging.Model
@@ -101,10 +95,9 @@ type Msg
     | NodesPaging Paging.Msg
 
 
-init : Config -> Model
-init cfg =
-    { config = cfg
-    , nodes = Loading
+init : Model
+init =
+    { nodes = Loading
     , sortMode = SortNone
     , selectedNode = NotAsked
     , nodesPagingModel = Paging.init 50
@@ -118,7 +111,7 @@ update msg model currentRoute key =
             ( { model | nodes = RemoteData.map (Dict.insert node.nodeId node) model.nodes }, Cmd.none )
 
         FetchNodeSummaries _ ->
-            ( model, Http.get { url = model.config.collectorUrl ++ "/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
+            ( model, Http.get { url = "/nodesSummary", expect = Http.expectJson FetchedNodeSummaries nodeSummariesDecoder } )
 
         FetchedNodeSummaries r ->
             case r of

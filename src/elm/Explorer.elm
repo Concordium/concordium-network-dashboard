@@ -54,8 +54,7 @@ initialTransactionEventPaging =
 
 
 type alias Model =
-    { config : Config
-    , blockHash : Maybe T.BlockHash
+    { blockHash : Maybe T.BlockHash
     , blockInfo : WebData Api.BlockInfo
     , blockSummary : WebData DisplayDetailBlockSummary
     }
@@ -77,10 +76,9 @@ type DisplayMsg
     | TransactionEventPaging Int Paging.Msg
 
 
-init : Config -> Model
-init cfg =
-    { config = cfg
-    , blockHash = Nothing
+init : Model
+init =
+    { blockHash = Nothing
     , blockInfo = NotAsked
     , blockSummary = NotAsked
     }
@@ -93,7 +91,7 @@ update msg model =
             case res of
                 Ok consensusStatus ->
                     ( { model | blockInfo = Loading }
-                    , Api.getBlockInfo model.config consensusStatus.bestBlock ReceivedBlockResponse
+                    , Api.getBlockInfo consensusStatus.bestBlock ReceivedBlockResponse
                     )
 
                 Err err ->
@@ -106,7 +104,7 @@ update msg model =
                         | blockInfo = Success blockInfo
                         , blockSummary = Loading
                       }
-                    , getBlockSummary model.config blockInfo.blockHash ReceivedBlockSummary
+                    , getBlockSummary blockInfo.blockHash ReceivedBlockSummary
                     )
 
                 Ok (Api.BlockNotFound hash) ->

@@ -13,20 +13,15 @@ import Transaction.Summary as TxSummary
 import Types as T
 
 
-type alias Config =
-    { middlewareUrl : String
-    }
-
-
 type alias ApiResult a =
     Result Http.Error a
 
 
 {-| Make a GET request to the middleware
 -}
-getMiddleware : Config -> String -> D.Decoder a -> (ApiResult a -> msg) -> Cmd msg
-getMiddleware cfg url decoder msg =
-    Http.get { url = cfg.middlewareUrl ++ url, expect = expectJson_ msg decoder }
+getMiddleware : String -> D.Decoder a -> (ApiResult a -> msg) -> Cmd msg
+getMiddleware url decoder msg =
+    Http.get { url = url, expect = expectJson_ msg decoder }
 
 
 {-| The default Http.expectJson / Http.expectString don't allow you to see any body
@@ -71,9 +66,9 @@ expectJson_ toMsg decoder =
 -- ConsensusStatus
 
 
-getConsensusStatus : Config -> (ApiResult ConsensusStatus -> msg) -> Cmd msg
-getConsensusStatus cfg msg =
-    getMiddleware cfg "/v1/consensusStatus" consensusStatusDecoder msg
+getConsensusStatus : (ApiResult ConsensusStatus -> msg) -> Cmd msg
+getConsensusStatus msg =
+    getMiddleware "/v1/consensusStatus" consensusStatusDecoder msg
 
 
 type alias ConsensusStatus =
@@ -95,9 +90,9 @@ consensusStatusDecoder =
 -- BlockInfo
 
 
-getBlockInfo : Config -> T.BlockHash -> (ApiResult BlockResponse -> msg) -> Cmd msg
-getBlockInfo cfg blockhash msg =
-    getMiddleware cfg ("/v1/blockInfo/" ++ blockhash) (blockResponseDecoder blockhash) msg
+getBlockInfo : T.BlockHash -> (ApiResult BlockResponse -> msg) -> Cmd msg
+getBlockInfo blockhash msg =
+    getMiddleware ("/v1/blockInfo/" ++ blockhash) (blockResponseDecoder blockhash) msg
 
 
 type alias BlockInfo =
@@ -152,9 +147,9 @@ blockInfoDecoder =
 -- Get transaction status
 
 
-getTransactionStatus : Config -> T.TxHash -> (ApiResult TransactionStatusResponse -> msg) -> Cmd msg
-getTransactionStatus cfg txHash msg =
-    getMiddleware cfg ("/v1/transactionStatus/" ++ txHash) transactionStatusResponseDecoder msg
+getTransactionStatus : T.TxHash -> (ApiResult TransactionStatusResponse -> msg) -> Cmd msg
+getTransactionStatus txHash msg =
+    getMiddleware ("/v1/transactionStatus/" ++ txHash) transactionStatusResponseDecoder msg
 
 
 {-| The current status of a transaction where:
