@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased changes
 
+## [1.0.2] - (2021-10-04)
+
 ### Added
 - Paging for transaction events in block explorer and the transaction lookup page.
 
