@@ -381,12 +381,12 @@ onRouteInit page model =
             , Api.getBlockInfo hash (ExplorerMsg << Explorer.ReceivedBlockResponse)
             )
 
-        Route.Lookup (Just txHash) ->
+        Route.Lookup hash ->
             let
-                lookupModel =
-                    model.lookupModel
+                ( newModel, cmd ) =
+                    Lookup.onRouteInit hash model.lookupModel
             in
-            ( { model | lookupModel = { lookupModel | searchTextValue = txHash } }, Api.getTransactionStatus txHash (LookupMsg << Lookup.ReceivedTransactionStatus) )
+            ( { model | lookupModel = newModel }, Cmd.map LookupMsg cmd )
 
         _ ->
             ( model, Cmd.none )
