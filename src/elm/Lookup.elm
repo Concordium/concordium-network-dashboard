@@ -12,6 +12,7 @@ import Element.Input as Input
 import Explorer.View exposing (mapSummaryItem, viewBlockHash, viewContainer, viewContentHeadline, viewSummaryItem, viewTransactionSummary)
 import Helpers exposing (..)
 import List
+import Maybe.Extra exposing (isJust)
 import Paging
 import RemoteData exposing (WebData)
 import Route exposing (Route)
@@ -33,6 +34,7 @@ type alias DisplayDetailTransactionStatusResponse =
 type alias Model =
     { navigationKey : Nav.Key
     , searchTextValue : String
+    , transactionHashError : Maybe T.TransactionHashError
     , transactionStatusResult : WebData DisplayDetailTransactionStatusResponse
     }
 
@@ -41,6 +43,7 @@ init : Nav.Key -> Model
 init navigationKey =
     { navigationKey = navigationKey
     , searchTextValue = ""
+    , transactionHashError = Nothing
     , transactionStatusResult = RemoteData.NotAsked
     }
 
@@ -53,6 +56,29 @@ type Msg
     | ToggleDisplayDetails Int Int
     | PagingMsg Paging.Msg
     | None
+
+
+{-| Update model and trigger cmd for when first navigating to this route
+-}
+onRouteInit : Maybe T.TxHash -> Model -> ( Model, Cmd Msg )
+onRouteInit maybeTxHash model =
+    case maybeTxHash of
+        Just txHash ->
+            let
+                transactionHashError =
+                    T.validateTransactionHash txHash
+
+                cmd =
+                    if isJust transactionHashError then
+                        Cmd.none
+
+                    else
+                        Api.getTransactionStatus txHash ReceivedTransactionStatus
+            in
+            ( { model | transactionHashError = transactionHashError, searchTextValue = txHash }, cmd )
+
+        Nothing ->
+            ( { model | transactionHashError = Nothing, searchTextValue = "" }, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -148,6 +174,13 @@ viewTransactionSearch theme model =
             , label = Input.labelAbove [ Font.center, paddingXY 5 10, Font.size 20 ] <| text "Lookup a transaction"
             , placeholder = Just <| Input.placeholder [ Font.color theme.palette.fg2 ] <| text "Transaction hash"
             }
+        , el [ Font.color theme.palette.warning, centerX ] <|
+            case model.transactionHashError of
+                Nothing ->
+                    text ""
+
+                Just err ->
+                    text <| T.transactionHashErrorToString err
         , Input.button
             [ centerX
             , Font.center

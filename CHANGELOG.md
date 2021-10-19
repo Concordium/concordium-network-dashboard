@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased changes
 
+### Added
+- Validate transaction hash when using the transaction lookup page.
+
 ## [1.0.2] - (2021-10-04)
 
 ### Added

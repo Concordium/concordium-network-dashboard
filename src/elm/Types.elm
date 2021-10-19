@@ -364,3 +364,36 @@ type alias BlockHash =
 
 type alias TxHash =
     String
+
+
+{-| Error type for when validating a string as a transaction hash
+-}
+type TransactionHashError
+    = InvalidLength
+    | InvalidHexEncoding
+
+
+{-| Convert error to a readable error message
+-}
+transactionHashErrorToString : TransactionHashError -> String
+transactionHashErrorToString error =
+    case error of
+        InvalidLength ->
+            "A transaction hash must be of length 64."
+
+        InvalidHexEncoding ->
+            "A transaction hash can only consist of digits and lowercase letters from 'a' to 'f'."
+
+
+{-| Check whether a string is a valid transaction hash. Returns Nothing if it is valid.
+-}
+validateTransactionHash : String -> Maybe TransactionHashError
+validateTransactionHash str =
+    if String.length str /= 64 then
+        Just InvalidLength
+
+    else if String.any (not << Char.isHexDigit) str then
+        Just InvalidHexEncoding
+
+    else
+        Nothing
