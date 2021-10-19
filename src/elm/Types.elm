@@ -379,13 +379,13 @@ transactionHashErrorToString : TransactionHashError -> String
 transactionHashErrorToString error =
     case error of
         InvalidLength ->
-            "A transaction hash must be of lenght 64."
+            "A transaction hash must be of length 64."
 
         InvalidHexEncoding ->
-            "A transaction hash can only consist of digits and lowercase letters from 'a', to 'f'."
+            "A transaction hash can only consist of digits and lowercase letters from 'a' to 'f'."
 
 
-{-| Validate a string to be a transaction hash, returns nothing if the string is valid
+{-| Check whether a string is a valid transaction hash. Returns Nothing if it is valid.
 -}
 validateTransactionHash : String -> Maybe TransactionHashError
 validateTransactionHash str =
