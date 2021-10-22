@@ -1,15 +1,15 @@
+@Library('concordium-pipelines') _
 pipeline {
     agent any
-
     environment {
-        image_repo = '192549843005.dkr.ecr.eu-west-1.amazonaws.com/concordium/network-dashboard'
+        ecr_repo_domain = '192549843005.dkr.ecr.eu-west-1.amazonaws.com'
+        image_repo = "${ecr_repo_domain}/concordium/network-dashboard"
         image_name = "${image_repo}:${image_tag}"
     }
-
     stages {
         stage('ecr-login') {
             steps {
-                sh '$(aws --region eu-west-1 ecr get-login | sed -e \'s/-e none//g\')'
+                ecrLogin(env.ecr_repo_domain, 'eu-west-1')
             }
         }
         stage('build') {
