@@ -157,16 +157,16 @@ decodeEnergy =
     D.int |> D.map Energy
 
 
-{-| Amount of tokens; represented in GTU as microGTU using BigInt.
+{-| Amount of tokens; represented in CCD as microCCD using BigInt.
 -}
 type Amount
-    = MicroGtu BigInt
+    = MicroCCD BigInt
 
 
-{-| Display an amount as GTU with 6 decimals appended with the unit
+{-| Display an amount as CCD with 6 decimals appended with the unit
 -}
 amountToString : Amount -> String
-amountToString (MicroGtu bigInt) =
+amountToString (MicroCCD bigInt) =
     let
         padded =
             bigInt
@@ -176,10 +176,10 @@ amountToString (MicroGtu bigInt) =
         amountString =
             String.dropRight fracPartLength padded ++ "." ++ String.right fracPartLength padded
     in
-    amountString ++ " GTU"
+    amountString ++ " CCD"
 
 
-{-| Decode amount in μGTU which is represented as a string only containing a number of microGTU.
+{-| Decode amount in μCCD which is represented as a string only containing a number of microCCD.
 -}
 decodeAmount : D.Decoder Amount
 decodeAmount =
@@ -201,30 +201,30 @@ fracPartLength =
 
 
 {-| Convert a string into an Amount, the string should only contain a number
-representing the amount of microGTU.
+representing the amount of microCCD.
 -}
 amountFromString : String -> Maybe Amount
 amountFromString str =
     BigInt.fromIntString str
-        |> Maybe.map MicroGtu
+        |> Maybe.map MicroCCD
 
 
-{-| Convert an Int into an Amount, the int should represent the amount of microGTU.
+{-| Convert an Int into an Amount, the int should represent the amount of microCCD.
 -}
 amountFromInt : Int -> Amount
 amountFromInt =
-    BigInt.fromInt >> MicroGtu
+    BigInt.fromInt >> MicroCCD
 
 
 {-| Scale an amount with a float, only considers the first 5 decimals of the float
 -}
 scaleAmount : Float -> Amount -> Amount
-scaleAmount s (MicroGtu bigInt) =
+scaleAmount s (MicroCCD bigInt) =
     let
         granularity =
             100000
     in
-    MicroGtu <|
+    MicroCCD <|
         BigInt.div (BigInt.mul bigInt <| BigInt.fromInt <| round <| s * granularity) (BigInt.fromInt granularity)
 
 
@@ -232,7 +232,7 @@ scaleAmount s (MicroGtu bigInt) =
 Unsafe if the amount is larger than 2^53-1.
 -}
 amountToInt : Amount -> Int
-amountToInt (MicroGtu bigInt) =
+amountToInt (MicroCCD bigInt) =
     BigInt.toString bigInt
         |> String.toInt
         |> Maybe.withDefault 0
@@ -281,13 +281,13 @@ floorTo decimals n =
 
 
 addAmounts : Amount -> Amount -> Amount
-addAmounts (MicroGtu left) (MicroGtu right) =
-    MicroGtu <| BigInt.add left right
+addAmounts (MicroCCD left) (MicroCCD right) =
+    MicroCCD <| BigInt.add left right
 
 
 subAmounts : Amount -> Amount -> Amount
-subAmounts (MicroGtu left) (MicroGtu right) =
-    MicroGtu <| BigInt.sub left right
+subAmounts (MicroCCD left) (MicroCCD right) =
+    MicroCCD <| BigInt.sub left right
 
 
 zeroAmount : Amount

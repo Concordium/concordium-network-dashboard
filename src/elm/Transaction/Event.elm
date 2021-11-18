@@ -236,7 +236,7 @@ type UpdatePayload
     | GasRewardsPayload GasRewards
     | ElectionDifficultyPayload Float
     | EuroPerEnergyPayload Relation
-    | MicroGtuPerEuroPayload Relation
+    | MicroCCDPerEuroPayload Relation
     | FoundationAccountPayload FoundationAccountRepresentation
     | RootKeysUpdatePayload HigherLevelKeys
     | Level1KeysUpdatePayload HigherLevelKeys
@@ -284,7 +284,7 @@ type alias HigherLevelKeys =
 type alias Authorizations =
     { mintDistribution : Authorization
     , transactionFeeDistribution : Authorization
-    , microGTUPerEuro : Authorization
+    , microCCDPerEuro : Authorization
     , euroPerEnergy : Authorization
     , electionDifficulty : Authorization
     , foundationAccount : Authorization
@@ -393,7 +393,7 @@ updatePayloadDecoder =
                         relationDecoder |> D.map EuroPerEnergyPayload
 
                     "microGTUPerEuro" ->
-                        relationDecoder |> D.map MicroGtuPerEuroPayload
+                        relationDecoder |> D.map MicroCCDPerEuroPayload
 
                     "foundationAccount" ->
                         foundationAccountRepresentationDecoder |> D.map FoundationAccountPayload

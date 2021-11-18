@@ -79,7 +79,7 @@ type alias Updates =
 
 type alias ChainParameters =
     { rewardParameters : RewardParameters
-    , microGTUPerEuro : Relation
+    , microCCDPerEuro : Relation
     , foundationAccountIndex : Int
     , accountCreationLimit : Int
     , bakerCooldownEpochs : Int
@@ -102,7 +102,7 @@ type alias UpdateQueues =
     , rootKeys : UpdateQueue HigherLevelKeys
     , level1Keys : UpdateQueue HigherLevelKeys
     , level2Keys : UpdateQueue Authorizations
-    , microGTUPerEuro : UpdateQueue Relation
+    , microCCDPerEuro : UpdateQueue Relation
     , protocol : UpdateQueue ProtocolUpdate
     , gasRewards : UpdateQueue GasRewards
     , foundationAccount : UpdateQueue Int

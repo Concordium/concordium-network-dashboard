@@ -170,13 +170,13 @@ minting_leaves size =
         ]
 
 
-coin_gtu : Float -> Svg msg
-coin_gtu size =
+coin_ccd : Float -> Svg msg
+coin_ccd size =
     iconBaseWithCustomViewBox
         (ViewBox 0 0 192 192)
         size
         [ g
-            [ id "Icons/Coin/GTU"
+            [ id "Icons/Coin/CCD"
             ]
             [ Svg.path
                 [ fill "#fedc42"
