@@ -908,17 +908,17 @@ rejectionToItem ctx reason =
             }
 
         NotAllowedMultipleCredentials ->
-            { content = [ text "Account is not allowed to have multiple credentials because it has non-zero encrypted balance" ]
+            { content = [ text "Account is not allowed to have multiple credentials because it has non-zero shielded balance" ]
             , details = Nothing
             }
 
         NotAllowedToReceiveEncrypted ->
-            { content = [ text "Account is not allowed to receive encrypted transfers because it has multiple credentials" ]
+            { content = [ text "Account is not allowed to receive shielded transfers because it has multiple credentials" ]
             , details = Nothing
             }
 
         NotAllowedToHandleEncrypted ->
-            { content = [ text "Account is not allowed to handle encrypted transfers because it has multiple credentials" ]
+            { content = [ text "Account is not allowed to handle shielded transfers because it has multiple credentials" ]
             , details = Nothing
             }
 
@@ -1595,7 +1595,7 @@ viewTransactionEvent ctx timezone txEvent =
             { content =
                 eventElem
                     [ viewAddress ctx (T.AddressAccount event.account)
-                    , text " received an encrypted amount."
+                    , text " received a shielded amount."
                     ]
             , details = Nothing
             }
@@ -1604,7 +1604,7 @@ viewTransactionEvent ctx timezone txEvent =
             { content =
                 eventElem
                     [ viewAddress ctx (T.AddressAccount event.account)
-                    , text " transferred an encrypted amount."
+                    , text " transferred a shielded amount."
                     ]
             , details = Nothing
             }
