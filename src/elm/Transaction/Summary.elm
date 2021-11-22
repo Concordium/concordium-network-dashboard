@@ -80,12 +80,12 @@ type UpdateType
       -- ^Update the election difficulty
     | UpdateEuroPerEnergy
       -- ^Update the euro per energy exchange rate
-    | UpdateMicroGTUPerEuro
-      -- ^Update the microGTU per euro exchange rate
+    | UpdateMicroCCDPerEuro
+      -- ^Update the microCCD per euro exchange rate
     | UpdateFoundationAccount
       -- ^Update the address of the foundation account
     | UpdateMintDistribution
-      -- ^Update the distribution of newly minted GTU
+      -- ^Update the distribution of newly minted CCD
     | UpdateTransactionFeeDistribution
       -- ^Update the distribution of transaction fees
     | UpdateGASRewards
@@ -318,7 +318,7 @@ updateTypeDecoder =
                         D.succeed UpdateEuroPerEnergy
 
                     "updateMicroGTUPerEuro" ->
-                        D.succeed UpdateMicroGTUPerEuro
+                        D.succeed UpdateMicroCCDPerEuro
 
                     "updateFoundationAccount" ->
                         D.succeed UpdateFoundationAccount

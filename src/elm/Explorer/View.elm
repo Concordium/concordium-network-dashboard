@@ -838,7 +838,7 @@ rejectionToItem ctx reason =
             }
 
         ZeroScheduledAmount ->
-            { content = [ text "Attempt to transfer 0 GTU with schedule" ]
+            { content = [ text "Attempt to transfer 0 CCD with schedule" ]
             , details = Nothing
             }
 
@@ -908,17 +908,17 @@ rejectionToItem ctx reason =
             }
 
         NotAllowedMultipleCredentials ->
-            { content = [ text "Account is not allowed to have multiple credentials because it has non-zero encrypted balance" ]
+            { content = [ text "Account is not allowed to have multiple credentials because it has non-zero shielded balance" ]
             , details = Nothing
             }
 
         NotAllowedToReceiveEncrypted ->
-            { content = [ text "Account is not allowed to receive encrypted transfers because it has multiple credentials" ]
+            { content = [ text "Account is not allowed to receive shielded transfers because it has multiple credentials" ]
             , details = Nothing
             }
 
         NotAllowedToHandleEncrypted ->
-            { content = [ text "Account is not allowed to handle encrypted transfers because it has multiple credentials" ]
+            { content = [ text "Account is not allowed to handle shielded transfers because it has multiple credentials" ]
             , details = Nothing
             }
 
@@ -992,7 +992,7 @@ listUpdatePayloads queues =
         ++ mapUpdate Level1KeysUpdatePayload queues.level1Keys
         ++ mapUpdate Level2KeysUpdatePayload queues.level2Keys
         ++ mapUpdate TransactionFeeDistributionPayload queues.transactionFeeDistribution
-        ++ mapUpdate MicroGtuPerEuroPayload queues.microGTUPerEuro
+        ++ mapUpdate MicroCCDPerEuroPayload queues.microCCDPerEuro
         ++ mapUpdate ProtocolUpdatePayload queues.protocol
         ++ mapUpdate GasRewardsPayload queues.gasRewards
         ++ mapUpdate (\i -> FoundationAccountPayload (Index i)) queues.foundationAccount
@@ -1109,7 +1109,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
             case specialEvent of
                 SpecialEventBakingRewards event ->
                     { tooltip = "Baking rewards"
-                    , icon = Icons.coin_gtu 20
+                    , icon = Icons.coin_ccd 20
                     , content =
                         row [ spacing 10 ]
                             [ text <| "Distributed " ++ bakingRewardAccountLower ]
@@ -1128,7 +1128,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                             [ paragraph [] [ text <| "Every epoch, the " ++ bakingRewardAccountLower ++ " is distributed among all bakers during the epoch." ]
                             , el [ centerX ] <| viewSpecialAccount ctx ctx.palette.c1 bakingRewardAccountUpper bakingAccountTotal
                             , paragraph [] [ text "The amount is distributed according to the share of blocks a baker have baked during the epoch." ]
-                            , paragraph [] [ text <| "Some amount of GTU might be left because of rounding, these are left in the " ++ bakingRewardAccountLower ++ " for the next epoch." ]
+                            , paragraph [] [ text <| "Some amount of CCD might be left because of rounding, these are left in the " ++ bakingRewardAccountLower ++ " for the next epoch." ]
                             , el [ centerX ] <| viewSpecialAccount ctx ctx.palette.c1 bakingRewardAccountUpper event.remainder
                             ]
                             [ viewTable ctx
@@ -1154,7 +1154,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                 SpecialEventMint event ->
                     { tooltip = "Minting"
                     , icon = Icons.minting_leaves 20
-                    , content = el [ spacing 10 ] <| text "Distributed minted GTU "
+                    , content = el [ spacing 10 ] <| text "Distributed minted CCD "
                     , details =
                         let
                             foundationMintFraction =
@@ -1165,18 +1165,18 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                         in
                         column [ spacing 25, width fill ]
                             [ viewDetailRow
-                                [ paragraph [] [ text "Every block introduces an amount of minted GTU." ] ]
+                                [ paragraph [] [ text "Every block introduces an amount of minted CCD." ] ]
                                 []
                             , viewDetailRow
                                 [ paragraph []
-                                    [ text "The amount depends on the number of slots since the last block, as the total supply of GTU is increased by a factor of 1 + "
+                                    [ text "The amount depends on the number of slots since the last block, as the total supply of CCD is increased by a factor of 1 + "
                                     , text <| String.fromFloat rewardParameters.mintDistribution.mintPerSlot
                                     , text " in every slot."
                                     ]
                                 ]
                                 [ el [ centerX ] <| viewSpecialAccount ctx ctx.palette.fg1 "Minted this block" mintTotal
                                 ]
-                            , viewDetailRow [ paragraph [] [ text "These GTU are distributed among special accounts for maintaining the blockchain and for rewarding bakers and finalizers. " ] ]
+                            , viewDetailRow [ paragraph [] [ text "These CCD are distributed among special accounts for maintaining the blockchain and for rewarding bakers and finalizers. " ] ]
                                 [ viewBar ctx
                                     [ { color = ctx.palette.c1, percentage = rewardParameters.mintDistribution.bakingReward, hint = bakingRewardAccountUpper }
                                     , { color = ctx.palette.c2, percentage = rewardParameters.mintDistribution.finalizationReward, hint = finalizationRewardAccountUpper }
@@ -1196,7 +1196,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
 
                 SpecialEventFinalizationRewards event ->
                     { tooltip = "Rewarded finalizers"
-                    , icon = Icons.coin_gtu 20
+                    , icon = Icons.coin_ccd 20
                     , content = row [ spacing 10 ] [ text <| "Distributed " ++ finalizationRewardAccountLower ]
                     , details =
                         let
@@ -1209,7 +1209,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                         viewDetailRow
                             [ paragraph [] [ text <| "Every time a finalization proof is included in a block the " ++ finalizationRewardAccountLower ++ " distributes a reward among the finalizers. The reward is proportional to the finalizers' share of finalization stake." ]
                             , el [ centerX ] <| viewSpecialAccount ctx ctx.palette.c2 finalizationRewardAccountUpper finalizationAccountTotal
-                            , paragraph [] [ text <| "The remaining GTU (which does not distribute evenly among the finalizers) stays in the " ++ finalizationRewardAccountLower ++ "." ]
+                            , paragraph [] [ text <| "The remaining CCD (which does not distribute evenly among the finalizers) stays in the " ++ finalizationRewardAccountLower ++ "." ]
                             , el [ centerX ] <| viewSpecialAccount ctx ctx.palette.c2 finalizationRewardAccountUpper event.remainder
                             ]
                             [ viewTable ctx
@@ -1234,7 +1234,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
 
                 SpecialEventBlockReward event ->
                     { tooltip = "Block reward"
-                    , icon = Icons.coin_gtu 20
+                    , icon = Icons.coin_ccd 20
                     , content =
                         row []
                             [ text <| "Rewarded " ++ T.amountToString event.bakerReward ++ " for baking this block to "
@@ -1595,7 +1595,7 @@ viewTransactionEvent ctx timezone txEvent =
             { content =
                 eventElem
                     [ viewAddress ctx (T.AddressAccount event.account)
-                    , text " received an encrypted amount."
+                    , text " received a shielded amount."
                     ]
             , details = Nothing
             }
@@ -1604,7 +1604,7 @@ viewTransactionEvent ctx timezone txEvent =
             { content =
                 eventElem
                     [ viewAddress ctx (T.AddressAccount event.account)
-                    , text " transferred an encrypted amount."
+                    , text " transferred a shielded amount."
                     ]
             , details = Nothing
             }
@@ -1851,7 +1851,7 @@ viewEventUpdateEnqueuedDetails ctx event =
                 foundationFraction =
                     1 - mintDistribution.bakingReward - mintDistribution.finalizationReward
             in
-            viewDetailRow [ paragraph [] [ text "Updating the parameters for GTU minting." ] ]
+            viewDetailRow [ paragraph [] [ text "Updating the parameters for CCD minting." ] ]
                 [ el [ centerX ] <| viewHeaderBox ctx ctx.palette.fg2 "Minted pr. slot" <| text <| String.fromFloat mintDistribution.mintPerSlot
                 , viewBar
                     ctx
@@ -1914,13 +1914,13 @@ viewEventUpdateEnqueuedDetails ctx event =
                 , viewRelation ctx euroPerEnergy
                 ]
 
-        MicroGtuPerEuroPayload microGtuPerEuro ->
+        MicroCCDPerEuroPayload microCCDPerEuro ->
             row [ width fill ]
                 [ text <|
-                    "Update the GTU to Euro conversion rate to "
-                        ++ String.fromInt microGtuPerEuro.denominator
+                    "Update the CCD to Euro conversion rate to "
+                        ++ String.fromInt microCCDPerEuro.denominator
                         ++ " EUR = "
-                        ++ (T.amountToString <| T.amountFromInt microGtuPerEuro.numerator)
+                        ++ (T.amountToString <| T.amountFromInt microCCDPerEuro.numerator)
                 ]
 
         FoundationAccountPayload foundationAccount ->
