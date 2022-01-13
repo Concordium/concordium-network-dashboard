@@ -384,11 +384,9 @@ nodePeersOnly nodes =
     nodes |> Dict.filter (\_ n -> n.peerType == "Node")
 
 
-
--- Check whether the client version is recent enough.
--- NB: This will only work until we have node version 10, after that it needs to be revised.
-
-
+{-| Check whether the client version is recent enough.
+NB: This will only work until we have node version 10, after that it needs to be revised.
+-}
 allowedNodeVersion : { ctx | minVersionIncludedInStats : String } -> { a | client : String } -> Bool
 allowedNodeVersion ctx node =
     node.client >= ctx.minVersionIncludedInStats
