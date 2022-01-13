@@ -250,7 +250,11 @@ viewSummaryWidgets ctx remoteNodes =
                   , icon = Icons.lastBlock iconSize
                   , value =
                         RemoteData.map
-                            (\nodes ->
+                            (\nodesDict ->
+                                let
+                                    compatibleNodes =
+                                        Dict.filter (\_ node -> node.client >= ctx.statsVersion) nodesDict
+                                in
                                 majorityStatFor
                                     (\node ->
                                         Maybe.withDefault "" node.bestArrivedTime
@@ -259,7 +263,7 @@ viewSummaryWidgets ctx remoteNodes =
                                             |> asSecondsAgo ctx.time
                                     )
                                     ""
-                                    nodes
+                                    compatibleNodes
                             )
                             remoteNodes
                   , subvalue = Nothing
@@ -274,6 +278,7 @@ viewSummaryWidgets ctx remoteNodes =
                                 let
                                     nodes =
                                         Dict.values nodeDict
+                                            |> List.filter (\node -> node.client >= ctx.statsVersion)
                                 in
                                 nodes
                                     |> List.map .finalizedBlockHeight
@@ -302,7 +307,13 @@ viewSummaryWidgets ctx remoteNodes =
                             (Palette.uiToColor ctx.palette.c2)
                   , value =
                         RemoteData.map
-                            (\nodes -> String.fromInt <| round (majorityStatFor .bestBlockHeight -1 nodes))
+                            (\nodesDict ->
+                                let
+                                    compatibleNodes =
+                                        Dict.filter (\_ node -> node.client >= ctx.statsVersion) nodesDict
+                                in
+                                String.fromInt <| round (majorityStatFor .bestBlockHeight -1 compatibleNodes)
+                            )
                             remoteNodes
                   , subvalue = Nothing
                   }
@@ -315,7 +326,13 @@ viewSummaryWidgets ctx remoteNodes =
                             (Palette.uiToColor ctx.palette.c2)
                   , value =
                         RemoteData.map
-                            (\nodes -> String.fromInt <| round (majorityStatFor .finalizedBlockHeight -1 nodes))
+                            (\nodesDict ->
+                                let
+                                    compatibleNodes =
+                                        Dict.filter (\_ node -> node.client >= ctx.statsVersion) nodesDict
+                                in
+                                String.fromInt <| round (majorityStatFor .finalizedBlockHeight -1 compatibleNodes)
+                            )
                             remoteNodes
                   , subvalue = Nothing
                   }
@@ -329,7 +346,13 @@ viewSummaryWidgets ctx remoteNodes =
                   , icon = Icons.lastBlockEMA iconSize
                   , value =
                         RemoteData.map
-                            (\nodes -> averageStatSecondsFor .blockArrivePeriodEMA nodes)
+                            (\nodesDict ->
+                                let
+                                    compatibleNodes =
+                                        Dict.filter (\_ node -> node.client >= ctx.statsVersion) nodesDict
+                                in
+                                averageStatSecondsFor .blockArrivePeriodEMA compatibleNodes
+                            )
                             remoteNodes
                   , subvalue =
                         Nothing
@@ -340,7 +363,13 @@ viewSummaryWidgets ctx remoteNodes =
                   , icon = Icons.lastFinalizedBlockEMA iconSize
                   , value =
                         RemoteData.map
-                            (\nodes -> averageStatSecondsFor .finalizationPeriodEMA nodes)
+                            (\nodesDict ->
+                                let
+                                    compatibleNodes =
+                                        Dict.filter (\_ node -> node.client >= ctx.statsVersion) nodesDict
+                                in
+                                averageStatSecondsFor .finalizationPeriodEMA compatibleNodes
+                            )
                             remoteNodes
                   , subvalue =
                         Nothing

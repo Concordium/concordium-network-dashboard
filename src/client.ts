@@ -12,6 +12,7 @@ const app = Elm.Main.init({
     },
     isProduction: __PRODUCTION__,
     version: __VERSION__,
+    statsVersion: __STATS_VERSION__,
     showCookieConsentBanner: loadCookieConsentChoice() === undefined,
   },
 });
