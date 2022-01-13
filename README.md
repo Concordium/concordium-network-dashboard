@@ -28,11 +28,11 @@ The development server will proxy some requests to either of these and must be p
 
 To use the development server with a local middleware and collector backend run:
 ```
-STATS_VERSION=3 CONCORDIUM_MIDDLEWARE_URL='http://localhost:8081' CONCORDIUM_COLLECTOR_BACKEND_URL='http://localhost:12000' npm run dev
+MIN_VERSION_INCLUDED_IN_STATS=3 CONCORDIUM_MIDDLEWARE_URL='http://localhost:8081' CONCORDIUM_COLLECTOR_BACKEND_URL='http://localhost:12000' npm run dev
 ```
 Then open the app (http://localhost:3001) in a browser. The app refreshes automatically when files are changed.
 
-The `STATS_VERSION` variable specifies the minimal version of the node that
+The `MIN_VERSION_INCLUDED_IN_STATS` variable specifies the minimal version of the node that
 allows it to be included in the calculation of summaries at the top of the
 page, e.g., current finalized height.
 
@@ -41,7 +41,7 @@ page, e.g., current finalized height.
 
 To use the development server with the Mainnet middleware and collector backend run:
 ```
-STATS_VERSION=3 npm run dev:mainnet
+MIN_VERSION_INCLUDED_IN_STATS=3 npm run dev:mainnet
 ```
 Then open the app (http://localhost:3001) in a browser. The app refreshes automatically when files are changed.
 
@@ -49,7 +49,7 @@ Then open the app (http://localhost:3001) in a browser. The app refreshes automa
 
 To use the development server with the Testnet middleware and collector backend run:
 ```
-STATS_VERSION=3 npm run dev:testnet
+MIN_VERSION_INCLUDED_IN_STATS=3 npm run dev:testnet
 ```
 Then open the app (http://localhost:3001) in a browser. The app refreshes automatically when files are changed.
 
@@ -59,14 +59,14 @@ _Stagenet is for internal use and requires VPN to access._
 
 To use the development server with the Stagenet middleware and collector backend run:
 ```
-STATS_VERSION=3 npm run dev:stagenet
+MIN_VERSION_INCLUDED_IN_STATS=3 npm run dev:stagenet
 ```
 Then open the app (http://localhost:3001) in a browser. The app refreshes automatically when files are changed.
 
 
 Other common build/run targets include:
 
-- `STATS_VERSION=3 npm run build` - Build the app in production mode and put it into `./dist`.
+- `MIN_VERSION_INCLUDED_IN_STATS=3 npm run build` - Build the app in production mode and put it into `./dist`.
 - `npm run formatcheck` - Checks the elm formatting.
 
 See the `script` section of `package.json` for all targets as well as their definitions.

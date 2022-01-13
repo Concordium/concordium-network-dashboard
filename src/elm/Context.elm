@@ -16,7 +16,7 @@ type alias Context a =
             | key : Key
             , time : Posix
             , window : Window
-            , statsVersion : String
+            , minVersionIncludedInStats : String
         }
 
 

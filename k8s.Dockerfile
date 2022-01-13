@@ -1,12 +1,12 @@
 FROM node:14 as build
 
 # Minimum node version to include in summary calculations.
-ARG stats_version
+ARG min_version_included_in_stats
 
-# Check that STATS_VERSION was indeed supplied
-RUN : "${stats_version:?Must be set and non-empty.}"
+# Check that MIN_VERSION_INCLUDED_IN_STATS was indeed supplied
+RUN : "${min_version_included_in_stats:?Must be set and non-empty.}"
 
-ENV STATS_VERSION=${stats_version}
+ENV MIN_VERSION_INCLUDED_IN_STATS=${min_version_included_in_stats}
 
 # https://github.com/nodejs/docker-node/blob/master/docs/BestPractices.md
 ENV NPM_CONFIG_PREFIX=/home/node/.npm-global

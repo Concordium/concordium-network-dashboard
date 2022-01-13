@@ -253,7 +253,7 @@ viewSummaryWidgets ctx remoteNodes =
                             (\nodesDict ->
                                 let
                                     compatibleNodes =
-                                        Dict.filter (\_ node -> node.client >= ctx.statsVersion) nodesDict
+                                        Dict.filter (\_ -> allowedNodeVersion ctx) nodesDict
                                 in
                                 majorityStatFor
                                     (\node ->
@@ -278,7 +278,7 @@ viewSummaryWidgets ctx remoteNodes =
                                 let
                                     nodes =
                                         Dict.values nodeDict
-                                            |> List.filter (\node -> node.client >= ctx.statsVersion)
+                                            |> List.filter (allowedNodeVersion ctx)
                                 in
                                 nodes
                                     |> List.map .finalizedBlockHeight
@@ -310,7 +310,7 @@ viewSummaryWidgets ctx remoteNodes =
                             (\nodesDict ->
                                 let
                                     compatibleNodes =
-                                        Dict.filter (\_ node -> node.client >= ctx.statsVersion) nodesDict
+                                        Dict.filter (\_ -> allowedNodeVersion ctx) nodesDict
                                 in
                                 String.fromInt <| round (majorityStatFor .bestBlockHeight -1 compatibleNodes)
                             )
@@ -329,7 +329,7 @@ viewSummaryWidgets ctx remoteNodes =
                             (\nodesDict ->
                                 let
                                     compatibleNodes =
-                                        Dict.filter (\_ node -> node.client >= ctx.statsVersion) nodesDict
+                                        Dict.filter (\_ -> allowedNodeVersion ctx) nodesDict
                                 in
                                 String.fromInt <| round (majorityStatFor .finalizedBlockHeight -1 compatibleNodes)
                             )
@@ -349,7 +349,7 @@ viewSummaryWidgets ctx remoteNodes =
                             (\nodesDict ->
                                 let
                                     compatibleNodes =
-                                        Dict.filter (\_ node -> node.client >= ctx.statsVersion) nodesDict
+                                        Dict.filter (\_ -> allowedNodeVersion ctx) nodesDict
                                 in
                                 averageStatSecondsFor .blockArrivePeriodEMA compatibleNodes
                             )
@@ -366,7 +366,7 @@ viewSummaryWidgets ctx remoteNodes =
                             (\nodesDict ->
                                 let
                                     compatibleNodes =
-                                        Dict.filter (\_ node -> node.client >= ctx.statsVersion) nodesDict
+                                        Dict.filter (\_ -> allowedNodeVersion ctx) nodesDict
                                 in
                                 averageStatSecondsFor .finalizationPeriodEMA compatibleNodes
                             )
@@ -382,6 +382,16 @@ viewSummaryWidgets ctx remoteNodes =
 nodePeersOnly : Dict Host NetworkNode -> Dict Host NetworkNode
 nodePeersOnly nodes =
     nodes |> Dict.filter (\_ n -> n.peerType == "Node")
+
+
+
+-- Check whether the client version is recent enough.
+-- NB: This will only work until we have node version 10, after that it needs to be revised.
+
+
+allowedNodeVersion : { ctx | minVersionIncludedInStats : String } -> { a | client : String } -> Bool
+allowedNodeVersion ctx node =
+    node.client >= ctx.minVersionIncludedInStats
 
 
 {-| For the given node attribute, finds majority value across all nodes
