@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased changes
 
+- Add a parameter to ignore older node versions in statistics calculations.
+
 ## [1.0.3] - (2021-11-22)
 
 ### Added
