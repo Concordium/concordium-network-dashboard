@@ -46,6 +46,10 @@ type alias Flags =
     , isProduction : Bool
     , version : Version
     , showCookieConsentBanner : Bool
+
+    -- Minimum version of the node that will be taken
+    -- into account when computing statistics
+    , minVersionIncludedInStats : Version
     }
 
 
@@ -71,6 +75,7 @@ type alias Model =
     , config : Config
     , window : { width : Int, height : Int }
     , version : Version
+    , minVersionIncludedInStats : Version
     , showCookieConsentBanner : Bool
     , palette : Palette Element.Color
     , colorMode : ColorMode
@@ -134,6 +139,7 @@ init flags url key =
                 , time = Time.millisToPosix 0
                 , timezone = Time.utc
                 , config = cfg
+                , minVersionIncludedInStats = flags.minVersionIncludedInStats
                 , version = flags.version
                 , showCookieConsentBanner = flags.showCookieConsentBanner
                 , window = flags.window

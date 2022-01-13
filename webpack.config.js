@@ -62,6 +62,7 @@ module.exports = {
     }),
     new webpack.DefinePlugin({
       __VERSION__: JSON.stringify(packageJson.version),
+      __MIN_VERSION_INCLUDED_IN_STATS__: JSON.stringify(process.env.MIN_VERSION_INCLUDED_IN_STATS),
       __ANALYTICS_ID__: JSON.stringify(analyticsId),
       __PRODUCTION__: isProduction.toString(),
     }),
