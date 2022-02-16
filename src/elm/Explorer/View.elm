@@ -1918,9 +1918,8 @@ viewEventUpdateEnqueuedDetails ctx event =
             row [ width fill ]
                 [ text <|
                     "Update the CCD to Euro conversion rate to "
-                        ++ String.fromInt microCCDPerEuro.denominator
-                        ++ " EUR = "
-                        ++ (T.amountToString <| T.amountFromInt microCCDPerEuro.numerator)
+                        ++ "1 EUR = "
+                        ++ (T.amountToString <| T.amountFromInt (microCCDPerEuro.numerator // microCCDPerEuro.denominator))
                 ]
 
         FoundationAccountPayload foundationAccount ->
