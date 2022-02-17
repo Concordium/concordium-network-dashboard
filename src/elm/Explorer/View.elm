@@ -936,7 +936,14 @@ viewUpdates theme timezone updates =
         viewUpdate : EventUpdateEnqueued -> Element Msg
         viewUpdate update =
             updateRow
-                (el [ Font.color theme.palette.fg1 ] <| text <| TimeHelpers.formatTime timezone update.effectiveTime)
+                (el [ Font.color theme.palette.fg1 ] <|
+                    text <|
+                        if (Time.posixToMillis <| update.effectiveTime) == 0 then
+                            "immediate"
+
+                        else
+                            TimeHelpers.formatTime timezone update.effectiveTime
+                )
                 (viewEventUpdateEnqueuedDetails theme update)
     in
     if List.isEmpty allQueuedUpdates then
@@ -1811,7 +1818,14 @@ viewTransactionEvent ctx timezone txEvent =
         TransactionEventUpdateEnqueued event ->
             { content =
                 eventElem
-                    [ text <| "Update enqueued to take effect " ++ TimeHelpers.formatTime timezone event.effectiveTime
+                    [ text <|
+                        "Update enqueued to take effect "
+                            ++ (if (Time.posixToMillis <| event.effectiveTime) == 0 then
+                                    "immediately"
+
+                                else
+                                    TimeHelpers.formatTime timezone event.effectiveTime
+                               )
                     ]
             , details =
                 Just <|

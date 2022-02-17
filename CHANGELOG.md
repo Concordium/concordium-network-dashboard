@@ -2,10 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased changes
+# Unreleased changes
+
+- Display the CCD/EUR exchange rate normalized to 1 EUR.
+- Correctly display the effective time of updates with immediate effect.
+
+## [1.0.4]
 
 - Add a parameter to ignore older node versions in statistics calculations.
-- Display the CCD/EUR exchange rate normalized to 1 EUR.
 
 ## [1.0.3] - (2021-11-22)
 
