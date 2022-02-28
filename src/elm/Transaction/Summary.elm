@@ -28,7 +28,7 @@ type TransactionSummaryType
     | UpdateTransaction UpdateType
 
 
-{-| Reason for transaction rejected
+{-| Supported transaction types
 
 Must be in sync with the constructor names of `Payload` found in
 <https://github.com/Concordium/concordium-base/blob/main/haskell-src/Concordium/Types/Execution.hs>
@@ -56,6 +56,8 @@ type AccountTransactionType
     | TransferWithMemo
     | EncryptedAmountTransferWithMemo
     | TransferWithScheduleAndMemo
+    | ConfigureBaker
+    | ConfigureDelegation
     | Malformed
 
 
@@ -286,6 +288,12 @@ accountTransactionTypeDecoder =
 
                 "registerData" ->
                     D.succeed RegisterData
+
+                "configureBaker" ->
+                    D.succeed ConfigureBaker
+
+                "configureDelegation" ->
+                    D.succeed ConfigureDelegation
 
                 _ ->
                     D.fail <| "Unknown AccountTransaction type: " ++ tipe

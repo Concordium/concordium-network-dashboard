@@ -242,14 +242,14 @@ type UpdatePayload
     | Level1KeysUpdatePayload HigherLevelKeys
     | Level2KeysUpdatePayload Authorizations
     | ProtocolUpdatePayload ProtocolUpdate
-    | BakerStakeThresholdPayload T.Amount
     | AddAnonymityRevokerPayload AnonymityRevokerInfo
     | AddIdentityProviderPayload IdentityProviderInfo
-
+    | PoolParametersPayload PoolParameters
+    | CooldownParametersPayload CooldownParameters
+    | TimeParametersPayload TimeParameters
 
 type alias MintDistribution =
-    { mintPerSlot : Float
-    , bakingReward : Float
+    { bakingReward : Float
     , finalizationReward : Float
     }
 
@@ -353,8 +353,30 @@ type AnonymityRevokerInfo
 type IdentityProviderInfo
     = IpInfo ArIpInfo
 
+type alias PoolParameters =
+    { bakerStakeThreshold : T.Amount
+    , finalizationCommissionLPool : T.Amount
+    , bakingCommissionLPool : T.Amount
+    , transactionCommissionLPool : T.Amount
+    , finalizationCommissionRange : Range T.Amount
+    , bakingCommissionRange : Range T.Amount
+    , transactionCommissionRange : Range T.Amount
+    , minimumEquityCapital : T.Amount
+    , capitalBound : Float
+    , leverageBound : Float
+    }
 
+type alias CooldownParameters =
+    { bakerCooldownEpochs : Int
+    , poolOwnerCooldown : Int
+    , delegatorCooldown : Int
+    }
 
+type alias TimeParameters =
+    { rewardPeriodLength : Int
+    , mintPerDay : Float
+    }
+    
 -- Errors
 
 
@@ -370,6 +392,16 @@ relationDecoder =
         |> required "denominator" D.int
         |> required "numerator" D.int
 
+type alias Range a =
+    { min : a
+    , max : a
+    }
+
+rangeDecoder : D.Decoder a -> D.Decoder (Range a)
+rangeDecoder dec =
+    D.succeed Range
+        |> required "min" dec
+        |> required "max" dec
 
 updatePayloadDecoder : D.Decoder UpdatePayload
 updatePayloadDecoder =
@@ -407,15 +439,21 @@ updatePayloadDecoder =
                     "protocol" ->
                         protocolUpdateDecoder |> D.map ProtocolUpdatePayload
 
-                    "bakerStakeThreshold" ->
-                        T.decodeAmount |> D.map BakerStakeThresholdPayload
-
                     "addAnonymityRevoker" ->
                         arDecoder |> D.map AddAnonymityRevokerPayload
 
                     "addIdentityProvider" ->
                         ipDecoder |> D.map AddIdentityProviderPayload
 
+                    "poolParameters" ->
+                        poolParametersDecoder |> D.map PoolParametersPayload
+
+                    "cooldownParameters" ->
+                        cooldownParametersDecoder |> D.map CooldownParametersPayload
+
+                    "timeParameters" ->
+                        timeParametersDecoder |> D.map TimeParametersPayload
+                         
                     _ ->
                         D.fail "Unknown update type"
     in
@@ -433,7 +471,6 @@ foundationAccountRepresentationDecoder =
 mintDistributionDecoder : D.Decoder MintDistribution
 mintDistributionDecoder =
     D.succeed MintDistribution
-        |> required "mintPerSlot" D.float
         |> required "bakingReward" D.float
         |> required "finalizationReward" D.float
 
@@ -570,7 +607,33 @@ protocolUpdateDecoder =
         |> required "specificationHash" D.string
         |> required "specificationAuxiliaryData" D.string
 
+poolParametersDecoder : D.Decoder PoolParameters
+poolParametersDecoder =
+    D.succeed PoolParameters
+       |> required "minimumThresholdForBaking" T.decodeAmount
+       |> required "finalizationCommissionLPool" T.decodeAmount
+       |> required "bakingCommissionLPool" T.decodeAmount
+       |> required "transactionCommissionLPool" T.decodeAmount
+       |> required "bakingCommissionRange" (rangeDecoder T.decodeAmount)
+       |> required "transactionCommissionRange" (rangeDecoder T.decodeAmount)
+       |> required "finalizationCommissionRange" (rangeDecoder T.decodeAmount)
+       |> required "minimumEquityCapital" T.decodeAmount
+       |> required "capitalBound" D.float
+       |> required "leverageBound" D.float
 
+cooldownParametersDecoder : D.Decoder CooldownParameters
+cooldownParametersDecoder =
+    D.succeed CooldownParameters
+       |> required "bakerCooldownEpochs" D.int
+       |> required "poolOwnerCooldown" D.int
+       |> required "delegatorCooldown" D.int
+
+timeParametersDecoder : D.Decoder TimeParameters
+timeParametersDecoder =
+    D.succeed TimeParameters
+       |> required "rewardPeriodLength" D.int
+       |> required "mintPerDay" D.float
+          
 {-| Convert Maybe a to a Decoder which fails if the Maybe is Nothing.
 It also takes a string for the message to fail with.
 -}

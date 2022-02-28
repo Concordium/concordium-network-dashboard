@@ -82,10 +82,21 @@ type alias ChainParameters =
     , microCCDPerEuro : Relation
     , foundationAccountIndex : Int
     , accountCreationLimit : Int
-    , bakerCooldownEpochs : Int
     , electionDifficulty : Float
     , euroPerEnergy : Relation
-    , minimumThresholdForBaking : T.Amount
+    , poolOwnerCooldown : Int
+    , delegatorCooldown : Int
+    , finalizationCommissionLPool : Float
+    , bakingCommissionLPool : Float
+    , transactionCommissiionLPool : Float
+    , finalizationCommissionRange : Range Float
+    , bakingCommissionRange : Range Float
+    , transactionCommissionRange : Range Float
+    , minimumEquityCapital : T.Amount
+    , capitalBound : Float
+    , leverageBound : Relation
+    , rewardPeriodLength : Int
+    , mintPerPayday : Float
     }
 
 
@@ -108,9 +119,11 @@ type alias UpdateQueues =
     , foundationAccount : UpdateQueue Int
     , electionDifficulty : UpdateQueue Float
     , euroPerEnergy : UpdateQueue Relation
-    , bakerStakeThreshold : UpdateQueue T.Amount
     , anonymityRevoker : UpdateQueue AnonymityRevokerInfo
     , identityProvider : UpdateQueue IdentityProviderInfo
+    , poolParameters : UpdateQueue PoolParameters
+    , cooldownParameters : UpdateQueue CooldownParameters
+    , timeParameters : UpdateQueue TimeParameters    
     }
 
 
@@ -141,10 +154,21 @@ chainParametersDecoder =
         |> required "microGTUPerEuro" relationDecoder
         |> required "foundationAccountIndex" D.int
         |> required "accountCreationLimit" D.int
-        |> required "bakerCooldownEpochs" D.int
         |> required "electionDifficulty" D.float
         |> required "euroPerEnergy" relationDecoder
-        |> required "minimumThresholdForBaking" T.decodeAmount
+        |> required "poolOwnerCooldown" D.int
+        |> required "delegatorCooldown" D.int
+        |> required "finalizationCommissionLPool" D.float
+        |> required "bakingCommissionLPool" D.float
+        |> required "transactionCommissionLPool" D.float
+        |> required "finalizationCommissionRange" (rangeDecoder D.float)
+        |> required "bakingCommissionRange" (rangeDecoder D.float)
+        |> required "transactionCommissionRange" (rangeDecoder D.float)
+        |> required "minimumEquityCapital" T.decodeAmount
+        |> required "capitalBound" D.float
+        |> required "leverageBound" relationDecoder
+        |> required "rewardPeriodLength" D.int
+        |> required "mintPerPayday" D.float
 
 
 rewardParametersDecoder : D.Decoder RewardParameters
@@ -169,9 +193,11 @@ updateQueuesDecoder =
         |> required "foundationAccount" (updateQueueDecoder D.int)
         |> required "electionDifficulty" (updateQueueDecoder D.float)
         |> required "euroPerEnergy" (updateQueueDecoder relationDecoder)
-        |> required "bakerStakeThreshold" (updateQueueDecoder T.decodeAmount)
         |> required "addAnonymityRevoker" (updateQueueDecoder arDecoder)
         |> required "addIdentityProvider" (updateQueueDecoder ipDecoder)
+        |> required "poolParameters" (updateQueueDecoder poolParametersDecoder)
+        |> required "cooldownParameters" (updateQueueDecoder cooldownParametersDecoder)
+        |> required "timeParameters" (updateQueueDecoder timeParametersDecoder)       
 
 
 updateQueueDecoder : D.Decoder a -> D.Decoder (UpdateQueue a)
@@ -197,6 +223,10 @@ type SpecialEvent
     | SpecialEventMint Mint
     | SpecialEventFinalizationRewards FinalizationRewards
     | SpecialEventBlockReward BlockReward
+    | SpecialEventPaydayFoundationReward PaydayFoundationReward
+    | SpecialEventPaydayAccountReward PaydayAccountReward
+    | SpecialEventBlockAccrueReward BlockAccrueReward
+    | SpecialEventPaydayPoolReward PaydayPoolReward
 
 
 type alias BakingRewards =
@@ -229,7 +259,35 @@ type alias BlockReward =
     , baker : T.AccountAddress
     }
 
+type alias PaydayFoundationReward =
+    { foundationAccount : T.AccountAddress
+    , developmentCharge : T.Amount
+    }
 
+type alias PaydayAccountReward =
+    { account : T.AccountAddress
+    , transactionFees : T.Amount
+    , bakerReward : T.Amount
+    , finalizationReward : T.Amount
+    }
+
+type alias BlockAccrueReward =
+    { transactionFees : T.Amount
+    , oldGASAccount : T.Amount
+    , newGASAccount : T.Amount
+    , bakerReward : T.Amount
+    , lPoolReward : T.Amount
+    , foundationCharge : T.Amount
+    , bakerId : T.BakerId
+    }
+
+type alias PaydayPoolReward =
+    { poolOwner : T.BakerId
+    , transactionFees : T.Amount
+    , bakerReward : T.Amount
+    , finalizationReward : T.Amount
+    }
+    
 specialEventDecoder : D.Decoder SpecialEvent
 specialEventDecoder =
     let
@@ -267,10 +325,45 @@ specialEventDecoder =
                         |> required "baker" T.accountAddressDecoder
                         |> D.map SpecialEventBlockReward
 
+                "PaydayFoundationReward" ->
+                    D.succeed PaydayFoundationReward
+                        |> required "foundationAccount" T.accountAddressDecoder
+                        |> required "developmentCharge" T.decodeAmount
+                        |> D.map SpecialEventPaydayFoundationReward
+
+                "PaydayAccountReward" ->
+                    D.succeed PaydayAccountReward
+                        |> required "account" T.accountAddressDecoder
+                        |> required "transactionFees" T.decodeAmount
+                        |> required "bakerReward" T.decodeAmount
+                        |> required "finalizationReward" T.decodeAmount
+                        |> D.map SpecialEventPaydayAccountReward
+
+                "BlockAccrueReward" ->
+                    D.succeed BlockAccrueReward
+                      |> required "transactionFees" T.decodeAmount
+                      |> required "oldGASAccount" T.decodeAmount
+                      |> required "newGASAccount" T.decodeAmount
+                      |> required "bakerReward" T.decodeAmount
+                      |> required "lPoolReward" T.decodeAmount
+                      |> required "foundationCharge" T.decodeAmount
+                      |> required "bakerId" D.int
+                      |> D.map SpecialEventBlockAccrueReward
+
+                "PaydayPoolReward" ->
+                    D.succeed PaydayPoolReward
+                      |> required "poolOwner" D.int
+                      |> required "transactionFees" T.decodeAmount
+                      |> required "bakerReward" T.decodeAmount
+                      |> required "finalizationReward" T.decodeAmount
+                      |> D.map SpecialEventPaydayPoolReward
+
                 _ ->
                     D.fail """Invalid SpecialEvent tag.
                               Expected one of the following: BakingRewards, Mint,
-                              FinalizationRewards, BlockReward."""
+                              FinalizationRewards, BlockReward,
+                              PaydayFoundationReward, PaydayAccountReward,
+                              BlockAccrueReward, PaydayPoolReward."""
     in
     D.field "tag" D.string |> D.andThen decode
 

@@ -125,8 +125,11 @@ viewBlockSummary theme timezone { blockSummary, state } =
             Paging.pager state.transactionPagingModel transactionNum
 
         specialEvents =
-            blockSummary.specialEvents
-                |> List.map (viewSpecialEvent theme blockSummary.updates.chainParameters.rewardParameters)
+            -- delegation payouts to individual payouts are too numerous to be displayed
+            List.filter (\ev -> case ev of
+                                    SpecialEventPaydayAccountReward _ -> False
+                                    _ -> True) blockSummary.specialEvents
+                |> List.map (viewSpecialEvent theme blockSummary.updates.chainParameters)
 
         finalizations =
             viewFinalizationData theme blockSummary.finalizationData
@@ -677,6 +680,12 @@ typeDescriptionAccountTransactionType accountTransactionType =
         TransferWithScheduleAndMemo ->
             { icon = html <| Icons.transaction 18, short = "Transfer with schedule and metadata" }
 
+        ConfigureBaker ->
+            { icon = html <| Icons.baking_bread 20, short = "Configure baker" }
+
+        ConfigureDelegation ->
+            { icon = html <| Icons.baking_bread 20, short = "Configure delegation" }
+              
         Malformed ->
             { icon = el [ paddingXY 6 0 ] <| text "?", short = "Serialization" }
 
@@ -1006,10 +1015,11 @@ listUpdatePayloads queues =
         ++ mapUpdate ElectionDifficultyPayload queues.electionDifficulty
         ++ mapUpdate EuroPerEnergyPayload queues.euroPerEnergy
         ++ mapUpdate MintDistributionPayload queues.mintDistribution
-        ++ mapUpdate BakerStakeThresholdPayload queues.bakerStakeThreshold
         ++ mapUpdate AddAnonymityRevokerPayload queues.anonymityRevoker
         ++ mapUpdate AddIdentityProviderPayload queues.identityProvider
-
+        ++ mapUpdate PoolParametersPayload queues.poolParameters
+        ++ mapUpdate CooldownParametersPayload queues.cooldownParameters
+        ++ mapUpdate TimeParametersPayload queues.timeParameters    
 
 asPercentage : Float -> String
 asPercentage n =
@@ -1109,8 +1119,8 @@ viewDetailRow l r =
     row [ width fill, spacing 20, padding 20 ] [ column [ width (fillPortion 2), spacing 20 ] l, column [ width (fillPortion 3), spacing 20 ] r ]
 
 
-viewSpecialEvent : Theme a -> RewardParameters -> SpecialEvent -> SummaryItem Msg
-viewSpecialEvent ctx rewardParameters specialEvent =
+viewSpecialEvent : Theme a -> ChainParameters -> SpecialEvent -> SummaryItem Msg
+viewSpecialEvent ctx chainParameters specialEvent =
     let
         item =
             case specialEvent of
@@ -1165,7 +1175,7 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                     , details =
                         let
                             foundationMintFraction =
-                                1 - rewardParameters.mintDistribution.bakingReward - rewardParameters.mintDistribution.finalizationReward
+                                T.subAmounts (T.amountFromInt 1) (T.addAmounts event.mintBakingReward event.mintFinalizationReward)
 
                             mintTotal =
                                 T.sumAmounts [ event.mintPlatformDevelopmentCharge, event.mintBakingReward, event.mintFinalizationReward ]
@@ -1174,20 +1184,20 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                             [ viewDetailRow
                                 [ paragraph [] [ text "Every block introduces an amount of minted CCD." ] ]
                                 []
-                            , viewDetailRow
-                                [ paragraph []
-                                    [ text "The amount depends on the number of slots since the last block, as the total supply of CCD is increased by a factor of 1 + "
-                                    , text <| String.fromFloat rewardParameters.mintDistribution.mintPerSlot
-                                    , text " in every slot."
-                                    ]
-                                ]
-                                [ el [ centerX ] <| viewSpecialAccount ctx ctx.palette.fg1 "Minted this block" mintTotal
-                                ]
+                            -- , viewDetailRow
+                            --     [ paragraph []
+                            --         [ text "The amount depends on the number of slots since the last block, as the total supply of CCD is increased by a factor of 1 + "
+                            --         , text <| String.fromFloat chainParameters.rewardParameters.mintDistribution.mintPerSlot
+                            --         , text " in every slot."
+                            --         ]
+                            --     ]
+                            --     [ el [ centerX ] <| viewSpecialAccount ctx ctx.palette.fg1 "Minted this block" mintTotal
+                            --     ]
                             , viewDetailRow [ paragraph [] [ text "These CCD are distributed among special accounts for maintaining the blockchain and for rewarding bakers and finalizers. " ] ]
                                 [ viewBar ctx
-                                    [ { color = ctx.palette.c1, percentage = rewardParameters.mintDistribution.bakingReward, hint = bakingRewardAccountUpper }
-                                    , { color = ctx.palette.c2, percentage = rewardParameters.mintDistribution.finalizationReward, hint = finalizationRewardAccountUpper }
-                                    , { color = ctx.palette.fg2, percentage = foundationMintFraction, hint = "Foundation" }
+                                    [ { color = ctx.palette.c1, percentage = T.amountToFloat event.mintBakingReward, hint = bakingRewardAccountUpper }
+                                    , { color = ctx.palette.c2, percentage = T.amountToFloat event.mintFinalizationReward, hint = finalizationRewardAccountUpper }
+                                    , { color = ctx.palette.fg2, percentage = T.amountToFloat foundationMintFraction, hint = "Foundation" }
                                     ]
                                 ]
                             , viewDetailRow
@@ -1250,13 +1260,13 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                     , details =
                         let
                             foundationTransactionFeeBlockReward =
-                                1 - (rewardParameters.transactionFeeDistribution.baker + rewardParameters.transactionFeeDistribution.gasAccount)
+                                1 - (chainParameters.rewardParameters.transactionFeeDistribution.baker + chainParameters.rewardParameters.transactionFeeDistribution.gasAccount)
 
                             bakerRewardAmountTransactionFee =
-                                T.scaleAmount rewardParameters.transactionFeeDistribution.baker event.transactionFees
+                                T.scaleAmount chainParameters.rewardParameters.transactionFeeDistribution.baker event.transactionFees
 
                             bakerRewardAmountFixedGasAccount =
-                                T.scaleAmount rewardParameters.gasRewards.baker event.oldGASAccount
+                                T.scaleAmount chainParameters.rewardParameters.gasRewards.baker event.oldGASAccount
 
                             nonGasBakerAmount =
                                 T.subAmounts event.bakerReward <| T.addAmounts bakerRewardAmountTransactionFee bakerRewardAmountFixedGasAccount
@@ -1272,8 +1282,8 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                 [ paragraph [] [ text "The transaction fees are distributed between the baker reward, a Gas Account and maintainance of the blockchain." ] ]
                                 [ el [ centerX ] <| viewSpecialAccount ctx ctx.palette.fg1 "Transaction fees" event.transactionFees
                                 , viewBar ctx
-                                    [ { color = ctx.palette.c1, percentage = rewardParameters.transactionFeeDistribution.baker, hint = "Baker Reward" }
-                                    , { color = ctx.palette.c3, percentage = rewardParameters.transactionFeeDistribution.gasAccount, hint = "Next Gas Account" }
+                                    [ { color = ctx.palette.c1, percentage = chainParameters.rewardParameters.transactionFeeDistribution.baker, hint = "Baker Reward" }
+                                    , { color = ctx.palette.c3, percentage = chainParameters.rewardParameters.transactionFeeDistribution.gasAccount, hint = "Next Gas Account" }
                                     , { color = ctx.palette.fg2, percentage = foundationTransactionFeeBlockReward, hint = "Foundation" }
                                     ]
                                 ]
@@ -1297,23 +1307,23 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                     , text " are chain parameters."
                                     ]
                                 , row [ centerX, spacing 30 ]
-                                    [ paragraph [] [ italic "F", text " = ", text <| asPercentage rewardParameters.gasRewards.finalizationProof ]
-                                    , paragraph [] [ italic "A", text " = ", text <| asPercentage rewardParameters.gasRewards.accountCreation ]
-                                    , paragraph [] [ italic "U", text " = ", text <| asPercentage rewardParameters.gasRewards.chainUpdate ]
+                                    [ paragraph [] [ italic "F", text " = ", text <| asPercentage chainParameters.rewardParameters.gasRewards.finalizationProof ]
+                                    , paragraph [] [ italic "A", text " = ", text <| asPercentage chainParameters.rewardParameters.gasRewards.accountCreation ]
+                                    , paragraph [] [ italic "U", text " = ", text <| asPercentage chainParameters.rewardParameters.gasRewards.chainUpdate ]
                                     ]
                                 , paragraph [] [ text "The bakers fraction of the Gas Account is" ]
-                                , paragraph [ Font.center ] [ text <| asPercentage rewardParameters.gasRewards.baker, text " + ", text <| asPercentage (1 - rewardParameters.gasRewards.baker), text " · ", italic "N" ]
+                                , paragraph [ Font.center ] [ text <| asPercentage chainParameters.rewardParameters.gasRewards.baker, text " + ", text <| asPercentage (1 - chainParameters.rewardParameters.gasRewards.baker), text " · ", italic "N" ]
                                 ]
                                 [ el [ centerX ] <| viewSpecialAccount ctx ctx.palette.fg1 "Gas account" event.oldGASAccount
                                 , viewBar ctx <|
-                                    [ { color = ctx.palette.c1, percentage = rewardParameters.gasRewards.baker, hint = "Baker Reward" } ]
+                                    [ { color = ctx.palette.c1, percentage = chainParameters.rewardParameters.gasRewards.baker, hint = "Baker Reward" } ]
                                         ++ (if nonGasFraction > 0 then
-                                                [ { color = Palette.veryLight ctx.palette.c1, percentage = (1 - rewardParameters.gasRewards.baker) * nonGasFraction, hint = "Non-Gas\nBaker Reward" } ]
+                                                [ { color = Palette.veryLight ctx.palette.c1, percentage = (1 - chainParameters.rewardParameters.gasRewards.baker) * nonGasFraction, hint = "Non-Gas\nBaker Reward" } ]
 
                                             else
                                                 []
                                            )
-                                        ++ [ { color = ctx.palette.c3, percentage = (1 - rewardParameters.gasRewards.baker) * (1 - nonGasFraction), hint = "Next Gas Account" } ]
+                                        ++ [ { color = ctx.palette.c3, percentage = (1 - chainParameters.rewardParameters.gasRewards.baker) * (1 - nonGasFraction), hint = "Next Gas Account" } ]
                                 ]
                             , viewDetailRow []
                                 [ row [ spacing 20, centerX ]
@@ -1324,6 +1334,52 @@ viewSpecialEvent ctx rewardParameters specialEvent =
                                 ]
                             ]
                     }
+
+                SpecialEventPaydayFoundationReward event ->
+                  { tooltip = "Payday foundation reward"
+                  , icon = Icons.coin_ccd 20
+                  , content = row [ spacing 10 ] [ text <| "Rewarded ",  text <| T.amountToString event.developmentCharge, text <| " to the foundation account ", viewFoundationAccount ctx (Address event.foundationAccount) ]
+                  , details = text ""
+                  }
+
+                -- this case will never be triggered because PaydayAccountReward events are filtered
+                -- out of the special events list before rendering it
+                SpecialEventPaydayAccountReward _ ->
+                  { tooltip = "Payday account reward"
+                  , icon = Icons.coin_ccd 20
+                  , content = text ""
+                  , details = text ""
+                  }
+
+                SpecialEventBlockAccrueReward event ->
+                  { tooltip = "Block accrue reward"
+                  , icon = Icons.coin_ccd 20
+                  , content = row [ spacing 10 ] [ text "Rewards for baking this block" ]
+                  , details = column [ width fill, spacing 30]
+                              [ viewDetailRow
+                                    [ paragraph [] [ text <| "Total fees paid for transaction in the block ", text <| T.amountToString event.transactionFees ]
+                                    , paragraph [] [ text <| "Rewarded ", text <| T.amountToString event.bakerReward, text " to baker with ID ",  text <| String.fromInt event.bakerId ]
+                                    , paragraph [] [ text <| "Rewarded ", text <| T.amountToString event.lPoolReward, text " to the L-Pool" ]
+                                    , paragraph [] [ text <| "Rewarded ", text <| T.amountToString event.foundationCharge, text " to the foundation" ] 
+                                    ]
+                                    []
+                              ]
+                  }
+
+                SpecialEventPaydayPoolReward event ->
+                  { tooltip = "Payday pool reward"
+                  , icon = Icons.coin_ccd 20
+                  , content = row [ spacing 10 ] [ text <| "Rewarded pool ", text <| String.fromInt event.poolOwner ]
+                  , details = column [ width fill, spacing 30]
+                              [ viewDetailRow
+                                    [ paragraph [] [ text <| "Transaction fees  ", text <| T.amountToString event.transactionFees ]
+                                    , paragraph [] [ text <| "Baker reward ", text <| T.amountToString event.bakerReward ]
+                                    , paragraph [] [ text <| "Finalization reward  ", text <| T.amountToString event.finalizationReward ]
+                                    ]
+                                    []
+                              ]
+                  }
+                  
     in
     [ { content =
             row contentRowAttrs <|
@@ -1866,8 +1922,8 @@ viewEventUpdateEnqueuedDetails ctx event =
                     1 - mintDistribution.bakingReward - mintDistribution.finalizationReward
             in
             viewDetailRow [ paragraph [] [ text "Updating the parameters for CCD minting." ] ]
-                [ el [ centerX ] <| viewHeaderBox ctx ctx.palette.fg2 "Minted pr. slot" <| text <| String.fromFloat mintDistribution.mintPerSlot
-                , viewBar
+                [ --el [ centerX ] <| viewHeaderBox ctx ctx.palette.fg2 "Minted pr. slot" <| text <| String.fromFloat mintDistribution.mintPerSlot
+                viewBar
                     ctx
                     [ { color = ctx.palette.c1, percentage = mintDistribution.bakingReward, hint = bakingRewardAccountUpper }
                     , { color = ctx.palette.c2, percentage = mintDistribution.finalizationReward, hint = finalizationRewardAccountUpper }
@@ -1957,15 +2013,21 @@ viewEventUpdateEnqueuedDetails ctx event =
                     }
                 ]
 
-        BakerStakeThresholdPayload threshold ->
-            paragraph [] [ text <| "Update the minimum staked amount for becoming a baker to " ++ T.amountToString threshold ]
-
         AddAnonymityRevokerPayload (ArInfo anonymityRevokerInfo) ->
             paragraph [] <| text "Add a new anonymity revoker. " :: displayArIp anonymityRevokerInfo
 
         AddIdentityProviderPayload (IpInfo identityProviderInfo) ->
             paragraph [] <| text "Add a new identity provider. " :: displayArIp identityProviderInfo
 
+        PoolParametersPayload _ ->
+            paragraph [] [ text "Update pool parameters." ]
+
+        CooldownParametersPayload _ ->
+            paragraph [] [ text "Update cooldown parameters." ]
+
+        TimeParametersPayload _ ->
+            paragraph [] [ text "Update time parameters." ]
+              
 
 viewFoundationAccount : Theme a -> FoundationAccountRepresentation -> Element Msg
 viewFoundationAccount ctx repr =
