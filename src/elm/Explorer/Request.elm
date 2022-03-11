@@ -282,7 +282,7 @@ type alias BlockAccrueReward =
     }
 
 type alias PaydayPoolReward =
-    { poolOwner : T.BakerId
+    { poolOwner : Maybe T.BakerId
     , transactionFees : T.Amount
     , bakerReward : T.Amount
     , finalizationReward : T.Amount
@@ -352,7 +352,7 @@ specialEventDecoder =
 
                 "PaydayPoolReward" ->
                     D.succeed PaydayPoolReward
-                      |> required "poolOwner" D.int
+                      |> required "poolOwner" (D.nullable D.int)
                       |> required "transactionFees" T.decodeAmount
                       |> required "bakerReward" T.decodeAmount
                       |> required "finalizationReward" T.decodeAmount

@@ -1369,7 +1369,10 @@ viewSpecialEvent ctx chainParameters specialEvent =
                 SpecialEventPaydayPoolReward event ->
                   { tooltip = "Payday pool reward"
                   , icon = Icons.coin_ccd 20
-                  , content = row [ spacing 10 ] [ text <| "Rewarded pool ", text <| String.fromInt event.poolOwner ]
+                  , content = row [ spacing 10 ] [ text <| "Rewarded"
+                                                 , text <| (case event.poolOwner of
+                                                                Just poolOwner -> "pool " ++ String.fromInt poolOwner
+                                                                Nothing -> "L-pool") ]
                   , details = column [ width fill, spacing 30]
                               [ viewDetailRow
                                     [ paragraph [] [ text <| "Transaction fees  ", text <| T.amountToString event.transactionFees ]
