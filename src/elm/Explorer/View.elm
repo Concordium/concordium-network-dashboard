@@ -1174,8 +1174,7 @@ viewSpecialEvent ctx chainParameters specialEvent =
                     , content = el [ spacing 10 ] <| text "Distributed minted CCD "
                     , details =
                         let
-                            foundationMintFraction =
-                                T.subAmounts (T.amountFromInt 1) (T.addAmounts event.mintBakingReward event.mintFinalizationReward)
+                            foundationMintFraction = 1 - chainParameters.rewardParameters.mintDistribution.bakingReward - chainParameters.rewardParameters.mintDistribution.finalizationReward
 
                             mintTotal =
                                 T.sumAmounts [ event.mintPlatformDevelopmentCharge, event.mintBakingReward, event.mintFinalizationReward ]
@@ -1195,9 +1194,9 @@ viewSpecialEvent ctx chainParameters specialEvent =
                             --     ]
                             , viewDetailRow [ paragraph [] [ text "These CCD are distributed among special accounts for maintaining the blockchain and for rewarding bakers and finalizers. " ] ]
                                 [ viewBar ctx
-                                    [ { color = ctx.palette.c1, percentage = T.amountToFloat event.mintBakingReward, hint = bakingRewardAccountUpper }
-                                    , { color = ctx.palette.c2, percentage = T.amountToFloat event.mintFinalizationReward, hint = finalizationRewardAccountUpper }
-                                    , { color = ctx.palette.fg2, percentage = T.amountToFloat foundationMintFraction, hint = "Foundation" }
+                                    [ { color = ctx.palette.c1, percentage = chainParameters.rewardParameters.mintDistribution.bakingReward, hint = bakingRewardAccountUpper }
+                                    , { color = ctx.palette.c2, percentage = chainParameters.rewardParameters.mintDistribution.finalizationReward , hint = finalizationRewardAccountUpper }
+                                    , { color = ctx.palette.fg2, percentage = foundationMintFraction, hint = "Foundation" }
                                     ]
                                 ]
                             , viewDetailRow
