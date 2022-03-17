@@ -179,7 +179,30 @@ type RejectReason
     | NotAllowedToReceiveEncrypted
       -- |The account is not allowed to send encrypted transfers (or transfer from/to public to/from encrypted)
     | NotAllowedToHandleEncrypted
-
+    -- |A configure baker transaction is missing one or more arguments in order to add a baker.
+    | MissingBakerAddParameters
+    -- |A configure baker transaction to remove baker is passed unexpected arguments.
+    | UnexpectedBakerRemoveParameters
+    -- |Not all baker commissions are within allowed ranges
+    | CommissionsNotInRangeForBaking
+    -- |Tried to add baker for an account that already has a delegator
+    | AlreadyADelegator
+    -- |The amount on the account was insufficient to cover the proposed stake
+    | InsufficientBalanceForDelegationStake
+    -- |A configure delegation transaction is missing one or more arguments in order to add a delegator.
+    | MissingDelegationAddParameters
+    -- |A configure delegation transaction to remove delegation is passed unexpected arguments.
+    | UnexpectedDelegationRemoveParameters
+    -- |The change could not be made because the delegator is in cooldown
+    | DelegatorInCooldown
+    -- |Account is not a delegation account
+    | NotADelegator T.AccountAddress
+    -- |Delegation target is not a baker
+    | DelegationTargetNotABaker T.BakerId
+    -- |The amount would result in pool capital higher than the maximum threshold
+    | StakeOverMaximumThresholdForPool
+    -- |The amount would result in pool with a too high fraction of delegated capital.
+    | PoolWouldBecomeOverDelegated    
 
 type alias RejectReasonRejectedInit =
     { rejectReason : Int
@@ -554,6 +577,44 @@ rejectReasonDecoder =
 
                 "NotAllowedToHandleEncrypted" ->
                     D.succeed NotAllowedToHandleEncrypted
+
+                "MissingBakerAddParameters" ->
+                    D.succeed MissingBakerAddParameters
+                        
+                "UnexpectedBakerRemoveParameters" ->
+                    D.succeed UnexpectedBakerRemoveParameters
+                        
+                "CommissionsNotInRangeForBaking" ->
+                    D.succeed CommissionsNotInRangeForBaking
+                        
+                "AlreadyADelegator" ->
+                    D.succeed AlreadyADelegator
+                        
+                "InsufficientBalanceForDelegationStake" ->
+                    D.succeed InsufficientBalanceForDelegationStake
+                        
+                "MissingDelegationAddParameters" ->
+                    D.succeed MissingDelegationAddParameters
+                        
+                "UnexpectedDelegationRemoveParameters" ->
+                    D.succeed UnexpectedDelegationRemoveParameters
+                        
+                "DelegatorInCooldown" ->
+                    D.succeed DelegatorInCooldown
+                        
+                "NotADelegator" ->
+                    D.map NotADelegator <|
+                        D.field "contents" T.accountAddressDecoder
+
+                "DelegationTargetNotABaker" ->
+                    D.map DelegationTargetNotABaker <|
+                        D.field "contents" D.int
+                    
+                "StakeOverMaximumThresholdForPool" ->
+                    D.succeed StakeOverMaximumThresholdForPool
+                    
+                "PoolWouldBecomeOverDelegated" ->
+                    D.succeed PoolWouldBecomeOverDelegated
 
                 _ ->
                     D.fail <| "Unknown RejectReason: " ++ tag

@@ -931,6 +931,64 @@ rejectionToItem ctx reason =
             , details = Nothing
             }
 
+        MissingBakerAddParameters ->
+            { content = [ text "A configure baker transaction is missing one or more arguments in order to add a baker" ]
+            , details = Nothing
+            }
+
+        UnexpectedBakerRemoveParameters ->
+            { content = [ text "A configure baker transaction to remove baker is passed unexpected arguments" ]
+            , details = Nothing
+            }
+            
+        CommissionsNotInRangeForBaking ->
+            { content = [ text "Not all baker commissions are within allowed ranges" ]
+            , details = Nothing
+            }
+            
+        AlreadyADelegator ->
+            { content = [ text "Tried to add baker for an account that already has a delegator" ]
+            , details = Nothing
+            }
+            
+        InsufficientBalanceForDelegationStake ->
+            { content = [ text "The amount on the account was insufficient to cover the proposed stake" ]
+            , details = Nothing
+            }
+
+        MissingDelegationAddParameters ->
+            { content = [ text "A configure delegation transaction is missing one or more arguments in order to add a delegator" ]
+            , details = Nothing
+            }
+
+        UnexpectedDelegationRemoveParameters ->
+            { content = [ text "A configure delegation transaction to remove delegation is passed unexpected arguments" ]
+            , details = Nothing
+            }
+
+        DelegatorInCooldown ->
+            { content = [ text "The change could not be made because the delegator is in cooldown" ]
+            , details = Nothing
+            }
+        NotADelegator addr ->
+            { content = [ text "Account ", viewAddress ctx <| T.AddressAccount addr, text " is not a delegation account" ]
+            , details = Nothing
+            }
+
+        DelegationTargetNotABaker targetId ->
+            { content = [ text "Delegation target with ID ", text <| String.fromInt targetId, text " is not a baker" ]
+            , details = Nothing
+            }
+
+        StakeOverMaximumThresholdForPool ->
+            { content = [ text "The amount would result in pool capital higher than the maximum threshold" ]
+            , details = Nothing
+            }
+    -- |
+        PoolWouldBecomeOverDelegated ->
+            { content = [ text "The amount would result in pool with a too high fraction of delegated capital." ]
+            , details = Nothing
+            }
 
 viewUpdates : Theme a -> Time.Zone -> Updates -> Element Msg
 viewUpdates theme timezone updates =
@@ -1368,7 +1426,7 @@ viewSpecialEvent ctx chainParameters specialEvent =
                 SpecialEventPaydayPoolReward event ->
                   { tooltip = "Payday pool reward"
                   , icon = Icons.coin_ccd 20
-                  , content = row [ spacing 10 ] [ text <| "Rewarded"
+                  , content = row [ spacing 10 ] [ text <| "Rewarded "
                                                  , text <| (case event.poolOwner of
                                                                 Just poolOwner -> "pool " ++ String.fromInt poolOwner
                                                                 Nothing -> "L-pool") ]
@@ -1914,6 +1972,159 @@ viewTransactionEvent ctx timezone txEvent =
                         ]
             }
 
+        TransactionEventBakerSetOpenStatus event ->
+            { content = eventElem
+                    [ text <| "Setting open status of "
+                    , viewBaker ctx event.bakerId event.account
+                    , text " to "
+                    , text event.openStatus
+                    ]
+            , details = Nothing
+            }
+            
+        TransactionEventBakerSetMetadataURL event ->
+            { content = eventElem
+                    [ text <| "Setting metadata URL of "
+                    , viewBaker ctx event.bakerId event.account
+                    , text " to "
+                    , text event.metadataUrl
+                    ]
+            , details = Nothing
+            }
+            
+        TransactionEventBakerSetTransactionFeeCommission event ->
+            { content = [ text <| "Setting transaction fee commission for "
+                    , viewBaker ctx event.bakerId event.account
+                    , text " to "
+                    , viewRelation ctx event.transactionFeeCommission
+                    ]
+            , details = Nothing
+            }
+            
+        TransactionEventBakerSetBakingRewardCommission event ->
+            { content = [ text <| "Setting baking reward commission for "
+                    , viewBaker ctx event.bakerId event.account
+                    , text " to "
+                    , viewRelation ctx event.bakingRewardCommission
+                    ]
+            , details = Nothing
+            }
+            
+        TransactionEventBakerSetFinalizationRewardCommission event ->
+            { content = [ text <| "Setting finalization reward commission for "
+                    , viewBaker ctx event.bakerId event.account
+                    , text " to "
+                    , viewRelation ctx event.finalizationRewardCommission
+                    ]
+            , details = Nothing
+            }
+            
+        TransactionEventContractInterrupted event ->
+            { content = eventElem
+                    [ text <| "Interrupted contract with address: "
+                    , viewAsAddressContract ctx event.address
+                    ]
+
+            , details =
+                Just <|
+                    column [ width fill ]
+                        [ viewDetailRow
+                            [ paragraph [] [ text "Contract instance was interupted" ] ]
+                            [ viewKeyValue ctx
+                                [ ( "Contract address", viewAsAddressContract ctx event.address )
+                                ]
+                            ]
+                        , viewDetailRow
+                            [ paragraph [] [ text "Contract events emitted" ] ]
+                            [ if List.isEmpty event.events then
+                                paragraph [ Font.center ] [ text "No events" ]
+
+                              else
+                                viewKeyValue ctx <| List.indexedMap (\i e -> ( String.fromInt i, paragraph [ wordBreak ] [ text e ] )) event.events
+                            ]
+                        ]
+            }
+            
+        TransactionEventContractResumed event  ->
+            { content = eventElem
+                    [ if event.success then
+                          text <| "Resumed "
+                      else
+                          text <| "Not resumed "
+                    , text <| "contract with address: "
+                    , viewAsAddressContract ctx event.address
+                    ]
+            , details = Nothing
+            }
+            
+        TransactionEventDelegationStakeIncreased event ->
+            { content =
+                  eventElem
+                    [ text <| "Increased stake of "
+                    , viewDelegator ctx event.delegatorId event.account
+                    , text " to "
+                    , text <| T.amountToString event.newStake
+                    ]
+            , details = Nothing
+            }
+            
+        TransactionEventDelegationStakeDecreased event ->
+            { content =
+                eventElem
+                    [ text <| "Decreased stake of "
+                    , viewDelegator ctx event.delegatorId event.account
+                    , text " to "
+                    , text <| T.amountToString event.newStake
+                    ]
+            , details = Nothing
+            }
+            
+        TransactionEventDelegationSetRestakeEarnings event ->
+            { content =
+                eventElem
+                    [ text <|
+                        if event.restakeEarnings then
+                            "Enable"
+
+                        else
+                            "Disable"
+                    , text <|
+                        " restake earnings of "
+                    , viewDelegator ctx event.delegatorId event.account
+                    ]                  
+            , details = Nothing
+            }
+            
+        TransactionEventDelegationSetDelegationTarget event ->
+            { content =
+                eventElem
+                    [ text <| "Set delegation target for "
+                    , viewDelegator ctx event.delegatorId event.account
+                    , text <| " to "
+                    , text <| case event.delegationTarget of
+                                  Just poolId -> "pool " ++ String.fromInt poolId
+                                  Nothing -> "L-pool"
+                    ]                                    
+            , details = Nothing
+            }
+            
+        TransactionEventDelegationAdded event ->
+            { content =
+                eventElem
+                    [ text <| "Added delegator "
+                    , viewDelegator ctx event.delegatorId event.account
+                    ]                  
+            , details = Nothing
+            }
+            
+        TransactionEventDelegationRemoved event ->
+            { content =
+                eventElem
+                    [ text <| "Removed delegator "
+                    , viewDelegator ctx event.delegatorId event.account
+                    ]                  
+            , details = Nothing
+            }
 
 viewEventUpdateEnqueuedDetails : Theme a -> EventUpdateEnqueued -> Element Msg
 viewEventUpdateEnqueuedDetails ctx event =
@@ -2183,6 +2394,15 @@ viewBaker ctx bakerId addr =
         , text <| "(Baker: " ++ String.fromInt bakerId ++ ")"
         ]
 
+{-| View a delegator as "<acc> (Baker: <baker-id>)". The account is shown using `viewAddress`.
+-}
+viewDelegator : Theme a -> Int -> T.AccountAddress -> Element Msg
+viewDelegator ctx delegatorId addr =
+    row
+        [ spacing 4 ]
+        [ viewAddress ctx <| T.AddressAccount addr
+        , text <| "(Delegator: " ++ String.fromInt delegatorId ++ ")"
+        ]        
 
 viewCredId : Theme a -> String -> Element Msg
 viewCredId ctx cred =

@@ -35,10 +35,24 @@ type TransactionEvent
     | TransactionEventBakerStakeDecreased EventBakerStakeDecreased
     | TransactionEventBakerSetRestakeEarnings EventBakerSetRestakeEarnings
     | TransactionEventBakerKeysUpdated EventBakerKeysUpdated
+    | TransactionEventBakerSetOpenStatus EventBakerSetOpenStatus
+    | TransactionEventBakerSetMetadataURL EventBakerSetMetadataURL
+    | TransactionEventBakerSetTransactionFeeCommission EventBakerSetTransactionFeeCommission
+    | TransactionEventBakerSetBakingRewardCommission EventBakerSetBakingRewardCommission
+    | TransactionEventBakerSetFinalizationRewardCommission EventBakerSetFinalizationRewardCommission
       -- Contracts
     | TransactionEventModuleDeployed EventModuleDeployed
     | TransactionEventContractInitialized EventContractInitialized
     | TransactionEventContractUpdated EventContractUpdated
+    | TransactionEventContractInterrupted EventContractInterrupted
+    | TransactionEventContractResumed EventContractResumed
+      -- Delegation
+    | TransactionEventDelegationStakeIncreased EventDelegationStakeIncreased
+    | TransactionEventDelegationStakeDecreased EventDelegationStakeDecreased
+    | TransactionEventDelegationSetRestakeEarnings EventDelegationSetRestakeEarnings
+    | TransactionEventDelegationSetDelegationTarget EventDelegationSetDelegationTarget
+    | TransactionEventDelegationAdded EventDelegationAdded
+    | TransactionEventDelegationRemoved EventDelegationRemoved
       -- Core
     | TransactionEventUpdateEnqueued EventUpdateEnqueued
     | TransactionEventDataRegistered EventDataRegistered
@@ -182,7 +196,35 @@ type alias EventBakerKeysUpdated =
     , aggregationKey : String
     }
 
+type alias EventBakerSetOpenStatus =
+    { bakerId : Int
+    , account : T.AccountAddress
+    , openStatus : String        
+    }
 
+type alias EventBakerSetMetadataURL =
+    { bakerId : Int
+    , account : T.AccountAddress
+    , metadataUrl : String
+    }
+
+type alias EventBakerSetTransactionFeeCommission =
+    { bakerId : Int
+    , account : T.AccountAddress
+    , transactionFeeCommission : Relation
+    }
+    
+type alias EventBakerSetBakingRewardCommission =
+    { bakerId : Int
+    , account : T.AccountAddress
+    , bakingRewardCommission : Relation
+    }
+    
+type alias EventBakerSetFinalizationRewardCommission =
+    { bakerId : Int
+    , account : T.AccountAddress
+    , finalizationRewardCommission : Relation        
+    }
 
 -- Contracts
 
@@ -209,12 +251,55 @@ type alias EventContractUpdated =
     , events : List T.ContractEvent
     }
 
+type alias EventContractInterrupted =
+    { address : T.ContractAddress
+    , events : List T.ContractEvent
+    }
+
+type alias EventContractResumed =
+    { address : T.ContractAddress
+    , success : Bool
+    }
 
 type alias EventDataRegistered =
     { data : ArbitraryBytes
     }
 
+-- Delegation
 
+type alias EventDelegationStakeIncreased =
+    { delegatorId : Int
+    , account : T.AccountAddress
+    , newStake : T.Amount
+    }
+    
+type alias EventDelegationStakeDecreased =
+    { delegatorId : Int
+    , account : T.AccountAddress
+    , newStake : T.Amount
+    }
+    
+type alias EventDelegationSetRestakeEarnings =
+    { delegatorId : Int
+    , account : T.AccountAddress
+    , restakeEarnings : Bool
+    }
+    
+type alias EventDelegationSetDelegationTarget =
+    { delegatorId : Int
+    , account : T.AccountAddress
+    , delegationTarget : Maybe Int
+    }
+    
+type alias EventDelegationAdded =
+    { delegatorId : Int
+    , account : T.AccountAddress
+    }
+    
+type alias EventDelegationRemoved =
+    { delegatorId : Int
+    , account : T.AccountAddress
+    }
 
 -- Core
 
@@ -831,6 +916,41 @@ transactionEventsDecoder =
                         |> required "aggregationKey" D.string
                         |> D.map TransactionEventBakerKeysUpdated
 
+                "BakerSetOpenStatus" ->
+                    D.succeed EventBakerSetOpenStatus
+                        |> required "bakerId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "openStatus" D.string
+                        |> D.map TransactionEventBakerSetOpenStatus
+
+                "BakerSetMetadataURL" ->
+                    D.succeed EventBakerSetMetadataURL
+                        |> required "bakerId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "metadataUrl" D.string
+                        |> D.map TransactionEventBakerSetMetadataURL
+
+                "BakerSetTransactionFeeCommission" ->
+                    D.succeed EventBakerSetTransactionFeeCommission
+                        |> required "bakerId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "transactionFeeCommission" relationDecoder
+                        |> D.map TransactionEventBakerSetTransactionFeeCommission
+
+                "BakerSetBakingRewardCommission" ->
+                    D.succeed EventBakerSetBakingRewardCommission
+                        |> required "bakerId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "bakingRewardCommission" relationDecoder
+                        |> D.map TransactionEventBakerSetBakingRewardCommission
+                    
+                "BakerSetFinalizationRewardCommission" ->
+                    D.succeed EventBakerSetFinalizationRewardCommission
+                        |> required "bakerId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "finalizationRewardCommission" relationDecoder
+                        |> D.map TransactionEventBakerSetFinalizationRewardCommission
+                           
                 -- Contracts
                 "ModuleDeployed" ->
                     D.succeed EventModuleDeployed
@@ -855,6 +975,59 @@ transactionEventsDecoder =
                         |> required "receiveName" T.contractReceiveNameDecoder
                         |> required "events" (D.list T.contractEventDecoder)
                         |> D.map TransactionEventContractUpdated
+
+                "Interrupted" ->
+                    D.succeed EventContractInterrupted
+                        |> required "address" T.contractAddressDecoder
+                        |> required "events" (D.list T.contractEventDecoder)
+                        |> D.map TransactionEventContractInterrupted
+
+                "Resumed" ->
+                    D.succeed EventContractResumed
+                        |> required "address" T.contractAddressDecoder
+                        |> required "success" D.bool
+                        |> D.map TransactionEventContractResumed
+                           
+                -- Delegation
+                "DelegationStakeIncreased" ->
+                    D.succeed EventDelegationStakeIncreased
+                        |> required "delegatorId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "newstake" T.decodeAmount
+                        |> D.map TransactionEventDelegationStakeIncreased
+
+                "DelegationStakeDecreased" ->
+                    D.succeed EventDelegationStakeDecreased
+                        |> required "delegatorId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "newstake" T.decodeAmount
+                        |> D.map TransactionEventDelegationStakeDecreased
+
+                "DelegationSetRestakeEarnings" ->
+                    D.succeed EventDelegationSetRestakeEarnings
+                        |> required "delegatorId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "restakeEarnings" D.bool
+                        |> D.map TransactionEventDelegationSetRestakeEarnings
+
+                "DelegationSetDelegationTarget" ->
+                    D.succeed EventDelegationSetDelegationTarget
+                        |> required "delegatorId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "delegationTarget" (D.nullable D.int)
+                        |> D.map TransactionEventDelegationSetDelegationTarget
+
+                "DelegationAdded" ->
+                    D.succeed EventDelegationAdded
+                        |> required "delegatorId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> D.map TransactionEventDelegationAdded
+
+                "DelegationRemoved" ->
+                    D.succeed EventDelegationRemoved
+                        |> required "delegatorId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> D.map TransactionEventDelegationRemoved       
 
                 -- Core
                 "UpdateEnqueued" ->
