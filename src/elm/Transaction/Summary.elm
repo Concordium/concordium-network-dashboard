@@ -96,8 +96,14 @@ type UpdateType
       -- ^Update the minimum stake that a baker needs to have to be able to bake
     | UpdateAddAnonymityRevoker
       -- ^Add a new anonymity revoker
-    | UpdateAddIdentityProvider -- ^Add a new identity provider
-
+    | UpdateAddIdentityProvider
+      -- ^Add a new identity provider
+    | UpdatePoolParameters
+      -- ^Update for pool parameters (previously baker stake threshold)
+    | UpdateCooldownParameters
+    -- ^Update for cooldown parameters, but not used by chain parameter version 0
+    | UpdateTimeParameters
+    -- ^Update for time parameters, but not used by chain parameter version 0
 
 type TransactionResult
     = TransactionAccepted (List TransactionEvent)
@@ -372,6 +378,15 @@ updateTypeDecoder =
                     "updateAddIdentityProvider" ->
                         D.succeed UpdateAddIdentityProvider
 
+                    "updatePoolParameters" ->
+                        D.succeed UpdatePoolParameters
+
+                    "updateCooldownParameters" ->
+                        D.succeed UpdateCooldownParameters
+
+                    "updateTimeParameters" ->
+                        D.succeed UpdateTimeParameters
+                 
                     _ ->
                         D.fail <| "Unknown UpdateType type: " ++ str
             )
