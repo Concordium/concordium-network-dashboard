@@ -356,7 +356,13 @@ contractReceiveNameDecoder =
                         D.fail "Invalid receive function name"
             )
 
-
+delegationTargetDecoder: D.Decoder (Maybe Int)
+delegationTargetDecoder =
+    (D.field "delegateType" D.string)
+        |> D.andThen (\dt -> case dt of
+                                 "BakerId" -> D.succeed Just |> required "bakerId" D.int 
+                                 _ -> D.succeed Nothing)
+           
 type alias BakerId =
     Int
 

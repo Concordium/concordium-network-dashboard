@@ -333,11 +333,18 @@ type UpdatePayload
     | CooldownParametersPayload CooldownParameters
     | TimeParametersPayload TimeParameters
 
-type alias MintDistribution =
-    { bakingReward : Float
+type MintDistribution = MDV0 MintDistributionV0 | MDV1 MintDistributionV1
+      
+type alias MintDistributionV0 =
+    { mintPerSlot : Float
+    , bakingReward : Float
     , finalizationReward : Float
     }
 
+type alias MintDistributionV1 =
+    { bakingReward : Float
+    , finalizationReward : Float
+    }    
 
 type alias TransactionFeeDistribution =
     { gasAccount : Float
@@ -438,25 +445,38 @@ type AnonymityRevokerInfo
 type IdentityProviderInfo
     = IpInfo ArIpInfo
 
-type alias PoolParameters =
-    { bakerStakeThreshold : T.Amount
-    , finalizationCommissionLPool : T.Amount
-    , bakingCommissionLPool : T.Amount
-    , transactionCommissionLPool : T.Amount
-    , finalizationCommissionRange : Range T.Amount
-    , bakingCommissionRange : Range T.Amount
-    , transactionCommissionRange : Range T.Amount
+
+type PoolParameters = PPV0 PoolParametersV0 | PPV1 PoolParametersV1
+
+{-| 'bakerStakeThreshold' is a single pool parameter in V0
+-}
+
+type PoolParametersV0 = PoolParametersV0 T.Amount
+      
+type alias PoolParametersV1 =
+    { finalizationCommissionLPool : Float
+    , bakingCommissionLPool : Float
+    , transactionCommissionLPool : Float
+    , finalizationCommissionRange : Range Float
+    , bakingCommissionRange : Range Float
+    , transactionCommissionRange : Range Float
     , minimumEquityCapital : T.Amount
     , capitalBound : Float
-    , leverageBound : Float
+    , leverageBound : Relation
     }
 
-type alias CooldownParameters =
-    { bakerCooldownEpochs : Int
-    , poolOwnerCooldown : Int
+type CooldownParameters = CDPV0 CooldownParametersV0 | CDPV1 CooldownParametersV1
+
+{-| 'bakerCooldownEpochs' is a single cooldown parameter in V0
+-}
+    
+type CooldownParametersV0 = CooldownParametersV0 Int
+
+type alias CooldownParametersV1 =
+    { poolOwnerCooldown : Int
     , delegatorCooldown : Int
     }
-
+    
 type alias TimeParameters =
     { rewardPeriodLength : Int
     , mintPerDay : Float
@@ -495,7 +515,8 @@ updatePayloadDecoder =
             D.field "update" <|
                 case updateType of
                     "mintDistribution" ->
-                        mintDistributionDecoder |> D.map MintDistributionPayload
+                        D.oneOf [ mintDistributionV1Decoder
+                                , mintDistributionV0Decoder ] |> D.map MintDistributionPayload
 
                     "transactionFeeDistribution" ->
                         transactionFeeDistributionDecoder |> D.map TransactionFeeDistributionPayload
@@ -530,13 +551,13 @@ updatePayloadDecoder =
                     "addIdentityProvider" ->
                         ipDecoder |> D.map AddIdentityProviderPayload
 
-                    "poolParameters" ->
-                        poolParametersDecoder |> D.map PoolParametersPayload
+                    "poolParametersCPV1" ->
+                        poolParametersV1Decoder |> D.map PoolParametersPayload
 
-                    "cooldownParameters" ->
-                        cooldownParametersDecoder |> D.map CooldownParametersPayload
+                    "cooldownParametersCPV1" ->
+                        cooldownParametersV1Decoder |> D.map CooldownParametersPayload
 
-                    "timeParameters" ->
+                    "timeParametersCPV1" ->
                         timeParametersDecoder |> D.map TimeParametersPayload
                          
                     _ ->
@@ -552,14 +573,21 @@ foundationAccountRepresentationDecoder =
         , D.map Index D.int
         ]
 
-
-mintDistributionDecoder : D.Decoder MintDistribution
-mintDistributionDecoder =
-    D.succeed MintDistribution
+mintDistributionV0Decoder : D.Decoder MintDistribution
+mintDistributionV0Decoder =
+    D.succeed MintDistributionV0
+        |> required "mintPerSlot" D.float
         |> required "bakingReward" D.float
         |> required "finalizationReward" D.float
+        |> D.map MDV0
 
-
+mintDistributionV1Decoder : D.Decoder MintDistribution
+mintDistributionV1Decoder =
+    D.succeed MintDistributionV1
+        |> required "bakingReward" D.float
+        |> required "finalizationReward" D.float           
+        |> D.map MDV1
+           
 transactionFeeDistributionDecoder : D.Decoder TransactionFeeDistribution
 transactionFeeDistributionDecoder =
     D.succeed TransactionFeeDistribution
@@ -692,32 +720,44 @@ protocolUpdateDecoder =
         |> required "specificationHash" D.string
         |> required "specificationAuxiliaryData" D.string
 
-poolParametersDecoder : D.Decoder PoolParameters
-poolParametersDecoder =
-    D.succeed PoolParameters
+poolParametersV0Decoder : D.Decoder PoolParameters
+poolParametersV0Decoder =
+    D.succeed PoolParametersV0
        |> required "minimumThresholdForBaking" T.decodeAmount
-       |> required "finalizationCommissionLPool" T.decodeAmount
-       |> required "bakingCommissionLPool" T.decodeAmount
-       |> required "transactionCommissionLPool" T.decodeAmount
-       |> required "bakingCommissionRange" (rangeDecoder T.decodeAmount)
-       |> required "transactionCommissionRange" (rangeDecoder T.decodeAmount)
-       |> required "finalizationCommissionRange" (rangeDecoder T.decodeAmount)
+       |> D.map PPV0
+           
+poolParametersV1Decoder : D.Decoder PoolParameters
+poolParametersV1Decoder =
+    D.succeed PoolParametersV1
+       |> required "finalizationCommissionLPool" D.float
+       |> required "bakingCommissionLPool" D.float
+       |> required "transactionCommissionLPool" D.float
+       |> required "bakingCommissionRange" (rangeDecoder D.float)
+       |> required "transactionCommissionRange" (rangeDecoder D.float)
+       |> required "finalizationCommissionRange" (rangeDecoder D.float)
        |> required "minimumEquityCapital" T.decodeAmount
        |> required "capitalBound" D.float
-       |> required "leverageBound" D.float
-
-cooldownParametersDecoder : D.Decoder CooldownParameters
-cooldownParametersDecoder =
-    D.succeed CooldownParameters
+       |> required "leverageBound" relationDecoder
+       |> D.map PPV1
+          
+cooldownParametersV0Decoder : D.Decoder CooldownParameters
+cooldownParametersV0Decoder =
+    D.succeed CooldownParametersV0
        |> required "bakerCooldownEpochs" D.int
+       |> D.map CDPV0
+          
+cooldownParametersV1Decoder : D.Decoder CooldownParameters
+cooldownParametersV1Decoder =
+    D.succeed CooldownParametersV1
        |> required "poolOwnerCooldown" D.int
        |> required "delegatorCooldown" D.int
-
+       |> D.map CDPV1
+          
 timeParametersDecoder : D.Decoder TimeParameters
 timeParametersDecoder =
     D.succeed TimeParameters
        |> required "rewardPeriodLength" D.int
-       |> required "mintPerDay" D.float
+       |> required "mintPerPayday" D.float
           
 {-| Convert Maybe a to a Decoder which fails if the Maybe is Nothing.
 It also takes a string for the message to fail with.
@@ -1014,7 +1054,7 @@ transactionEventsDecoder =
                     D.succeed EventDelegationSetDelegationTarget
                         |> required "delegatorId" D.int
                         |> required "account" T.accountAddressDecoder
-                        |> required "delegationTarget" (D.nullable D.int)
+                        |> required "delegationTarget" T.delegationTargetDecoder
                         |> D.map TransactionEventDelegationSetDelegationTarget
 
                 "DelegationAdded" ->
