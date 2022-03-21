@@ -717,7 +717,7 @@ timeParametersDecoder : D.Decoder TimeParameters
 timeParametersDecoder =
     D.succeed TimeParameters
        |> required "rewardPeriodLength" D.int
-       |> required "mintPerDay" D.float
+       |> required "mintPerPayday" D.float
           
 {-| Convert Maybe a to a Decoder which fails if the Maybe is Nothing.
 It also takes a string for the message to fail with.

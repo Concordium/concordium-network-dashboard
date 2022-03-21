@@ -1232,7 +1232,10 @@ viewSpecialEvent ctx chainParameters specialEvent =
                     , content = el [ spacing 10 ] <| text "Distributed minted CCD "
                     , details =
                         let
-                            foundationMintFraction = 1 - chainParameters.rewardParameters.mintDistribution.bakingReward - chainParameters.rewardParameters.mintDistribution.finalizationReward
+                            rewardParameters = case chainParameters of
+                                                   CPV0 cp -> cp.rewardParameters
+                                                   CPV1 cp -> cp.rewardParameters
+                            foundationMintFraction = 1 - rewardParameters.mintDistribution.bakingReward - rewardParameters.mintDistribution.finalizationReward
 
                             mintTotal =
                                 T.sumAmounts [ event.mintPlatformDevelopmentCharge, event.mintBakingReward, event.mintFinalizationReward ]
@@ -1252,8 +1255,8 @@ viewSpecialEvent ctx chainParameters specialEvent =
                             --     ]
                             , viewDetailRow [ paragraph [] [ text "These CCD are distributed among special accounts for maintaining the blockchain and for rewarding bakers and finalizers. " ] ]
                                 [ viewBar ctx
-                                    [ { color = ctx.palette.c1, percentage = chainParameters.rewardParameters.mintDistribution.bakingReward, hint = bakingRewardAccountUpper }
-                                    , { color = ctx.palette.c2, percentage = chainParameters.rewardParameters.mintDistribution.finalizationReward , hint = finalizationRewardAccountUpper }
+                                    [ { color = ctx.palette.c1, percentage = rewardParameters.mintDistribution.bakingReward, hint = bakingRewardAccountUpper }
+                                    , { color = ctx.palette.c2, percentage = rewardParameters.mintDistribution.finalizationReward , hint = finalizationRewardAccountUpper }
                                     , { color = ctx.palette.fg2, percentage = foundationMintFraction, hint = "Foundation" }
                                     ]
                                 ]
@@ -1316,14 +1319,17 @@ viewSpecialEvent ctx chainParameters specialEvent =
                             ]
                     , details =
                         let
+                            rewardParameters = case chainParameters of
+                                                   CPV0 cp -> cp.rewardParameters
+                                                   CPV1 cp -> cp.rewardParameters                            
                             foundationTransactionFeeBlockReward =
-                                1 - (chainParameters.rewardParameters.transactionFeeDistribution.baker + chainParameters.rewardParameters.transactionFeeDistribution.gasAccount)
+                                1 - (rewardParameters.transactionFeeDistribution.baker + rewardParameters.transactionFeeDistribution.gasAccount)
 
                             bakerRewardAmountTransactionFee =
-                                T.scaleAmount chainParameters.rewardParameters.transactionFeeDistribution.baker event.transactionFees
+                                T.scaleAmount rewardParameters.transactionFeeDistribution.baker event.transactionFees
 
                             bakerRewardAmountFixedGasAccount =
-                                T.scaleAmount chainParameters.rewardParameters.gasRewards.baker event.oldGASAccount
+                                T.scaleAmount rewardParameters.gasRewards.baker event.oldGASAccount
 
                             nonGasBakerAmount =
                                 T.subAmounts event.bakerReward <| T.addAmounts bakerRewardAmountTransactionFee bakerRewardAmountFixedGasAccount
@@ -1339,8 +1345,8 @@ viewSpecialEvent ctx chainParameters specialEvent =
                                 [ paragraph [] [ text "The transaction fees are distributed between the baker reward, a Gas Account and maintainance of the blockchain." ] ]
                                 [ el [ centerX ] <| viewSpecialAccount ctx ctx.palette.fg1 "Transaction fees" event.transactionFees
                                 , viewBar ctx
-                                    [ { color = ctx.palette.c1, percentage = chainParameters.rewardParameters.transactionFeeDistribution.baker, hint = "Baker Reward" }
-                                    , { color = ctx.palette.c3, percentage = chainParameters.rewardParameters.transactionFeeDistribution.gasAccount, hint = "Next Gas Account" }
+                                    [ { color = ctx.palette.c1, percentage = rewardParameters.transactionFeeDistribution.baker, hint = "Baker Reward" }
+                                    , { color = ctx.palette.c3, percentage = rewardParameters.transactionFeeDistribution.gasAccount, hint = "Next Gas Account" }
                                     , { color = ctx.palette.fg2, percentage = foundationTransactionFeeBlockReward, hint = "Foundation" }
                                     ]
                                 ]
@@ -1364,23 +1370,23 @@ viewSpecialEvent ctx chainParameters specialEvent =
                                     , text " are chain parameters."
                                     ]
                                 , row [ centerX, spacing 30 ]
-                                    [ paragraph [] [ italic "F", text " = ", text <| asPercentage chainParameters.rewardParameters.gasRewards.finalizationProof ]
-                                    , paragraph [] [ italic "A", text " = ", text <| asPercentage chainParameters.rewardParameters.gasRewards.accountCreation ]
-                                    , paragraph [] [ italic "U", text " = ", text <| asPercentage chainParameters.rewardParameters.gasRewards.chainUpdate ]
+                                    [ paragraph [] [ italic "F", text " = ", text <| asPercentage rewardParameters.gasRewards.finalizationProof ]
+                                    , paragraph [] [ italic "A", text " = ", text <| asPercentage rewardParameters.gasRewards.accountCreation ]
+                                    , paragraph [] [ italic "U", text " = ", text <| asPercentage rewardParameters.gasRewards.chainUpdate ]
                                     ]
                                 , paragraph [] [ text "The bakers fraction of the Gas Account is" ]
-                                , paragraph [ Font.center ] [ text <| asPercentage chainParameters.rewardParameters.gasRewards.baker, text " + ", text <| asPercentage (1 - chainParameters.rewardParameters.gasRewards.baker), text " · ", italic "N" ]
+                                , paragraph [ Font.center ] [ text <| asPercentage rewardParameters.gasRewards.baker, text " + ", text <| asPercentage (1 - rewardParameters.gasRewards.baker), text " · ", italic "N" ]
                                 ]
                                 [ el [ centerX ] <| viewSpecialAccount ctx ctx.palette.fg1 "Gas account" event.oldGASAccount
                                 , viewBar ctx <|
-                                    [ { color = ctx.palette.c1, percentage = chainParameters.rewardParameters.gasRewards.baker, hint = "Baker Reward" } ]
+                                    [ { color = ctx.palette.c1, percentage = rewardParameters.gasRewards.baker, hint = "Baker Reward" } ]
                                         ++ (if nonGasFraction > 0 then
-                                                [ { color = Palette.veryLight ctx.palette.c1, percentage = (1 - chainParameters.rewardParameters.gasRewards.baker) * nonGasFraction, hint = "Non-Gas\nBaker Reward" } ]
+                                                [ { color = Palette.veryLight ctx.palette.c1, percentage = (1 - rewardParameters.gasRewards.baker) * nonGasFraction, hint = "Non-Gas\nBaker Reward" } ]
 
                                             else
                                                 []
                                            )
-                                        ++ [ { color = ctx.palette.c3, percentage = (1 - chainParameters.rewardParameters.gasRewards.baker) * (1 - nonGasFraction), hint = "Next Gas Account" } ]
+                                        ++ [ { color = ctx.palette.c3, percentage = (1 - rewardParameters.gasRewards.baker) * (1 - nonGasFraction), hint = "Next Gas Account" } ]
                                 ]
                             , viewDetailRow []
                                 [ row [ spacing 20, centerX ]

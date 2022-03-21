@@ -14,7 +14,6 @@ import Transaction.Summary exposing (..)
 import Types as T
 
 
-
 -- BlockSummary
 
 
@@ -63,12 +62,11 @@ blockSummaryDecoder =
         |> required "specialEvents" (D.list specialEventDecoder)
         |> required "transactionSummaries" (D.list transactionSummaryDecoder)
         |> optional "finalizationData" (D.nullable finalizationDataDecoder) Nothing
-        |> required "updates" updatesDecoder
-
-
+        |> required "updates" (D.oneOf [updatesDecoderV1, updatesDecoderV0])
 
 -- Updates
 
+type ChainParameters = CPV0 ChainParametersV0 | CPV1 ChainParametersV1
 
 type alias Updates =
     { chainParameters : ChainParameters
@@ -76,8 +74,18 @@ type alias Updates =
     , updateQueues : UpdateQueues
     }
 
-
-type alias ChainParameters =
+type alias ChainParametersV0 =
+    { rewardParameters : RewardParameters
+    , microCCDPerEuro : Relation
+    , foundationAccountIndex : Int
+    , accountCreationLimit : Int
+    , bakerCooldownEpochs : Int
+    , electionDifficulty : Float
+    , euroPerEnergy : Relation
+    , minimumThresholdForBaking : T.Amount
+    }
+    
+type alias ChainParametersV1 =
     { rewardParameters : RewardParameters
     , microCCDPerEuro : Relation
     , foundationAccountIndex : Int
@@ -138,18 +146,36 @@ type alias UpdateQueueItem a =
     , update : a
     }
 
-
-updatesDecoder : D.Decoder Updates
-updatesDecoder =
+updatesDecoderV0 : D.Decoder Updates
+updatesDecoderV0 =
     D.succeed Updates
-        |> required "chainParameters" chainParametersDecoder
+        |> required "chainParameters" chainParametersDecoderV0
+        |> required "keys" updateKeysCollectionDecoder
+        |> required "updateQueues" updateQueuesDecoder
+    
+updatesDecoderV1 : D.Decoder Updates
+updatesDecoderV1 =
+    D.succeed Updates
+        |> required "chainParameters" chainParametersDecoderV1
         |> required "keys" updateKeysCollectionDecoder
         |> required "updateQueues" updateQueuesDecoder
 
-
-chainParametersDecoder : D.Decoder ChainParameters
-chainParametersDecoder =
-    D.succeed ChainParameters
+chainParametersDecoderV0 : D.Decoder ChainParameters
+chainParametersDecoderV0 =
+    D.succeed ChainParametersV0
+        |> required "rewardParameters" rewardParametersDecoder
+        |> required "microGTUPerEuro" relationDecoder
+        |> required "foundationAccountIndex" D.int
+        |> required "accountCreationLimit" D.int
+        |> required "bakerCooldownEpochs" D.int   
+        |> required "electionDifficulty" D.float
+        |> required "euroPerEnergy" relationDecoder
+        |> required "minimumThresholdForBaking" T.decodeAmount
+        |> D.map CPV0
+           
+chainParametersDecoderV1 : D.Decoder ChainParameters
+chainParametersDecoderV1 =
+    D.succeed ChainParametersV1
         |> required "rewardParameters" rewardParametersDecoder
         |> required "microGTUPerEuro" relationDecoder
         |> required "foundationAccountIndex" D.int
@@ -169,7 +195,7 @@ chainParametersDecoder =
         |> required "leverageBound" relationDecoder
         |> required "rewardPeriodLength" D.int
         |> required "mintPerPayday" D.float
-
+        |> D.map CPV1
 
 rewardParametersDecoder : D.Decoder RewardParameters
 rewardParametersDecoder =
@@ -177,7 +203,6 @@ rewardParametersDecoder =
         |> required "mintDistribution" mintDistributionDecoder
         |> required "transactionFeeDistribution" transactionFeeDistributionDecoder
         |> required "gASRewards" gasRewardsDecoder
-
 
 updateQueuesDecoder : D.Decoder UpdateQueues
 updateQueuesDecoder =
