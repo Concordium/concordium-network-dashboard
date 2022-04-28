@@ -2011,7 +2011,7 @@ viewTransactionEvent ctx timezone txEvent =
                     [ text <| "Setting metadata URL of "
                     , viewBaker ctx event.bakerId event.account
                     , text " to "
-                    , text event.metadataUrl
+                    , text event.metadataURL
                     ]
             , details = Nothing
             }
@@ -2020,7 +2020,7 @@ viewTransactionEvent ctx timezone txEvent =
             { content = [ text <| "Setting transaction fee commission for "
                     , viewBaker ctx event.bakerId event.account
                     , text " to "
-                    , viewRelation ctx event.transactionFeeCommission
+                    , text <| String.fromFloat event.transactionFeeCommission
                     ]
             , details = Nothing
             }
@@ -2029,7 +2029,7 @@ viewTransactionEvent ctx timezone txEvent =
             { content = [ text <| "Setting baking reward commission for "
                     , viewBaker ctx event.bakerId event.account
                     , text " to "
-                    , viewRelation ctx event.bakingRewardCommission
+                    , text <| String.fromFloat event.bakingRewardCommission
                     ]
             , details = Nothing
             }
@@ -2038,7 +2038,7 @@ viewTransactionEvent ctx timezone txEvent =
             { content = [ text <| "Setting finalization reward commission for "
                     , viewBaker ctx event.bakerId event.account
                     , text " to "
-                    , viewRelation ctx event.finalizationRewardCommission
+                    , text <| String.fromFloat event.finalizationRewardCommission
                     ]
             , details = Nothing
             }

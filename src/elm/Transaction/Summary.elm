@@ -92,8 +92,6 @@ type UpdateType
       -- ^Update the distribution of transaction fees
     | UpdateGASRewards
       -- ^Update the GAS rewards
-    | UpdateBakerStakeThreshold
-      -- ^Update the minimum stake that a baker needs to have to be able to bake
     | UpdateAddAnonymityRevoker
       -- ^Add a new anonymity revoker
     | UpdateAddIdentityProvider
@@ -368,9 +366,6 @@ updateTypeDecoder =
 
                     "updateGASRewards" ->
                         D.succeed UpdateGASRewards
-
-                    "updateBakerStakeThreshold" ->
-                        D.succeed UpdateBakerStakeThreshold
 
                     "updateAddAnonymityRevoker" ->
                         D.succeed UpdateAddAnonymityRevoker
