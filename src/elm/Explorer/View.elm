@@ -945,6 +945,21 @@ rejectionToItem ctx reason =
             { content = [ text "Not all baker commissions are within allowed ranges" ]
             , details = Nothing
             }
+
+        FinalizationRewardCommissionNotInRange ->
+            { content = [ text "Finalization reward commission is not in the valid range for a baker" ]
+            , details = Nothing
+            }
+
+        BakingRewardCommissionNotInRange ->
+            { content = [ text "Baking reward commission is not in the valid range for a baker" ]
+            , details = Nothing
+            }
+
+        TransactionFeeCommissionNotInRange ->
+            { content = [ text "Tried to add baker for an account that already has a delegator" ]
+            , details = Nothing
+            }
             
         AlreadyADelegator ->
             { content = [ text "Tried to add baker for an account that already has a delegator" ]
@@ -958,6 +973,11 @@ rejectionToItem ctx reason =
 
         MissingDelegationAddParameters ->
             { content = [ text "A configure delegation transaction is missing one or more arguments in order to add a delegator" ]
+            , details = Nothing
+            }
+
+        InsufficientDelegationStake ->
+            { content = [ text "The delegation stake when adding a baker was 0." ]
             , details = Nothing
             }
 
@@ -984,9 +1004,14 @@ rejectionToItem ctx reason =
             { content = [ text "The amount would result in pool capital higher than the maximum threshold" ]
             , details = Nothing
             }
-    -- |
+
         PoolWouldBecomeOverDelegated ->
             { content = [ text "The amount would result in pool with a too high fraction of delegated capital." ]
+            , details = Nothing
+            }
+
+        PoolClosed ->
+            { content = [ text "The pool is not open to delegators." ]
             , details = Nothing
             }
 
@@ -1274,7 +1299,7 @@ viewSpecialEvent ctx chainParameters specialEvent =
                             , viewDetailRow [ paragraph [] [ text "These CCD are distributed among special accounts for maintaining the blockchain and for rewarding bakers and finalizers. " ] ]
                                 [ viewBar ctx
                                     [ { color = ctx.palette.c1, percentage = bakingReward, hint = bakingRewardAccountUpper }
-                                    , { color = ctx.palette.c2, percentage = finalizationReward , hint = finalizationRewardAccountUpper }
+                                    , { color = ctx.palette.c2, percentage = finalizationReward, hint = finalizationRewardAccountUpper }
                                     , { color = ctx.palette.fg2, percentage = foundationMintFraction, hint = "Foundation" }
                                     ]
                                 ]
@@ -1332,7 +1357,7 @@ viewSpecialEvent ctx chainParameters specialEvent =
                     , icon = Icons.coin_ccd 20
                     , content =
                         row []
-                            [ text <| "Rewarded" ++ T.amountToString event.bakerReward ++ " for baking this block to "
+                            [ text <| "Rewarded " ++ T.amountToString event.bakerReward ++ " for baking this block to "
                             , viewAddress ctx (T.AddressAccount event.baker)
                             ]
                     , details =
@@ -1419,7 +1444,10 @@ viewSpecialEvent ctx chainParameters specialEvent =
                 SpecialEventPaydayFoundationReward event ->
                   { tooltip = "Payday foundation reward"
                   , icon = Icons.coin_ccd 20
-                  , content = row [ spacing 10 ] [ text <| "Rewarded ",  text <| T.amountToString event.developmentCharge, text <| " to the foundation account ", viewFoundationAccount ctx (Address event.foundationAccount) ]
+                  , content = row [ spacing 10 ]
+                              [ text <| "Rewarded ",  text <| T.amountToString event.developmentCharge
+                              , text <| " to the foundation account ", viewFoundationAccount ctx (Address event.foundationAccount)
+                              ]
                   , details = text ""
                   }
 
@@ -2011,7 +2039,7 @@ viewTransactionEvent ctx timezone txEvent =
                     [ text <| "Setting metadata URL of "
                     , viewBaker ctx event.bakerId event.account
                     , text " to "
-                    , text event.metadataUrl
+                    , text event.metadataURL
                     ]
             , details = Nothing
             }
@@ -2020,7 +2048,7 @@ viewTransactionEvent ctx timezone txEvent =
             { content = [ text <| "Setting transaction fee commission for "
                     , viewBaker ctx event.bakerId event.account
                     , text " to "
-                    , viewRelation ctx event.transactionFeeCommission
+                    , text <| String.fromFloat event.transactionFeeCommission
                     ]
             , details = Nothing
             }
@@ -2029,7 +2057,7 @@ viewTransactionEvent ctx timezone txEvent =
             { content = [ text <| "Setting baking reward commission for "
                     , viewBaker ctx event.bakerId event.account
                     , text " to "
-                    , viewRelation ctx event.bakingRewardCommission
+                    , text <| String.fromFloat event.bakingRewardCommission
                     ]
             , details = Nothing
             }
@@ -2038,7 +2066,7 @@ viewTransactionEvent ctx timezone txEvent =
             { content = [ text <| "Setting finalization reward commission for "
                     , viewBaker ctx event.bakerId event.account
                     , text " to "
-                    , viewRelation ctx event.finalizationRewardCommission
+                    , text <| String.fromFloat event.finalizationRewardCommission
                     ]
             , details = Nothing
             }

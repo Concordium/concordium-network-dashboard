@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 - Display the CCD/EUR exchange rate normalized to 1 EUR.
 - Correctly display the effective time of updates with immediate effect.
 - Display the ConfigureBaker and ConfigureDelegation transactions
-- Display pool (including L-pool) and foundation block rewards
+- Display pool, passive delegation and foundation block rewards
 
 ## [1.0.4]
 

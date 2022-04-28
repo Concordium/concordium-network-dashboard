@@ -205,25 +205,25 @@ type alias EventBakerSetOpenStatus =
 type alias EventBakerSetMetadataURL =
     { bakerId : Int
     , account : T.AccountAddress
-    , metadataUrl : String
+    , metadataURL : String
     }
 
 type alias EventBakerSetTransactionFeeCommission =
     { bakerId : Int
     , account : T.AccountAddress
-    , transactionFeeCommission : Relation
+    , transactionFeeCommission : Float
     }
     
 type alias EventBakerSetBakingRewardCommission =
     { bakerId : Int
     , account : T.AccountAddress
-    , bakingRewardCommission : Relation
+    , bakingRewardCommission : Float
     }
     
 type alias EventBakerSetFinalizationRewardCommission =
     { bakerId : Int
     , account : T.AccountAddress
-    , finalizationRewardCommission : Relation        
+    , finalizationRewardCommission : Float        
     }
 
 -- Contracts
@@ -383,7 +383,7 @@ type alias Authorizations =
     , protocol : Authorization
     , paramGASRewards : Authorization
     , emergency : Authorization
-    , bakerStakeThreshold : Authorization
+    , poolParameters : Authorization
     , keys : List AuthorizationKey
     }
 
@@ -469,7 +469,7 @@ type CooldownParameters = CDPV0 CooldownParametersV0 | CDPV1 CooldownParametersV
 
 {-| 'bakerCooldownEpochs' is a single cooldown parameter in V0
 -}
-    
+
 type CooldownParametersV0 = CooldownParametersV0 Int
 
 type alias CooldownParametersV1 =
@@ -496,6 +496,9 @@ relationDecoder =
     D.succeed Relation
         |> required "denominator" D.int
         |> required "numerator" D.int
+
+{-| A range that includes both endpoints.
+ -}
 
 type alias Range a =
     { min : a
@@ -664,7 +667,7 @@ authorizationsDecoder =
         |> required "protocol" authorizationDecoder
         |> required "paramGASRewards" authorizationDecoder
         |> required "emergency" authorizationDecoder
-        |> required "bakerStakeThreshold" authorizationDecoder
+        |> required "poolParameters" authorizationDecoder
         |> required "keys" (D.list authorizationKeyDecoder)
 
 
@@ -729,9 +732,9 @@ poolParametersV0Decoder =
 poolParametersV1Decoder : D.Decoder PoolParameters
 poolParametersV1Decoder =
     D.succeed PoolParametersV1
-       |> required "finalizationCommissionLPool" D.float
-       |> required "bakingCommissionLPool" D.float
-       |> required "transactionCommissionLPool" D.float
+       |> required "passiveFinalizationCommission" D.float
+       |> required "passiveBakingCommission" D.float
+       |> required "passiveTransactionCommission" D.float
        |> required "bakingCommissionRange" (rangeDecoder D.float)
        |> required "transactionCommissionRange" (rangeDecoder D.float)
        |> required "finalizationCommissionRange" (rangeDecoder D.float)
@@ -974,21 +977,21 @@ transactionEventsDecoder =
                     D.succeed EventBakerSetTransactionFeeCommission
                         |> required "bakerId" D.int
                         |> required "account" T.accountAddressDecoder
-                        |> required "transactionFeeCommission" relationDecoder
+                        |> required "transactionFeeCommission" D.float
                         |> D.map TransactionEventBakerSetTransactionFeeCommission
 
                 "BakerSetBakingRewardCommission" ->
                     D.succeed EventBakerSetBakingRewardCommission
                         |> required "bakerId" D.int
                         |> required "account" T.accountAddressDecoder
-                        |> required "bakingRewardCommission" relationDecoder
+                        |> required "bakingRewardCommission" D.float
                         |> D.map TransactionEventBakerSetBakingRewardCommission
                     
                 "BakerSetFinalizationRewardCommission" ->
                     D.succeed EventBakerSetFinalizationRewardCommission
                         |> required "bakerId" D.int
                         |> required "account" T.accountAddressDecoder
-                        |> required "finalizationRewardCommission" relationDecoder
+                        |> required "finalizationRewardCommission" D.float
                         |> D.map TransactionEventBakerSetFinalizationRewardCommission
                            
                 -- Contracts

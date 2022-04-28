@@ -167,7 +167,7 @@ chainParametersDecoderV0 =
         |> required "microGTUPerEuro" relationDecoder
         |> required "foundationAccountIndex" D.int
         |> required "accountCreationLimit" D.int
-        |> required "bakerCooldownEpochs" D.int   
+        |> required "bakerCooldownEpochs" D.int
         |> required "electionDifficulty" D.float
         |> required "euroPerEnergy" relationDecoder
         |> required "minimumThresholdForBaking" T.decodeAmount
