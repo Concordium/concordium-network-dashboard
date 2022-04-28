@@ -94,9 +94,9 @@ type alias ChainParametersV1 =
     , euroPerEnergy : Relation
     , poolOwnerCooldown : Int
     , delegatorCooldown : Int
-    , finalizationCommissionLPool : Float
-    , bakingCommissionLPool : Float
-    , transactionCommissiionLPool : Float
+    , passiveFinalizationCommission : Float
+    , passiveBakingCommission : Float
+    , passiveTransactionCommission : Float
     , finalizationCommissionRange : Range Float
     , bakingCommissionRange : Range Float
     , transactionCommissionRange : Range Float
@@ -184,9 +184,9 @@ chainParametersDecoderV1 =
         |> required "euroPerEnergy" relationDecoder
         |> required "poolOwnerCooldown" D.int
         |> required "delegatorCooldown" D.int
-        |> required "finalizationCommissionLPool" D.float
-        |> required "bakingCommissionLPool" D.float
-        |> required "transactionCommissionLPool" D.float
+        |> required "passiveFinalizationCommission" D.float
+        |> required "passiveBakingCommission" D.float
+        |> required "passiveTransactionCommission" D.float
         |> required "finalizationCommissionRange" (rangeDecoder D.float)
         |> required "bakingCommissionRange" (rangeDecoder D.float)
         |> required "transactionCommissionRange" (rangeDecoder D.float)
@@ -307,7 +307,7 @@ type alias BlockAccrueReward =
     , oldGASAccount : T.Amount
     , newGASAccount : T.Amount
     , bakerReward : T.Amount
-    , lPoolReward : T.Amount
+    , passiveReward : T.Amount
     , foundationCharge : T.Amount
     , bakerId : T.BakerId
     }
@@ -376,7 +376,7 @@ specialEventDecoder =
                       |> required "oldGASAccount" T.decodeAmount
                       |> required "newGASAccount" T.decodeAmount
                       |> required "bakerReward" T.decodeAmount
-                      |> required "lPoolReward" T.decodeAmount
+                      |> required "passiveReward" T.decodeAmount
                       |> required "foundationCharge" T.decodeAmount
                       |> required "bakerId" D.int
                       |> D.map SpecialEventBlockAccrueReward

@@ -1440,7 +1440,7 @@ viewSpecialEvent ctx chainParameters specialEvent =
                               [ viewDetailRow
                                     [ paragraph [] [ text <| "Total fees paid for transaction in the block ", text <| T.amountToString event.transactionFees ]
                                     , paragraph [] [ text <| "Rewarded ", text <| T.amountToString event.bakerReward, text " to baker with ID ",  text <| String.fromInt event.bakerId ]
-                                    , paragraph [] [ text <| "Rewarded ", text <| T.amountToString event.lPoolReward, text " to the L-Pool" ]
+                                    , paragraph [] [ text <| "Rewarded ", text <| T.amountToString event.passiveReward, text " to passive delegators" ]
                                     , paragraph [] [ text <| "Rewarded ", text <| T.amountToString event.foundationCharge, text " to the foundation" ] 
                                     ]
                                     []
@@ -2127,7 +2127,7 @@ viewTransactionEvent ctx timezone txEvent =
                     , text <| " to "
                     , text <| case event.delegationTarget of
                                   Just poolId -> "pool " ++ String.fromInt poolId
-                                  Nothing -> "L-pool"
+                                  Nothing -> "passive delegation"
                     ]                                    
             , details = Nothing
             }

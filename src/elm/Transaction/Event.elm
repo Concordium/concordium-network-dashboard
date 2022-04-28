@@ -454,9 +454,9 @@ type PoolParameters = PPV0 PoolParametersV0 | PPV1 PoolParametersV1
 type PoolParametersV0 = PoolParametersV0 T.Amount
       
 type alias PoolParametersV1 =
-    { finalizationCommissionLPool : Float
-    , bakingCommissionLPool : Float
-    , transactionCommissionLPool : Float
+    { passiveFinalizationCommission : Float
+    , passiveBakingCommission : Float
+    , passiveTransactionCommission : Float
     , finalizationCommissionRange : Range Float
     , bakingCommissionRange : Range Float
     , transactionCommissionRange : Range Float
