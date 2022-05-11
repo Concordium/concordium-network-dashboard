@@ -1481,7 +1481,7 @@ viewSpecialEvent ctx chainParameters specialEvent =
                   , content = row [ spacing 10 ] [ text <| "Rewarded"
                                                  , text <| (case event.poolOwner of
                                                                 Just poolOwner -> "pool " ++ String.fromInt poolOwner
-                                                                Nothing -> "L-pool") ]
+                                                                Nothing -> "passive") ]
                   , details = column [ width fill, spacing 30]
                               [ viewDetailRow
                                     [ paragraph [] [ text <| "Transaction fees  ", text <| T.amountToString event.transactionFees ]
