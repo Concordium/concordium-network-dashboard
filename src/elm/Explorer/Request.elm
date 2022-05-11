@@ -14,6 +14,7 @@ import Transaction.Summary exposing (..)
 import Types as T
 
 
+
 -- BlockSummary
 
 
@@ -62,17 +63,24 @@ blockSummaryDecoder =
         |> required "specialEvents" (D.list specialEventDecoder)
         |> required "transactionSummaries" (D.list transactionSummaryDecoder)
         |> optional "finalizationData" (D.nullable finalizationDataDecoder) Nothing
-        |> required "updates" (D.oneOf [updatesDecoderV1, updatesDecoderV0])
+        |> required "updates" (D.oneOf [ updatesDecoderV1, updatesDecoderV0 ])
+
+
 
 -- Updates
 
-type ChainParameters = CPV0 ChainParametersV0 | CPV1 ChainParametersV1
+
+type ChainParameters
+    = CPV0 ChainParametersV0
+    | CPV1 ChainParametersV1
+
 
 type alias Updates =
     { chainParameters : ChainParameters
     , keyCollection : UpdateKeysCollection
     , updateQueues : UpdateQueues
     }
+
 
 type alias ChainParametersV0 =
     { rewardParameters : RewardParameters
@@ -84,7 +92,8 @@ type alias ChainParametersV0 =
     , euroPerEnergy : Relation
     , minimumThresholdForBaking : T.Amount
     }
-    
+
+
 type alias ChainParametersV1 =
     { rewardParameters : RewardParameters
     , microCCDPerEuro : Relation
@@ -131,7 +140,7 @@ type alias UpdateQueues =
     , identityProvider : UpdateQueue IdentityProviderInfo
     , poolParameters : UpdateQueue PoolParameters
     , cooldownParameters : UpdateQueue CooldownParameters
-    , timeParameters : UpdateQueue TimeParameters    
+    , timeParameters : UpdateQueue TimeParameters
     }
 
 
@@ -146,19 +155,22 @@ type alias UpdateQueueItem a =
     , update : a
     }
 
+
 updatesDecoderV0 : D.Decoder Updates
 updatesDecoderV0 =
     D.succeed Updates
         |> required "chainParameters" chainParametersDecoderV0
         |> required "keys" updateKeysCollectionDecoder
         |> required "updateQueues" updateQueuesDecoder
-    
+
+
 updatesDecoderV1 : D.Decoder Updates
 updatesDecoderV1 =
     D.succeed Updates
         |> required "chainParameters" chainParametersDecoderV1
         |> required "keys" updateKeysCollectionDecoder
         |> required "updateQueues" updateQueuesDecoder
+
 
 chainParametersDecoderV0 : D.Decoder ChainParameters
 chainParametersDecoderV0 =
@@ -172,7 +184,8 @@ chainParametersDecoderV0 =
         |> required "euroPerEnergy" relationDecoder
         |> required "minimumThresholdForBaking" T.decodeAmount
         |> D.map CPV0
-           
+
+
 chainParametersDecoderV1 : D.Decoder ChainParameters
 chainParametersDecoderV1 =
     D.succeed ChainParametersV1
@@ -197,19 +210,31 @@ chainParametersDecoderV1 =
         |> required "mintPerPayday" D.float
         |> D.map CPV1
 
+
 rewardParametersDecoder : D.Decoder RewardParameters
 rewardParametersDecoder =
     D.succeed RewardParameters
-        |> required "mintDistribution" (D.oneOf [ mintDistributionV1Decoder
-                                                , mintDistributionV0Decoder] )
+        |> required "mintDistribution"
+            (D.oneOf
+                [ mintDistributionV1Decoder
+                , mintDistributionV0Decoder
+                ]
+            )
         |> required "transactionFeeDistribution" transactionFeeDistributionDecoder
         |> required "gASRewards" gasRewardsDecoder
+
 
 updateQueuesDecoder : D.Decoder UpdateQueues
 updateQueuesDecoder =
     D.succeed UpdateQueues
-        |> required "mintDistribution" (updateQueueDecoder (D.oneOf [ mintDistributionV1Decoder
-                                                                    , mintDistributionV0Decoder ]))
+        |> required "mintDistribution"
+            (updateQueueDecoder
+                (D.oneOf
+                    [ mintDistributionV1Decoder
+                    , mintDistributionV0Decoder
+                    ]
+                )
+            )
         |> required "transactionFeeDistribution" (updateQueueDecoder transactionFeeDistributionDecoder)
         |> required "rootKeys" (updateQueueDecoder higherLevelKeysDecoder)
         |> required "level1Keys" (updateQueueDecoder higherLevelKeysDecoder)
@@ -222,12 +247,24 @@ updateQueuesDecoder =
         |> required "euroPerEnergy" (updateQueueDecoder relationDecoder)
         |> required "addAnonymityRevoker" (updateQueueDecoder arDecoder)
         |> required "addIdentityProvider" (updateQueueDecoder ipDecoder)
-        |> optional "poolParameters" (updateQueueDecoder (D.oneOf [ poolParametersV1Decoder
-                                                                 , poolParametersV0Decoder ]))
-           { nextSequenceNumber = 0, queue = [] }
-        |> optional "cooldownParameters" (updateQueueDecoder (D.oneOf [ cooldownParametersV1Decoder
-                                                                      , cooldownParametersV0Decoder]))
-           { nextSequenceNumber = 0, queue = [] }
+        |> optional "poolParameters"
+            (updateQueueDecoder
+                (D.oneOf
+                    [ poolParametersV1Decoder
+                    , poolParametersV0Decoder
+                    ]
+                )
+            )
+            { nextSequenceNumber = 0, queue = [] }
+        |> optional "cooldownParameters"
+            (updateQueueDecoder
+                (D.oneOf
+                    [ cooldownParametersV1Decoder
+                    , cooldownParametersV0Decoder
+                    ]
+                )
+            )
+            { nextSequenceNumber = 0, queue = [] }
         |> optional "timeParameters" (updateQueueDecoder timeParametersDecoder) { nextSequenceNumber = 0, queue = [] }
 
 
@@ -290,10 +327,12 @@ type alias BlockReward =
     , baker : T.AccountAddress
     }
 
+
 type alias PaydayFoundationReward =
     { foundationAccount : T.AccountAddress
     , developmentCharge : T.Amount
     }
+
 
 type alias PaydayAccountReward =
     { account : T.AccountAddress
@@ -301,6 +340,7 @@ type alias PaydayAccountReward =
     , bakerReward : T.Amount
     , finalizationReward : T.Amount
     }
+
 
 type alias BlockAccrueReward =
     { transactionFees : T.Amount
@@ -312,13 +352,15 @@ type alias BlockAccrueReward =
     , bakerId : T.BakerId
     }
 
+
 type alias PaydayPoolReward =
     { poolOwner : Maybe T.BakerId
     , transactionFees : T.Amount
     , bakerReward : T.Amount
     , finalizationReward : T.Amount
     }
-    
+
+
 specialEventDecoder : D.Decoder SpecialEvent
 specialEventDecoder =
     let
@@ -372,22 +414,22 @@ specialEventDecoder =
 
                 "BlockAccrueReward" ->
                     D.succeed BlockAccrueReward
-                      |> required "transactionFees" T.decodeAmount
-                      |> required "oldGASAccount" T.decodeAmount
-                      |> required "newGASAccount" T.decodeAmount
-                      |> required "bakerReward" T.decodeAmount
-                      |> required "passiveReward" T.decodeAmount
-                      |> required "foundationCharge" T.decodeAmount
-                      |> required "bakerId" D.int
-                      |> D.map SpecialEventBlockAccrueReward
+                        |> required "transactionFees" T.decodeAmount
+                        |> required "oldGASAccount" T.decodeAmount
+                        |> required "newGASAccount" T.decodeAmount
+                        |> required "bakerReward" T.decodeAmount
+                        |> required "passiveReward" T.decodeAmount
+                        |> required "foundationCharge" T.decodeAmount
+                        |> required "bakerId" D.int
+                        |> D.map SpecialEventBlockAccrueReward
 
                 "PaydayPoolReward" ->
                     D.succeed PaydayPoolReward
-                      |> required "poolOwner" (D.nullable D.int)
-                      |> required "transactionFees" T.decodeAmount
-                      |> required "bakerReward" T.decodeAmount
-                      |> required "finalizationReward" T.decodeAmount
-                      |> D.map SpecialEventPaydayPoolReward
+                        |> required "poolOwner" (D.nullable D.int)
+                        |> required "transactionFees" T.decodeAmount
+                        |> required "bakerReward" T.decodeAmount
+                        |> required "finalizationReward" T.decodeAmount
+                        |> D.map SpecialEventPaydayPoolReward
 
                 _ ->
                     D.fail """Invalid SpecialEvent tag.

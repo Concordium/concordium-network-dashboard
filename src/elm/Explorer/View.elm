@@ -126,9 +126,16 @@ viewBlockSummary theme timezone { blockSummary, state } =
 
         specialEvents =
             -- delegation payouts to individual payouts are too numerous to be displayed
-            List.filter (\ev -> case ev of
-                                    SpecialEventPaydayAccountReward _ -> False
-                                    _ -> True) blockSummary.specialEvents
+            List.filter
+                (\ev ->
+                    case ev of
+                        SpecialEventPaydayAccountReward _ ->
+                            False
+
+                        _ ->
+                            True
+                )
+                blockSummary.specialEvents
                 |> List.map (viewSpecialEvent theme blockSummary.updates.chainParameters)
 
         finalizations =
@@ -685,7 +692,7 @@ typeDescriptionAccountTransactionType accountTransactionType =
 
         ConfigureDelegation ->
             { icon = html <| Icons.baking_bread 20, short = "Configure delegation" }
-              
+
         Malformed ->
             { icon = el [ paddingXY 6 0 ] <| text "?", short = "Serialization" }
 
@@ -940,7 +947,7 @@ rejectionToItem ctx reason =
             { content = [ text "A configure baker transaction to remove baker is passed unexpected arguments" ]
             , details = Nothing
             }
-            
+
         CommissionsNotInRangeForBaking ->
             { content = [ text "Not all baker commissions are within allowed ranges" ]
             , details = Nothing
@@ -960,12 +967,12 @@ rejectionToItem ctx reason =
             { content = [ text "Tried to add baker for an account that already has a delegator" ]
             , details = Nothing
             }
-            
+
         AlreadyADelegator ->
             { content = [ text "Tried to add baker for an account that already has a delegator" ]
             , details = Nothing
             }
-            
+
         InsufficientBalanceForDelegationStake ->
             { content = [ text "The amount on the account was insufficient to cover the proposed stake" ]
             , details = Nothing
@@ -990,6 +997,7 @@ rejectionToItem ctx reason =
             { content = [ text "The change could not be made because the delegator is in cooldown" ]
             , details = Nothing
             }
+
         NotADelegator addr ->
             { content = [ text "Account ", viewAddress ctx <| T.AddressAccount addr, text " is not a delegation account" ]
             , details = Nothing
@@ -1014,6 +1022,7 @@ rejectionToItem ctx reason =
             { content = [ text "The pool is not open to delegators." ]
             , details = Nothing
             }
+
 
 viewUpdates : Theme a -> Time.Zone -> Updates -> Element Msg
 viewUpdates theme timezone updates =
@@ -1102,7 +1111,8 @@ listUpdatePayloads queues =
         ++ mapUpdate AddIdentityProviderPayload queues.identityProvider
         ++ mapUpdate PoolParametersPayload queues.poolParameters
         ++ mapUpdate CooldownParametersPayload queues.cooldownParameters
-        ++ mapUpdate TimeParametersPayload queues.timeParameters    
+        ++ mapUpdate TimeParametersPayload queues.timeParameters
+
 
 asPercentage : Float -> String
 asPercentage n =
@@ -1257,26 +1267,46 @@ viewSpecialEvent ctx chainParameters specialEvent =
                     , content = el [ spacing 10 ] <| text "Distributed minted CCD "
                     , details =
                         let
-                            rewardParameters = case chainParameters of
-                                                   CPV0 cp -> cp.rewardParameters
-                                                   CPV1 cp -> cp.rewardParameters
-                            (mintPerSlot, bakingReward, finalizationReward) =
+                            rewardParameters =
                                 case chainParameters of
-                                    CPV0 cp -> case cp.rewardParameters.mintDistribution of
-                                                   MDV0 md -> ( Just md.mintPerSlot
-                                                              , md.bakingReward
-                                                              , md.finalizationReward)
-                                                   MDV1 md -> ( Nothing
-                                                              , md.bakingReward
-                                                              , md.finalizationReward)
-                                    CPV1 cp -> case cp.rewardParameters.mintDistribution of
-                                                   MDV0 md -> ( Just md.mintPerSlot
-                                                              , md.bakingReward
-                                                              , md.finalizationReward)
-                                                   MDV1 md -> ( Nothing
-                                                              , md.bakingReward
-                                                              , md.finalizationReward)
-                            foundationMintFraction = 1 - bakingReward - finalizationReward
+                                    CPV0 cp ->
+                                        cp.rewardParameters
+
+                                    CPV1 cp ->
+                                        cp.rewardParameters
+
+                            ( mintPerSlot, bakingReward, finalizationReward ) =
+                                case chainParameters of
+                                    CPV0 cp ->
+                                        case cp.rewardParameters.mintDistribution of
+                                            MDV0 md ->
+                                                ( Just md.mintPerSlot
+                                                , md.bakingReward
+                                                , md.finalizationReward
+                                                )
+
+                                            MDV1 md ->
+                                                ( Nothing
+                                                , md.bakingReward
+                                                , md.finalizationReward
+                                                )
+
+                                    CPV1 cp ->
+                                        case cp.rewardParameters.mintDistribution of
+                                            MDV0 md ->
+                                                ( Just md.mintPerSlot
+                                                , md.bakingReward
+                                                , md.finalizationReward
+                                                )
+
+                                            MDV1 md ->
+                                                ( Nothing
+                                                , md.bakingReward
+                                                , md.finalizationReward
+                                                )
+
+                            foundationMintFraction =
+                                1 - bakingReward - finalizationReward
 
                             mintTotal =
                                 T.sumAmounts [ event.mintPlatformDevelopmentCharge, event.mintBakingReward, event.mintFinalizationReward ]
@@ -1287,12 +1317,15 @@ viewSpecialEvent ctx chainParameters specialEvent =
                                 []
                             , viewDetailRow
                                 [ paragraph [] <|
-                                      case mintPerSlot of
-                                          Just mps -> [ text "The amount depends on the number of slots since the last block, as the total supply of CCD is increased by a factor of 1 + "
-                                                      , text <| String.fromFloat mps
-                                                      , text " in every slot."
-                                                      ]
-                                          Nothing ->  [ text "The amount depends on the number of slots since the last block." ]
+                                    case mintPerSlot of
+                                        Just mps ->
+                                            [ text "The amount depends on the number of slots since the last block, as the total supply of CCD is increased by a factor of 1 + "
+                                            , text <| String.fromFloat mps
+                                            , text " in every slot."
+                                            ]
+
+                                        Nothing ->
+                                            [ text "The amount depends on the number of slots since the last block." ]
                                 ]
                                 [ el [ centerX ] <| viewSpecialAccount ctx ctx.palette.fg1 "Minted this block" mintTotal
                                 ]
@@ -1362,9 +1395,14 @@ viewSpecialEvent ctx chainParameters specialEvent =
                             ]
                     , details =
                         let
-                            rewardParameters = case chainParameters of
-                                                   CPV0 cp -> cp.rewardParameters
-                                                   CPV1 cp -> cp.rewardParameters                            
+                            rewardParameters =
+                                case chainParameters of
+                                    CPV0 cp ->
+                                        cp.rewardParameters
+
+                                    CPV1 cp ->
+                                        cp.rewardParameters
+
                             foundationTransactionFeeBlockReward =
                                 1 - (rewardParameters.transactionFeeDistribution.baker + rewardParameters.transactionFeeDistribution.gasAccount)
 
@@ -1442,56 +1480,67 @@ viewSpecialEvent ctx chainParameters specialEvent =
                     }
 
                 SpecialEventPaydayFoundationReward event ->
-                  { tooltip = "Payday foundation reward"
-                  , icon = Icons.coin_ccd 20
-                  , content = row [ spacing 10 ]
-                              [ text <| "Rewarded ",  text <| T.amountToString event.developmentCharge
-                              , text <| " to the foundation account ", viewFoundationAccount ctx (Address event.foundationAccount)
-                              ]
-                  , details = text ""
-                  }
+                    { tooltip = "Payday foundation reward"
+                    , icon = Icons.coin_ccd 20
+                    , content =
+                        row [ spacing 10 ]
+                            [ text <| "Rewarded "
+                            , text <| T.amountToString event.developmentCharge
+                            , text <| " to the foundation account "
+                            , viewFoundationAccount ctx (Address event.foundationAccount)
+                            ]
+                    , details = text ""
+                    }
 
                 -- this case will never be triggered because PaydayAccountReward events are filtered
                 -- out of the special events list before rendering it
                 SpecialEventPaydayAccountReward _ ->
-                  { tooltip = "Payday account reward"
-                  , icon = Icons.coin_ccd 20
-                  , content = text ""
-                  , details = text ""
-                  }
+                    { tooltip = "Payday account reward"
+                    , icon = Icons.coin_ccd 20
+                    , content = text ""
+                    , details = text ""
+                    }
 
                 SpecialEventBlockAccrueReward event ->
-                  { tooltip = "Block accrue reward"
-                  , icon = Icons.coin_ccd 20
-                  , content = row [ spacing 10 ] [ text "Rewards for baking this block" ]
-                  , details = column [ width fill, spacing 30]
-                              [ viewDetailRow
-                                    [ paragraph [] [ text <| "Total fees paid for transaction in the block ", text <| T.amountToString event.transactionFees ]
-                                    , paragraph [] [ text <| "Rewarded ", text <| T.amountToString event.bakerReward, text " to baker with ID ",  text <| String.fromInt event.bakerId ]
-                                    , paragraph [] [ text <| "Rewarded ", text <| T.amountToString event.passiveReward, text " to passive delegators" ]
-                                    , paragraph [] [ text <| "Rewarded ", text <| T.amountToString event.foundationCharge, text " to the foundation" ] 
-                                    ]
-                                    []
-                              ]
-                  }
+                    { tooltip = "Block accrue reward"
+                    , icon = Icons.coin_ccd 20
+                    , content = row [ spacing 10 ] [ text "Rewards for baking this block" ]
+                    , details =
+                        column [ width fill, spacing 30 ]
+                            [ viewDetailRow
+                                [ paragraph [] [ text <| "Total fees paid for transaction in the block ", text <| T.amountToString event.transactionFees ]
+                                , paragraph [] [ text <| "Rewarded ", text <| T.amountToString event.bakerReward, text " to baker with ID ", text <| String.fromInt event.bakerId ]
+                                , paragraph [] [ text <| "Rewarded ", text <| T.amountToString event.passiveReward, text " to passive delegators" ]
+                                , paragraph [] [ text <| "Rewarded ", text <| T.amountToString event.foundationCharge, text " to the foundation" ]
+                                ]
+                                []
+                            ]
+                    }
 
                 SpecialEventPaydayPoolReward event ->
-                  { tooltip = "Payday pool reward"
-                  , icon = Icons.coin_ccd 20
-                  , content = row [ spacing 10 ] [ text <| "Rewarded"
-                                                 , text <| (case event.poolOwner of
-                                                                Just poolOwner -> "pool " ++ String.fromInt poolOwner
-                                                                Nothing -> "passive") ]
-                  , details = column [ width fill, spacing 30]
-                              [ viewDetailRow
-                                    [ paragraph [] [ text <| "Transaction fees  ", text <| T.amountToString event.transactionFees ]
-                                    , paragraph [] [ text <| "Baker reward ", text <| T.amountToString event.bakerReward ]
-                                    , paragraph [] [ text <| "Finalization reward  ", text <| T.amountToString event.finalizationReward ]
-                                    ]
-                                    []
-                              ]
-                  }
-                  
+                    { tooltip = "Payday pool reward"
+                    , icon = Icons.coin_ccd 20
+                    , content =
+                        row [ spacing 10 ]
+                            [ text <| "Rewarded"
+                            , text <|
+                                case event.poolOwner of
+                                    Just poolOwner ->
+                                        "pool " ++ String.fromInt poolOwner
+
+                                    Nothing ->
+                                        "passive"
+                            ]
+                    , details =
+                        column [ width fill, spacing 30 ]
+                            [ viewDetailRow
+                                [ paragraph [] [ text <| "Transaction fees  ", text <| T.amountToString event.transactionFees ]
+                                , paragraph [] [ text <| "Baker reward ", text <| T.amountToString event.bakerReward ]
+                                , paragraph [] [ text <| "Finalization reward  ", text <| T.amountToString event.finalizationReward ]
+                                ]
+                                []
+                            ]
+                    }
     in
     [ { content =
             row contentRowAttrs <|
@@ -2025,7 +2074,8 @@ viewTransactionEvent ctx timezone txEvent =
             }
 
         TransactionEventBakerSetOpenStatus event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Setting open status of "
                     , viewBaker ctx event.bakerId event.account
                     , text " to "
@@ -2033,9 +2083,10 @@ viewTransactionEvent ctx timezone txEvent =
                     ]
             , details = Nothing
             }
-            
+
         TransactionEventBakerSetMetadataURL event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Setting metadata URL of "
                     , viewBaker ctx event.bakerId event.account
                     , text " to "
@@ -2043,40 +2094,43 @@ viewTransactionEvent ctx timezone txEvent =
                     ]
             , details = Nothing
             }
-            
+
         TransactionEventBakerSetTransactionFeeCommission event ->
-            { content = [ text <| "Setting transaction fee commission for "
-                    , viewBaker ctx event.bakerId event.account
-                    , text " to "
-                    , text <| String.fromFloat event.transactionFeeCommission
-                    ]
+            { content =
+                [ text <| "Setting transaction fee commission for "
+                , viewBaker ctx event.bakerId event.account
+                , text " to "
+                , text <| String.fromFloat event.transactionFeeCommission
+                ]
             , details = Nothing
             }
-            
+
         TransactionEventBakerSetBakingRewardCommission event ->
-            { content = [ text <| "Setting baking reward commission for "
-                    , viewBaker ctx event.bakerId event.account
-                    , text " to "
-                    , text <| String.fromFloat event.bakingRewardCommission
-                    ]
+            { content =
+                [ text <| "Setting baking reward commission for "
+                , viewBaker ctx event.bakerId event.account
+                , text " to "
+                , text <| String.fromFloat event.bakingRewardCommission
+                ]
             , details = Nothing
             }
-            
+
         TransactionEventBakerSetFinalizationRewardCommission event ->
-            { content = [ text <| "Setting finalization reward commission for "
-                    , viewBaker ctx event.bakerId event.account
-                    , text " to "
-                    , text <| String.fromFloat event.finalizationRewardCommission
-                    ]
+            { content =
+                [ text <| "Setting finalization reward commission for "
+                , viewBaker ctx event.bakerId event.account
+                , text " to "
+                , text <| String.fromFloat event.finalizationRewardCommission
+                ]
             , details = Nothing
             }
-            
+
         TransactionEventContractInterrupted event ->
-            { content = eventElem
+            { content =
+                eventElem
                     [ text <| "Interrupted contract with address: "
                     , viewAsAddressContract ctx event.address
                     ]
-
             , details =
                 Just <|
                     column [ width fill ]
@@ -2096,22 +2150,24 @@ viewTransactionEvent ctx timezone txEvent =
                             ]
                         ]
             }
-            
-        TransactionEventContractResumed event  ->
-            { content = eventElem
+
+        TransactionEventContractResumed event ->
+            { content =
+                eventElem
                     [ if event.success then
-                          text <| "Resumed "
+                        text <| "Resumed "
+
                       else
-                          text <| "Not resumed "
+                        text <| "Not resumed "
                     , text <| "contract with address: "
                     , viewAsAddressContract ctx event.address
                     ]
             , details = Nothing
             }
-            
+
         TransactionEventDelegationStakeIncreased event ->
             { content =
-                  eventElem
+                eventElem
                     [ text <| "Increased stake of "
                     , viewDelegator ctx event.delegatorId event.account
                     , text " to "
@@ -2119,7 +2175,7 @@ viewTransactionEvent ctx timezone txEvent =
                     ]
             , details = Nothing
             }
-            
+
         TransactionEventDelegationStakeDecreased event ->
             { content =
                 eventElem
@@ -2130,7 +2186,7 @@ viewTransactionEvent ctx timezone txEvent =
                     ]
             , details = Nothing
             }
-            
+
         TransactionEventDelegationSetRestakeEarnings event ->
             { content =
                 eventElem
@@ -2143,56 +2199,64 @@ viewTransactionEvent ctx timezone txEvent =
                     , text <|
                         " restake earnings of "
                     , viewDelegator ctx event.delegatorId event.account
-                    ]                  
+                    ]
             , details = Nothing
             }
-            
+
         TransactionEventDelegationSetDelegationTarget event ->
             { content =
                 eventElem
                     [ text <| "Set delegation target for "
                     , viewDelegator ctx event.delegatorId event.account
                     , text <| " to "
-                    , text <| case event.delegationTarget of
-                                  Just poolId -> "pool " ++ String.fromInt poolId
-                                  Nothing -> "passive delegation"
-                    ]                                    
+                    , text <|
+                        case event.delegationTarget of
+                            Just poolId ->
+                                "pool " ++ String.fromInt poolId
+
+                            Nothing ->
+                                "passive delegation"
+                    ]
             , details = Nothing
             }
-            
+
         TransactionEventDelegationAdded event ->
             { content =
                 eventElem
                     [ text <| "Added delegator "
                     , viewDelegator ctx event.delegatorId event.account
-                    ]                  
+                    ]
             , details = Nothing
             }
-            
+
         TransactionEventDelegationRemoved event ->
             { content =
                 eventElem
                     [ text <| "Removed delegator "
                     , viewDelegator ctx event.delegatorId event.account
-                    ]                  
+                    ]
             , details = Nothing
             }
+
 
 viewEventUpdateEnqueuedDetails : Theme a -> EventUpdateEnqueued -> Element Msg
 viewEventUpdateEnqueuedDetails ctx event =
     case event.payload of
         MintDistributionPayload mintDistribution ->
             let
-                (bakingReward, finalizationReward) =
+                ( bakingReward, finalizationReward ) =
                     case mintDistribution of
-                        MDV0 md -> (md.bakingReward, md.finalizationReward)
-                        MDV1 md -> (md.bakingReward, md.finalizationReward)                                   
+                        MDV0 md ->
+                            ( md.bakingReward, md.finalizationReward )
+
+                        MDV1 md ->
+                            ( md.bakingReward, md.finalizationReward )
+
                 foundationFraction =
                     1 - bakingReward - finalizationReward
             in
             viewDetailRow [ paragraph [] [ text "Updating the parameters for CCD minting." ] ]
-                [ --el [ centerX ] <| viewHeaderBox ctx ctx.palette.fg2 "Minted pr. slot" <| text <| String.fromFloat mintDistribution.mintPerSlot
-                viewBar
+                [ viewBar
                     ctx
                     [ { color = ctx.palette.c1, percentage = bakingReward, hint = bakingRewardAccountUpper }
                     , { color = ctx.palette.c2, percentage = finalizationReward, hint = finalizationRewardAccountUpper }
@@ -2296,7 +2360,7 @@ viewEventUpdateEnqueuedDetails ctx event =
 
         TimeParametersPayload _ ->
             paragraph [] [ text "Update time parameters." ]
-              
+
 
 viewFoundationAccount : Theme a -> FoundationAccountRepresentation -> Element Msg
 viewFoundationAccount ctx repr =
@@ -2450,6 +2514,7 @@ viewBaker ctx bakerId addr =
         , text <| "(Baker: " ++ String.fromInt bakerId ++ ")"
         ]
 
+
 {-| View a delegator as "<acc> (Baker: <baker-id>)". The account is shown using `viewAddress`.
 -}
 viewDelegator : Theme a -> Int -> T.AccountAddress -> Element Msg
@@ -2458,7 +2523,8 @@ viewDelegator ctx delegatorId addr =
         [ spacing 4 ]
         [ viewAddress ctx <| T.AddressAccount addr
         , text <| "(Delegator: " ++ String.fromInt delegatorId ++ ")"
-        ]        
+        ]
+
 
 viewCredId : Theme a -> String -> Element Msg
 viewCredId ctx cred =
