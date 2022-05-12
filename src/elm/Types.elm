@@ -238,6 +238,17 @@ amountToInt (MicroCCD bigInt) =
         |> Maybe.withDefault 0
 
 
+{-| Convert amount to Float.
+-}
+amountToFloat : Amount -> Float
+amountToFloat (MicroCCD bigInt) =
+    (BigInt.toString bigInt
+        |> String.toFloat
+        |> Maybe.withDefault 0
+    )
+        / toFloat (10 ^ fracPartLength)
+
+
 {-| Divides two amounts a and b as (a / b).
 Unsafe: Since it is converting the amounts to a JS number, the result is imprecise
 if any of the amounts are larger than 2^53 - 1
@@ -347,6 +358,20 @@ contractReceiveNameDecoder =
 
                     _ ->
                         D.fail "Invalid receive function name"
+            )
+
+
+delegationTargetDecoder : D.Decoder (Maybe Int)
+delegationTargetDecoder =
+    D.field "delegateType" D.string
+        |> D.andThen
+            (\dt ->
+                case dt of
+                    "Baker" ->
+                        D.succeed Just |> required "bakerId" D.int
+
+                    _ ->
+                        D.succeed Nothing
             )
 
 

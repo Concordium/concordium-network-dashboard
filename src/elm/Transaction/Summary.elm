@@ -28,7 +28,7 @@ type TransactionSummaryType
     | UpdateTransaction UpdateType
 
 
-{-| Reason for transaction rejected
+{-| Supported transaction types
 
 Must be in sync with the constructor names of `Payload` found in
 <https://github.com/Concordium/concordium-base/blob/main/haskell-src/Concordium/Types/Execution.hs>
@@ -56,6 +56,8 @@ type AccountTransactionType
     | TransferWithMemo
     | EncryptedAmountTransferWithMemo
     | TransferWithScheduleAndMemo
+    | ConfigureBaker
+    | ConfigureDelegation
     | Malformed
 
 
@@ -90,11 +92,16 @@ type UpdateType
       -- ^Update the distribution of transaction fees
     | UpdateGASRewards
       -- ^Update the GAS rewards
-    | UpdateBakerStakeThreshold
-      -- ^Update the minimum stake that a baker needs to have to be able to bake
     | UpdateAddAnonymityRevoker
       -- ^Add a new anonymity revoker
-    | UpdateAddIdentityProvider -- ^Add a new identity provider
+    | UpdateAddIdentityProvider
+      -- ^Add a new identity provider
+    | UpdatePoolParameters
+      -- ^Update for pool parameters (previously baker stake threshold)
+    | UpdateCooldownParameters
+      -- ^Update for cooldown parameters, but not used by chain parameter version 0
+    | UpdateTimeParameters
+      -- ^Update for time parameters, but not used by chain parameter version 0
 
 
 type TransactionResult
@@ -177,6 +184,40 @@ type RejectReason
     | NotAllowedToReceiveEncrypted
       -- |The account is not allowed to send encrypted transfers (or transfer from/to public to/from encrypted)
     | NotAllowedToHandleEncrypted
+      -- |A configure baker transaction is missing one or more arguments in order to add a baker.
+    | MissingBakerAddParameters
+      -- |A configure baker transaction to remove baker is passed unexpected arguments.
+    | UnexpectedBakerRemoveParameters
+      -- |Not all baker commissions are within allowed ranges
+    | CommissionsNotInRangeForBaking
+      -- |Finalization reward commission is not in the valid range for a baker
+    | FinalizationRewardCommissionNotInRange
+      -- |Baking reward commission is not in the valid range for a baker
+    | BakingRewardCommissionNotInRange
+      -- |Transaction fee commission is not in the valid range for a baker
+    | TransactionFeeCommissionNotInRange
+      -- |Tried to add baker for an account that already has a delegator
+    | AlreadyADelegator
+      -- |The amount on the account was insufficient to cover the proposed stake
+    | InsufficientBalanceForDelegationStake
+      -- |A configure delegation transaction is missing one or more arguments in order to add a delegator.
+    | MissingDelegationAddParameters
+      -- |A configure delegation transaction to remove delegation is passed unexpected arguments.
+    | UnexpectedDelegationRemoveParameters
+      -- |The delegation stake when adding a baker was 0.
+    | InsufficientDelegationStake
+      -- |The change could not be made because the delegator is in cooldown
+    | DelegatorInCooldown
+      -- |Account is not a delegation account
+    | NotADelegator T.AccountAddress
+      -- |Delegation target is not a baker
+    | DelegationTargetNotABaker T.BakerId
+      -- |The amount would result in pool capital higher than the maximum threshold
+    | StakeOverMaximumThresholdForPool
+      -- |The amount would result in pool with a too high fraction of delegated capital.
+    | PoolWouldBecomeOverDelegated
+      -- |The pool is not open to delegators.
+    | PoolClosed
 
 
 type alias RejectReasonRejectedInit =
@@ -287,6 +328,12 @@ accountTransactionTypeDecoder =
                 "registerData" ->
                     D.succeed RegisterData
 
+                "configureBaker" ->
+                    D.succeed ConfigureBaker
+
+                "configureDelegation" ->
+                    D.succeed ConfigureDelegation
+
                 _ ->
                     D.fail <| "Unknown AccountTransaction type: " ++ tipe
     in
@@ -332,14 +379,20 @@ updateTypeDecoder =
                     "updateGASRewards" ->
                         D.succeed UpdateGASRewards
 
-                    "updateBakerStakeThreshold" ->
-                        D.succeed UpdateBakerStakeThreshold
-
                     "updateAddAnonymityRevoker" ->
                         D.succeed UpdateAddAnonymityRevoker
 
                     "updateAddIdentityProvider" ->
                         D.succeed UpdateAddIdentityProvider
+
+                    "updatePoolParameters" ->
+                        D.succeed UpdatePoolParameters
+
+                    "updateCooldownParameters" ->
+                        D.succeed UpdateCooldownParameters
+
+                    "updateTimeParameters" ->
+                        D.succeed UpdateTimeParameters
 
                     _ ->
                         D.fail <| "Unknown UpdateType type: " ++ str
@@ -546,6 +599,56 @@ rejectReasonDecoder =
 
                 "NotAllowedToHandleEncrypted" ->
                     D.succeed NotAllowedToHandleEncrypted
+
+                "MissingBakerAddParameters" ->
+                    D.succeed MissingBakerAddParameters
+
+                "UnexpectedBakerRemoveParameters" ->
+                    D.succeed UnexpectedBakerRemoveParameters
+
+                "CommissionsNotInRangeForBaking" ->
+                    D.succeed CommissionsNotInRangeForBaking
+
+                "FinalizationRewardCommissionNotInRange" ->
+                    D.succeed FinalizationRewardCommissionNotInRange
+
+                "BakingRewardCommissionNotInRange" ->
+                    D.succeed BakingRewardCommissionNotInRange
+
+                "TransactionFeeCommissionNotInRange" ->
+                    D.succeed TransactionFeeCommissionNotInRange
+
+                "AlreadyADelegator" ->
+                    D.succeed AlreadyADelegator
+
+                "InsufficientBalanceForDelegationStake" ->
+                    D.succeed InsufficientBalanceForDelegationStake
+
+                "MissingDelegationAddParameters" ->
+                    D.succeed MissingDelegationAddParameters
+
+                "UnexpectedDelegationRemoveParameters" ->
+                    D.succeed UnexpectedDelegationRemoveParameters
+
+                "InsufficientDelegationStake" ->
+                    D.succeed InsufficientDelegationStake
+
+                "DelegatorInCooldown" ->
+                    D.succeed DelegatorInCooldown
+
+                "NotADelegator" ->
+                    D.map NotADelegator <|
+                        D.field "contents" T.accountAddressDecoder
+
+                "DelegationTargetNotABaker" ->
+                    D.map DelegationTargetNotABaker <|
+                        D.field "contents" D.int
+
+                "StakeOverMaximumThresholdForPool" ->
+                    D.succeed StakeOverMaximumThresholdForPool
+
+                "PoolWouldBecomeOverDelegated" ->
+                    D.succeed PoolWouldBecomeOverDelegated
 
                 _ ->
                     D.fail <| "Unknown RejectReason: " ++ tag

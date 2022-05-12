@@ -35,10 +35,24 @@ type TransactionEvent
     | TransactionEventBakerStakeDecreased EventBakerStakeDecreased
     | TransactionEventBakerSetRestakeEarnings EventBakerSetRestakeEarnings
     | TransactionEventBakerKeysUpdated EventBakerKeysUpdated
+    | TransactionEventBakerSetOpenStatus EventBakerSetOpenStatus
+    | TransactionEventBakerSetMetadataURL EventBakerSetMetadataURL
+    | TransactionEventBakerSetTransactionFeeCommission EventBakerSetTransactionFeeCommission
+    | TransactionEventBakerSetBakingRewardCommission EventBakerSetBakingRewardCommission
+    | TransactionEventBakerSetFinalizationRewardCommission EventBakerSetFinalizationRewardCommission
       -- Contracts
     | TransactionEventModuleDeployed EventModuleDeployed
     | TransactionEventContractInitialized EventContractInitialized
     | TransactionEventContractUpdated EventContractUpdated
+    | TransactionEventContractInterrupted EventContractInterrupted
+    | TransactionEventContractResumed EventContractResumed
+      -- Delegation
+    | TransactionEventDelegationStakeIncreased EventDelegationStakeIncreased
+    | TransactionEventDelegationStakeDecreased EventDelegationStakeDecreased
+    | TransactionEventDelegationSetRestakeEarnings EventDelegationSetRestakeEarnings
+    | TransactionEventDelegationSetDelegationTarget EventDelegationSetDelegationTarget
+    | TransactionEventDelegationAdded EventDelegationAdded
+    | TransactionEventDelegationRemoved EventDelegationRemoved
       -- Core
     | TransactionEventUpdateEnqueued EventUpdateEnqueued
     | TransactionEventDataRegistered EventDataRegistered
@@ -183,6 +197,41 @@ type alias EventBakerKeysUpdated =
     }
 
 
+type alias EventBakerSetOpenStatus =
+    { bakerId : Int
+    , account : T.AccountAddress
+    , openStatus : String
+    }
+
+
+type alias EventBakerSetMetadataURL =
+    { bakerId : Int
+    , account : T.AccountAddress
+    , metadataURL : String
+    }
+
+
+type alias EventBakerSetTransactionFeeCommission =
+    { bakerId : Int
+    , account : T.AccountAddress
+    , transactionFeeCommission : Float
+    }
+
+
+type alias EventBakerSetBakingRewardCommission =
+    { bakerId : Int
+    , account : T.AccountAddress
+    , bakingRewardCommission : Float
+    }
+
+
+type alias EventBakerSetFinalizationRewardCommission =
+    { bakerId : Int
+    , account : T.AccountAddress
+    , finalizationRewardCommission : Float
+    }
+
+
 
 -- Contracts
 
@@ -210,8 +259,64 @@ type alias EventContractUpdated =
     }
 
 
+type alias EventContractInterrupted =
+    { address : T.ContractAddress
+    , events : List T.ContractEvent
+    }
+
+
+type alias EventContractResumed =
+    { address : T.ContractAddress
+    , success : Bool
+    }
+
+
 type alias EventDataRegistered =
     { data : ArbitraryBytes
+    }
+
+
+
+-- Delegation
+
+
+type alias EventDelegationStakeIncreased =
+    { delegatorId : Int
+    , account : T.AccountAddress
+    , newStake : T.Amount
+    }
+
+
+type alias EventDelegationStakeDecreased =
+    { delegatorId : Int
+    , account : T.AccountAddress
+    , newStake : T.Amount
+    }
+
+
+type alias EventDelegationSetRestakeEarnings =
+    { delegatorId : Int
+    , account : T.AccountAddress
+    , restakeEarnings : Bool
+    }
+
+
+type alias EventDelegationSetDelegationTarget =
+    { delegatorId : Int
+    , account : T.AccountAddress
+    , delegationTarget : Maybe Int
+    }
+
+
+type alias EventDelegationAdded =
+    { delegatorId : Int
+    , account : T.AccountAddress
+    }
+
+
+type alias EventDelegationRemoved =
+    { delegatorId : Int
+    , account : T.AccountAddress
     }
 
 
@@ -242,14 +347,27 @@ type UpdatePayload
     | Level1KeysUpdatePayload HigherLevelKeys
     | Level2KeysUpdatePayload Authorizations
     | ProtocolUpdatePayload ProtocolUpdate
-    | BakerStakeThresholdPayload T.Amount
     | AddAnonymityRevokerPayload AnonymityRevokerInfo
     | AddIdentityProviderPayload IdentityProviderInfo
+    | PoolParametersPayload PoolParameters
+    | CooldownParametersPayload CooldownParameters
+    | TimeParametersPayload TimeParameters
 
 
-type alias MintDistribution =
+type MintDistribution
+    = MDV0 MintDistributionV0
+    | MDV1 MintDistributionV1
+
+
+type alias MintDistributionV0 =
     { mintPerSlot : Float
     , bakingReward : Float
+    , finalizationReward : Float
+    }
+
+
+type alias MintDistributionV1 =
+    { bakingReward : Float
     , finalizationReward : Float
     }
 
@@ -291,7 +409,7 @@ type alias Authorizations =
     , protocol : Authorization
     , paramGASRewards : Authorization
     , emergency : Authorization
-    , bakerStakeThreshold : Authorization
+    , poolParameters : Authorization
     , keys : List AuthorizationKey
     }
 
@@ -354,6 +472,53 @@ type IdentityProviderInfo
     = IpInfo ArIpInfo
 
 
+type PoolParameters
+    = PPV0 PoolParametersV0
+    | PPV1 PoolParametersV1
+
+
+{-| 'bakerStakeThreshold' is a single pool parameter in V0
+-}
+type PoolParametersV0
+    = PoolParametersV0 T.Amount
+
+
+type alias PoolParametersV1 =
+    { passiveFinalizationCommission : Float
+    , passiveBakingCommission : Float
+    , passiveTransactionCommission : Float
+    , finalizationCommissionRange : Range Float
+    , bakingCommissionRange : Range Float
+    , transactionCommissionRange : Range Float
+    , minimumEquityCapital : T.Amount
+    , capitalBound : Float
+    , leverageBound : Relation
+    }
+
+
+type CooldownParameters
+    = CDPV0 CooldownParametersV0
+    | CDPV1 CooldownParametersV1
+
+
+{-| 'bakerCooldownEpochs' is a single cooldown parameter in V0
+-}
+type CooldownParametersV0
+    = CooldownParametersV0 Int
+
+
+type alias CooldownParametersV1 =
+    { poolOwnerCooldown : Int
+    , delegatorCooldown : Int
+    }
+
+
+type alias TimeParameters =
+    { rewardPeriodLength : Int
+    , mintPerDay : Float
+    }
+
+
 
 -- Errors
 
@@ -371,6 +536,21 @@ relationDecoder =
         |> required "numerator" D.int
 
 
+{-| A range that includes both endpoints.
+-}
+type alias Range a =
+    { min : a
+    , max : a
+    }
+
+
+rangeDecoder : D.Decoder a -> D.Decoder (Range a)
+rangeDecoder dec =
+    D.succeed Range
+        |> required "min" dec
+        |> required "max" dec
+
+
 updatePayloadDecoder : D.Decoder UpdatePayload
 updatePayloadDecoder =
     let
@@ -378,7 +558,11 @@ updatePayloadDecoder =
             D.field "update" <|
                 case updateType of
                     "mintDistribution" ->
-                        mintDistributionDecoder |> D.map MintDistributionPayload
+                        D.oneOf
+                            [ mintDistributionV1Decoder
+                            , mintDistributionV0Decoder
+                            ]
+                            |> D.map MintDistributionPayload
 
                     "transactionFeeDistribution" ->
                         transactionFeeDistributionDecoder |> D.map TransactionFeeDistributionPayload
@@ -407,14 +591,20 @@ updatePayloadDecoder =
                     "protocol" ->
                         protocolUpdateDecoder |> D.map ProtocolUpdatePayload
 
-                    "bakerStakeThreshold" ->
-                        T.decodeAmount |> D.map BakerStakeThresholdPayload
-
                     "addAnonymityRevoker" ->
                         arDecoder |> D.map AddAnonymityRevokerPayload
 
                     "addIdentityProvider" ->
                         ipDecoder |> D.map AddIdentityProviderPayload
+
+                    "poolParametersCPV1" ->
+                        poolParametersV1Decoder |> D.map PoolParametersPayload
+
+                    "cooldownParametersCPV1" ->
+                        cooldownParametersV1Decoder |> D.map CooldownParametersPayload
+
+                    "timeParametersCPV1" ->
+                        timeParametersDecoder |> D.map TimeParametersPayload
 
                     _ ->
                         D.fail "Unknown update type"
@@ -430,12 +620,21 @@ foundationAccountRepresentationDecoder =
         ]
 
 
-mintDistributionDecoder : D.Decoder MintDistribution
-mintDistributionDecoder =
-    D.succeed MintDistribution
+mintDistributionV0Decoder : D.Decoder MintDistribution
+mintDistributionV0Decoder =
+    D.succeed MintDistributionV0
         |> required "mintPerSlot" D.float
         |> required "bakingReward" D.float
         |> required "finalizationReward" D.float
+        |> D.map MDV0
+
+
+mintDistributionV1Decoder : D.Decoder MintDistribution
+mintDistributionV1Decoder =
+    D.succeed MintDistributionV1
+        |> required "bakingReward" D.float
+        |> required "finalizationReward" D.float
+        |> D.map MDV1
 
 
 transactionFeeDistributionDecoder : D.Decoder TransactionFeeDistribution
@@ -514,7 +713,7 @@ authorizationsDecoder =
         |> required "protocol" authorizationDecoder
         |> required "paramGASRewards" authorizationDecoder
         |> required "emergency" authorizationDecoder
-        |> required "bakerStakeThreshold" authorizationDecoder
+        |> required "poolParameters" authorizationDecoder
         |> required "keys" (D.list authorizationKeyDecoder)
 
 
@@ -569,6 +768,50 @@ protocolUpdateDecoder =
         |> required "specificationURL" D.string
         |> required "specificationHash" D.string
         |> required "specificationAuxiliaryData" D.string
+
+
+poolParametersV0Decoder : D.Decoder PoolParameters
+poolParametersV0Decoder =
+    D.succeed PoolParametersV0
+        |> required "minimumThresholdForBaking" T.decodeAmount
+        |> D.map PPV0
+
+
+poolParametersV1Decoder : D.Decoder PoolParameters
+poolParametersV1Decoder =
+    D.succeed PoolParametersV1
+        |> required "passiveFinalizationCommission" D.float
+        |> required "passiveBakingCommission" D.float
+        |> required "passiveTransactionCommission" D.float
+        |> required "bakingCommissionRange" (rangeDecoder D.float)
+        |> required "transactionCommissionRange" (rangeDecoder D.float)
+        |> required "finalizationCommissionRange" (rangeDecoder D.float)
+        |> required "minimumEquityCapital" T.decodeAmount
+        |> required "capitalBound" D.float
+        |> required "leverageBound" relationDecoder
+        |> D.map PPV1
+
+
+cooldownParametersV0Decoder : D.Decoder CooldownParameters
+cooldownParametersV0Decoder =
+    D.succeed CooldownParametersV0
+        |> required "bakerCooldownEpochs" D.int
+        |> D.map CDPV0
+
+
+cooldownParametersV1Decoder : D.Decoder CooldownParameters
+cooldownParametersV1Decoder =
+    D.succeed CooldownParametersV1
+        |> required "poolOwnerCooldown" D.int
+        |> required "delegatorCooldown" D.int
+        |> D.map CDPV1
+
+
+timeParametersDecoder : D.Decoder TimeParameters
+timeParametersDecoder =
+    D.succeed TimeParameters
+        |> required "rewardPeriodLength" D.int
+        |> required "mintPerPayday" D.float
 
 
 {-| Convert Maybe a to a Decoder which fails if the Maybe is Nothing.
@@ -768,6 +1011,41 @@ transactionEventsDecoder =
                         |> required "aggregationKey" D.string
                         |> D.map TransactionEventBakerKeysUpdated
 
+                "BakerSetOpenStatus" ->
+                    D.succeed EventBakerSetOpenStatus
+                        |> required "bakerId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "openStatus" D.string
+                        |> D.map TransactionEventBakerSetOpenStatus
+
+                "BakerSetMetadataURL" ->
+                    D.succeed EventBakerSetMetadataURL
+                        |> required "bakerId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "metadataURL" D.string
+                        |> D.map TransactionEventBakerSetMetadataURL
+
+                "BakerSetTransactionFeeCommission" ->
+                    D.succeed EventBakerSetTransactionFeeCommission
+                        |> required "bakerId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "transactionFeeCommission" D.float
+                        |> D.map TransactionEventBakerSetTransactionFeeCommission
+
+                "BakerSetBakingRewardCommission" ->
+                    D.succeed EventBakerSetBakingRewardCommission
+                        |> required "bakerId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "bakingRewardCommission" D.float
+                        |> D.map TransactionEventBakerSetBakingRewardCommission
+
+                "BakerSetFinalizationRewardCommission" ->
+                    D.succeed EventBakerSetFinalizationRewardCommission
+                        |> required "bakerId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "finalizationRewardCommission" D.float
+                        |> D.map TransactionEventBakerSetFinalizationRewardCommission
+
                 -- Contracts
                 "ModuleDeployed" ->
                     D.succeed EventModuleDeployed
@@ -792,6 +1070,59 @@ transactionEventsDecoder =
                         |> required "receiveName" T.contractReceiveNameDecoder
                         |> required "events" (D.list T.contractEventDecoder)
                         |> D.map TransactionEventContractUpdated
+
+                "Interrupted" ->
+                    D.succeed EventContractInterrupted
+                        |> required "address" T.contractAddressDecoder
+                        |> required "events" (D.list T.contractEventDecoder)
+                        |> D.map TransactionEventContractInterrupted
+
+                "Resumed" ->
+                    D.succeed EventContractResumed
+                        |> required "address" T.contractAddressDecoder
+                        |> required "success" D.bool
+                        |> D.map TransactionEventContractResumed
+
+                -- Delegation
+                "DelegationStakeIncreased" ->
+                    D.succeed EventDelegationStakeIncreased
+                        |> required "delegatorId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "newStake" T.decodeAmount
+                        |> D.map TransactionEventDelegationStakeIncreased
+
+                "DelegationStakeDecreased" ->
+                    D.succeed EventDelegationStakeDecreased
+                        |> required "delegatorId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "newStake" T.decodeAmount
+                        |> D.map TransactionEventDelegationStakeDecreased
+
+                "DelegationSetRestakeEarnings" ->
+                    D.succeed EventDelegationSetRestakeEarnings
+                        |> required "delegatorId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "restakeEarnings" D.bool
+                        |> D.map TransactionEventDelegationSetRestakeEarnings
+
+                "DelegationSetDelegationTarget" ->
+                    D.succeed EventDelegationSetDelegationTarget
+                        |> required "delegatorId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> required "delegationTarget" T.delegationTargetDecoder
+                        |> D.map TransactionEventDelegationSetDelegationTarget
+
+                "DelegationAdded" ->
+                    D.succeed EventDelegationAdded
+                        |> required "delegatorId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> D.map TransactionEventDelegationAdded
+
+                "DelegationRemoved" ->
+                    D.succeed EventDelegationRemoved
+                        |> required "delegatorId" D.int
+                        |> required "account" T.accountAddressDecoder
+                        |> D.map TransactionEventDelegationRemoved
 
                 -- Core
                 "UpdateEnqueued" ->
