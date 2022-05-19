@@ -650,6 +650,9 @@ rejectReasonDecoder =
                 "PoolWouldBecomeOverDelegated" ->
                     D.succeed PoolWouldBecomeOverDelegated
 
+                "PoolClosed" ->
+                    D.succeed PoolClosed
+                        
                 _ ->
                     D.fail <| "Unknown RejectReason: " ++ tag
     in
