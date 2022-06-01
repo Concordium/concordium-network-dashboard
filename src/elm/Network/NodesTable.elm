@@ -104,7 +104,7 @@ nodesTable ctx sortMode nodes =
                         \node ->
                             text <| asTimeAgoDuration node.uptime
                   }
-                , { header = sortableHeader ctx sortMode SortClient "Client"
+                , { header = sortableHeader ctx sortMode SortClient "Node"
                   , width = fill
                   , view =
                         \node ->

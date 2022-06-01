@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - Display the ConfigureBaker and ConfigureDelegation transactions
 - Display pool, passive delegation and foundation block rewards
 - Display transactions without associated events
+- Corrected the node version column label in the node list
 
 ## [1.0.4]
 
