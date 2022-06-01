@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 - Correctly display the effective time of updates with immediate effect.
 - Display the ConfigureBaker and ConfigureDelegation transactions
 - Display pool, passive delegation and foundation block rewards
+- Display transactions without associated events
 - Corrected the node version column label in the node list
 
 ## [1.0.4]

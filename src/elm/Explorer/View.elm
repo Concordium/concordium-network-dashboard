@@ -565,7 +565,26 @@ viewTransactionSummary ctx timezone txSummary =
         TransactionAccepted events ->
             case events of
                 [] ->
-                    []
+                    [ { content = row contentRowAttrs <|
+                        transactionRowCells
+                            { tipe = icon
+                            , sender = Maybe.withDefault none <| Maybe.map (viewAddress ctx << T.AddressAccount) txSummary.sender
+                            , event = paragraph [ ] <| [ text <| typeDecription.short ]
+                            , cost = el [ alignRight ] <| text <| T.amountToString txSummary.cost
+                            , txHash =
+                                row [ width fill ]
+                                    [ el
+                                        [ stringTooltipAboveWithCopy ctx txSummary.hash
+                                        , pointer
+                                        , onClick (CopyToClipboard txSummary.hash)
+                                        ]
+                                        (el [ alignRight ] <| text <| String.left 8 txSummary.hash)
+                                    , el [ alignRight ] (html <| Icons.status_success 20)
+                                    ]
+                            }
+                         , details = Nothing
+                      }
+                    ]
 
                 mainEvent :: subEvents ->
                     viewMainEventItem mainEvent :: List.map viewSubEvent subEvents

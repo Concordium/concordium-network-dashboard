@@ -6,7 +6,7 @@ import Cbor.Decode
 import Cbor.Encode
 import Hex.Convert
 import Json.Decode as D
-import Json.Decode.Pipeline exposing (required)
+import Json.Decode.Pipeline exposing (required, optional)
 import Time exposing (Posix)
 import Types as T
 
@@ -409,6 +409,7 @@ type alias Authorizations =
     , protocol : Authorization
     , paramGASRewards : Authorization
     , emergency : Authorization
+    , bakerStakeThreshold : Authorization
     , poolParameters : Authorization
     , keys : List AuthorizationKey
     }
@@ -713,7 +714,8 @@ authorizationsDecoder =
         |> required "protocol" authorizationDecoder
         |> required "paramGASRewards" authorizationDecoder
         |> required "emergency" authorizationDecoder
-        |> required "poolParameters" authorizationDecoder
+        |> optional "bakerStakeThreshold" authorizationDecoder { threshold = 0 , authorizedKeys = [] }
+        |> optional "poolParameters" authorizationDecoder { threshold = 0 , authorizedKeys = [] }
         |> required "keys" (D.list authorizationKeyDecoder)
 
 
