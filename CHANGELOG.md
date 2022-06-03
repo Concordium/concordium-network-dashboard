@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - Display pool, passive delegation and foundation block rewards
 - Display transactions without associated events
 - Corrected the node version column label in the node list
+- Enabled special events paging in the block summary
 
 ## [1.0.4]
 

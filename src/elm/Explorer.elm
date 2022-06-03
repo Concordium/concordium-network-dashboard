@@ -33,8 +33,11 @@ type alias BlockSummaryDisplayState =
     -- in that transaction, with details currently open.
     , transactionWithDetailsOpen : Dict Int (Set Int)
 
+    -- Used for special event paging and represents the index of the current page
+    , specialEventPagingModel : Dict Int Paging.Model
+
     -- A set of indicies of events with details open.
-    , specialEventWithDetailsOpen : Set Int
+    , specialEventWithDetailsOpen : Dict Int (Set Int)
     }
 
 
@@ -43,7 +46,8 @@ initialBlockSummaryDisplayState =
     { transactionPagingModel = Paging.init 10
     , transactionEventPagingModel = Dict.empty
     , transactionWithDetailsOpen = Dict.empty
-    , specialEventWithDetailsOpen = Set.empty
+    , specialEventPagingModel = Dict.empty
+    , specialEventWithDetailsOpen = Dict.empty
     }
 
 
@@ -71,9 +75,10 @@ type Msg
 -}
 type DisplayMsg
     = ToggleTransactionDetails Int Int
-    | ToggleSpecialEventDetails Int
+    | ToggleSpecialEventDetails Int Int
     | TransactionPaging Paging.Msg
     | TransactionEventPaging Int Paging.Msg
+    | SpecialEventPaging Int Paging.Msg
 
 
 init : Model
@@ -153,9 +158,13 @@ updateDisplayState msg state =
                         state.transactionWithDetailsOpen
             }
 
-        ToggleSpecialEventDetails eventIndex ->
+        ToggleSpecialEventDetails pageIndex eventIndex ->
             { state
-                | specialEventWithDetailsOpen = toggleSetMember eventIndex state.specialEventWithDetailsOpen
+                | specialEventWithDetailsOpen =
+                    Dict.update
+                        pageIndex
+                        (Maybe.withDefault Set.empty >> toggleSetMember eventIndex >> Just)
+                        state.specialEventWithDetailsOpen
             }
 
         TransactionPaging pagingMsg ->
@@ -176,3 +185,17 @@ updateDisplayState msg state =
                                     |> Just
                             )
             }
+
+        SpecialEventPaging eventIndex pagingMsg ->
+            { state
+                | specialEventPagingModel =
+                    state.specialEventPagingModel
+                        |> Dict.update eventIndex
+                            (\pagingModel ->
+                                pagingModel
+                                    |> Maybe.withDefault initialTransactionEventPaging
+                                    |> Paging.update pagingMsg
+                                    |> Just
+                            )
+            }
+
