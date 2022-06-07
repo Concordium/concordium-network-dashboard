@@ -178,7 +178,7 @@ viewBlockSummary theme timezone { blockSummary, state } =
                     , cost = none
                     , txHash = none
                     }
-            , column [ width fill, spacing 5 ] <| viewSummaryItem theme (List.concat specialEvents ++ finalizations) state.specialEventWithDetailsOpen (Display << ToggleSpecialEventDetails) initialTransactionEventPaging (\_ -> Nop)
+            , column [ width fill, spacing 5 ] <| viewSummaryItems theme (List.singleton (List.concat specialEvents ++ finalizations)) state.specialEventWithDetailsOpen (\t e -> Display <| Explorer.ToggleSpecialEventDetails t e) state.specialEventPagingModel (\i -> Display << SpecialEventPaging i)
             ]
         , section
             [ titleWithSubtitle theme "Updates" "Updates queued at the time of this block"
