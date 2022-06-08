@@ -4,13 +4,19 @@ All notable changes to this project will be documented in this file.
 
 # Unreleased changes
 
+## [1.0.10]
+
+### Added
+
 - Display the CCD/EUR exchange rate normalized to 1 EUR.
-- Correctly display the effective time of updates with immediate effect.
 - Display the ConfigureBaker and ConfigureDelegation transactions
 - Display pool, passive delegation and foundation block rewards
 - Display transactions without associated events
-- Corrected the node version column label in the node list
+
+### Fixed
+- Correctly display the effective time of updates with immediate effect.
 - Enabled special events paging in the block summary
+- Corrected the node version column label in the node list
 
 ## [1.0.4]
 
