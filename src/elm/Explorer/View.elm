@@ -2537,7 +2537,7 @@ viewAddress ctx addr =
                 ]
 
 {-| View a smart contract module reference. The first 8 characters are displayed,
-    and there are a tooltip hover effect and copy on click effects.
+    and there is a tooltip hover effect and copy on click effects.
 -}
 viewModuleRef : Theme a -> T.ModuleRef -> Element Msg
 viewModuleRef ctx ref =
