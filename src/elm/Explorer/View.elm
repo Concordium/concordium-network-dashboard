@@ -2184,6 +2184,20 @@ viewTransactionEvent ctx timezone txEvent =
             , details = Nothing
             }
 
+        TransactionEventContractUpgraded event ->
+            { content =
+                eventElem
+                    [ text "Upgraded "
+                    , text <| "contract with address: "
+                    , viewAsAddressContract ctx event.address
+                    , text <| "from "
+                    , viewModuleRef ctx event.from
+                    , text <| " to "
+                    , viewModuleRef ctx event.to
+                    ]
+            , details = Nothing
+            }
+
         TransactionEventDelegationStakeIncreased event ->
             { content =
                 eventElem
@@ -2521,6 +2535,20 @@ viewAddress ctx addr =
                 [ el [] (html <| Icons.smart_contract 18)
                 , text <| T.contractAddressToString address
                 ]
+
+{-| View a smart contract module reference. The first 8 characters are displayed,
+    and there is a tooltip hover effect and copy on click effects.
+-}
+viewModuleRef : Theme a -> T.ModuleRef -> Element Msg
+viewModuleRef ctx ref =
+    row [ spacing 4
+        , stringTooltipAboveWithCopy ctx ref
+        , pointer
+        , onClick (CopyToClipboard ref)
+        ]
+        [ el [] (html <| Icons.smart_contract 18)
+        , text (String.left 8 ref)
+        ]
 
 
 {-| View a baker as "<acc> (Baker: <baker-id>)". The account is shown using `viewAddress`.

@@ -2,7 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-# Unreleased changes
+## Unreleased changes
+
+## [1.1.0]
+
+### Added
+
+- Add ability to display the new smart contract "Upgraded" event.
 
 ## [1.0.10]
 

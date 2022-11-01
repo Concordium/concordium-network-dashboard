@@ -46,6 +46,7 @@ type TransactionEvent
     | TransactionEventContractUpdated EventContractUpdated
     | TransactionEventContractInterrupted EventContractInterrupted
     | TransactionEventContractResumed EventContractResumed
+    | TransactionEventContractUpgraded EventContractUpgraded
       -- Delegation
     | TransactionEventDelegationStakeIncreased EventDelegationStakeIncreased
     | TransactionEventDelegationStakeDecreased EventDelegationStakeDecreased
@@ -264,12 +265,16 @@ type alias EventContractInterrupted =
     , events : List T.ContractEvent
     }
 
-
 type alias EventContractResumed =
     { address : T.ContractAddress
     , success : Bool
     }
 
+type alias EventContractUpgraded =
+    { address : T.ContractAddress
+    , from : T.ModuleRef
+    , to : T.ModuleRef
+    }
 
 type alias EventDataRegistered =
     { data : ArbitraryBytes
@@ -1084,6 +1089,13 @@ transactionEventsDecoder =
                         |> required "address" T.contractAddressDecoder
                         |> required "success" D.bool
                         |> D.map TransactionEventContractResumed
+
+                "Upgraded" ->
+                    D.succeed EventContractUpgraded
+                        |> required "address" T.contractAddressDecoder
+                        |> required "from" D.string
+                        |> required "to" D.string
+                        |> D.map TransactionEventContractUpgraded
 
                 -- Delegation
                 "DelegationStakeIncreased" ->
