@@ -2190,7 +2190,7 @@ viewTransactionEvent ctx timezone txEvent =
                     [ text "Upgraded "
                     , text <| "contract with address: "
                     , viewAsAddressContract ctx event.address
-                    , text <| "from "
+                    , text <| " from "
                     , viewModuleRef ctx event.from
                     , text <| " to "
                     , viewModuleRef ctx event.to
