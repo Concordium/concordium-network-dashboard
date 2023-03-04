@@ -6,7 +6,7 @@ import Cbor.Decode
 import Cbor.Encode
 import Hex.Convert
 import Json.Decode as D
-import Json.Decode.Pipeline exposing (required, optional)
+import Json.Decode.Pipeline exposing (optional, required)
 import Time exposing (Posix)
 import Types as T
 
@@ -265,16 +265,19 @@ type alias EventContractInterrupted =
     , events : List T.ContractEvent
     }
 
+
 type alias EventContractResumed =
     { address : T.ContractAddress
     , success : Bool
     }
+
 
 type alias EventContractUpgraded =
     { address : T.ContractAddress
     , from : T.ModuleRef
     , to : T.ModuleRef
     }
+
 
 type alias EventDataRegistered =
     { data : ArbitraryBytes
@@ -563,17 +566,18 @@ updatePayloadDecoder =
         decode updateType =
             D.field "update" <|
                 case updateType of
-                    "mintDistribution" ->
-                        D.oneOf
-                            [ mintDistributionV1Decoder
-                            , mintDistributionV0Decoder
-                            ]
+                    "mintDistributionV0" ->
+                        mintDistributionV0Decoder
+                            |> D.map MintDistributionPayload
+
+                    "mintDistributionV1" ->
+                        mintDistributionV1Decoder
                             |> D.map MintDistributionPayload
 
                     "transactionFeeDistribution" ->
                         transactionFeeDistributionDecoder |> D.map TransactionFeeDistributionPayload
 
-                    "gASRewards" ->
+                    "gasRewards" ->
                         gasRewardsDecoder |> D.map GasRewardsPayload
 
                     "electionDifficulty" ->
@@ -603,13 +607,16 @@ updatePayloadDecoder =
                     "addIdentityProvider" ->
                         ipDecoder |> D.map AddIdentityProviderPayload
 
-                    "poolParametersCPV1" ->
+                    "poolParametersV0" ->
+                        poolParametersV0Decoder |> D.map PoolParametersPayload
+
+                    "poolParametersV1" ->
                         poolParametersV1Decoder |> D.map PoolParametersPayload
 
-                    "cooldownParametersCPV1" ->
+                    "cooldownParametersV1" ->
                         cooldownParametersV1Decoder |> D.map CooldownParametersPayload
 
-                    "timeParametersCPV1" ->
+                    "timeParametersV1" ->
                         timeParametersDecoder |> D.map TimeParametersPayload
 
                     _ ->
@@ -719,8 +726,8 @@ authorizationsDecoder =
         |> required "protocol" authorizationDecoder
         |> required "paramGASRewards" authorizationDecoder
         |> required "emergency" authorizationDecoder
-        |> optional "bakerStakeThreshold" authorizationDecoder { threshold = 0 , authorizedKeys = [] }
-        |> optional "poolParameters" authorizationDecoder { threshold = 0 , authorizedKeys = [] }
+        |> optional "bakerStakeThreshold" authorizationDecoder { threshold = 0, authorizedKeys = [] }
+        |> optional "poolParameters" authorizationDecoder { threshold = 0, authorizedKeys = [] }
         |> required "keys" (D.list authorizationKeyDecoder)
 
 

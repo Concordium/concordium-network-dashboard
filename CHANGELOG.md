@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased changes
 
+## [1.2.0]
+
+## Fixed
+
+- Display of genesis blocks in the block explorer.
+
+## Changed
+
+- Support updated middleware API.
+
 ## [1.1.0]
 
 ### Added

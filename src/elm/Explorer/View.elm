@@ -136,7 +136,7 @@ viewBlockSummary theme timezone { blockSummary, state } =
                             True
                 )
                 blockSummary.specialEvents
-                |> List.map (viewSpecialEvent theme blockSummary.updates.chainParameters)
+                |> List.map (viewSpecialEvent theme blockSummary.chainParameters)
 
         finalizations =
             viewFinalizationData theme blockSummary.finalizationData
@@ -182,7 +182,7 @@ viewBlockSummary theme timezone { blockSummary, state } =
             ]
         , section
             [ titleWithSubtitle theme "Updates" "Updates queued at the time of this block"
-            , viewUpdates theme timezone blockSummary.updates
+            , viewUpdates theme timezone blockSummary.pendingUpdates
             ]
         ]
 
@@ -565,24 +565,25 @@ viewTransactionSummary ctx timezone txSummary =
         TransactionAccepted events ->
             case events of
                 [] ->
-                    [ { content = row contentRowAttrs <|
-                        transactionRowCells
-                            { tipe = icon
-                            , sender = Maybe.withDefault none <| Maybe.map (viewAddress ctx << T.AddressAccount) txSummary.sender
-                            , event = paragraph [ ] <| [ text <| typeDecription.short ]
-                            , cost = el [ alignRight ] <| text <| T.amountToString txSummary.cost
-                            , txHash =
-                                row [ width fill ]
-                                    [ el
-                                        [ stringTooltipAboveWithCopy ctx txSummary.hash
-                                        , pointer
-                                        , onClick (CopyToClipboard txSummary.hash)
-                                        ]
-                                        (el [ alignRight ] <| text <| String.left 8 txSummary.hash)
-                                    , el [ alignRight ] (html <| Icons.status_success 20)
-                                    ]
-                            }
-                         , details = Nothing
+                    [ { content =
+                            row contentRowAttrs <|
+                                transactionRowCells
+                                    { tipe = icon
+                                    , sender = Maybe.withDefault none <| Maybe.map (viewAddress ctx << T.AddressAccount) txSummary.sender
+                                    , event = paragraph [] <| [ text <| typeDecription.short ]
+                                    , cost = el [ alignRight ] <| text <| T.amountToString txSummary.cost
+                                    , txHash =
+                                        row [ width fill ]
+                                            [ el
+                                                [ stringTooltipAboveWithCopy ctx txSummary.hash
+                                                , pointer
+                                                , onClick (CopyToClipboard txSummary.hash)
+                                                ]
+                                                (el [ alignRight ] <| text <| String.left 8 txSummary.hash)
+                                            , el [ alignRight ] (html <| Icons.status_success 20)
+                                            ]
+                                    }
+                      , details = Nothing
                       }
                     ]
 
@@ -1043,12 +1044,11 @@ rejectionToItem ctx reason =
             }
 
 
-viewUpdates : Theme a -> Time.Zone -> Updates -> Element Msg
+viewUpdates : Theme a -> Time.Zone -> List EventUpdateEnqueued -> Element Msg
 viewUpdates theme timezone updates =
     let
         allQueuedUpdates =
-            listUpdatePayloads updates.updateQueues
-                |> List.sortBy (.effectiveTime >> Time.posixToMillis)
+            List.sortBy (.effectiveTime >> Time.posixToMillis) updates
 
         updateRow left right =
             row [ width fill ] [ el [ width (fill |> maximum 250) ] left, el [ width fill ] right ]
@@ -1287,42 +1287,21 @@ viewSpecialEvent ctx chainParameters specialEvent =
                     , details =
                         let
                             rewardParameters =
-                                case chainParameters of
-                                    CPV0 cp ->
-                                        cp.rewardParameters
-
-                                    CPV1 cp ->
-                                        cp.rewardParameters
+                                chainParameters.rewardParameters
 
                             ( mintPerSlot, bakingReward, finalizationReward ) =
-                                case chainParameters of
-                                    CPV0 cp ->
-                                        case cp.rewardParameters.mintDistribution of
-                                            MDV0 md ->
-                                                ( Just md.mintPerSlot
-                                                , md.bakingReward
-                                                , md.finalizationReward
-                                                )
+                                case rewardParameters.mintDistribution of
+                                    MDV0 md ->
+                                        ( Just md.mintPerSlot
+                                        , md.bakingReward
+                                        , md.finalizationReward
+                                        )
 
-                                            MDV1 md ->
-                                                ( Nothing
-                                                , md.bakingReward
-                                                , md.finalizationReward
-                                                )
-
-                                    CPV1 cp ->
-                                        case cp.rewardParameters.mintDistribution of
-                                            MDV0 md ->
-                                                ( Just md.mintPerSlot
-                                                , md.bakingReward
-                                                , md.finalizationReward
-                                                )
-
-                                            MDV1 md ->
-                                                ( Nothing
-                                                , md.bakingReward
-                                                , md.finalizationReward
-                                                )
+                                    MDV1 md ->
+                                        ( Nothing
+                                        , md.bakingReward
+                                        , md.finalizationReward
+                                        )
 
                             foundationMintFraction =
                                 1 - bakingReward - finalizationReward
@@ -1415,12 +1394,7 @@ viewSpecialEvent ctx chainParameters specialEvent =
                     , details =
                         let
                             rewardParameters =
-                                case chainParameters of
-                                    CPV0 cp ->
-                                        cp.rewardParameters
-
-                                    CPV1 cp ->
-                                        cp.rewardParameters
+                                chainParameters.rewardParameters
 
                             foundationTransactionFeeBlockReward =
                                 1 - (rewardParameters.transactionFeeDistribution.baker + rewardParameters.transactionFeeDistribution.gasAccount)
@@ -2536,12 +2510,14 @@ viewAddress ctx addr =
                 , text <| T.contractAddressToString address
                 ]
 
+
 {-| View a smart contract module reference. The first 8 characters are displayed,
-    and there is a tooltip hover effect and copy on click effects.
+and there is a tooltip hover effect and copy on click effects.
 -}
 viewModuleRef : Theme a -> T.ModuleRef -> Element Msg
 viewModuleRef ctx ref =
-    row [ spacing 4
+    row
+        [ spacing 4
         , stringTooltipAboveWithCopy ctx ref
         , pointer
         , onClick (CopyToClipboard ref)

@@ -198,4 +198,3 @@ updateDisplayState msg state =
                                     |> Just
                             )
             }
-
