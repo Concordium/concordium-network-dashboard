@@ -984,7 +984,7 @@ rejectionToItem ctx reason =
             }
 
         TransactionFeeCommissionNotInRange ->
-            { content = [ text "Tried to add baker for an account that already has a delegator" ]
+            { content = [ text "Transaction fee commission was not within the allowed range" ]
             , details = Nothing
             }
 
