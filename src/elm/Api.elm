@@ -108,7 +108,6 @@ type alias BlockInfo =
     , blockLastFinalized : String
     , blockSlotTime : Posix
     , blockHeight : Int
-    , blockBaker : Int
     }
 
 
@@ -140,7 +139,6 @@ blockInfoDecoder =
         |> required "blockLastFinalized" D.string
         |> required "blockSlotTime" Iso8601.decoder
         |> required "blockHeight" D.int
-        |> required "blockBaker" D.int
 
 
 

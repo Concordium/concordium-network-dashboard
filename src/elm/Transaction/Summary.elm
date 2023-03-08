@@ -2,6 +2,7 @@ module Transaction.Summary exposing (..)
 
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (custom, optional, required)
+import Time
 import Transaction.Event exposing (..)
 import Types as T
 
@@ -436,6 +437,13 @@ transactionSummaryDecoder =
         |> required "type" transactionSummaryTypeDecoder
 
 
+pendingUpdateDecoder : D.Decoder EventUpdateEnqueued
+pendingUpdateDecoder =
+    D.succeed EventUpdateEnqueued
+        |> required "effectiveTime" (D.map (\seconds -> Time.millisToPosix (seconds * 1000)) D.int)
+        |> required "effect" updatePayloadDecoder
+
+
 rejectReasonDecoder : D.Decoder RejectReason
 rejectReasonDecoder =
     let
@@ -652,7 +660,7 @@ rejectReasonDecoder =
 
                 "PoolClosed" ->
                     D.succeed PoolClosed
-                        
+
                 _ ->
                     D.fail <| "Unknown RejectReason: " ++ tag
     in

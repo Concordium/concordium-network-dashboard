@@ -53,7 +53,8 @@ type alias BlockSummary =
     { specialEvents : List SpecialEvent
     , transactionSummaries : List TransactionSummary
     , finalizationData : Maybe FinalizationData
-    , updates : Updates
+    , pendingUpdates : List EventUpdateEnqueued
+    , chainParameters : ChainParameters
     }
 
 
@@ -63,57 +64,22 @@ blockSummaryDecoder =
         |> required "specialEvents" (D.list specialEventDecoder)
         |> required "transactionSummaries" (D.list transactionSummaryDecoder)
         |> optional "finalizationData" (D.nullable finalizationDataDecoder) Nothing
-        |> required "updates" (D.oneOf [ updatesDecoderV1, updatesDecoderV0 ])
+        |> required "pendingUpdates" (D.list pendingUpdateDecoder)
+        |> required "chainParameters" chainParametersDecoder
 
 
 
 -- Updates
 
 
-type ChainParameters
-    = CPV0 ChainParametersV0
-    | CPV1 ChainParametersV1
+type alias ChainParameters =
+    { rewardParameters : RewardParameters
+    }
 
 
 type alias Updates =
     { chainParameters : ChainParameters
-    , keyCollection : UpdateKeysCollection
     , updateQueues : UpdateQueues
-    }
-
-
-type alias ChainParametersV0 =
-    { rewardParameters : RewardParameters
-    , microCCDPerEuro : Relation
-    , foundationAccountIndex : Int
-    , accountCreationLimit : Int
-    , bakerCooldownEpochs : Int
-    , electionDifficulty : Float
-    , euroPerEnergy : Relation
-    , minimumThresholdForBaking : T.Amount
-    }
-
-
-type alias ChainParametersV1 =
-    { rewardParameters : RewardParameters
-    , microCCDPerEuro : Relation
-    , foundationAccountIndex : Int
-    , accountCreationLimit : Int
-    , electionDifficulty : Float
-    , euroPerEnergy : Relation
-    , poolOwnerCooldown : Int
-    , delegatorCooldown : Int
-    , passiveFinalizationCommission : Float
-    , passiveBakingCommission : Float
-    , passiveTransactionCommission : Float
-    , finalizationCommissionRange : Range Float
-    , bakingCommissionRange : Range Float
-    , transactionCommissionRange : Range Float
-    , minimumEquityCapital : T.Amount
-    , capitalBound : Float
-    , leverageBound : Relation
-    , rewardPeriodLength : Int
-    , mintPerPayday : Float
     }
 
 
@@ -156,59 +122,10 @@ type alias UpdateQueueItem a =
     }
 
 
-updatesDecoderV0 : D.Decoder Updates
-updatesDecoderV0 =
-    D.succeed Updates
-        |> required "chainParameters" chainParametersDecoderV0
-        |> required "keys" updateKeysCollectionDecoder
-        |> required "updateQueues" updateQueuesDecoder
-
-
-updatesDecoderV1 : D.Decoder Updates
-updatesDecoderV1 =
-    D.succeed Updates
-        |> required "chainParameters" chainParametersDecoderV1
-        |> required "keys" updateKeysCollectionDecoder
-        |> required "updateQueues" updateQueuesDecoder
-
-
-chainParametersDecoderV0 : D.Decoder ChainParameters
-chainParametersDecoderV0 =
-    D.succeed ChainParametersV0
+chainParametersDecoder : D.Decoder ChainParameters
+chainParametersDecoder =
+    D.succeed ChainParameters
         |> required "rewardParameters" rewardParametersDecoder
-        |> required "microGTUPerEuro" relationDecoder
-        |> required "foundationAccountIndex" D.int
-        |> required "accountCreationLimit" D.int
-        |> required "bakerCooldownEpochs" D.int
-        |> required "electionDifficulty" D.float
-        |> required "euroPerEnergy" relationDecoder
-        |> required "minimumThresholdForBaking" T.decodeAmount
-        |> D.map CPV0
-
-
-chainParametersDecoderV1 : D.Decoder ChainParameters
-chainParametersDecoderV1 =
-    D.succeed ChainParametersV1
-        |> required "rewardParameters" rewardParametersDecoder
-        |> required "microGTUPerEuro" relationDecoder
-        |> required "foundationAccountIndex" D.int
-        |> required "accountCreationLimit" D.int
-        |> required "electionDifficulty" D.float
-        |> required "euroPerEnergy" relationDecoder
-        |> required "poolOwnerCooldown" D.int
-        |> required "delegatorCooldown" D.int
-        |> required "passiveFinalizationCommission" D.float
-        |> required "passiveBakingCommission" D.float
-        |> required "passiveTransactionCommission" D.float
-        |> required "finalizationCommissionRange" (rangeDecoder D.float)
-        |> required "bakingCommissionRange" (rangeDecoder D.float)
-        |> required "transactionCommissionRange" (rangeDecoder D.float)
-        |> required "minimumEquityCapital" T.decodeAmount
-        |> required "capitalBound" D.float
-        |> required "leverageBound" relationDecoder
-        |> required "rewardPeriodLength" D.int
-        |> required "mintPerPayday" D.float
-        |> D.map CPV1
 
 
 rewardParametersDecoder : D.Decoder RewardParameters
@@ -221,65 +138,7 @@ rewardParametersDecoder =
                 ]
             )
         |> required "transactionFeeDistribution" transactionFeeDistributionDecoder
-        |> required "gASRewards" gasRewardsDecoder
-
-
-updateQueuesDecoder : D.Decoder UpdateQueues
-updateQueuesDecoder =
-    D.succeed UpdateQueues
-        |> required "mintDistribution"
-            (updateQueueDecoder
-                (D.oneOf
-                    [ mintDistributionV1Decoder
-                    , mintDistributionV0Decoder
-                    ]
-                )
-            )
-        |> required "transactionFeeDistribution" (updateQueueDecoder transactionFeeDistributionDecoder)
-        |> required "rootKeys" (updateQueueDecoder higherLevelKeysDecoder)
-        |> required "level1Keys" (updateQueueDecoder higherLevelKeysDecoder)
-        |> required "level2Keys" (updateQueueDecoder authorizationsDecoder)
-        |> required "microGTUPerEuro" (updateQueueDecoder relationDecoder)
-        |> required "protocol" (updateQueueDecoder protocolUpdateDecoder)
-        |> required "gasRewards" (updateQueueDecoder gasRewardsDecoder)
-        |> required "foundationAccount" (updateQueueDecoder D.int)
-        |> required "electionDifficulty" (updateQueueDecoder D.float)
-        |> required "euroPerEnergy" (updateQueueDecoder relationDecoder)
-        |> required "addAnonymityRevoker" (updateQueueDecoder arDecoder)
-        |> required "addIdentityProvider" (updateQueueDecoder ipDecoder)
-        |> optional "poolParameters"
-            (updateQueueDecoder
-                (D.oneOf
-                    [ poolParametersV1Decoder
-                    , poolParametersV0Decoder
-                    ]
-                )
-            )
-            { nextSequenceNumber = 0, queue = [] }
-        |> optional "cooldownParameters"
-            (updateQueueDecoder
-                (D.oneOf
-                    [ cooldownParametersV1Decoder
-                    , cooldownParametersV0Decoder
-                    ]
-                )
-            )
-            { nextSequenceNumber = 0, queue = [] }
-        |> optional "timeParameters" (updateQueueDecoder timeParametersDecoder) { nextSequenceNumber = 0, queue = [] }
-
-
-updateQueueDecoder : D.Decoder a -> D.Decoder (UpdateQueue a)
-updateQueueDecoder decoder =
-    D.succeed UpdateQueue
-        |> required "nextSequenceNumber" D.int
-        |> required "queue" (D.list (updateQueueItemDecoder decoder))
-
-
-updateQueueItemDecoder : D.Decoder a -> D.Decoder (UpdateQueueItem a)
-updateQueueItemDecoder decoder =
-    D.succeed UpdateQueueItem
-        |> required "effectiveTime" (D.map (\seconds -> Time.millisToPosix (seconds * 1000)) D.int)
-        |> required "update" decoder
+        |> required "gasRewards" gasRewardsDecoder
 
 
 
