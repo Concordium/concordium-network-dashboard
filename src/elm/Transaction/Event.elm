@@ -586,7 +586,7 @@ updatePayloadDecoder =
                     "euroPerEnergy" ->
                         relationDecoder |> D.map EuroPerEnergyPayload
 
-                    "microGTUPerEuro" ->
+                    "microCCDPerEuro" ->
                         relationDecoder |> D.map MicroCCDPerEuroPayload
 
                     "foundationAccount" ->
