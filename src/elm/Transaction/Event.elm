@@ -570,7 +570,15 @@ updatePayloadDecoder =
                         mintDistributionV0Decoder
                             |> D.map MintDistributionPayload
 
+                    "mintDistribution" ->
+                        mintDistributionV0Decoder
+                            |> D.map MintDistributionPayload
+
                     "mintDistributionV1" ->
+                        mintDistributionV1Decoder
+                            |> D.map MintDistributionPayload
+
+                    "mintDistributionCPV1" ->
                         mintDistributionV1Decoder
                             |> D.map MintDistributionPayload
 
@@ -580,6 +588,9 @@ updatePayloadDecoder =
                     "gasRewards" ->
                         gasRewardsDecoder |> D.map GasRewardsPayload
 
+                    "gASRewards" ->
+                        gasRewardsDecoder |> D.map GasRewardsPayload
+
                     "electionDifficulty" ->
                         D.float |> D.map ElectionDifficultyPayload
 
@@ -587,6 +598,9 @@ updatePayloadDecoder =
                         relationDecoder |> D.map EuroPerEnergyPayload
 
                     "microCCDPerEuro" ->
+                        relationDecoder |> D.map MicroCCDPerEuroPayload
+
+                    "microGTUPerEuro" ->
                         relationDecoder |> D.map MicroCCDPerEuroPayload
 
                     "foundationAccount" ->
@@ -610,13 +624,25 @@ updatePayloadDecoder =
                     "poolParametersV0" ->
                         poolParametersV0Decoder |> D.map PoolParametersPayload
 
+                    "bakerStakeThresold" ->
+                        poolParametersV0Decoder |> D.map PoolParametersPayload
+
                     "poolParametersV1" ->
+                        poolParametersV1Decoder |> D.map PoolParametersPayload
+
+                    "poolParametersCPV1" ->
                         poolParametersV1Decoder |> D.map PoolParametersPayload
 
                     "cooldownParametersV1" ->
                         cooldownParametersV1Decoder |> D.map CooldownParametersPayload
 
+                    "cooldownParametersCPV1" ->
+                        cooldownParametersV1Decoder |> D.map CooldownParametersPayload
+
                     "timeParametersV1" ->
+                        timeParametersDecoder |> D.map TimeParametersPayload
+
+                    "timeParametersCPV1" ->
                         timeParametersDecoder |> D.map TimeParametersPayload
 
                     _ ->
