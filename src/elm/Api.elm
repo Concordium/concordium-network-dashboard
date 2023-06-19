@@ -104,7 +104,6 @@ type alias BlockInfo =
     , blockReceiveTime : Posix
     , transactionCount : Int
     , transactionEnergyCost : Int
-    , blockSlot : Int
     , blockLastFinalized : String
     , blockSlotTime : Posix
     , blockHeight : Int
@@ -135,7 +134,6 @@ blockInfoDecoder =
         |> required "blockReceiveTime" Iso8601.decoder
         |> required "transactionCount" D.int
         |> required "transactionEnergyCost" D.int
-        |> required "blockSlot" D.int
         |> required "blockLastFinalized" D.string
         |> required "blockSlotTime" Iso8601.decoder
         |> required "blockHeight" D.int
