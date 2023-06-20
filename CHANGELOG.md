@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased changes
 
+## [1.3.0]
+
+- Remove blockSlot from expected response of block info, making the dashboard
+  work with protocol version 6.
+
 ## [1.2.0]
 
 ## Fixed
