@@ -390,7 +390,7 @@ type alias GasRewards =
     { chainUpdate : Float
     , accountCreation : Float
     , baker : Float
-    , finalizationProof : Float
+    , finalizationProof : Maybe Float
     }
 
 
@@ -689,7 +689,7 @@ gasRewardsDecoder =
         |> required "chainUpdate" D.float
         |> required "accountCreation" D.float
         |> required "baker" D.float
-        |> required "finalizationProof" D.float
+        |> optional "finalizationProof" (D.nullable D.float) Nothing
 
 
 arDecoder : D.Decoder AnonymityRevokerInfo

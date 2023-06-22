@@ -102,7 +102,10 @@ type UpdateType
     | UpdateCooldownParameters
       -- ^Update for cooldown parameters, but not used by chain parameter version 0
     | UpdateTimeParameters
-      -- ^Update for time parameters, but not used by chain parameter version 0
+
+
+
+-- ^Update for time parameters, but not used by chain parameter version 0
 
 
 type TransactionResult

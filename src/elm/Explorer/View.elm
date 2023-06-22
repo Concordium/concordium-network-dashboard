@@ -1444,7 +1444,7 @@ viewSpecialEvent ctx chainParameters specialEvent =
                                     , text " are chain parameters."
                                     ]
                                 , row [ centerX, spacing 30 ]
-                                    [ paragraph [] [ italic "F", text " = ", text <| asPercentage rewardParameters.gasRewards.finalizationProof ]
+                                    [ Maybe.withDefault none (Maybe.map (\reward -> paragraph [] [ italic "F", text " = ", text <| asPercentage reward ]) rewardParameters.gasRewards.finalizationProof)
                                     , paragraph [] [ italic "A", text " = ", text <| asPercentage rewardParameters.gasRewards.accountCreation ]
                                     , paragraph [] [ italic "U", text " = ", text <| asPercentage rewardParameters.gasRewards.chainUpdate ]
                                     ]
@@ -2307,7 +2307,7 @@ viewEventUpdateEnqueuedDetails ctx event =
                     ]
                 ]
                 [ row [ centerX, spacing 30 ]
-                    [ paragraph [] [ italic "F", text " = ", text <| asPercentage gasRewards.finalizationProof ]
+                    [ Maybe.withDefault none (Maybe.map (\reward -> paragraph [] [ italic "F", text " = ", text <| asPercentage reward ]) gasRewards.finalizationProof)
                     , paragraph [] [ italic "A", text " = ", text <| asPercentage gasRewards.accountCreation ]
                     , paragraph [] [ italic "U", text " = ", text <| asPercentage gasRewards.chainUpdate ]
                     ]
