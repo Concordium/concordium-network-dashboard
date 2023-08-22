@@ -41,6 +41,9 @@ import Time exposing (..)
 import Tooltip exposing (stringTooltipAboveWidget, stringTooltipAlignedRight)
 import Transition exposing (..)
 import Tree exposing (Tree)
+import Network exposing (filterNodesByHeight)
+import Api
+import Platform.Cmd as Cmd
 
 
 
@@ -60,6 +63,7 @@ type alias Model =
     , gridSpec : Maybe GridSpec
     , maxWidth : Int
     , selectedBlock : Maybe String
+    , minFinalizedHeight : Maybe Int
     }
 
 
@@ -77,8 +81,9 @@ init maxWidth =
       , gridSpec = Nothing
       , maxWidth = maxWidth
       , selectedBlock = Nothing
+      , minFinalizedHeight = Nothing
       }
-    , Build.getNodeInfo GotNodeInfo
+    , Api.getConsensusStatus ReceivedConsensusStatus
     )
 
 
@@ -108,14 +113,16 @@ type Msg
     | OnAnimationFrame Int
     | BlockClicked String
     | MaxWidthChanged Int
+    | ReceivedConsensusStatus (Api.ApiResult Api.ConsensusStatus)
+    | ReceivedBlockResponse (Api.ApiResult Api.BlockResponse)
 
 
-update : Context a -> Msg -> Model -> ( Model, Cmd Msg )
+update : Context a -> Msg -> Model -> (Model, Cmd Msg)
 update ctx msg model =
     case msg of
         GotNodeInfo (Success nodeInfo) ->
             if Just nodeInfo /= List.head model.nodes then
-                updateChain ctx nodeInfo model
+                updateChain ctx (filterNodesByHeight model.minFinalizedHeight nodeInfo) model
 
             else
                 ( model, Cmd.none )
@@ -184,20 +191,23 @@ update ctx msg model =
                     ( model, Cmd.none )
 
         TickSecond time ->
-            case model.replay of
-                Nothing ->
-                    ( model
-                    , Build.getNodeInfo GotNodeInfo
-                    )
+            case model.minFinalizedHeight of
+                Nothing -> (model, Cmd.none)
+                Just _ ->
+                  case model.replay of
+                      Nothing ->
+                          ( model
+                          , Build.getNodeInfo GotNodeInfo
+                          )
 
-                Just replay ->
-                    let
-                        steppedReplay =
-                            Build.advanceReplay replay
-                    in
-                    update ctx
-                        (GotNodeInfo (Success steppedReplay.present))
-                        { model | replay = Just steppedReplay }
+                      Just replay ->
+                          let
+                              steppedReplay =
+                                  Build.advanceReplay replay
+                          in
+                          update ctx
+                              (GotNodeInfo (Success steppedReplay.present))
+                              { model | replay = Just steppedReplay }
 
         OnAnimationFrame time ->
             ( { model
@@ -219,8 +229,32 @@ update ctx msg model =
                     ( newModel, Cmd.none )
 
                 Just nodes ->
-                    updateChain ctx nodes newModel
+                    updateChain ctx (filterNodesByHeight model.minFinalizedHeight nodes) newModel
+        ReceivedConsensusStatus res ->
+            case res of
+                Ok consensusStatus ->
+                    ( model
+                    , Api.getBlockInfo consensusStatus.currentEraGenesisBlock ReceivedBlockResponse
+                    )
 
+                Err err ->
+                    ( model, Cmd.none )
+        ReceivedBlockResponse blockInfoRes ->
+            case blockInfoRes of
+                Ok (Api.Block blockInfo) ->
+                    ( { model
+                        | minFinalizedHeight = Just blockInfo.blockHeight
+                      }
+                    , Build.getNodeInfo GotNodeInfo
+                    )
+
+                Ok (Api.BlockNotFound _) ->
+                    ( model
+                    , Cmd.none
+                    )
+
+                _ ->
+                    ( model, Cmd.none )
 
 selectBlock : Model -> String -> Model
 selectBlock model hash =
@@ -297,6 +331,7 @@ updateNodes new current =
 updateChain : Context a -> List Node -> Model -> ( Model, Cmd Msg )
 updateChain ctx nodes model =
     let
+
         -- The best block according to the majority of the nodes.
         maybeBestBlock =
             nodes
@@ -401,7 +436,7 @@ rebuild : Context a -> Model -> ( Model, Cmd Msg )
 rebuild ctx model =
     case List.head model.nodes of
         Just nodes ->
-            updateChain ctx nodes model
+            updateChain ctx (filterNodesByHeight model.minFinalizedHeight nodes) model
 
         Nothing ->
             ( model, Cmd.none )
@@ -429,8 +464,8 @@ subscriptions model =
 
 view : Theme a -> Model -> Bool -> Element Msg
 view theme model showDevTools =
-    case model.lastFinalized of
-        Just lastFinalized ->
+    case (model.lastFinalized, model.minFinalizedHeight) of
+        (Just lastFinalized, Just _) ->
             let
                 nodes =
                     model.nodes
@@ -468,7 +503,7 @@ view theme model showDevTools =
                     (html <| View.viewChain theme vcontext currentDrawableChain)
                 ]
 
-        Nothing ->
+        _ ->
             none
 
 

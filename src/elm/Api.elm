@@ -75,6 +75,7 @@ type alias ConsensusStatus =
     { bestBlock : String
     , genesisTime : Posix
     , epochDuration : Int
+    , currentEraGenesisBlock: String
     }
 
 
@@ -84,6 +85,7 @@ consensusStatusDecoder =
         |> required "bestBlock" D.string
         |> required "genesisTime" Iso8601.decoder
         |> required "epochDuration" D.int
+        |> required "currentEraGenesisBlock" D.string
 
 
 

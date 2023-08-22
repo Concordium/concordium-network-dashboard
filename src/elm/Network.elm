@@ -391,6 +391,14 @@ allowedNodeVersion : { ctx | minVersionIncludedInStats : String } -> { a | clien
 allowedNodeVersion ctx node =
     node.client >= ctx.minVersionIncludedInStats
 
+{-| Filter out nodes whose last finalized block height is strictly less than provided.
+    If the minimum height is not provided the function acts as the identity function.
+-}
+filterNodesByHeight : Maybe Int -> List {node | finalizedBlockHeight: Int} -> List {node | finalizedBlockHeight: Int}
+filterNodesByHeight minHeight =
+    case minHeight of
+        Nothing -> \x -> x
+        Just h -> List.filter (\n -> n.finalizedBlockHeight >= h)
 
 {-| For the given node attribute, finds majority value across all nodes
 and returns that, or the default if unknown.
