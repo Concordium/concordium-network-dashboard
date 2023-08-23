@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased changes
 
+## 1.3.2
+
+- Fix chain display when a lot of nodes are left behind in case of a protocol update.
+
 ## 1.3.1
 
 - Remove finalization proof gas parameter from expected parameters since they
